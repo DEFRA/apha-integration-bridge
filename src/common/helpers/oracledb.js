@@ -1,4 +1,5 @@
 import oracledb from 'oracledb'
+import retry from 'async-retry'
 import { config } from '../../config.js'
 
 const oracledbConfigurations = config.get('oracledb')
@@ -50,8 +51,6 @@ export const oracleDb = {
          * @type {oracledb.PoolAttributes}
          */
         const poolAttributes = {
-          httpsProxy,
-          httpsProxyPort,
           user: config.username,
           password: config.password,
           connectString: `${config.host}/${config.dbname}`,
@@ -61,19 +60,36 @@ export const oracleDb = {
           poolAlias: key
         }
 
+        if (httpsProxy && httpsProxyPort) {
+          poolAttributes.httpsProxy = httpsProxy
+          poolAttributes.httpsProxyPort = httpsProxyPort
+        }
+
         server.logger.debug(
           `Creating OracleDB pool "${key}" with attributes`,
           poolAttributes
         )
 
         try {
-          /**
-           * create the pool for this oracledb connection
-           */
-          await oracledb.createPool(poolAttributes)
+          await retry(
+            async () => {
+              /**
+               * create the pool for this oracledb connection
+               */
+              await oracledb.createPool(poolAttributes)
 
-          server.logger.trace(
-            `OracleDB pool created for "${key}" with attributes`
+              server.logger.info(`OracleDB pool created for "${key}"`)
+            },
+            {
+              retries: 3,
+              minTimeout: 100,
+              maxTimeout: 300,
+              onRetry: () => {
+                server.logger.warn(
+                  `Retrying to create OracleDB pool "${key}"...`
+                )
+              }
+            }
           )
         } catch (error) {
           server.logger.error(
@@ -88,8 +104,17 @@ export const oracleDb = {
          * decorate the server with a helper function, that will return
          * establish connection to this particular oracledb pool when called
          */
-        server.decorate('server', `oracledb.${key}`, () => {
-          return oracledb.getConnection(key)
+        server.decorate('server', `oracledb.${key}`, async () => {
+          const connection = await oracledb.getConnection(key)
+
+          return {
+            connection,
+            [Symbol.asyncDispose]: async () => {
+              await connection.close()
+
+              server.logger.trace(`OracleDB connection closed for "${key}"`)
+            }
+          }
         })
 
         /**
