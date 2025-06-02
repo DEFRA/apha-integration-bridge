@@ -1,3 +1,13 @@
+import {
+  jest,
+  describe,
+  beforeEach,
+  beforeAll,
+  afterAll,
+  afterEach,
+  test,
+  expect
+} from '@jest/globals'
 import hapi from '@hapi/hapi'
 
 import { secureContext } from './index.js'

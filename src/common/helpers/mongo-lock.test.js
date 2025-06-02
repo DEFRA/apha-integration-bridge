@@ -1,3 +1,5 @@
+import { jest, describe, beforeEach, test, expect } from '@jest/globals'
+
 import { acquireLock, requireLock } from './mongo-lock.js'
 
 describe('Lock Functions', () => {
