@@ -11,6 +11,15 @@ import { pulse } from './common/helpers/pulse.js'
 import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 
+/**
+ * Builds and configures a Hapi server instance.
+ *
+ * The server is configured with logging, tracing and database plugins and
+ * registers the application routes.
+ *
+ * @returns {Promise<import('@hapi/hapi').Server>} A configured but not started
+ * Hapi server.
+ */
 async function createServer() {
   setupProxy()
 

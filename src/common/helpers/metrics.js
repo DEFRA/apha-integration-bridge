@@ -6,6 +6,13 @@ import {
 import { config } from '../../config.js'
 import { createLogger } from './logging/logger.js'
 
+/**
+ * Sends a custom CloudWatch metric when metrics are enabled.
+ *
+ * @param {string} metricName Name of the metric.
+ * @param {number} [value=1] Value for the metric.
+ * @returns {Promise<void>} Resolves when the metric is flushed.
+ */
 const metricsCounter = async (metricName, value = 1) => {
   if (!config.get('isMetricsEnabled')) {
     return
