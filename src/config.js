@@ -10,6 +10,122 @@ const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
 
 const config = convict({
+  oracledb: {
+    pega: {
+      username: {
+        doc: 'PEGA Database Username',
+        format: String,
+        nullable: false,
+        default: 'pega',
+        env: 'ORACLEDB_PEGA_USERNAME'
+      },
+      password: {
+        doc: 'PEGA Database Password',
+        format: String,
+        nullable: false,
+        default: 'password',
+        env: 'ORACLEDB_PEGA_PASSWORD'
+      },
+      host: {
+        doc: 'PEGA Database host',
+        format: String,
+        nullable: false,
+        default: 'localhost:1521',
+        env: 'ORACLEDB_PEGA_HOST'
+      },
+      dbname: {
+        doc: 'PEGA Database, Database name',
+        format: String,
+        nullable: false,
+        default: 'pega',
+        env: 'ORACLEDB_PEGA_DBNAME'
+      },
+      poolMin: {
+        doc: 'PEGA Database pool min',
+        format: Number,
+        default: 0,
+        env: 'ORACLEDB_PEGA_POOL_MIN'
+      },
+      poolMax: {
+        doc: 'PEGA Database pool max',
+        format: Number,
+        default: 1,
+        env: 'ORACLEDB_PEGA_POOL_MAX'
+      },
+      poolTimeout: {
+        doc: 'PEGA Database pool timeout',
+        format: Number,
+        default: 60,
+        env: 'ORACLEDB_PEGA_POOL_TIMEOUT'
+      },
+      poolCloseWaitTime: {
+        doc: 'PEGA Database pool closing wait time',
+        format: Number,
+        default: 0,
+        env: 'ORACLEDB_PEGA_POOL_CLOSE_WAIT_TIME'
+      }
+    },
+    sam: {
+      username: {
+        doc: 'SAM Database Username',
+        format: String,
+        nullable: false,
+        default: 'sam',
+        env: 'ORACLEDB_SAM_USERNAME'
+      },
+      password: {
+        doc: 'SAM Database Password',
+        format: String,
+        nullable: false,
+        default: 'password',
+        env: 'ORACLEDB_SAM_PASSWORD'
+      },
+      host: {
+        doc: 'SAM Database host',
+        format: String,
+        nullable: false,
+        default: 'localhost:1521',
+        env: 'ORACLEDB_SAM_HOST'
+      },
+      dbname: {
+        doc: 'SAM Database, Database name',
+        format: String,
+        nullable: false,
+        default: 'sam',
+        env: 'ORACLEDB_SAM_DBNAME'
+      },
+      poolMin: {
+        doc: 'SAM Database pool min',
+        format: Number,
+        default: 0,
+        env: 'ORACLEDB_SAM_POOL_MIN'
+      },
+      poolMax: {
+        doc: 'SAM Database pool max',
+        format: Number,
+        default: 1,
+        env: 'ORACLEDB_SAM_POOL_MAX'
+      },
+      poolTimeout: {
+        doc: 'SAM Database pool timeout',
+        format: Number,
+        default: 60,
+        env: 'ORACLEDB_SAM_POOL_TIMEOUT'
+      },
+      poolCloseWaitTime: {
+        doc: 'SAM Database pool closing wait time',
+        format: Number,
+        default: 0,
+        env: 'ORACLEDB_SAM_POOL_CLOSE_WAIT_TIME'
+      },
+      poolAlias: {
+        doc: 'SAM Database pool alias name',
+        format: String,
+        default: 'samPool',
+        env: 'ORACLEDB_SAM_POOL_ALIAS'
+      }
+    }
+  },
   serviceVersion: {
     doc: 'The service version, this variable is injected into your docker container in CDP environments',
     format: String,
