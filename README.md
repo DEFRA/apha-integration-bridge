@@ -1,5 +1,10 @@
 # apha-integration-bridge
 
+## 😱 - Documentation to write:
+
+- You must have a [docker login for Oracle Container Registry](https://container-registry.oracle.com/) to pull the base image.
+- Using `npm run compose:up`
+
 Core delivery platform Node.js Backend Template.
 
 - [Requirements](#requirements)
@@ -47,7 +52,7 @@ nvm use
 Install application dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
 ### Development
