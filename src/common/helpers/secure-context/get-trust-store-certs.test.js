@@ -1,3 +1,5 @@
+import { describe, test, expect } from '@jest/globals'
+
 import { getTrustStoreCerts } from './get-trust-store-certs.js'
 
 describe('#getTrustStoreCerts', () => {

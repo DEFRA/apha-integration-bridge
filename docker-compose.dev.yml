@@ -1,0 +1,26 @@
+services:
+  oracledb-sam:
+    image: container-registry.oracle.com/database/free:latest
+    ports:
+      - '1521:1521'
+      - '5500:5500'
+    environment:
+      - ORACLE_PW="letmein"
+    volumes:
+      - ./compose/oracledb:/opt/oracle/scripts/startup
+      - oracledb-sam-data:/opt/oracle/oradata
+    restart: always
+
+  mongodb:
+    image: mongo:6.0.13
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb-data:/data
+    restart: always
+
+volumes:
+  mongodb-data:
+    name: apha-integration-bridge-mongodb-data
+  oracledb-sam-data:
+    name: apha-integration-bridge-oracledb-sam-data

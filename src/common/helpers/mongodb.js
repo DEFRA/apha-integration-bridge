@@ -19,7 +19,9 @@ export const mongoDb = {
       })
 
       const databaseName = options.databaseName
+
       const db = client.db(databaseName)
+
       const locker = new LockManager(db.collection('mongo-locks'))
 
       await createIndexes(db)

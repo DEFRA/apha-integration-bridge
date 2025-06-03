@@ -1,4 +1,4 @@
-# apha-integration-bridge
+# APHA: Integration Bridge
 
 Core delivery platform Node.js Backend Template.
 
@@ -42,17 +42,27 @@ nvm use
 
 ## Local development
 
+In-order to run this application locally, you will need to register and obtain a login token for the Oracle Container Registry.
+
+You can find the instructions on how to do this in the [Oracle Container Registry documentation](https://container-registry.oracle.com/).
+
 ### Setup
 
 Install application dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
 ### Development
 
 To run the application in `development` mode run:
+
+Start the local development dependencies by running the following command:
+
+```bash
+npm run compose:up
+```
 
 ```bash
 npm run dev
@@ -60,11 +70,24 @@ npm run dev
 
 ### Testing
 
+In-order to run the tests locally, against testcontainers that run the free version of OracleDB, you will need to install the OracleDB Instant Client libraries.
+You can find the instructions on how to install them in the [OracleDB documentation](https://www.oracle.com/database/technologies/instant-client/downloads.html).
+
+Once this is done, create a `.env` file in the root of the project, with the location of the OracleDB Instant Client libraries. For example:
+
+```bash
+ORACLE_CLIENT_LIB_DIR=/Users/yourusername/Downloads/instantclient_23_3
+```
+
+Then you can run the tests with:
+
+````
+
 To test the application run:
 
 ```bash
 npm run test
-```
+````
 
 ### Production
 
