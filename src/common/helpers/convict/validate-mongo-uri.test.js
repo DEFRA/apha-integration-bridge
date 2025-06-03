@@ -1,3 +1,5 @@
+import { describe, test, expect } from '@jest/globals'
+
 import { convictValidateMongoUri } from './validate-mongo-uri.js'
 
 describe('#convictValidateMongoUri', () => {

@@ -1,3 +1,5 @@
+import { afterEach, describe, test, expect } from '@jest/globals'
+
 import { config } from '../../../config.js'
 import { getGlobalDispatcher, ProxyAgent } from 'undici'
 import { setupProxy } from './setup-proxy.js'

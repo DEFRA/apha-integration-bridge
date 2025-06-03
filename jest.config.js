@@ -1,9 +1,14 @@
+import dotenv from 'dotenv'
+
+dotenv.config()
+
 export default {
   rootDir: '.',
   verbose: true,
   resetModules: true,
   clearMocks: true,
   silent: false,
+  injectGlobals: false,
   preset: '@shelf/jest-mongodb',
   watchPathIgnorePatterns: ['globalConfig'],
   testMatch: ['**/src/**/*.test.js'],
@@ -16,6 +21,14 @@ export default {
     '<rootDir>/.server',
     'index.js'
   ],
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50
+    }
+  },
   coverageDirectory: '<rootDir>/coverage',
   transform: {
     '^.+\\.js$': 'babel-jest'

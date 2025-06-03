@@ -1,3 +1,12 @@
+import {
+  jest,
+  describe,
+  beforeAll,
+  afterAll,
+  test,
+  expect
+} from '@jest/globals'
+
 import { Db, MongoClient } from 'mongodb'
 import { LockManager } from 'mongo-locks'
 
