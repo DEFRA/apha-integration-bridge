@@ -1,8 +1,12 @@
 import Hapi from '@hapi/hapi'
+import inert from '@hapi/inert'
+import vision from '@hapi/vision'
+import path from 'node:path'
 
+import { openApi } from './common/helpers/swagger.js'
 import { config } from './config.js'
-import { router } from './plugins/router.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
+import { routingPlugin } from './common/helpers/routing.js'
 import { mongoDb } from './common/helpers/mongodb.js'
 import { oracleDb } from './common/helpers/oracledb.js'
 import { failAction } from './common/helpers/fail-action.js'
@@ -10,6 +14,9 @@ import { secureContext } from './common/helpers/secure-context/index.js'
 import { pulse } from './common/helpers/pulse.js'
 import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
+import { versionPlugin } from './common/helpers/versioning.js'
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
 /**
  * Builds and configures a Hapi server instance.
@@ -51,6 +58,18 @@ async function createServer() {
 
   await server.register([
     /**
+     * plugin for handling static files
+     *
+     * @see https://hapi.dev/module/inert/
+     */
+    inert,
+    /**
+     * template rendering support for hapi.js
+     *
+     * @see https://hapi.dev/module/vision/
+     */
+    vision,
+    /**
      * automatically logs incoming requests
      */
     requestLogger,
@@ -75,9 +94,25 @@ async function createServer() {
      */
     oracleDb,
     /**
+     * sets up header-based api versioning for the API
+     */
+    {
+      plugin: versionPlugin
+    },
+    /**
+     * openapi swagger plugin
+     */
+    openApi,
+    /**
      * routes used in the app
      */
-    router
+    {
+      plugin: routingPlugin,
+      options: {
+        routesDirectory: path.join(__dirname, 'routes'),
+        logRoutes: true
+      }
+    }
   ])
 
   return server
