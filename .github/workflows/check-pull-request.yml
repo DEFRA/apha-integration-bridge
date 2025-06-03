@@ -25,6 +25,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Install Oracle Instant Client
+        id: oracle
+        run: ./.github/scripts/oracle-instant-client.sh
+
       - run: npm ci
 
       - run: npm run format:check
@@ -32,6 +36,8 @@ jobs:
       - run: npm run lint
 
       - run: npm test
+        env:
+          ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
 
       - name: Test Docker Image Build
         run: |
