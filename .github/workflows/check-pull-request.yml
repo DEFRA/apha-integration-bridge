@@ -24,11 +24,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: |
-          npm ci
-          npm run format:check
-          npm run lint
-          npm test
+
+      - run: npm ci
+
+      - run: npm run format:check
+
+      - run: npm run lint
+
+      - run: npm test
 
       - name: Test Docker Image Build
         run: |
