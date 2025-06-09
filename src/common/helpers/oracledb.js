@@ -107,6 +107,8 @@ export const oracleDb = {
         server.decorate('server', `oracledb.${key}`, async () => {
           const connection = await oracledb.getConnection(key)
 
+          server.logger.trace(`OracleDB connection established for "${key}"`)
+
           return {
             connection,
             [Symbol.asyncDispose]: async () => {

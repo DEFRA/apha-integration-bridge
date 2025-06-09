@@ -2,6 +2,12 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import {
+  GetUnitsSchema,
+  getUnitsQuery
+} from '../../../../lib/db/queries/get-units.js'
+import { execute } from '../../../../lib/db/operations/execute.js'
+
 const __dirname = new URL('.', import.meta.url).pathname
 
 export const options = {
@@ -17,11 +23,7 @@ export const options = {
     }
   },
   validate: {
-    params: Joi.object({
-      countyId: Joi.string().required().description('County ID'),
-      parishId: Joi.string().required().description('Parish ID'),
-      holdingsId: Joi.string().required().description('Holdings ID')
-    }),
+    params: GetUnitsSchema,
     headers: Joi.object({
       accept: Joi.string()
         .default('application/vnd.integration-bridge.v1+json')
@@ -30,16 +32,12 @@ export const options = {
   }
 }
 
-export const handler = (request, h) => {
-  const { countyId, parishId, holdingsId } = request.params
+export async function handler(request, h) {
+  await using oracledb = await request.server['oracledb.sam']()
 
-  return h
-    .response({
-      message: 'success',
-      version: request.pre.apiVersion,
-      countyId,
-      parishId,
-      holdingsId
-    })
-    .code(200)
+  const query = getUnitsQuery(request.params)
+
+  const rows = await execute(oracledb.connection, query)
+
+  return h.response(rows).code(200)
 }

@@ -46,6 +46,10 @@ export const routingPlugin = {
      * Import and register each route file
      */
     for (const file of routeFiles) {
+      if (file.includes('.test')) {
+        continue
+      }
+
       const filePath = path.join(routesDirectory, file)
 
       /**

@@ -1,5 +1,6 @@
+import oracledb from 'oracledb'
 import { beforeAll } from '@jest/globals'
-import { GenericContainer } from 'testcontainers'
+import { GenericContainer, Wait } from 'testcontainers'
 
 export const createOracleDbTestContainer = () => {
   /**
@@ -20,7 +21,13 @@ export const createOracleDbTestContainer = () => {
         target: '/opt/oracle/scripts/startup'
       }
     ])
-    .withStartupTimeout(10_000)
+    .withEnvironment({
+      ORACLE_PW: 'letmein'
+    })
+    .withStartupTimeout(30_000)
+    .withWaitStrategy(
+      Wait.forLogMessage('DONE: Executing user defined scripts')
+    )
 
   /**
    * @type {Promise<import('testcontainers').StartedTestContainer>}
@@ -29,7 +36,7 @@ export const createOracleDbTestContainer = () => {
 
   beforeAll(async () => {
     await started
-  })
+  }, 60_000)
 
   /**
    * @returns {Promise<Object>} the configuration for the oracledb test container
@@ -43,6 +50,29 @@ export const createOracleDbTestContainer = () => {
   }
 
   return {
-    getConfiguration
+    getConfiguration,
+    getConnection: async (config) => {
+      const { host } = await getConfiguration()
+
+      const pool = await oracledb.createPool({
+        user: config.username,
+        password: config.password,
+        connectString: `${host}/${config.dbname}`,
+        poolAlias: 'sam'
+      })
+
+      const connection = await pool.getConnection()
+
+      return {
+        connection,
+        [Symbol.asyncDispose]: async () => {
+          try {
+            await connection.close()
+          } finally {
+            await pool.close(0)
+          }
+        }
+      }
+    }
   }
 }
