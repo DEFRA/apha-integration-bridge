@@ -15,6 +15,9 @@ jobs:
   pr-validator:
     name: Run Pull Request Checks
     runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: 1
+      DOCKER_HOST: unix:///var/run/docker.sock
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
