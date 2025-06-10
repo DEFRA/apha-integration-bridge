@@ -39,7 +39,7 @@ jobs:
       - name: Docker pull Oracle DB
         run: docker pull container-registry.oracle.com/database/free:latest
 
-      - run: npm ci
+      - run: npm i
 
       - run: npm run format:check
 
@@ -51,7 +51,7 @@ jobs:
           DEBUG: testcontainers
           # DOCKER_HOST: unix:///var/run/docker.sock
           # TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
-          NODE_OPTIONS: '--network-family-autoselection-attempt-timeout=500'
+          # NODE_OPTIONS: '--network-family-autoselection-attempt-timeout=500'
 
       - name: Test Docker Image Build
         run: |
