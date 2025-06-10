@@ -49,8 +49,9 @@ jobs:
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
           DEBUG: testcontainers
-          DOCKER_HOST: unix:///var/run/docker.sock
-          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
+          # DOCKER_HOST: unix:///var/run/docker.sock
+          # TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
+          NODE_OPTIONS: '--network-family-autoselection-attempt-timeout=500'
 
       - name: Test Docker Image Build
         run: |
