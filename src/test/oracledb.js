@@ -1,5 +1,5 @@
 import oracledb from 'oracledb'
-import { beforeAll } from '@jest/globals'
+import { beforeAll, afterAll } from '@jest/globals'
 import { GenericContainer, Wait } from 'testcontainers'
 
 /**
@@ -36,9 +36,11 @@ export const createOracleDbTestContainer = () => {
     console.log(await started)
   }, 60_000)
 
-  // afterAll(async () => {
-  //   console.log(await started)
-  // })
+  afterAll(async () => {
+    const runningContainer = await started
+
+    await runningContainer.stop()
+  })
 
   /**
    * @returns {Promise<Object>} the configuration for the oracledb test container
