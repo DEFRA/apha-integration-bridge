@@ -48,7 +48,7 @@ jobs:
       - run: npm test
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
-          DOCKER_HOST: /var/run/docker.sock
+          DEBUG: testcontainers
 
       - name: Test Docker Image Build
         run: |
