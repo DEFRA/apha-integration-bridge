@@ -39,11 +39,6 @@ jobs:
       - name: Docker pull Oracle DB
         run: docker pull container-registry.oracle.com/database/free:latest
 
-      - name: Debug Docker Status
-        run: |
-          docker info
-          ls -la /var/run/docker.sock
-
       - run: npm ci
 
       - run: npm run format:check
@@ -53,6 +48,7 @@ jobs:
       - run: npm test
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
+          DOCKER_HOST: /var/run/docker.sock
 
       - name: Test Docker Image Build
         run: |
