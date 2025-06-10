@@ -49,7 +49,8 @@ jobs:
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
           DEBUG: testcontainers
-          DOCKER_HOST: /var/run/docker.sock
+          DOCKER_HOST: unix:///var/run/docker.sock
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
 
       - name: Test Docker Image Build
         run: |
