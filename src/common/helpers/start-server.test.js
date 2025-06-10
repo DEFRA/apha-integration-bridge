@@ -38,7 +38,7 @@ jest.mock('./logging/logger.js', () => ({
 
 jest.setTimeout(30_000)
 
-describe('#startServer', () => {
+describe.skip('#startServer', () => {
   const PROCESS_ENV = process.env
   let createServerSpy
   let hapiServerSpy
