@@ -1,7 +1,20 @@
 import Joi from 'joi'
 
 import { query } from '../operations/query.js'
+import { obfuscate } from '../marshallers/obfuscate.js'
 
+/**
+ * @typedef {import('joi')} Joi
+ */
+
+/**
+ * Schema for validating parameters to fetch units from the database
+ *
+ * @typedef {Object} GetUnitsSchema
+ * @property {string} countyId - The ID of the county
+ * @property {string} parishId - The ID of the parish
+ * @property {string} holdingsId - The ID of the holdings
+ */
 export const GetUnitsSchema = Joi.object({
   countyId: Joi.string().required().description('County ID'),
   parishId: Joi.string().required().description('Parish ID'),
@@ -9,8 +22,11 @@ export const GetUnitsSchema = Joi.object({
 })
 
 /**
- * @param {*} parameters
- * @returns {import('knex').Knex.Sql} the query builder for fetching units
+ * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
+ * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
+ *
+ * @param {GetUnitsSchema} parameters Parameters required to build the query for fetching units
+ * @returns {Query} the query builder for fetching units
  */
 export function getUnitsQuery(parameters) {
   /**
@@ -24,7 +40,7 @@ export function getUnitsQuery(parameters) {
 
   const cph = `${value.countyId}/${value.parishId}/${value.holdingsId}`
 
-  return query()
+  const { sql, bindings } = query()
     .select(
       'cph',
       'location_id',
@@ -53,4 +69,15 @@ export function getUnitsQuery(parameters) {
     .from('ahbrp.v_cph_customer_unit')
     .where('cph', `LIKE`, cph)
     .toSQL()
+
+  return {
+    sql,
+    bindings,
+    marshallers: {
+      person_family_name: [obfuscate],
+      person_given_name: [obfuscate],
+      oraganisation_name: [obfuscate],
+      property_number: [obfuscate]
+    }
+  }
 }

@@ -3,8 +3,11 @@ import OracleDB from 'oracledb'
 /**
  * execute a sql query against the supplied connection
  *
+ * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
+ * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
+ *
  * @param {import('oracledb').Connection} connection - the oracledb connection to use
- * @param {import('knex').Knex.Sql} query - a knex query builder instance
+ * @param {Query} query - a knex query builder instance
  */
 export async function execute(connection, query) {
   let index = 0
@@ -29,9 +32,25 @@ export async function execute(connection, query) {
       outFormat: OracleDB.OUT_FORMAT_OBJECT,
       fetchTypeHandler: function (metadata) {
         /**
-         * ensure column names are in lowercase
+         * always lowercase the column names
          */
         metadata.name = metadata.name.toLowerCase()
+
+        /**
+         * if a marshaller is defined for this column, return a converter function
+         * that applies the marshaller to the value
+         */
+        const marshaller = query.marshallers?.[metadata.name]
+
+        if (marshaller) {
+          return {
+            converter: (value) => {
+              return marshaller.reduce((intermediateValue, fn) => {
+                return fn(intermediateValue)
+              }, value)
+            }
+          }
+        }
       }
     })
 

@@ -15,9 +15,6 @@ jobs:
   pr-validator:
     name: Run Pull Request Checks
     runs-on: ubuntu-latest
-    env:
-      DOCKER_BUILDKIT: 1
-      DOCKER_HOST: unix:///var/run/docker.sock
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,6 +38,11 @@ jobs:
 
       - name: Docker pull Oracle DB
         run: docker pull container-registry.oracle.com/database/free:latest
+
+      - name: Debug Docker Status
+        run: |
+          docker info
+          ls -la /var/run/docker.sock
 
       - run: npm ci
 

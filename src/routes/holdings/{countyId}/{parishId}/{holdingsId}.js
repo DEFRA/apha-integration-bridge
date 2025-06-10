@@ -19,7 +19,7 @@ export const options = {
   ),
   plugins: {
     'hapi-swagger': {
-      id: 'list' // refer to notes above
+      id: 'list'
     }
   },
   validate: {

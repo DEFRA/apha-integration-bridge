@@ -17,5 +17,6 @@ test('returns the expected query for valid parameters', () => {
 })
 
 test('throws if the parameters are invalid', () => {
+  // @ts-expect-error - missing required parameters
   expect(() => getUnitsQuery({})).toThrow(/required/i)
 })
