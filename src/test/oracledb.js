@@ -33,7 +33,7 @@ export const createOracleDbTestContainer = () => {
   const started = container.start()
 
   beforeAll(async () => {
-    console.log(await started)
+    await started
   }, 60_000)
 
   afterAll(async () => {
