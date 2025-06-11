@@ -8,7 +8,7 @@ import {
 } from '@jest/globals'
 import hapi from '@hapi/hapi'
 
-import { getConfiguration } from '../../test/oracledb.js'
+import { getContainerHost, getTestContainer } from '../../test/oracledb.js'
 
 const mockLoggerInfo = jest.fn()
 const mockLoggerError = jest.fn()
@@ -38,6 +38,8 @@ jest.mock('./logging/logger.js', () => ({
 
 jest.setTimeout(30_000)
 
+const container = getTestContainer()
+
 describe('#startServer', () => {
   const PROCESS_ENV = process.env
   let createServerSpy
@@ -46,12 +48,12 @@ describe('#startServer', () => {
   let createServerImport
 
   beforeAll(async () => {
-    const oracledbConfig = await getConfiguration()
+    const host = await getContainerHost(container)
 
     process.env = {
       ...PROCESS_ENV,
-      ORACLEDB_PEGA_HOST: oracledbConfig.host,
-      ORACLEDB_SAM_HOST: oracledbConfig.host
+      ORACLEDB_PEGA_HOST: host,
+      ORACLEDB_SAM_HOST: host
     }
 
     process.env.PORT = '3098' // Set to obscure port to avoid conflicts
