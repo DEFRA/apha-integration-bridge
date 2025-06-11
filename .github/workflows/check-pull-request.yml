@@ -45,6 +45,8 @@ jobs:
 
       - run: npm run lint
 
+      - run: npm run compose:up
+
       - run: npm test
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}

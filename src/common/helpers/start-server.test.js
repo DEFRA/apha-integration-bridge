@@ -8,7 +8,7 @@ import {
 } from '@jest/globals'
 import hapi from '@hapi/hapi'
 
-import { createOracleDbTestContainer } from '../../test/oracledb.js'
+import { getConfiguration } from '../../test/oracledb.js'
 
 const mockLoggerInfo = jest.fn()
 const mockLoggerError = jest.fn()
@@ -45,10 +45,8 @@ describe('#startServer', () => {
   let startServerImport
   let createServerImport
 
-  const container = createOracleDbTestContainer()
-
   beforeAll(async () => {
-    const oracledbConfig = await container.getConfiguration()
+    const oracledbConfig = await getConfiguration()
 
     process.env = {
       ...PROCESS_ENV,

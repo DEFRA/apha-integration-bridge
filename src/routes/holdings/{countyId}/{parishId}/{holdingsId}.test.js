@@ -2,11 +2,9 @@ import Hapi from '@hapi/hapi'
 import { test } from '@jest/globals'
 
 import { config } from '../../../../config.js'
-import { createOracleDbTestContainer } from '../../../../test/oracledb.js'
+import { getConnection } from '../../../../test/oracledb.js'
 
 import * as route from './{holdingsId}.js'
-
-const container = createOracleDbTestContainer()
 
 test('correctly returns the expected oracledb data', async () => {
   const samConfig = config.get('oracledb.sam')
@@ -14,7 +12,7 @@ test('correctly returns the expected oracledb data', async () => {
   const server = Hapi.server({ port: 0 })
 
   server.decorate('server', 'oracledb.sam', () => {
-    return container.getConnection(samConfig)
+    return getConnection(samConfig)
   })
 
   server.route({
