@@ -1,48 +1,63 @@
-import { beforeAll } from '@jest/globals'
-import { GenericContainer } from 'testcontainers'
+import oracledb from 'oracledb'
+import { GenericContainer, Wait } from 'testcontainers'
 
-export const createOracleDbTestContainer = () => {
-  /**
-   * create a new test container for oracledb
-   *
-   * @note the docker daemon needs to have a valid login for oracle container registry
-   */
-  const container = new GenericContainer(
-    'container-registry.oracle.com/database/free:latest'
+export const getTestContainer = () => {
+  return (
+    new GenericContainer('container-registry.oracle.com/database/free:latest')
+      .withExposedPorts(1521)
+      /**
+       * run the necessary startup sql scripts
+       */
+      .withBindMounts([
+        {
+          source: `${process.cwd()}/compose/oracledb`,
+          target: '/opt/oracle/scripts/startup',
+          mode: 'ro'
+        }
+      ])
+      .withEnvironment({
+        ORACLE_PW: 'letmein'
+      })
+      .withStartupTimeout(60_000)
+      .withWaitStrategy(
+        Wait.forLogMessage('DONE: Executing user defined scripts')
+      )
   )
-    .withExposedPorts(1521)
-    /**
-     * run the necessary startup sql scripts
-     */
-    .withCopyDirectoriesToContainer([
-      {
-        source: './compose/oracledb',
-        target: '/opt/oracle/scripts/startup'
-      }
-    ])
-    .withStartupTimeout(10_000)
+}
 
-  /**
-   * @type {Promise<import('testcontainers').StartedTestContainer>}
-   */
-  const started = container.start()
+/**
+ * @param {GenericContainer} container
+ */
+export const getContainerHost = async (container) => {
+  const runningContainer = await container.start()
 
-  beforeAll(async () => {
-    await started
+  return `0.0.0.0:${runningContainer.getMappedPort(1521)}`
+}
+
+/**
+ * @param {GenericContainer} container
+ * @param {{ username: string; password: string; dbname: string }} config
+ */
+export const getConnection = async (container, config) => {
+  const host = await getContainerHost(container)
+
+  const pool = await oracledb.createPool({
+    user: config.username,
+    password: config.password,
+    connectString: `${host}/${config.dbname}`,
+    poolAlias: 'sam'
   })
 
-  /**
-   * @returns {Promise<Object>} the configuration for the oracledb test container
-   */
-  const getConfiguration = async () => {
-    const runningContainer = await started
-
-    return {
-      host: `0.0.0.0:${runningContainer.getMappedPort(1521)}`
-    }
-  }
+  const connection = await pool.getConnection()
 
   return {
-    getConfiguration
+    connection,
+    [Symbol.asyncDispose]: async () => {
+      try {
+        await connection.close()
+      } finally {
+        await pool.close(0)
+      }
+    }
   }
 }
