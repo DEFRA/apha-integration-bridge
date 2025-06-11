@@ -21,6 +21,6 @@ services:
 
 volumes:
   mongodb-data:
-    name: apha-integration-bridge-mongodb-data
+    name: mongodb-data
   oracledb-sam-data:
-    name: apha-integration-bridge-oracledb-sam-data
+    name: oracledb-sam-data

@@ -9,6 +9,7 @@ module.exports = {
       }
     ]
   ],
+  plugins: ['@babel/plugin-transform-explicit-resource-management'],
   env: {
     test: {
       plugins: ['babel-plugin-transform-import-meta']

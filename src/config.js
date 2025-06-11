@@ -37,7 +37,7 @@ const config = convict({
         doc: 'PEGA Database, Database name',
         format: String,
         nullable: false,
-        default: 'pega',
+        default: 'FREEPDB1',
         env: 'ORACLEDB_PEGA_DBNAME'
       },
       poolMin: {
@@ -91,7 +91,7 @@ const config = convict({
         doc: 'SAM Database, Database name',
         format: String,
         nullable: false,
-        default: 'sam',
+        default: 'FREEPDB1',
         env: 'ORACLEDB_SAM_DBNAME'
       },
       poolMin: {
@@ -117,12 +117,6 @@ const config = convict({
         format: Number,
         default: 0,
         env: 'ORACLEDB_SAM_POOL_CLOSE_WAIT_TIME'
-      },
-      poolAlias: {
-        doc: 'SAM Database pool alias name',
-        format: String,
-        default: 'samPool',
-        env: 'ORACLEDB_SAM_POOL_ALIAS'
       }
     }
   },
