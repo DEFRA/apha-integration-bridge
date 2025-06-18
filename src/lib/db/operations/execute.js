@@ -1,4 +1,15 @@
 import OracleDB from 'oracledb'
+import { context, trace } from '@opentelemetry/api'
+
+import { meter, tracer } from '../../telemetry/index.js'
+
+/**
+ * Gauge to track the latency of executing a SQL query against OracleDB
+ */
+const latencyGauge = meter.createGauge('oracledb_connection_execute_latency', {
+  description: 'The latency of executing a SQL query against OracleDB',
+  unit: 'Milliseconds'
+})
 
 /**
  * execute a sql query against the supplied connection
@@ -26,37 +37,56 @@ export async function execute(connection, query) {
   /**
    * @type {OracleDB.Result<any>}
    */
-  try {
-    // @ts-ignore - OracleDB does not have a type definition for `execute` that matches the usage here
-    const results = await connection.execute(sql, query.bindings, {
-      outFormat: OracleDB.OUT_FORMAT_OBJECT,
-      fetchTypeHandler: function (metadata) {
-        /**
-         * always lowercase the column names
-         */
-        metadata.name = metadata.name.toLowerCase()
+  return context.with(
+    trace.setSpan(context.active(), trace.getActiveSpan()),
+    async () => {
+      const startTime = Date.now()
 
-        /**
-         * if a marshaller is defined for this column, return a converter function
-         * that applies the marshaller to the value
-         */
-        const marshaller = query.marshallers?.[metadata.name]
+      return tracer.startActiveSpan('oracledb#execute', async (span) => {
+        span.setAttribute('sql.query', sql)
 
-        if (marshaller) {
-          return {
-            converter: (value) => {
-              return marshaller.reduce((intermediateValue, fn) => {
-                return fn(intermediateValue)
-              }, value)
+        try {
+          // @ts-ignore - OracleDB does not have a type definition for `execute` that matches the usage here
+          const results = await connection.execute(sql, query.bindings, {
+            outFormat: OracleDB.OUT_FORMAT_OBJECT,
+            fetchTypeHandler: function (metadata) {
+              /**
+               * always lowercase the column names
+               */
+              metadata.name = metadata.name.toLowerCase()
+
+              /**
+               * if a marshaller is defined for this column, return a converter function
+               * that applies the marshaller to the value
+               */
+              const marshaller = query.marshallers?.[metadata.name]
+
+              if (marshaller) {
+                return {
+                  converter: (value) => {
+                    return marshaller.reduce((intermediateValue, fn) => {
+                      return fn(intermediateValue)
+                    }, value)
+                  }
+                }
+              }
             }
-          }
-        }
-      }
-    })
+          })
 
-    return results.rows
-  } catch (error) {
-    console.error('Error executing SQL:', error)
-    throw error
-  }
+          return results.rows
+        } catch (error) {
+          span.recordException(error)
+          span.setStatus({ code: 2, message: error.message })
+
+          throw error
+        } finally {
+          span.end()
+
+          const latency = Date.now() - startTime
+
+          latencyGauge.record(latency)
+        }
+      })
+    }
+  )
 }
