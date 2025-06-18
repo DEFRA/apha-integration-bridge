@@ -1,16 +1,10 @@
-services:
-  oracledb-sam:
-    image: container-registry.oracle.com/database/free:latest
-    ports:
-      - '1521:1521'
-      - '5500:5500'
-    environment:
-      - ORACLE_PW="letmein"
-    volumes:
-      - ./compose/oracledb:/opt/oracle/scripts/startup
-      - oracledb-sam-data:/opt/oracle/oradata
-    restart: always
+include:
+  - path: './.docker-compose/opentelemetry.compose.yml'
+    service: opentelemetry
+  - path: './.docker-compose/oracledb.compose.yml'
+    service: oracledb
 
+services:
   mongodb:
     image: mongo:6.0.13
     ports:
@@ -22,5 +16,3 @@ services:
 volumes:
   mongodb-data:
     name: mongodb-data
-  oracledb-sam-data:
-    name: oracledb-sam-data

@@ -46,6 +46,11 @@ In-order to run this application locally, you will need to register and obtain a
 
 You can find the instructions on how to do this in the [Oracle Container Registry documentation](https://container-registry.oracle.com/).
 
+### Environment variables
+
+In local development, we follow NextJS convention of using a `.env.local` file to store environment variables. All necessary defaults are provided inside
+the `.env` file.
+
 ### Setup
 
 Install application dependencies:

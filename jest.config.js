@@ -1,6 +1,8 @@
-import dotenv from 'dotenv'
+import { config as dotenv } from '@dotenvx/dotenvx'
 
-dotenv.config()
+dotenv({
+  convention: 'nextjs'
+})
 
 export default {
   rootDir: '.',

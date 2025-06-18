@@ -15,6 +15,7 @@ import { pulse } from './common/helpers/pulse.js'
 import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { versionPlugin } from './common/helpers/versioning.js'
+import { opentelemetryPlugin } from './common/helpers/telemetry.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -69,6 +70,10 @@ async function createServer() {
      * @see https://hapi.dev/module/vision/
      */
     vision,
+    /**
+     * sets up opentelemetry tracing and metrics
+     */
+    opentelemetryPlugin,
     /**
      * automatically logs incoming requests
      */
