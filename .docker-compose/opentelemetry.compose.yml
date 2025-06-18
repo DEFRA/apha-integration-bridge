@@ -1,0 +1,24 @@
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.98.0
+    command: ['--config=/conf/collector-config.yml']
+    volumes:
+      - ./otel/collector-config.yml:/conf/collector-config.yml
+    ports:
+      - '4318:4318'
+      - '9464:9464'
+    depends_on:
+      - jaeger
+    networks:
+      - metrics
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    ports:
+      - '16686:16686'
+    networks:
+      - metrics
+
+networks:
+  metrics:
+    driver: bridge

@@ -10,7 +10,7 @@ export const getTestContainer = () => {
        */
       .withBindMounts([
         {
-          source: `${process.cwd()}/compose/oracledb`,
+          source: `${process.cwd()}/.docker-compose/oracledb`,
           target: '/opt/oracle/scripts/startup',
           mode: 'ro'
         }
