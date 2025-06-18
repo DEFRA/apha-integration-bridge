@@ -25,7 +25,7 @@ test('produces the expected metric content', async () => {
   const meterProvider = new MeterProvider({
     readers: [
       new PeriodicExportingMetricReader({
-        exporter: exporter,
+        exporter,
         exportIntervalMillis: 1
       })
     ]
@@ -34,7 +34,8 @@ test('produces the expected metric content', async () => {
   const meter = meterProvider.getMeter('test')
 
   const requestCounter = meter.createCounter('requests', {
-    description: 'Counts fake requests'
+    description: 'Counts fake requests',
+    unit: 'Milliseconds'
   })
 
   requestCounter.add(1, {
@@ -64,7 +65,7 @@ test('produces the expected metric content', async () => {
             Metrics: [
               {
                 Name: 'requests',
-                Unit: 'Count'
+                Unit: 'Milliseconds'
               }
             ],
             Namespace: 'aws-embedded-metrics'

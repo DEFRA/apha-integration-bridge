@@ -7,7 +7,7 @@ services:
     environment:
       - ORACLE_PW="letmein"
     volumes:
-      - ./compose/oracledb:/opt/oracle/scripts/startup
+      - ./oracledb:/opt/oracle/scripts/startup
       - oracledb-data:/opt/oracle/oradata
     restart: always
 

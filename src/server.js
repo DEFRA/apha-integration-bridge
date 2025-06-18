@@ -1,3 +1,5 @@
+import './lib/telemetry/index.js'
+
 import Hapi from '@hapi/hapi'
 import inert from '@hapi/inert'
 import vision from '@hapi/vision'

@@ -1,50 +1,12 @@
-import { NodeSDK } from '@opentelemetry/sdk-node'
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
-import {
-  MeterProvider,
-  PeriodicExportingMetricReader
-} from '@opentelemetry/sdk-metrics'
-import { trace, context, propagation } from '@opentelemetry/api'
-import {
-  ConsoleSpanExporter,
-  SimpleSpanProcessor
-} from '@opentelemetry/sdk-trace-base'
-import { createMetricsLogger } from 'aws-embedded-metrics'
+import { trace, context } from '@opentelemetry/api'
 
-import { EMFMetricExporter } from '../../lib/telemetry/emf-metrics-exporter.js'
-
-/**
- * define a meter provider that exports metrics every 30 seconds
- */
-const meterProvider = new MeterProvider({
-  readers: [
-    new PeriodicExportingMetricReader({
-      exporter: new EMFMetricExporter({
-        emf: createMetricsLogger()
-      }),
-      exportIntervalMillis: 30_000
-    })
-  ]
-})
-
-export const meter = meterProvider.getMeter('metrics')
-
-const sdk = new NodeSDK({
-  /**
-   * export tracing spans to stdout
-   */
-  spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
-  instrumentations: [getNodeAutoInstrumentations()]
-})
-
-sdk.start()
+import { tracer, telemetry, meterProvider } from '../../lib/telemetry/index.js'
 
 /**
  * @typedef {import('@hapi/hapi').Request} Hapi.Request
  * @typedef {import('@opentelemetry/api').Span} OpenTelemetry.Span
- * @typedef {import('@opentelemetry/api').Tracer} OpenTelemetry.Tracer
  *
- * @typedef {Hapi.Request & { app: { span: OpenTelemetry.Span; tracer: OpenTelemetry.Tracer }}} HapiRequestWithTelemetry
+ * @typedef {Hapi.Request & { app: { span: OpenTelemetry.Span }}} HapiRequestWithSpan
  */
 
 /**
@@ -62,59 +24,64 @@ export const opentelemetryPlugin = {
      * @param {import('@hapi/hapi').Server} server
      */
     register: async function (server) {
+      telemetry.start()
+
       server.events.on('stop', () => {
         /**
          * shutdown the sdk when the server is stopping
          *
          * @note this helps to ensure that all spans and metrics are flushed
          */
-        return Promise.all([sdk.shutdown(), meterProvider.shutdown()])
+        return Promise.all([telemetry.shutdown(), meterProvider.shutdown()])
       })
-
-      const tracer = trace.getTracer('request-tracer')
 
       server.ext({
         type: 'onRequest',
         /**
-         * @param {HapiRequestWithTelemetry} request
+         * @param {HapiRequestWithSpan} request
          */
         method: (request, h) => {
-          const parentContext = propagation.extract(
-            context.active(),
-            request.headers
-          )
+          const spanLabel = `[${request.method}] ${request.path}`
 
           /**
            * define a span for the request
            */
-          const span = tracer.startSpan(
-            `[${request.method}] ${request.path}`,
-            undefined,
-            parentContext
-          )
-
-          span.setAttribute('http.method', request.method)
-
-          span.setAttribute('http.route', request.route.path)
+          const span = tracer.startSpan(spanLabel)
 
           request.app.span = span
 
-          request.app.tracer = tracer
+          return h.continue
+        }
+      })
 
-          /**
-           * Run the rest of the request lifecycle within the span's context
-           */
-          return context.with(
-            trace.setSpan(parentContext, span),
-            () => h.continue
-          )
+      server.ext({
+        type: 'onPreHandler',
+        /**
+         * @param {HapiRequestWithSpan} request
+         */
+        method: (request, h) => {
+          const { span } = request.app
+
+          const { handler } = request.route.settings
+
+          if (typeof handler === 'function') {
+            const boundHandler = handler.bind(request.route)
+
+            request.route.settings.handler = function (request, h) {
+              return context.with(trace.setSpan(context.active(), span), () => {
+                return boundHandler(request, h)
+              })
+            }
+          }
+
+          return h.continue
         }
       })
 
       server.ext({
         type: 'onPreResponse',
         /**
-         * @param {HapiRequestWithTelemetry} request
+         * @param {HapiRequestWithSpan} request
          */
         method: (request, h) => {
           const { span } = request.app
@@ -131,6 +98,10 @@ export const opentelemetryPlugin = {
             if ('statusCode' in response) {
               statusCode = response.statusCode
             }
+
+            span.setAttribute('http.method', request.method)
+
+            span.setAttribute('http.route', request.route.path)
 
             span.setAttribute('http.status_code', statusCode)
 

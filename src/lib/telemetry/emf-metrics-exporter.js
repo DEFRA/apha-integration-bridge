@@ -14,6 +14,21 @@ const DataPointType = {
 }
 
 /**
+ * Converts the descriptor unit to an AWS Embedded Metrics Unit.
+ *
+ * @param {string} unit
+ *
+ * @returns {import('aws-embedded-metrics').Unit}
+ */
+const resolveUnit = (unit) => {
+  if (unit in Unit) {
+    return Unit[unit]
+  }
+
+  return Unit.Count
+}
+
+/**
  * Extend the ConsoleMetricExporter to format and log metrics in EMF format, so that they
  * will be picked up and metrics created by the AWS CloudWatch agent.
  */
@@ -52,6 +67,7 @@ export class EMFMetricExporter extends ConsoleMetricExporter {
 
     for (const scope of resourceMetrics.scopeMetrics) {
       for (const metric of scope.metrics) {
+        console.log(metric.descriptor.unit)
         switch (metric.dataPointType) {
           case DataPointType.SUM:
           case DataPointType.GAUGE: {
@@ -63,7 +79,7 @@ export class EMFMetricExporter extends ConsoleMetricExporter {
               emf.putMetric(
                 metric.descriptor.name,
                 Number(datapoint.value),
-                Unit.Count,
+                resolveUnit(metric.descriptor.unit),
                 StorageResolution.Standard
               )
             }
