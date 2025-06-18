@@ -35,6 +35,9 @@ export const opentelemetryPlugin = {
         return Promise.all([telemetry.shutdown(), meterProvider.shutdown()])
       })
 
+      /**
+       * configure the span that will be created for each request with the method and path
+       */
       server.ext({
         type: 'onRequest',
         /**
@@ -46,30 +49,45 @@ export const opentelemetryPlugin = {
           /**
            * define a span for the request
            */
-          const span = tracer.startSpan(spanLabel)
-
-          request.app.span = span
+          request.app.span = tracer.startSpan(spanLabel)
 
           return h.continue
         }
       })
 
+      /**
+       * wrap the request handler to ensure that the context is applied correctly to the handler
+       *
+       * @note without this step, child spans appear as root spans in the trace view
+       */
       server.ext({
         type: 'onPreHandler',
         /**
-         * @param {HapiRequestWithSpan} request
+         * @param {any} request
          */
         method: (request, h) => {
           const { span } = request.app
 
-          const { handler } = request.route.settings
+          /**
+           * track the original handler for the request
+           */
+          if (!request.route.settings.originalHandler) {
+            request.route.settings.originalHandler =
+              request.route.settings.handler
+          }
+
+          /**
+           * extract the handler for the request
+           */
+          const { originalHandler: handler } = request.route.settings
 
           if (typeof handler === 'function') {
-            const boundHandler = handler.bind(request.route)
-
+            /**
+             * dynamically wrap the handler to execute within the correct otel context
+             */
             request.route.settings.handler = function (request, h) {
               return context.with(trace.setSpan(context.active(), span), () => {
-                return boundHandler(request, h)
+                return handler.bind(request.route)(request, h)
               })
             }
           }
