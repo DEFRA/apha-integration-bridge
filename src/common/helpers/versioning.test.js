@@ -1,7 +1,7 @@
 import Hapi from '@hapi/hapi'
 import { describe, beforeAll, afterAll, test, expect } from '@jest/globals'
 
-import { versionPlugin } from './versioning'
+import { versionPlugin } from './versioning.js'
 
 describe('Version Plugin', () => {
   let server

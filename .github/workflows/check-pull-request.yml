@@ -45,7 +45,7 @@ jobs:
 
       - run: npm run lint
 
-      - run: npm run compose:up
+      # - run: npm run compose:up
 
       - run: npm test
         env:
