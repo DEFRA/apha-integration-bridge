@@ -51,7 +51,7 @@ export async function handler(request, h) {
     await using oracledb = await request.server['oracledb.sam']()
 
     /**
-     * constructo the query to find the holding
+     * construct the query to find the holding
      */
     const query = findHoldingQuery(request.params)
 
