@@ -81,7 +81,9 @@ export async function handler(request, h) {
       })
       .code(200)
   } catch (error) {
-    request.logger.error(error)
+    if (request.logger) {
+      request.logger.error(error)
+    }
 
     let httpException = error
 
