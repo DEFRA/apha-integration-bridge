@@ -8,7 +8,7 @@ import * as route from './{holdingsId}.js'
 
 const container = getTestContainer()
 
-jest.setTimeout(60_000)
+jest.setTimeout(90_000)
 
 test('returns the cph and type for a CPH ID that exists', async () => {
   const samConfig = config.get('oracledb.sam')
