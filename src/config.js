@@ -11,60 +11,60 @@ const isTest = process.env.NODE_ENV === 'test'
 
 const config = convict({
   oracledb: {
-    pega: {
-      username: {
-        doc: 'PEGA Database Username',
-        format: String,
-        nullable: false,
-        default: 'pega',
-        env: 'ORACLEDB_PEGA_USERNAME'
-      },
-      password: {
-        doc: 'PEGA Database Password',
-        format: String,
-        nullable: false,
-        default: 'password',
-        env: 'ORACLEDB_PEGA_PASSWORD'
-      },
-      host: {
-        doc: 'PEGA Database host',
-        format: String,
-        nullable: false,
-        default: 'localhost:1521',
-        env: 'ORACLEDB_PEGA_HOST'
-      },
-      dbname: {
-        doc: 'PEGA Database, Database name',
-        format: String,
-        nullable: false,
-        default: 'FREEPDB1',
-        env: 'ORACLEDB_PEGA_DBNAME'
-      },
-      poolMin: {
-        doc: 'PEGA Database pool min',
-        format: Number,
-        default: 0,
-        env: 'ORACLEDB_PEGA_POOL_MIN'
-      },
-      poolMax: {
-        doc: 'PEGA Database pool max',
-        format: Number,
-        default: 1,
-        env: 'ORACLEDB_PEGA_POOL_MAX'
-      },
-      poolTimeout: {
-        doc: 'PEGA Database pool timeout',
-        format: Number,
-        default: 60,
-        env: 'ORACLEDB_PEGA_POOL_TIMEOUT'
-      },
-      poolCloseWaitTime: {
-        doc: 'PEGA Database pool closing wait time',
-        format: Number,
-        default: 0,
-        env: 'ORACLEDB_PEGA_POOL_CLOSE_WAIT_TIME'
-      }
-    },
+    // pega: {
+    //   username: {
+    //     doc: 'PEGA Database Username',
+    //     format: String,
+    //     nullable: false,
+    //     default: 'pega',
+    //     env: 'ORACLEDB_PEGA_USERNAME'
+    //   },
+    //   password: {
+    //     doc: 'PEGA Database Password',
+    //     format: String,
+    //     nullable: false,
+    //     default: 'password',
+    //     env: 'ORACLEDB_PEGA_PASSWORD'
+    //   },
+    //   host: {
+    //     doc: 'PEGA Database host',
+    //     format: String,
+    //     nullable: false,
+    //     default: 'localhost:1521',
+    //     env: 'ORACLEDB_PEGA_HOST'
+    //   },
+    //   dbname: {
+    //     doc: 'PEGA Database, Database name',
+    //     format: String,
+    //     nullable: false,
+    //     default: 'FREEPDB1',
+    //     env: 'ORACLEDB_PEGA_DBNAME'
+    //   },
+    //   poolMin: {
+    //     doc: 'PEGA Database pool min',
+    //     format: Number,
+    //     default: 0,
+    //     env: 'ORACLEDB_PEGA_POOL_MIN'
+    //   },
+    //   poolMax: {
+    //     doc: 'PEGA Database pool max',
+    //     format: Number,
+    //     default: 1,
+    //     env: 'ORACLEDB_PEGA_POOL_MAX'
+    //   },
+    //   poolTimeout: {
+    //     doc: 'PEGA Database pool timeout',
+    //     format: Number,
+    //     default: 60,
+    //     env: 'ORACLEDB_PEGA_POOL_TIMEOUT'
+    //   },
+    //   poolCloseWaitTime: {
+    //     doc: 'PEGA Database pool closing wait time',
+    //     format: Number,
+    //     default: 0,
+    //     env: 'ORACLEDB_PEGA_POOL_CLOSE_WAIT_TIME'
+    //   }
+    // },
     sam: {
       username: {
         doc: 'SAM Database Username',

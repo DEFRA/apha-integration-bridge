@@ -9,8 +9,7 @@
   },
   "scripts": {
     "compose:up": "docker compose -f docker-compose.dev.yml up -d",
-    "compose:stop": "docker compose -f docker-compose.dev.yml down && docker compose -f docker-compose.dev.yml rm --force --volumes",
-    "compose:rm": "npm run compose:stop && docker volume rm oracledb-data",
+    "compose:rm": "docker compose -f docker-compose.dev.yml down --remove-orphans --volumes",
     "docker:dev": "NODE_ENV=development npm run server:watch",
     "dev": "dotenvx run --convention=nextjs -- npm run server:watch",
     "dev:debug": "NODE_ENV=development npm run server:debug",

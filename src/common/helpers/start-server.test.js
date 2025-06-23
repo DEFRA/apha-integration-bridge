@@ -52,7 +52,7 @@ describe('#startServer', () => {
 
     process.env = {
       ...PROCESS_ENV,
-      ORACLEDB_PEGA_HOST: host,
+      // ORACLEDB_PEGA_HOST: host,
       ORACLEDB_SAM_HOST: host
     }
 
@@ -93,9 +93,9 @@ describe('#startServer', () => {
         'MongoDb connected to apha-integration-bridge'
       )
 
-      expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
-        expect.stringMatching(/oracledb pool created for.+pega/i)
-      )
+      // expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
+      //   expect.stringMatching(/oracledb pool created for.+pega/i)
+      // )
 
       expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
         expect.stringMatching(/oracledb pool created for.+sam/i)
