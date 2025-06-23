@@ -1,5 +1,5 @@
 import Hapi from '@hapi/hapi'
-import { jest, test } from '@jest/globals'
+import { jest, test, expect } from '@jest/globals'
 
 import { config } from '../../../../config.js'
 import { getTestContainer, getConnection } from '../../../../test/oracledb.js'
@@ -10,7 +10,7 @@ const container = getTestContainer()
 
 jest.setTimeout(60_000)
 
-test('correctly returns the expected oracledb data', async () => {
+test('returns the cph and type for a CPH ID that exists', async () => {
   const samConfig = config.get('oracledb.sam')
 
   const server = Hapi.server({ port: 0 })
@@ -27,8 +27,41 @@ test('correctly returns the expected oracledb data', async () => {
 
   const res = await server.inject({
     method: 'GET',
-    url: '/01/02/03'
+    url: '/45/001/0002'
   })
 
-  console.log(res.result)
+  expect(res.result).toMatchObject({
+    data: {
+      type: 'holdings',
+      id: '45/001/0002',
+      attributes: {
+        cph_type: 'DEV_SAMPLE'
+      }
+    }
+  })
+
+  expect(res.statusCode).toBe(200)
+})
+
+test('returns 404 for a CPH ID that does not exist', async () => {
+  const samConfig = config.get('oracledb.sam')
+
+  const server = Hapi.server({ port: 0 })
+
+  server.decorate('server', 'oracledb.sam', () => {
+    return getConnection(container, samConfig)
+  })
+
+  server.route({
+    ...route,
+    path: '/{countyId}/{parishId}/{holdingsId}',
+    method: 'GET'
+  })
+
+  const res = await server.inject({
+    method: 'GET',
+    url: '/XX/55/GGGG'
+  })
+
+  expect(res.statusCode).toBe(404)
 })

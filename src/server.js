@@ -18,6 +18,7 @@ import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { versionPlugin } from './common/helpers/versioning.js'
 import { opentelemetryPlugin } from './common/helpers/telemetry.js'
+import { HTTPException } from './lib/http/http-exception.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -56,6 +57,22 @@ async function createServer() {
     },
     router: {
       stripTrailingSlash: true
+    }
+  })
+
+  /**
+   * ensure we handle 404 errors with the expected response payload
+   */
+  server.route({
+    method: '*',
+    path: '/{p*}',
+    handler: function (request) {
+      const { method, path } = request
+
+      return new HTTPException(
+        'NOT_FOUND',
+        `No route: [${method.toUpperCase()}] ${path}`
+      ).boomify()
     }
   })
 
