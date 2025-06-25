@@ -43,8 +43,6 @@ export async function execute(connection, query) {
       const startTime = Date.now()
 
       return tracer.startActiveSpan('oracledb#execute', async (span) => {
-        span.setAttribute('sql.query', sql)
-
         try {
           // @ts-ignore - OracleDB does not have a type definition for `execute` that matches the usage here
           const results = await connection.execute(sql, query.bindings, {
