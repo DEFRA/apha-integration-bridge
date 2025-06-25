@@ -6,10 +6,8 @@ import {
 } from '@opentelemetry/sdk-metrics'
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto'
-import {
-  ConsoleSpanExporter,
-  SimpleSpanProcessor
-} from '@opentelemetry/sdk-trace-base'
+import { JsonTraceSerializer } from '@opentelemetry/otlp-transformer'
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { createMetricsLogger } from 'aws-embedded-metrics'
 
 import { EMFMetricExporter } from './emf-metrics-exporter.js'
@@ -21,16 +19,24 @@ let metricExporter = new EMFMetricExporter({
   emf: createMetricsLogger()
 })
 
-/**
- * @type {import("@opentelemetry/sdk-trace-base").SpanExporter}
- */
-let spanExporter = new ConsoleSpanExporter()
+let spanProcessor = new SimpleSpanProcessor({
+  shutdown: () => Promise.resolve(),
+  export: (spans, result) => {
+    const buffer = JsonTraceSerializer.serializeRequest(spans)
+
+    if (buffer) {
+      console.log(Buffer.from(buffer).toString('utf8'))
+    }
+
+    result({ code: 0 })
+  }
+})
 
 /**
  * if an OTLP exporter endpoint is defined, use it for both metrics and traces
  */
 if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
-  spanExporter = new OTLPTraceExporter({})
+  spanProcessor = new SimpleSpanProcessor(new OTLPTraceExporter({}))
 
   metricExporter = new OTLPMetricExporter({})
 }
@@ -53,7 +59,7 @@ export const telemetry = new NodeSDK({
   /**
    * export tracing spans to stdout
    */
-  spanProcessors: [new SimpleSpanProcessor(spanExporter)]
+  spanProcessors: [spanProcessor]
 })
 
 export const tracer = trace.getTracer('request-tracer')
