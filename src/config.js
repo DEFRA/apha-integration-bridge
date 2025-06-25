@@ -159,6 +159,14 @@ const config = convict({
     default: 'local',
     env: 'ENVIRONMENT'
   },
+  auth: {
+    scope: {
+      doc: 'The authentication scope required for the service',
+      format: String,
+      default: 'apha-integration-bridge-resource-srv/access',
+      ENV: 'AUTH_SOPE'
+    }
+  },
   log: {
     isEnabled: {
       doc: 'Is logging enabled',
