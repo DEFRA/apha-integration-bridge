@@ -19,6 +19,21 @@ test('returns the cph and type for a CPH ID that exists', async () => {
     return getConnection(container, samConfig)
   })
 
+  /**
+   * create a fake simple auth strategy
+   */
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (request, h) => {
+        return h.authenticated({ credentials: {} })
+      }
+    }
+  })
+
+  server.auth.strategy('simple', 'simple', {})
+
+  server.auth.default('simple')
+
   server.route({
     ...route,
     path: '/{countyId}/{parishId}/{holdingsId}',
@@ -51,6 +66,21 @@ test('returns 404 for a CPH ID that does not exist', async () => {
   server.decorate('server', 'oracledb.sam', () => {
     return getConnection(container, samConfig)
   })
+
+  /**
+   * create a fake simple auth strategy
+   */
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (request, h) => {
+        return h.authenticated({ credentials: {} })
+      }
+    }
+  })
+
+  server.auth.strategy('simple', 'simple', {})
+
+  server.auth.default('simple')
 
   server.route({
     ...route,
