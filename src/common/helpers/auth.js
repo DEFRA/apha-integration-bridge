@@ -97,6 +97,10 @@ export const authPlugin = {
                 artifacts: payload
               })
             } catch (err) {
+              if (Boom.isBoom(err)) {
+                return err
+              }
+
               return Boom.unauthorized('Token verification failed')
             }
           }
