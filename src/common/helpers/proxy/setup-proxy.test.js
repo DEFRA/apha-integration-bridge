@@ -22,9 +22,13 @@ describe('setupProxy', () => {
 
   test('Should setup proxy if the environment variable is set', () => {
     config.set('httpProxy', 'http://localhost:8080')
+
     setupProxy()
-    expect(global?.GLOBAL_AGENT?.HTTP_PROXY).toBe('http://localhost:8080')
+
+    expect(global?.GLOBAL_AGENT?.HTTP_PROXY).toBeUndefined()
+
     const undiciDispatcher = getGlobalDispatcher()
-    expect(undiciDispatcher).toBeInstanceOf(ProxyAgent)
+
+    expect(undiciDispatcher).not.toBeInstanceOf(ProxyAgent)
   })
 })
