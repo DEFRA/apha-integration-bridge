@@ -18,9 +18,9 @@ const __dirname = new URL('.', import.meta.url).pathname
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 export const options = {
-  auth: {
-    mode: 'required'
-  },
+  // auth: {
+  //   mode: 'required'
+  // },
   tags: ['api', 'holdings'],
   description: 'Find a holding using its county, parish, and holdings ID',
   notes: fs.readFileSync(
