@@ -4,8 +4,6 @@ services:
     ports:
       - '1521:1521'
       - '5500:5500'
-    environment:
-      - ORACLE_PW="letmein"
     volumes:
       - ./oracledb:/opt/oracle/scripts/startup
       - oracledb-data:/opt/oracle/oradata
