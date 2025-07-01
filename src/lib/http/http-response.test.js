@@ -21,7 +21,7 @@ describe('HTTPResponse', () => {
       data: {
         type: 'user',
         id: 42,
-        attributes: { username: 'alice' }
+        username: 'alice'
       }
     })
   })
@@ -32,8 +32,7 @@ describe('HTTPResponse', () => {
     expect(response.toJSON()).toEqual({
       data: {
         type: 'item',
-        id: 'xyz',
-        attributes: null
+        id: 'xyz'
       }
     })
   })
@@ -44,8 +43,7 @@ describe('HTTPResponse', () => {
     expect(response.toJSON()).toEqual({
       data: {
         type: 'thing',
-        id: undefined,
-        attributes: undefined
+        id: undefined
       }
     })
   })

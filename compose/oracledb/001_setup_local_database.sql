@@ -1,3 +1,6 @@
+WHENEVER SQLERROR EXIT SQL.SQLCODE;
+SET ECHO ON;
+
 -- Connect to the default pluggable database
 ALTER SESSION SET CONTAINER=FREEPDB1;
 
@@ -14,7 +17,7 @@ CREATE USER ahbrp IDENTIFIED BY "password";
 GRANT CONNECT, RESOURCE, DBA TO ahbrp;
 
 -- Connect as 'ahbrp' user to create the table explicitly
-CONNECT ahbrp/password@FREEPDB1;
+ALTER SESSION SET CURRENT_SCHEMA=ahbrp;
 
 CREATE TABLE v_cph_customer_unit (
   cph VARCHAR2(50) NOT NULL,
@@ -52,9 +55,6 @@ INSERT INTO v_cph_customer_unit (cph, location_id, feature_name, main_role_type,
 -- Add indexes
 CREATE INDEX idx_location_id ON v_cph_customer_unit (location_id);
 CREATE INDEX idx_postcode ON v_cph_customer_unit (postcode);
-
--- Reconnect as SYS or privileged user to grant access
-CONNECT sys/password@FREEPDB1 AS SYSDBA;
 
 --- Grant privileges to the user 'sam'
 GRANT SELECT ON ahbrp.v_cph_customer_unit TO sam;

@@ -18,7 +18,7 @@ export class HTTPResponse {
       data: {
         type,
         id,
-        attributes
+        ...attributes
       }
     }
   }

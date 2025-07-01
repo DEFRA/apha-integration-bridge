@@ -24,7 +24,7 @@ export const FindHoldingSchema = Joi.object({
  * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
  * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
  *
- * @param {FindHoldingSchema} parameters Parameters required to build the query for looking up a holding
+ * @param {unknown} parameters Parameters required to build the query for looking up a holding
  * @returns {Query} the query builder for looking up a holding
  */
 export function findHoldingQuery(parameters) {
@@ -40,7 +40,8 @@ export function findHoldingQuery(parameters) {
   const cph = `${value.countyId}/${value.parishId}/${value.holdingsId}`
 
   const { sql, bindings } = query()
-    .select('cph', 'cph_type as cphType')
+    .select('cph')
+    .select('cph_type as cphtype')
     .distinct()
     .from('ahbrp.cph')
     .where('cph', `LIKE`, cph)
