@@ -22,17 +22,17 @@ test('returns the cph and type for a CPH ID that exists', async () => {
   /**
    * create a fake simple auth strategy
    */
-  server.auth.scheme('simple', () => {
-    return {
-      authenticate: (request, h) => {
-        return h.authenticated({ credentials: {} })
-      }
-    }
-  })
+  // server.auth.scheme('simple', () => {
+  //   return {
+  //     authenticate: (request, h) => {
+  //       return h.authenticated({ credentials: {} })
+  //     }
+  //   }
+  // })
 
-  server.auth.strategy('simple', 'simple', {})
+  // server.auth.strategy('simple', 'simple', {})
 
-  server.auth.default('simple')
+  // server.auth.default('simple')
 
   server.route({
     ...route,
@@ -49,9 +49,7 @@ test('returns the cph and type for a CPH ID that exists', async () => {
     data: {
       type: 'holdings',
       id: '45/001/0002',
-      attributes: {
-        cph_type: 'DEV_SAMPLE'
-      }
+      cphType: 'DEV_SAMPLE'
     }
   })
 

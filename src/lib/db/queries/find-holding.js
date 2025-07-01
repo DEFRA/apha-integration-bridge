@@ -40,7 +40,7 @@ export function findHoldingQuery(parameters) {
   const cph = `${value.countyId}/${value.parishId}/${value.holdingsId}`
 
   const { sql, bindings } = query()
-    .select('cph', 'cph_type')
+    .select('cph', 'cph_type as cphType')
     .distinct()
     .from('ahbrp.cph')
     .where('cph', `LIKE`, cph)
