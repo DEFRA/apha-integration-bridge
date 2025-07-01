@@ -3,7 +3,6 @@ import { jest, test, expect } from '@jest/globals'
 
 import { config } from '../../../../config.js'
 import { getTestContainer, getConnection } from '../../../../test/oracledb.js'
-import { HTTPResponse } from '../../../../lib/http/http-response.js'
 
 import * as route from './{holdingsId}.js'
 
@@ -46,15 +45,11 @@ test('returns the cph and type for a CPH ID that exists', async () => {
     url: '/45/001/0002'
   })
 
-  const response = /** @type {HTTPResponse} */ (res.result)
+  const response = /** @type {Record<string,unknown>} */ (res.result)
 
-  expect(response).toBeInstanceOf(HTTPResponse)
-
-  expect(response.id).toBe('45/001/0002')
-
-  expect(response.type).toBe('holdings')
-
-  expect(response.attributes).toMatchObject({
+  expect(response).toMatchObject({
+    id: '45/001/0002',
+    type: 'holdings',
     cphType: 'DEV_SAMPLE'
   })
 
@@ -93,7 +88,7 @@ test('returns 404 for a CPH ID that does not exist', async () => {
 
   const res = await server.inject({
     method: 'GET',
-    url: '/XX/55/GGGG'
+    url: '/00/00/0000'
   })
 
   expect(res.statusCode).toBe(404)
