@@ -1,3 +1,4 @@
+import Joi from 'joi'
 import { boomify } from '@hapi/boom'
 
 export const HTTPExceptionCode = {
@@ -6,6 +7,30 @@ export const HTTPExceptionCode = {
   UNSUPPORTED_VERSION: 404,
   INTERNAL_SERVER_ERROR: 500
 }
+
+export const HTTPExceptionSchema = Joi.object({
+  message: Joi.string()
+    .required()
+    .description('A human-readable error message'),
+  code: Joi.string().required().description('The error code'),
+  errors: Joi.array()
+    .items(
+      Joi.object({
+        code: Joi.string().required().description('The error code'),
+        message: Joi.string()
+          .required()
+          .description('A human-readable error message')
+      })
+        .description('A HTTP error that triggered the HTTP Exception response')
+        .label('HTTP Error')
+    )
+    .description('One ore more errors that triggered the HTTP exception')
+    .label('HTTP Exceptions List')
+})
+  .description(
+    'A well-structured HTTP error response, containing one or more errors'
+  )
+  .label('HTTP Exception')
 
 export class HTTPException extends Error {
   /**
@@ -69,12 +94,30 @@ export class HTTPException extends Error {
 
     return boom
   }
+
+  /**
+   * @param {import('@hapi/hapi').Request} request
+   * @param {import('@hapi/hapi').ResponseToolkit} _h
+   * @param {Error} error
+   */
+  static failValidation(request, _h, error) {
+    if (!(error instanceof Joi.ValidationError)) {
+      throw error
+    }
+
+    return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
+      new HTTPError('VALIDATION_ERROR', error.message, {
+        ...request.params
+      })
+    ]).boomify()
+  }
 }
 
 export const HTTPErrorCode = {
   UNKNOWN: 'UNKNOWN',
   DATABASE_ERROR: 'DATABASE_ERROR',
-  MISSING_QUERY_PARAMETER: 'MISSING_QUERY_PARAMETER'
+  MISSING_QUERY_PARAMETER: 'MISSING_QUERY_PARAMETER',
+  VALIDATION_ERROR: 'VALIDATION_ERROR'
 }
 
 export class HTTPError extends Error {

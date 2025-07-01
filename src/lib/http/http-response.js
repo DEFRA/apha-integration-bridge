@@ -11,7 +11,7 @@ export class HTTPResponse {
     this.attributes = attributes
   }
 
-  toJSON() {
+  toResponse() {
     const { type, id, attributes } = this
 
     return {
@@ -21,5 +21,9 @@ export class HTTPResponse {
         ...attributes
       }
     }
+  }
+
+  toJSON() {
+    return this.toResponse()
   }
 }
