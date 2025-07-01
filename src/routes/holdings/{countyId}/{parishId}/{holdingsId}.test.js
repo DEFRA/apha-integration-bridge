@@ -3,6 +3,7 @@ import { jest, test, expect } from '@jest/globals'
 
 import { config } from '../../../../config.js'
 import { getTestContainer, getConnection } from '../../../../test/oracledb.js'
+import { HTTPResponse } from '../../../../lib/http/http-response.js'
 
 import * as route from './{holdingsId}.js'
 
@@ -22,17 +23,17 @@ test('returns the cph and type for a CPH ID that exists', async () => {
   /**
    * create a fake simple auth strategy
    */
-  server.auth.scheme('simple', () => {
-    return {
-      authenticate: (request, h) => {
-        return h.authenticated({ credentials: {} })
-      }
-    }
-  })
+  // server.auth.scheme('simple', () => {
+  //   return {
+  //     authenticate: (request, h) => {
+  //       return h.authenticated({ credentials: {} })
+  //     }
+  //   }
+  // })
 
-  server.auth.strategy('simple', 'simple', {})
+  // server.auth.strategy('simple', 'simple', {})
 
-  server.auth.default('simple')
+  // server.auth.default('simple')
 
   server.route({
     ...route,
@@ -45,14 +46,16 @@ test('returns the cph and type for a CPH ID that exists', async () => {
     url: '/45/001/0002'
   })
 
-  expect(res.result).toMatchObject({
-    data: {
-      type: 'holdings',
-      id: '45/001/0002',
-      attributes: {
-        cph_type: 'DEV_SAMPLE'
-      }
-    }
+  const response = /** @type {HTTPResponse} */ (res.result)
+
+  expect(response).toBeInstanceOf(HTTPResponse)
+
+  expect(response.id).toBe('45/001/0002')
+
+  expect(response.type).toBe('holdings')
+
+  expect(response.attributes).toMatchObject({
+    cphType: 'DEV_SAMPLE'
   })
 
   expect(res.statusCode).toBe(200)

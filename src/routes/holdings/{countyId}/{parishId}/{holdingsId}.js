@@ -11,6 +11,7 @@ import {
   findHoldingQuery,
   FindHoldingSchema
 } from '../../../../lib/db/queries/find-holding.js'
+import { HTTPResponse } from '../../../../lib/http/http-response.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -42,6 +43,9 @@ export const options = {
   }
 }
 
+/**
+ * @type {import('@hapi/hapi').Lifecycle.Method}
+ */
 export async function handler(request, h) {
   if (request.pre.apiVersion > 1.0) {
     return new HTTPException(
@@ -63,6 +67,8 @@ export async function handler(request, h) {
 
     /**
      * execute the query and determine if any rows were returned
+     *
+     * @type {{ cph: string; cphtype: string; }[]}
      */
     const rows = await execute(oracledb.connection, query)
 
@@ -75,17 +81,11 @@ export async function handler(request, h) {
 
     const [row] = rows
 
-    const { cph, ...attributes } = row
+    const { cph, cphtype } = row
 
-    return h
-      .response({
-        data: {
-          type: 'holdings',
-          id: cph,
-          attributes
-        }
-      })
-      .code(200)
+    const response = new HTTPResponse('holdings', cph, { cphType: cphtype })
+
+    return h.response(response).code(200)
   } catch (error) {
     if (request.logger) {
       request.logger.error(error)
