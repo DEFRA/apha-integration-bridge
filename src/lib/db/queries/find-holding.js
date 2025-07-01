@@ -15,9 +15,9 @@ import { query } from '../operations/query.js'
  * @property {string} holdingsId - The ID of the holdings
  */
 export const FindHoldingSchema = Joi.object({
-  countyId: Joi.string().required().description('County ID'),
-  parishId: Joi.string().required().description('Parish ID'),
-  holdingsId: Joi.string().required().description('Holdings ID')
+  countyId: Joi.string().regex(/^\d+$/).required().description('County ID'),
+  parishId: Joi.string().regex(/^\d+$/).required().description('Parish ID'),
+  holdingsId: Joi.string().regex(/^\d+$/).required().description('Holdings ID')
 })
 
 /**

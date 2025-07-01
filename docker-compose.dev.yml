@@ -3,16 +3,15 @@ include:
     service: opentelemetry
   - path: './.docker-compose/oracledb.compose.yml'
     service: oracledb
+# services:
+#   mongodb:
+#     image: mongo:6.0.13
+#     ports:
+#       - '27017:27017'
+#     volumes:
+#       - mongodb-data:/data
+#     restart: always
 
-services:
-  mongodb:
-    image: mongo:6.0.13
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongodb-data:/data
-    restart: always
-
-volumes:
-  mongodb-data:
-    name: mongodb-data
+# volumes:
+#   mongodb-data:
+#     name: mongodb-data

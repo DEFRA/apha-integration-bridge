@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import {
+  HTTPExceptionSchema,
   HTTPException,
   HTTPError
 } from '../../../../lib/http/http-exception.js'
@@ -14,6 +15,16 @@ import {
 import { HTTPResponse } from '../../../../lib/http/http-response.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
+
+const FindHoldingResponseSchema = Joi.object({
+  data: Joi.object({
+    type: Joi.string().valid('holdings').required().label('Holding Type'),
+    id: Joi.string().required(),
+    cphType: Joi.string().required()
+  }).label('Basic Holding Data')
+})
+  .description('The holding is found and the type has been retrieved')
+  .label('Find Holding Response')
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
@@ -39,7 +50,14 @@ export const options = {
       accept: Joi.string()
         .default('application/vnd.integration-bridge.v1+json')
         .description('Accept header for API versioning')
-    }).options({ allowUnknown: true })
+    }).options({ allowUnknown: true }),
+    failAction: HTTPException.failValidation
+  },
+  response: {
+    status: {
+      200: FindHoldingResponseSchema,
+      '400-500': HTTPExceptionSchema
+    }
   }
 }
 
@@ -85,7 +103,7 @@ export async function handler(request, h) {
 
     const response = new HTTPResponse('holdings', cph, { cphType: cphtype })
 
-    return h.response(response).code(200)
+    return h.response(response.toResponse()).code(200)
   } catch (error) {
     if (request.logger) {
       request.logger.error(error)
