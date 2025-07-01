@@ -48,9 +48,11 @@ test('returns the cph and type for a CPH ID that exists', async () => {
   const response = /** @type {Record<string,unknown>} */ (res.result)
 
   expect(response).toMatchObject({
-    id: '45/001/0002',
-    type: 'holdings',
-    cphType: 'DEV_SAMPLE'
+    data: {
+      id: '45/001/0002',
+      type: 'holdings',
+      cphType: 'DEV_SAMPLE'
+    }
   })
 
   expect(res.statusCode).toBe(200)
