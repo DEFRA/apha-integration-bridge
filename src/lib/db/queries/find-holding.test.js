@@ -6,7 +6,7 @@ test('returns the expected query for valid parameters', () => {
   const parameters = {
     countyId: '01',
     parishId: '02',
-    holdingsId: '03'
+    holdingId: '03'
   }
 
   const { sql, bindings } = findHoldingQuery(parameters)

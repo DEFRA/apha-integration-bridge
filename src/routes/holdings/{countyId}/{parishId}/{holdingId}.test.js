@@ -4,7 +4,7 @@ import { jest, test, expect } from '@jest/globals'
 import { config } from '../../../../config.js'
 import { getTestContainer, getConnection } from '../../../../test/oracledb.js'
 
-import * as route from './{holdingsId}.js'
+import * as route from './{holdingId}.js'
 
 const container = getTestContainer()
 
@@ -36,7 +36,7 @@ test('returns the cph and type for a CPH ID that exists', async () => {
 
   server.route({
     ...route,
-    path: '/{countyId}/{parishId}/{holdingsId}',
+    path: '/{countyId}/{parishId}/{holdingId}',
     method: 'GET'
   })
 
@@ -84,7 +84,7 @@ test('returns 404 for a CPH ID that does not exist', async () => {
 
   server.route({
     ...route,
-    path: '/{countyId}/{parishId}/{holdingsId}',
+    path: '/{countyId}/{parishId}/{holdingId}',
     method: 'GET'
   })
 

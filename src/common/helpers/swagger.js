@@ -16,9 +16,10 @@ export const openApi = {
     tags: [
       {
         name: 'holdings',
-        description: 'Explanatory description of holdings operations',
+        description:
+          'Check if a county parish holding (CPH) number exists in Sam and get basic information about the holding.',
         externalDocs: {
-          description: 'Find out more about holdings',
+          description: 'Find about more about this endpoint',
           url: 'https://example.com/holdings'
         }
       }

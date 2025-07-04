@@ -13,12 +13,12 @@ import { obfuscate } from '../marshallers/obfuscate.js'
  * @typedef {Object} GetUnitsSchema
  * @property {string} countyId - The ID of the county
  * @property {string} parishId - The ID of the parish
- * @property {string} holdingsId - The ID of the holdings
+ * @property {string} holdingId - The ID of the holdings
  */
 export const GetUnitsSchema = Joi.object({
-  countyId: Joi.string().required().description('County ID'),
-  parishId: Joi.string().required().description('Parish ID'),
-  holdingsId: Joi.string().required().description('Holdings ID')
+  countyId: Joi.string().length(2).required().description('County ID'),
+  parishId: Joi.string().length(3).required().description('Parish ID'),
+  holdingId: Joi.string().length(4).required().description('Holding ID')
 })
 
 /**
@@ -38,7 +38,7 @@ export function getUnitsQuery(parameters) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const cph = `${value.countyId}/${value.parishId}/${value.holdingsId}`
+  const cph = `${value.countyId}/${value.parishId}/${value.holdingId}`
 
   const { sql, bindings } = query()
     .select(
