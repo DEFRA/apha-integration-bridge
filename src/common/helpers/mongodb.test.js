@@ -12,10 +12,10 @@ import { LockManager } from 'mongo-locks'
 
 import { createServer } from '../../server.js'
 
-describe.skip('#mongoDb', () => {
+describe('#mongoDb', () => {
   let server
 
-  describe.skip('Set up', () => {
+  describe('Set up', () => {
     beforeAll(async () => {
       server = await createServer()
       await server.initialize()
@@ -25,22 +25,22 @@ describe.skip('#mongoDb', () => {
       await server.stop({ timeout: 0 })
     })
 
-    test.skip('Server should have expected MongoDb decorators', () => {
+    test('Server should have expected MongoDb decorators', () => {
       expect(server.db).toBeInstanceOf(Db)
       expect(server.mongoClient).toBeInstanceOf(MongoClient)
       expect(server.locker).toBeInstanceOf(LockManager)
     })
 
-    test.skip('MongoDb should have expected database name', () => {
+    test('MongoDb should have expected database name', () => {
       expect(server.db.databaseName).toBe('apha-integration-bridge')
     })
 
-    test.skip('MongoDb should have expected namespace', () => {
+    test('MongoDb should have expected namespace', () => {
       expect(server.db.namespace).toBe('apha-integration-bridge')
     })
   })
 
-  describe.skip('Shut down', () => {
+  describe('Shut down', () => {
     beforeAll(async () => {
       server = await createServer()
       await server.initialize()

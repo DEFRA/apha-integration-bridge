@@ -10,7 +10,7 @@ import { config } from './config.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { routingPlugin } from './common/helpers/routing.js'
 // import { authPlugin } from './common/helpers/auth.js'
-// import { mongoDb } from './common/helpers/mongodb.js'
+import { mongoDb } from './common/helpers/mongodb.js'
 import { oracleDb } from './common/helpers/oracledb.js'
 import { failAction } from './common/helpers/fail-action.js'
 import { secureContext } from './common/helpers/secure-context/index.js'
@@ -118,7 +118,7 @@ async function createServer() {
     /**
      * sets up mongo connection pool and attaches to `server` and `request` objects
      */
-    // mongoDb,
+    mongoDb,
     /**
      * sets up OracleDB connection pool(s) and attaches to `server` and `request` objects
      */

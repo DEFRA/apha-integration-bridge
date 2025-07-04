@@ -87,6 +87,12 @@ describe('#startServer', () => {
         'Custom secure context is disabled'
       )
 
+      expect(mockHapiLoggerInfo).toHaveBeenCalledWith('Setting up MongoDb')
+
+      expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
+        'MongoDb connected to apha-integration-bridge'
+      )
+
       // expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
       //   expect.stringMatching(/oracledb pool created for.+pega/i)
       // )
