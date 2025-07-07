@@ -12,12 +12,24 @@ import { query } from '../operations/query.js'
  * @typedef {Object} FindHoldingSchema
  * @property {string} countyId - The ID of the county
  * @property {string} parishId - The ID of the parish
- * @property {string} holdingsId - The ID of the holdings
+ * @property {string} holdingId - The ID of the holdings
  */
 export const FindHoldingSchema = Joi.object({
-  countyId: Joi.string().regex(/^\d+$/).required().description('County ID'),
-  parishId: Joi.string().regex(/^\d+$/).required().description('Parish ID'),
-  holdingsId: Joi.string().regex(/^\d+$/).required().description('Holdings ID')
+  countyId: Joi.string()
+    .length(2)
+    .regex(/^\d+$/)
+    .required()
+    .description('County ID'),
+  parishId: Joi.string()
+    .length(3)
+    .regex(/^\d+$/)
+    .required()
+    .description('Parish ID'),
+  holdingId: Joi.string()
+    .length(4)
+    .regex(/^\d+$/)
+    .required()
+    .description('Holding ID')
 })
 
 /**
@@ -37,7 +49,7 @@ export function findHoldingQuery(parameters) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const cph = `${value.countyId}/${value.parishId}/${value.holdingsId}`
+  const cph = `${value.countyId}/${value.parishId}/${value.holdingId}`
 
   const { sql, bindings } = query()
     .select('cph')
