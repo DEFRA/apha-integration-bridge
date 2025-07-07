@@ -18,12 +18,18 @@ const __dirname = new URL('.', import.meta.url).pathname
 
 const FindHoldingResponseSchema = Joi.object({
   data: Joi.object({
-    type: Joi.string().valid('holdings').required().label('Holding Type'),
-    id: Joi.string().required(),
+    type: Joi.string()
+      .valid('holdings')
+      .required()
+      .label('Holding Type')
+      .description('The “type” value will be "holdings" for this endpoint.'),
+    id: Joi.string().required().label('CPH ID'),
     cphType: Joi.string().required()
   }).label('Basic Holding Data')
 })
-  .description('The holding is found and the type has been retrieved')
+  .description(
+    'A matching CPH number exists in Sam and basic information about the holding has been retrieved.'
+  )
   .label('Find Holding Response')
 
 /**
@@ -36,12 +42,12 @@ export const options = {
   tags: ['api', 'holdings'],
   description: 'Find a holding using its county, parish, and holdings ID',
   notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), '{holdingsId}.md'),
+    path.join(decodeURIComponent(__dirname), '{holdingId}.md'),
     'utf8'
   ),
   plugins: {
     'hapi-swagger': {
-      id: 'list'
+      id: 'find'
     }
   },
   validate: {
