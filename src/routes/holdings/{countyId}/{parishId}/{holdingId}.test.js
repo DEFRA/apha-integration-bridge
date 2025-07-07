@@ -90,7 +90,7 @@ test('returns 404 for a CPH ID that does not exist', async () => {
 
   const res = await server.inject({
     method: 'GET',
-    url: '/00/00/0000'
+    url: '/00/000/0000'
   })
 
   expect(res.statusCode).toBe(404)

@@ -5,18 +5,17 @@ import { findHoldingQuery } from './find-holding.js'
 test('returns the expected query for valid parameters', () => {
   const parameters = {
     countyId: '01',
-    parishId: '02',
-    holdingId: '03'
+    parishId: '000',
+    holdingId: '0333'
   }
 
   const { sql, bindings } = findHoldingQuery(parameters)
 
   expect(sql).toMatchSnapshot()
 
-  expect(bindings).toEqual(['01/02/03'])
+  expect(bindings).toEqual(['01/000/0333'])
 })
 
 test('throws if the parameters are invalid', () => {
-  // @ts-expect-error - missing required parameters
   expect(() => findHoldingQuery({})).toThrow(/required/i)
 })
