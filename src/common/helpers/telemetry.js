@@ -1,12 +1,22 @@
 import { trace, context } from '@opentelemetry/api'
 
-import { tracer, telemetry, meterProvider } from '../../lib/telemetry/index.js'
+import {
+  meter,
+  tracer,
+  telemetry,
+  meterProvider
+} from '../../lib/telemetry/index.js'
+
+const requestLatency = meter.createGauge('request.latency', {
+  description: 'Measures the latency of incoming requests',
+  unit: 'Milliseconds'
+})
 
 /**
  * @typedef {import('@hapi/hapi').Request} Hapi.Request
  * @typedef {import('@opentelemetry/api').Span} OpenTelemetry.Span
  *
- * @typedef {Hapi.Request & { app: { span: OpenTelemetry.Span }}} HapiRequestWithSpan
+ * @typedef {Hapi.Request & { app: { startTime: number; span: OpenTelemetry.Span }}} HapiRequestWithSpan
  */
 
 /**
@@ -50,6 +60,8 @@ export const opentelemetryPlugin = {
            * define a span for the request
            */
           request.app.span = tracer.startSpan(spanLabel)
+
+          request.app.startTime = Date.now()
 
           return h.continue
         }
@@ -102,7 +114,7 @@ export const opentelemetryPlugin = {
          * @param {HapiRequestWithSpan} request
          */
         method: (request, h) => {
-          const { span } = request.app
+          const { span, startTime } = request.app
 
           if (span) {
             const { response } = request
@@ -124,6 +136,12 @@ export const opentelemetryPlugin = {
             span.setAttribute('http.status_code', statusCode)
 
             span.end()
+
+            requestLatency.record(Date.now() - startTime, {
+              method: request.method,
+              route: request.route.path,
+              status_code: statusCode
+            })
           }
 
           return h.continue
