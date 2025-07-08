@@ -1,6 +1,10 @@
 import { ConsoleMetricExporter } from '@opentelemetry/sdk-metrics'
 import { StorageResolution, Unit } from 'aws-embedded-metrics'
 
+import { createLogger } from '../../common/helpers/logging/logger.js'
+
+const logger = createLogger()
+
 const DataPointType = {
   /**
    * A sum metric data point has a single numeric value and a
@@ -67,7 +71,6 @@ export class EMFMetricExporter extends ConsoleMetricExporter {
 
     for (const scope of resourceMetrics.scopeMetrics) {
       for (const metric of scope.metrics) {
-        console.log(metric.descriptor.unit)
         switch (metric.dataPointType) {
           case DataPointType.SUM:
           case DataPointType.GAUGE: {
@@ -87,7 +90,7 @@ export class EMFMetricExporter extends ConsoleMetricExporter {
             break
           }
           default: {
-            console.warn(
+            logger.warn(
               `Ignoring unsupported metric type: ${metric.dataPointType}`
             )
             break

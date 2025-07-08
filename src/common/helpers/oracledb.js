@@ -1,8 +1,25 @@
 import oracledb from 'oracledb'
 import retry from 'async-retry'
 import { config } from '../../config.js'
+import { meter } from '../../lib/telemetry/index.js'
 
 const oracledbConfigurations = config.get('oracledb')
+
+const connectionTime = meter.createGauge('oracledb.connection.time', {
+  description: 'Time taken to establish an OracleDB connection',
+  unit: 'Milliseconds'
+})
+
+const connectionDuration = meter.createGauge('oracledb.connection.duration', {
+  description: 'Duration of an OracleDB connection once established',
+  unit: 'Milliseconds'
+})
+
+const connectionError = meter.createCounter('oracledb.connection.error', {
+  description:
+    'Number of errors encountered while establishing an OracleDB connection',
+  unit: 'Count'
+})
 
 /** @type {string | undefined} */
 const proxyUrl = config.get('httpProxy')
@@ -105,17 +122,46 @@ export const oracleDb = {
          * establish connection to this particular oracledb pool when called
          */
         server.decorate('server', `oracledb.${key}`, async () => {
-          const connection = await oracledb.getConnection(key)
+          const startTime = Date.now()
+          try {
+            const connection = await oracledb.getConnection(key)
 
-          server.logger.trace(`OracleDB connection established for "${key}"`)
+            server.logger.trace(`OracleDB connection established for "${key}"`)
 
-          return {
-            connection,
-            [Symbol.asyncDispose]: async () => {
-              await connection.close()
+            const elapsedTime = Date.now() - startTime
 
-              server.logger.trace(`OracleDB connection closed for "${key}"`)
+            /**
+             * record how long it took to establish the connection
+             */
+            connectionTime.record(elapsedTime, {
+              connectionPool: key
+            })
+
+            return {
+              connection,
+              [Symbol.asyncDispose]: async () => {
+                const duration = Date.now() - startTime
+
+                try {
+                  await connection.close()
+                } finally {
+                  /**
+                   * record how long the connection was open for
+                   */
+                  connectionDuration.record(duration, {
+                    connectionPool: key
+                  })
+                }
+
+                server.logger.trace(`OracleDB connection closed for "${key}"`)
+              }
             }
+          } catch (error) {
+            connectionError.add(1, {
+              connectionPool: key
+            })
+
+            throw error
           }
         })
 
