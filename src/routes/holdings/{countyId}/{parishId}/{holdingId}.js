@@ -1,3 +1,4 @@
+import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -67,6 +68,8 @@ export const options = {
   }
 }
 
+const metrics = createMetricsLogger()
+
 /**
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
@@ -79,6 +82,8 @@ export async function handler(request, h) {
   }
 
   try {
+    metrics.putMetric('holdingRequest', 1, Unit.Count)
+
     /**
      * request an oracledb sam connection from the server
      */
