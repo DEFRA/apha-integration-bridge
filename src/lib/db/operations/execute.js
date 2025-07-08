@@ -6,7 +6,7 @@ import { meter, tracer } from '../../telemetry/index.js'
 /**
  * Gauge to track the latency of executing a SQL query against OracleDB
  */
-const latencyGauge = meter.createGauge('oracledb_connection_execute_latency', {
+const latencyGauge = meter.createGauge('oracledb.execution.time', {
   description: 'The latency of executing a SQL query against OracleDB',
   unit: 'Milliseconds'
 })
