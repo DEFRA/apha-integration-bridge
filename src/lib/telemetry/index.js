@@ -25,7 +25,7 @@ let spanProcessor = new SimpleSpanProcessor({
     const buffer = JsonTraceSerializer.serializeRequest(spans)
 
     if (buffer) {
-      console.log(Buffer.from(buffer).toString('utf8'))
+      process.stdout.write(Buffer.from(buffer).toString('utf8'))
     }
 
     result({ code: 0 })

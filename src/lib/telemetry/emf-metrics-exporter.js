@@ -99,6 +99,8 @@ export class EMFMetricExporter extends ConsoleMetricExporter {
       }
     }
 
+    await emf.flush()
+
     resultCallback({ code: 0 })
   }
 }
