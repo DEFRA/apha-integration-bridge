@@ -10,7 +10,10 @@ import { JsonTraceSerializer } from '@opentelemetry/otlp-transformer'
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { createMetricsLogger } from 'aws-embedded-metrics'
 
+import { createLogger } from '../../common/helpers/logging/logger.js'
 import { EMFMetricExporter } from './emf-metrics-exporter.js'
+
+const logger = createLogger()
 
 /**
  * @type {import("@opentelemetry/sdk-metrics").PushMetricExporter}
@@ -25,7 +28,7 @@ let spanProcessor = new SimpleSpanProcessor({
     const buffer = JsonTraceSerializer.serializeRequest(spans)
 
     if (buffer) {
-      process.stdout.write(Buffer.from(buffer).toString('utf8'))
+      logger.trace(Buffer.from(buffer).toString('utf8'))
     }
 
     result({ code: 0 })
