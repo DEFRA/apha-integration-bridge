@@ -55,7 +55,7 @@ export const options = {
     params: FindHoldingSchema,
     headers: Joi.object({
       accept: Joi.string()
-        .default('application/vnd.integration-bridge.v1+json')
+        .default('application/vnd.apha.1+json')
         .description('Accept header for API versioning')
     }).options({ allowUnknown: true }),
     failAction: HTTPException.failValidation
