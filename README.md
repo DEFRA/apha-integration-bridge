@@ -46,6 +46,14 @@ In-order to run this application locally, you will need to register and obtain a
 
 You can find the instructions on how to do this in the [Oracle Container Registry documentation](https://container-registry.oracle.com/).
 
+Once you have obtained your personal access token, you can log in to the Oracle Container Registry by running `docker login container-registry.oracle.com` and providing your email address as the username and your personal access token as the password.
+
+Test your login by pulling the OracleDB image:
+
+```bash
+docker pull container-registry.oracle.com/database/free:latest
+```
+
 ### Environment variables
 
 In local development, we follow NextJS convention of using a `.env.local` file to store environment variables. All necessary defaults are provided inside
@@ -75,10 +83,10 @@ npm run dev
 
 ### Testing
 
-In-order to run the tests locally, against testcontainers that run the free version of OracleDB, you will need to install the OracleDB Instant Client libraries.
+In-order to run the tests locally, against testcontainers that run the free version of OracleDB, you will need to install the "OracleDB Instant Client libraries".
 You can find the instructions on how to install them in the [OracleDB documentation](https://www.oracle.com/database/technologies/instant-client/downloads.html).
 
-Once this is done, create a `.env` file in the root of the project, with the location of the OracleDB Instant Client libraries. For example:
+Once this is done, create a `.env.test.local` file at the root of the project, with the location of the "OracleDB Instant Client libraries". For example:
 
 ```bash
 ORACLE_CLIENT_LIB_DIR=/Users/yourusername/Downloads/instantclient_23_3
@@ -91,7 +99,7 @@ Then you can run the tests with:
 To test the application run:
 
 ```bash
-npm run test
+npm t
 ````
 
 ### Production

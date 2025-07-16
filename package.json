@@ -24,7 +24,7 @@
     "test:watch": "node --no-experimental-require-module ./node_modules/jest/bin/jest.js --watch",
     "server:watch": "nodemon --inspect=0.0.0.0 --ext js,json --legacy-watch ./src",
     "server:debug": "nodemon --inspect-brk=0.0.0.0 --ext js,json --legacy-watch ./src",
-    "start": "NODE_ENV=production node --use-strict .",
+    "start": "NODE_ENV=production dotenvx run --convention=nextjs -- node --use-strict .",
     "setup:husky": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module"
   },
   "author": "Defra DDTS",
