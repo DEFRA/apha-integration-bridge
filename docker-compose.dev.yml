@@ -1,8 +1,11 @@
 include:
+  # run opentelemetry services locally to develop and test traces and metrics
   - path: './.docker-compose/opentelemetry.compose.yml'
     service: opentelemetry
+  # run the oracledb service locally with mock data
   - path: './.docker-compose/oracledb.compose.yml'
     service: oracledb
+
 services:
   mongodb:
     image: mongo:6.0.13
