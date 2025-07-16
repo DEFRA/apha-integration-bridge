@@ -30,7 +30,7 @@ export const versionPlugin = {
       const acceptHeader = request.headers.accept
 
       const versionMatch = acceptHeader
-        ? acceptHeader.match(/vnd\.integration-bridge\.v(\d+(\.\d+)?)/)
+        ? acceptHeader.match(/vnd\.apha\.(\d+(\.\d+)?)/)
         : null
 
       const resolvedVersion = versionMatch

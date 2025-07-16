@@ -7,8 +7,18 @@ import {
   meterProvider
 } from '../../lib/telemetry/index.js'
 
-const requestLatency = meter.createGauge('request.latency', {
-  description: 'Measures the latency of incoming requests',
+const requestLatency2XX = meter.createGauge('request.latency.2XX', {
+  description: 'Measures the latency of incoming 2XX requests',
+  unit: 'Milliseconds'
+})
+
+const requestLatency4XX = meter.createGauge('request.latency.4XX', {
+  description: 'Measures the latency of incoming 4XX requests',
+  unit: 'Milliseconds'
+})
+
+const requestLatency5XX = meter.createGauge('request.latency.5XX', {
+  description: 'Measures the latency of incoming 5XX requests',
   unit: 'Milliseconds'
 })
 
@@ -137,11 +147,20 @@ export const opentelemetryPlugin = {
 
             span.end()
 
-            requestLatency.record(Date.now() - startTime, {
+            const dimensions = {
               method: request.method,
-              route: request.route.path,
-              status_code: statusCode
-            })
+              route: request.route.path
+            }
+
+            const elapsed = Date.now() - startTime
+
+            if (statusCode >= 200 && statusCode < 300) {
+              requestLatency2XX.record(elapsed, dimensions)
+            } else if (statusCode >= 400 && statusCode < 500) {
+              requestLatency4XX.record(elapsed, dimensions)
+            } else if (statusCode >= 500) {
+              requestLatency5XX.record(elapsed, dimensions)
+            }
           }
 
           return h.continue

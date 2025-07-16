@@ -49,7 +49,7 @@ describe('Version Plugin', () => {
       method: 'GET',
       url: '/test',
       headers: {
-        accept: 'application/vnd.integration-bridge.v1.1+json'
+        accept: 'application/vnd.apha.1.1+json'
       }
     })
     expect(res.statusCode).toBe(200)
@@ -64,7 +64,7 @@ describe('Version Plugin', () => {
       method: 'GET',
       url: '/test',
       headers: {
-        accept: 'application/vnd.integration-bridge.v2.0+json'
+        accept: 'application/vnd.apha.2.0+json'
       }
     })
     expect(res.statusCode).toBe(200)
@@ -79,7 +79,7 @@ describe('Version Plugin', () => {
       method: 'GET',
       url: '/test',
       headers: {
-        accept: 'application/vnd.integration-bridge.v3.5+json'
+        accept: 'application/vnd.apha.3.5+json'
       }
     })
     expect(res.statusCode).toBe(200)
