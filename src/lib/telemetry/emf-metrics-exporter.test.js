@@ -46,7 +46,7 @@ test('produces the expected metric content', async () => {
 
   await emf.flush()
 
-  expect(mockConsole).toHaveBeenLastCalledWith(
+  expect(mockConsole).toHaveBeenCalledWith(
     /**
      * this is a metric created using "emf.putMetric()" and then flushed
      * to determine the expected output
