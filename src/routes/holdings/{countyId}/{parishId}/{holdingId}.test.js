@@ -22,17 +22,17 @@ test('returns the cph and type for a CPH ID that exists', async () => {
   /**
    * create a fake simple auth strategy
    */
-  // server.auth.scheme('simple', () => {
-  //   return {
-  //     authenticate: (request, h) => {
-  //       return h.authenticated({ credentials: {} })
-  //     }
-  //   }
-  // })
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (request, h) => {
+        return h.authenticated({ credentials: {} })
+      }
+    }
+  })
 
-  // server.auth.strategy('simple', 'simple', {})
+  server.auth.strategy('simple', 'simple', {})
 
-  // server.auth.default('simple')
+  server.auth.default('simple')
 
   server.route({
     ...route,
@@ -67,20 +67,20 @@ test('returns 404 for a CPH ID that does not exist', async () => {
     return getConnection(container, samConfig)
   })
 
-  // /**
-  //  * create a fake simple auth strategy
-  //  */
-  // server.auth.scheme('simple', () => {
-  //   return {
-  //     authenticate: (request, h) => {
-  //       return h.authenticated({ credentials: {} })
-  //     }
-  //   }
-  // })
+  /**
+   * create a fake simple auth strategy
+   */
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (request, h) => {
+        return h.authenticated({ credentials: {} })
+      }
+    }
+  })
 
-  // server.auth.strategy('simple', 'simple', {})
+  server.auth.strategy('simple', 'simple', {})
 
-  // server.auth.default('simple')
+  server.auth.default('simple')
 
   server.route({
     ...route,
