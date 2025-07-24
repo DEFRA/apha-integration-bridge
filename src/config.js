@@ -71,52 +71,52 @@ const config = convict({
         format: String,
         nullable: false,
         default: 'sam',
-        env: 'ORACLEDB_SAM_USERNAME'
+        env: 'ORACLEDB_SAM_SMDB_USERNAME'
       },
       password: {
         doc: 'SAM Database Password',
         format: String,
         nullable: false,
         default: 'password',
-        env: 'ORACLEDB_SAM_PASSWORD'
+        env: 'ORACLEDB_SAM_SMDB_PASSWORD'
       },
       host: {
         doc: 'SAM Database host',
         format: String,
         nullable: false,
         default: 'localhost:1521',
-        env: 'ORACLEDB_SAM_HOST'
+        env: 'ORACLEDB_SAM_SMDB_HOST'
       },
       dbname: {
         doc: 'SAM Database, Database name',
         format: String,
         nullable: false,
         default: 'FREEPDB1',
-        env: 'ORACLEDB_SAM_DBNAME'
+        env: 'ORACLEDB_SAM_SMDB_DBNAME'
       },
       poolMin: {
         doc: 'SAM Database pool min',
         format: Number,
         default: 0,
-        env: 'ORACLEDB_SAM_POOL_MIN'
+        env: 'ORACLEDB_SAM_SMDB_POOL_MIN'
       },
       poolMax: {
         doc: 'SAM Database pool max',
         format: Number,
         default: 1,
-        env: 'ORACLEDB_SAM_POOL_MAX'
+        env: 'ORACLEDB_SAM_SMDB_POOL_MAX'
       },
       poolTimeout: {
         doc: 'SAM Database pool timeout',
         format: Number,
         default: 60,
-        env: 'ORACLEDB_SAM_POOL_TIMEOUT'
+        env: 'ORACLEDB_SAM_SMDB_POOL_TIMEOUT'
       },
       poolCloseWaitTime: {
         doc: 'SAM Database pool closing wait time',
         format: Number,
         default: 0,
-        env: 'ORACLEDB_SAM_POOL_CLOSE_WAIT_TIME'
+        env: 'ORACLEDB_SAM_SMDB_POOL_CLOSE_WAIT_TIME'
       }
     }
   },
