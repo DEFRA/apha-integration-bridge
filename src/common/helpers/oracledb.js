@@ -144,6 +144,17 @@ export const oracleDb = {
 
                 try {
                   await connection.close()
+                } catch (error) {
+                  server.logger.error(
+                    `Failed to close OracleDB connection for "${key}":`,
+                    error
+                  )
+
+                  connectionError.add(1, {
+                    connectionPool: key
+                  })
+
+                  throw error
                 } finally {
                   /**
                    * record how long the connection was open for
