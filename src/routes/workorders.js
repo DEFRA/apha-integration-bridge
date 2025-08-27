@@ -32,7 +32,7 @@ export const options = {
     mode: 'required'
   },
   tags: ['api', 'workorders'],
-  description: 'Find a holding using its county, parish, and holdings ID',
+  description: 'Retrieve workorders filtered by activation date range',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'workorders.md'),
     'utf8'
