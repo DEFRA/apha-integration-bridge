@@ -31,7 +31,7 @@ export const options = {
   auth: {
     mode: 'required'
   },
-  tags: ['api', 'holdings'],
+  tags: ['api', 'workorders'],
   description: 'Find a holding using its county, parish, and holdings ID',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'workorders.md'),
