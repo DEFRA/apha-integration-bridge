@@ -153,6 +153,8 @@ export const oracleDb = {
                   connectionError.add(1, {
                     connectionPool: key
                   })
+
+                  throw error
                 } finally {
                   /**
                    * record how long the connection was open for
