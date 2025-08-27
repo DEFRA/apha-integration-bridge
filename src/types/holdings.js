@@ -16,8 +16,6 @@ export const HoldingsReference = Joi.object({
   links: LinksReference
 })
 
-export const Holdings = HoldingsReference.keys({
-  data: HoldingsData.keys({
-    cphType: Joi.string().required().label('CPH Type')
-  }).required()
+export const Holdings = HoldingsData.keys({
+  cphType: Joi.string().required().label('CPH Type')
 }).label('Holdings Data')

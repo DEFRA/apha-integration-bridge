@@ -15,11 +15,13 @@ import {
   FindHoldingSchema
 } from '../../../../lib/db/queries/find-holding.js'
 import { HTTPObjectResponse } from '../../../../lib/http/http-response.js'
+import { LinksReference } from '../../../../types/links.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
 const FindHoldingResponseSchema = Joi.object({
-  data: Holdings.label('Basic Holding Data')
+  data: Holdings.label('Basic Holding Data'),
+  links: LinksReference
 })
   .description(
     'A matching CPH number exists in Sam and basic information about the holding has been retrieved.'
@@ -115,6 +117,8 @@ export async function handler(request, h) {
         self: `/holdings/${cph}`
       }
     )
+
+    console.log(JSON.stringify(response.toResponse(), null, 2))
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {

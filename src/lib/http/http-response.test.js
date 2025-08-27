@@ -2,53 +2,53 @@ import { describe, test, expect } from '@jest/globals'
 import { HTTPObjectResponse, HTTPArrayResponse } from './http-response.js'
 
 describe('HTTPObjectResponse', () => {
-  test('should correctly assign type, id, and attributes', () => {
+  test('should correctly assign type, id, and data', () => {
     const type = 'card'
     const id = 'abc123'
-    const attributes = { name: 'Pikachu', power: 9001 }
+    const data = { name: 'Pikachu', power: 9001 }
 
-    const response = new HTTPObjectResponse(type, id, attributes)
+    const response = new HTTPObjectResponse(type, id, data)
 
     // internal fields (mirrors original style)
     expect(response.type).toBe(type)
     expect(response.id).toBe(id)
-    expect(response.attributes).toEqual(attributes)
+    expect(response.data).toEqual(data)
   })
 
-  test('toResponse() should return properly structured object and include empty relationships', () => {
+  test('toResponse() should return properly structured object and omit empty relationships', () => {
     const response = new HTTPObjectResponse('user', 42, { username: 'alice' })
 
     expect(response.toResponse()).toEqual({
       data: {
         type: 'user',
         id: 42,
-        username: 'alice',
-        relationships: {}
-      }
+        username: 'alice'
+      },
+      links: {}
     })
   })
 
-  test('should handle null attributes by omitting them (relationships still present)', () => {
+  test('should handle null data by omitting attributes (no relationships key)', () => {
     const response = new HTTPObjectResponse('item', 'xyz', null)
 
     expect(response.toResponse()).toEqual({
       data: {
         type: 'item',
-        id: 'xyz',
-        relationships: {}
-      }
+        id: 'xyz'
+      },
+      links: {}
     })
   })
 
-  test('should handle undefined id and attributes', () => {
+  test('should handle undefined id and data', () => {
     const response = new HTTPObjectResponse('thing', undefined, undefined)
 
     expect(response.toResponse()).toEqual({
       data: {
         type: 'thing',
-        id: undefined,
-        relationships: {}
-      }
+        id: undefined
+      },
+      links: {}
     })
   })
 
@@ -57,43 +57,41 @@ describe('HTTPObjectResponse', () => {
     const b = new HTTPObjectResponse('b', 2, { name: 'B' })
 
     // chainable
-    expect(a.relationship(b)).toBe(a)
+    expect(a.relationship('b', b)).toBe(a)
 
     // validation
-    expect(() => a.relationship({ type: 'b', id: 3 })).toThrow(TypeError)
-    expect(() => a.relationship({ type: 'b', id: 3 })).toThrow(
+    expect(() => a.relationship('b', { type: 'b', id: 3 })).toThrow(TypeError)
+    expect(() => a.relationship('b', { type: 'b', id: 3 })).toThrow(
       'Response must be an instance of HTTPObjectResponse'
     )
   })
 
-  test('relationship(): single related item serializes as object (not array)', () => {
+  test('relationship(): single related item serializes as object (not array) and includes full toResponse wrapper', () => {
     const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
     const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
 
-    user.relationship(org)
+    user.relationship('org', org)
 
     const out = user.toResponse()
-    expect(out.data.relationships.org).toEqual({
-      type: 'org',
-      id: 'o1',
-      name: 'Acme',
-      relationships: {}
-    })
     expect(Array.isArray(out.data.relationships.org)).toBe(false)
+    expect(out.data.relationships.org).toEqual({
+      data: { type: 'org', id: 'o1', name: 'Acme' },
+      links: {}
+    })
   })
 
-  test('relationship(): multiple of the same type serialize as an array (in insertion order)', () => {
+  test('relationship(): multiple of the same type serialize as an array (in insertion order), each a full wrapper', () => {
     const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
     const org1 = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
     const org2 = new HTTPObjectResponse('org', 'o2', { name: 'Beta' })
 
-    user.relationship(org1).relationship(org2)
+    user.relationship('org', org1).relationship('org', org2)
 
     const out = user.toResponse()
     expect(Array.isArray(out.data.relationships.org)).toBe(true)
     expect(out.data.relationships.org).toEqual([
-      { type: 'org', id: 'o1', name: 'Acme', relationships: {} },
-      { type: 'org', id: 'o2', name: 'Beta', relationships: {} }
+      { data: { type: 'org', id: 'o1', name: 'Acme' }, links: {} },
+      { data: { type: 'org', id: 'o2', name: 'Beta' }, links: {} }
     ])
   })
 
@@ -103,15 +101,13 @@ describe('HTTPObjectResponse', () => {
     const original = new HTTPObjectResponse('org', 'o1', { name: 'OldCo' })
     const updated = new HTTPObjectResponse('org', 'o1', { name: 'NewCo' })
 
-    user.relationship(original).relationship(updated)
+    user.relationship('org', original).relationship('org', updated)
 
     const out = user.toResponse()
-    // With a single item for this type, it should serialize as an object
+    // With a single item for this type, it should serialize as an object (full wrapper)
     expect(out.data.relationships.org).toEqual({
-      type: 'org',
-      id: 'o1',
-      name: 'NewCo',
-      relationships: {}
+      data: { type: 'org', id: 'o1', name: 'NewCo' },
+      links: {}
     })
   })
 
@@ -120,16 +116,16 @@ describe('HTTPObjectResponse', () => {
     const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
     const role = new HTTPObjectResponse('role', 'r1', { title: 'Admin' })
 
-    user.relationship(org).relationship(role)
+    user.relationship('org', org).relationship('role', role)
 
     const out = user.toResponse()
     expect(out.data.relationships).toEqual({
-      org: { type: 'org', id: 'o1', name: 'Acme', relationships: {} },
-      role: { type: 'role', id: 'r1', title: 'Admin', relationships: {} }
+      org: { data: { type: 'org', id: 'o1', name: 'Acme' }, links: {} },
+      role: { data: { type: 'role', id: 'r1', title: 'Admin' }, links: {} }
     })
   })
 
-  test('attributes cannot override type or id (explicit fields win)', () => {
+  test('data cannot override type or id (explicit fields win)', () => {
     const response = new HTTPObjectResponse('realType', 123, {
       type: 'fakeType',
       id: 'fakeId',
@@ -140,21 +136,21 @@ describe('HTTPObjectResponse', () => {
       data: {
         hello: 'world',
         type: 'realType',
-        id: 123,
-        relationships: {}
-      }
+        id: 123
+      },
+      links: {}
     })
   })
 
-  test('nested relationships are serialized recursively', () => {
+  test('nested relationships are serialized recursively (each as full wrapper)', () => {
     const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
     const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
     const parent = new HTTPObjectResponse('org', 'p1', {
       name: 'Acme Holdings'
     })
 
-    org.relationship(parent) // org -> parent
-    user.relationship(org) // user -> org
+    org.relationship('org', parent) // org -> parent
+    user.relationship('org', org) // user -> org
 
     const out = user.toResponse()
     expect(out).toEqual({
@@ -164,20 +160,26 @@ describe('HTTPObjectResponse', () => {
         username: 'alice',
         relationships: {
           org: {
-            type: 'org',
-            id: 'o1',
-            name: 'Acme',
-            relationships: {
-              org: {
-                type: 'org',
-                id: 'p1',
-                name: 'Acme Holdings',
-                relationships: {}
+            data: {
+              type: 'org',
+              id: 'o1',
+              name: 'Acme',
+              relationships: {
+                org: {
+                  data: {
+                    type: 'org',
+                    id: 'p1',
+                    name: 'Acme Holdings'
+                  },
+                  links: {}
+                }
               }
-            }
+            },
+            links: {}
           }
         }
-      }
+      },
+      links: {}
     })
   })
 })
@@ -190,9 +192,10 @@ describe('HTTPArrayResponse', () => {
 
     expect(res.toResponse()).toEqual({
       data: [
-        { type: 'user', id: 1, username: 'alice', relationships: {} },
-        { type: 'user', id: 2, username: 'bob', relationships: {} }
-      ]
+        { type: 'user', id: 1, username: 'alice' },
+        { type: 'user', id: 2, username: 'bob' }
+      ],
+      links: {}
     })
   })
 
@@ -211,22 +214,22 @@ describe('HTTPArrayResponse', () => {
       .add(new HTTPObjectResponse('user', 1, { username: 'alice-updated' }))
 
     expect(res.toResponse()).toEqual({
-      data: [
-        { type: 'user', id: 1, username: 'alice-updated', relationships: {} }
-      ]
+      data: [{ type: 'user', id: 1, username: 'alice-updated' }],
+      links: {}
     })
   })
 
-  test('should handle null attributes on items by omitting them (relationships still present)', () => {
+  test('should handle null data on items by omitting attributes (no empty relationships key)', () => {
     const res = new HTTPArrayResponse()
       .add(new HTTPObjectResponse('item', 'a', null))
       .add(new HTTPObjectResponse('item', 'b', { name: 'Beta' }))
 
     expect(res.toResponse()).toEqual({
       data: [
-        { type: 'item', id: 'a', relationships: {} },
-        { type: 'item', id: 'b', name: 'Beta', relationships: {} }
-      ]
+        { type: 'item', id: 'a' },
+        { type: 'item', id: 'b', name: 'Beta' }
+      ],
+      links: {}
     })
   })
 
@@ -238,11 +241,12 @@ describe('HTTPArrayResponse', () => {
     res.remove('x')
 
     expect(res.toResponse()).toEqual({
-      data: [{ type: 'thing', id: 'y', value: 2, relationships: {} }]
+      data: [{ type: 'thing', id: 'y', value: 2 }],
+      links: {}
     })
   })
 
-  test('array-level attributes are included at the top level of the response', () => {
+  test('array-level "links" object is kept as-is at the top level', () => {
     const res = new HTTPArrayResponse({
       meta: { total: 2 },
       links: { self: '/users' }
@@ -252,29 +256,32 @@ describe('HTTPArrayResponse', () => {
 
     expect(res.toResponse()).toEqual({
       data: [
-        { type: 'user', id: 1, username: 'alice', relationships: {} },
-        { type: 'user', id: 2, username: 'bob', relationships: {} }
+        { type: 'user', id: 1, username: 'alice' },
+        { type: 'user', id: 2, username: 'bob' }
       ],
-      meta: { total: 2 },
-      links: { self: '/users' }
+      // The constructor argument is used verbatim as `links`
+      links: { meta: { total: 2 }, links: { self: '/users' } }
     })
   })
 
-  test('empty array response returns { data: [] } with any provided attributes spread', () => {
+  test('empty array response returns { data: [] } with provided object stored under links', () => {
     const withAttrs = new HTTPArrayResponse({ meta: { total: 0 } })
-    expect(withAttrs.toResponse()).toEqual({ data: [], meta: { total: 0 } })
+    expect(withAttrs.toResponse()).toEqual({
+      data: [],
+      links: { meta: { total: 0 } }
+    })
 
     const noAttrs = new HTTPArrayResponse()
-    expect(noAttrs.toResponse()).toEqual({ data: [] })
+    expect(noAttrs.toResponse()).toEqual({ data: [], links: {} })
   })
 
-  test('items can include their own nested relationships', () => {
+  test('items can include their own nested relationships (wrappers preserved inside relationships)', () => {
     const post = new HTTPObjectResponse('post', 10, { title: 'Hello' })
     const author = new HTTPObjectResponse('user', 1, { username: 'alice' })
     const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
 
-    author.relationship(org)
-    post.relationship(author)
+    author.relationship('org', org)
+    post.relationship('user', author)
 
     const list = new HTTPArrayResponse().add(post)
 
@@ -286,16 +293,23 @@ describe('HTTPArrayResponse', () => {
           title: 'Hello',
           relationships: {
             user: {
-              type: 'user',
-              id: 1,
-              username: 'alice',
-              relationships: {
-                org: { type: 'org', id: 'o1', name: 'Acme', relationships: {} }
-              }
+              data: {
+                type: 'user',
+                id: 1,
+                username: 'alice',
+                relationships: {
+                  org: {
+                    data: { type: 'org', id: 'o1', name: 'Acme' },
+                    links: {}
+                  }
+                }
+              },
+              links: {}
             }
           }
         }
-      ]
+      ],
+      links: {}
     })
   })
 
@@ -307,7 +321,8 @@ describe('HTTPArrayResponse', () => {
     expect(list.add(a)).toBe(list)
     expect(list.add(b).remove('a')).toBe(list)
     expect(list.toResponse()).toEqual({
-      data: [{ type: 'x', id: 'b', relationships: {} }]
+      data: [{ type: 'x', id: 'b' }],
+      links: {}
     })
   })
 
