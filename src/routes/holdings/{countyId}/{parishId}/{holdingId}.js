@@ -3,6 +3,7 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { Holdings } from '../../../../types/holdings.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -13,20 +14,14 @@ import {
   findHoldingQuery,
   FindHoldingSchema
 } from '../../../../lib/db/queries/find-holding.js'
-import { HTTPResponse } from '../../../../lib/http/http-response.js'
+import { HTTPObjectResponse } from '../../../../lib/http/http-response.js'
+import { LinksReference } from '../../../../types/links.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
 const FindHoldingResponseSchema = Joi.object({
-  data: Joi.object({
-    type: Joi.string()
-      .valid('holdings')
-      .required()
-      .label('Holding Type')
-      .description('The “type” value will be "holdings" for this endpoint.'),
-    id: Joi.string().required().label('CPH ID'),
-    cphType: Joi.string().required()
-  }).label('Basic Holding Data')
+  data: Holdings.label('Basic Holding Data'),
+  links: LinksReference
 })
   .description(
     'A matching CPH number exists in Sam and basic information about the holding has been retrieved.'
@@ -78,7 +73,7 @@ export async function handler(request, h) {
     return new HTTPException(
       'UNSUPPORTED_VERSION',
       `Unknown version: ${request.pre.apiVersion}`
-    )
+    ).boomify()
   }
 
   try {
@@ -112,7 +107,18 @@ export async function handler(request, h) {
 
     const { cph, cphtype } = row
 
-    const response = new HTTPResponse('holdings', cph, { cphType: cphtype })
+    const response = new HTTPObjectResponse(
+      'holdings',
+      cph,
+      {
+        cphType: cphtype
+      },
+      {
+        self: `/holdings/${cph}`
+      }
+    )
+
+    console.log(JSON.stringify(response.toResponse(), null, 2))
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
