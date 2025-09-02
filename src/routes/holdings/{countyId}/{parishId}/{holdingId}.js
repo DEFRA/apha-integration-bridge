@@ -92,7 +92,7 @@ export async function handler(request, h) {
     /**
      * execute the query and determine if any rows were returned
      *
-     * @type {{ cph: string; cphtype: string; }[]}
+     * @type {{ cph: string; cphtype: string; locationid: string; laname: string; lanumber: string; cphactive: string; }[]}
      */
     const rows = await execute(oracledb.connection, query)
 
@@ -105,7 +105,7 @@ export async function handler(request, h) {
 
     const [row] = rows
 
-    const { cph, cphtype } = row
+    const { cph, cphtype, locationid } = row
 
     const response = new HTTPObjectResponse(
       'holdings',
@@ -118,7 +118,17 @@ export async function handler(request, h) {
       }
     )
 
-    console.log(JSON.stringify(response.toResponse(), null, 2))
+    response.relationship(
+      'location',
+      new HTTPObjectResponse(
+        'locations',
+        locationid,
+        {},
+        {
+          self: `/holdings/${cph}/relationships/location`
+        }
+      )
+    )
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
