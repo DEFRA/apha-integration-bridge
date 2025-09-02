@@ -117,7 +117,7 @@ export async function handler(request, h) {
         self: `/holdings/${cph}`
       }
     )
-    
+
     response.relationship(
       'location',
       new HTTPObjectResponse(
