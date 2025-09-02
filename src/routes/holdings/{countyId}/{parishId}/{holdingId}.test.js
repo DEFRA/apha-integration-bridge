@@ -51,7 +51,18 @@ test('returns the cph and type for a CPH ID that exists', async () => {
     data: {
       id: '45/001/0002',
       type: 'holdings',
-      cphType: 'DEV_SAMPLE'
+      cphType: 'DEV_SAMPLE',
+      relationships: {
+        location: {
+          data: {
+            type: 'locations',
+            id: 'LOC-BETA'
+          },
+          links: {
+            self: `/holdings/45/001/0002/relationships/location`
+          }
+        }
+      }
     }
   })
 

@@ -1,11 +1,12 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 --  Oracle XE container initialisation script for local development / testing
+--  (updated to support expanded CPH lookup query)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 1. Switch into the default pluggable DB
+-- 1) Switch into the default pluggable DB
 ALTER SESSION SET CONTAINER = FREEPDB1;
 
--- 2. Create three local schemas (users) ------------------------------------------------
+-- 2) Create three local schemas (users)
 CREATE USER sam   IDENTIFIED BY "password";
 CREATE USER pega  IDENTIFIED BY "password";
 CREATE USER ahbrp IDENTIFIED BY "password";
@@ -14,8 +15,20 @@ GRANT CONNECT, RESOURCE, DBA TO sam;
 GRANT CONNECT, RESOURCE, DBA TO pega;
 GRANT CONNECT, RESOURCE, DBA TO ahbrp;
 
--- 3. Build the base test table in schema AHBRP ----------------------------------------
+-- 3) Build the base test table in schema AHBRP
 CONNECT ahbrp/password@FREEPDB1;
+
+-- Drop & recreate for idempotent dev runs (ignore errors if first run)
+BEGIN
+  EXECUTE IMMEDIATE 'DROP VIEW cph';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE v_cph_customer_unit PURGE';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
 
 CREATE TABLE v_cph_customer_unit (
   cph                               VARCHAR2(50)  NOT NULL,
@@ -44,7 +57,7 @@ CREATE TABLE v_cph_customer_unit (
   CONSTRAINT v_cph_customer_unit_pk PRIMARY KEY (cph)
 );
 
--- 4. Seed data (original rows + the one your test needs) -------------------------------
+-- 4) Seed data (existing samples + rows your test query needs)
 INSERT INTO v_cph_customer_unit
   (cph,          location_id, feature_name, main_role_type, person_family_name,
    person_given_name, organisation_name, party_id, asset_id, asset_location_type,
@@ -84,26 +97,156 @@ VALUES
    TO_DATE('2023-01-01','YYYY-MM-DD'), TO_DATE('2023-12-31','YYYY-MM-DD'),
    'Usage3','Involvement3','TypeC','HM003','Keeper3','PN003','IJ78 9KL','Owner3');
 
--- **NEW** row specifically for the dev/test query
-INSERT INTO v_cph_customer_unit (cph, cph_type)
-VALUES ('45/001/0002', 'DEV_SAMPLE');
+-- New minimal rows that your expanded query will join to
+INSERT INTO v_cph_customer_unit (cph, cph_type) VALUES ('01/001/0001', 'UNIT_TEST');
+INSERT INTO v_cph_customer_unit (cph, cph_type) VALUES ('45/001/0002', 'DEV_SAMPLE');
 
 COMMIT;
 
--- 5. Indexes (unchanged) ---------------------------------------------------------------
+-- 5) Indexes (unchanged)
 CREATE INDEX idx_location_id ON v_cph_customer_unit (location_id);
 CREATE INDEX idx_postcode     ON v_cph_customer_unit (postcode);
 
--- 6. Lightweight view exposing just the columns your test query needs -----------------
+-- 6) Lightweight view exposing just the columns your test query needs
 CREATE OR REPLACE VIEW cph (CPH, CPH_TYPE) AS
-SELECT
-  cph,
-  cph_type
-FROM
-  v_cph_customer_unit;
+SELECT cph, cph_type
+FROM   v_cph_customer_unit;
 
--- 7. Re-grant privileges ---------------------------------------------------------------
+-- ─────────────────────────────────────────────────────────────────────────────
+-- NEW: Minimal AHBRP structures to support the expanded query
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Drop if exist (dev-friendly)
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_state PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE location PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_involvement PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_map PURGE';     EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_desc PURGE';    EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set_map PURGE';      EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+
+-- Core feature tables
+CREATE TABLE feature_involvement (
+  feature_pk                  NUMBER       PRIMARY KEY,
+  cph                         VARCHAR2(50) NOT NULL,
+  feature_involvement_type    VARCHAR2(50) NOT NULL,
+  feature_involv_to_date      DATE
+);
+
+CREATE TABLE location (
+  feature_pk   NUMBER       PRIMARY KEY,
+  location_id  VARCHAR2(50) NOT NULL
+);
+
+CREATE TABLE feature_state (
+  feature_pk          NUMBER       PRIMARY KEY,
+  feature_status_code VARCHAR2(20) NOT NULL
+);
+
+-- Reference data tables (very slimmed down)
+CREATE TABLE ref_data_set_map (
+  ref_data_set_map_pk   NUMBER        PRIMARY KEY,
+  ref_data_set_map_name VARCHAR2(100) NOT NULL,
+  effective_to_date     DATE          NOT NULL
+);
+
+CREATE TABLE ref_data_code (
+  ref_data_code_pk  NUMBER        PRIMARY KEY,
+  code              VARCHAR2(50)  NOT NULL,
+  effective_to_date DATE          NOT NULL
+);
+
+CREATE TABLE ref_data_code_desc (
+  ref_data_code_pk  NUMBER        PRIMARY KEY,
+  short_description VARCHAR2(255) NOT NULL
+);
+
+CREATE TABLE ref_data_code_map (
+  ref_data_code_map_pk   NUMBER       PRIMARY KEY,
+  ref_data_set_map_pk    NUMBER       NOT NULL,
+  from_ref_data_code_pk  NUMBER       NOT NULL,
+  to_ref_data_code_pk    NUMBER       NOT NULL,
+  effective_to_date      DATE         NOT NULL
+);
+
+-- Minimal reference data to satisfy WHERE filters and joins
+INSERT INTO ref_data_set_map (ref_data_set_map_pk, ref_data_set_map_name, effective_to_date)
+VALUES (1, 'LOCAL_AUTHORITY_COUNTY_PARISH', DATE '9999-12-31');
+
+-- rdc: local authority numbers (what your query returns as laNumber)
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (101, 'LA01001', DATE '9999-12-31');
+INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (101, 'Local Authority 01/001');
+
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (102, 'LA45001', DATE '9999-12-31');
+INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (102, 'Dev Sample LA 45/001');
+
+-- rdc1: county/parish codes (must equal SUBSTR(cph,1,6))
+INSERT INTO ref_data_code (ref_data_code_pk, code,     effective_to_date) VALUES (201, '01/001', DATE '9999-12-31');
+INSERT INTO ref_data_code (ref_data_code_pk, code,     effective_to_date) VALUES (202, '45/001', DATE '9999-12-31');
+
+-- Map each LA number (rdc) to its county/parish (rdc1)
+INSERT INTO ref_data_code_map (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
+VALUES (301, 1, 101, 201, DATE '9999-12-31');
+
+INSERT INTO ref_data_code_map (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
+VALUES (302, 1, 102, 202, DATE '9999-12-31');
+
+-- Feature graph for each test CPH
+-- CPH 01/001/0001
+INSERT INTO feature_involvement (feature_pk, cph,            feature_involvement_type, feature_involv_to_date)
+VALUES                           (5001,      '01/001/0001',  'CPHHOLDERSHIP',          NULL);
+
+INSERT INTO location            (feature_pk, location_id) VALUES (5001, 'LOC-ALPHA');
+INSERT INTO feature_state       (feature_pk, feature_status_code) VALUES (5001, 'ACTIVE');
+
+-- CPH 45/001/0002
+INSERT INTO feature_involvement (feature_pk, cph,            feature_involvement_type, feature_involv_to_date)
+VALUES                           (5002,      '45/001/0002',  'CPHHOLDERSHIP',          NULL);
+
+INSERT INTO location            (feature_pk, location_id) VALUES (5002, 'LOC-BETA');
+INSERT INTO feature_state       (feature_pk, feature_status_code) VALUES (5002, 'ACTIVE');
+
+-- Negative control (should NOT be returned: inactive)
+INSERT INTO v_cph_customer_unit (cph, cph_type) VALUES ('99/999/9999', 'INACTIVE_SAMPLE');
+INSERT INTO feature_involvement (feature_pk, cph,            feature_involvement_type, feature_involv_to_date)
+VALUES                           (5999,      '99/999/9999',  'CPHHOLDERSHIP',          NULL);
+INSERT INTO location            (feature_pk, location_id) VALUES (5999, 'LOC-ZZ');
+INSERT INTO feature_state       (feature_pk, feature_status_code) VALUES (5999, 'INACTIVE');
+-- also wire a county/parish map so the joins succeed but the WHERE filters exclude it
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (1099, 'LA99999', DATE '9999-12-31');
+INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (1099, 'Control LA 99/999');
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (2099, '99/999', DATE '9999-12-31');
+INSERT INTO ref_data_code_map  (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
+VALUES (3099, 1, 1099, 2099, DATE '9999-12-31');
+
+COMMIT;
+
+-- Helpful indexes (optional for local XE, but nice to have)
+CREATE INDEX idx_fi_cph           ON feature_involvement (cph);
+CREATE INDEX idx_fi_feature_pk    ON feature_involvement (feature_pk);
+CREATE INDEX idx_loc_feature_pk   ON location (feature_pk);
+CREATE INDEX idx_fs_feature_pk    ON feature_state (feature_pk);
+CREATE INDEX idx_rdc_code         ON ref_data_code (code);
+CREATE INDEX idx_rdcm_to_pk       ON ref_data_code_map (to_ref_data_code_pk);
+CREATE INDEX idx_rdcm_from_pk     ON ref_data_code_map (from_ref_data_code_pk);
+
+-- 7) Re-grant privileges (so the test user can SELECT cross-schema)
 CONNECT sys/password@FREEPDB1 AS SYSDBA;
 
 GRANT SELECT ON ahbrp.v_cph_customer_unit TO sam;
-GRANT SELECT ON ahbrp.cph                 TO sam;   -- new view
+GRANT SELECT ON ahbrp.cph                 TO sam;
+
+GRANT SELECT ON ahbrp.feature_involvement TO sam;
+GRANT SELECT ON ahbrp.location            TO sam;
+GRANT SELECT ON ahbrp.feature_state       TO sam;
+GRANT SELECT ON ahbrp.ref_data_set_map    TO sam;
+GRANT SELECT ON ahbrp.ref_data_code       TO sam;
+GRANT SELECT ON ahbrp.ref_data_code_desc  TO sam;
+GRANT SELECT ON ahbrp.ref_data_code_map   TO sam;
