@@ -13,6 +13,10 @@ import {
   getLocation,
   GetLocationSchema
 } from '../../lib/db/queries/get-location.js'
+import { HTTPObjectResponse } from '../../lib/http/http-response.js'
+import { LinksReference } from '../../types/links.js'
+import { CommoditiesReference } from '../../types/commodities.js'
+import { FacilitiesReference } from '../../types/facilities.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -27,18 +31,6 @@ export const GetLocationParamsSchema = Joi.object({
 /**
  * Response schemas (for Swagger & runtime 200 validation)
  */
-const RelationshipIdentifier = Joi.object({
-  type: Joi.string().valid('commodities', 'facilities').required(),
-  id: Joi.string().required()
-})
-
-const RelationshipWithLinks = Joi.object({
-  data: Joi.array().items(RelationshipIdentifier).min(1).required(),
-  links: Joi.object({
-    self: Joi.string().uri({ relativeOnly: true }).required()
-  }).required()
-})
-
 const LocationAddressSchema = Joi.object({
   paonStartNumber: Joi.alternatives(Joi.number(), Joi.string()).allow(null, ''),
   paonStartNumberSuffix: Joi.string().allow(null, ''),
@@ -65,12 +57,19 @@ const GetLocationResponseSchema = Joi.object({
     id: Joi.string().required(),
     address: LocationAddressSchema,
     relationships: Joi.object({
-      commodities: RelationshipWithLinks.optional(),
-      facilities: RelationshipWithLinks.optional()
+      // HTTPObjectResponse serializes a single related item as an object,
+      // and multiple items as an array of wrapped references.
+      commodities: Joi.alternatives()
+        .try(CommoditiesReference, Joi.array().items(CommoditiesReference))
+        .optional(),
+      facilities: Joi.alternatives()
+        .try(FacilitiesReference, Joi.array().items(FacilitiesReference))
+        .optional()
     })
       .min(1)
       .optional()
-  }).required()
+  }).required(),
+  links: LinksReference
 })
   .description(
     'Location details with BS7666 address and associated commodities/facilities'
@@ -199,41 +198,41 @@ export async function handler(request, h) {
       }
     }
 
-    // Build root response object
-    const data = {
-      type: 'locations',
-      id: locationId,
-      address
+    // Build response using HTTPObjectResponse
+    const response = new HTTPObjectResponse(
+      'locations',
+      locationId,
+      { address },
+      { self: `/locations/${locationId}` }
+    )
+
+    // Add commodity relationships (each as a wrapped reference)
+    for (const id of commoditiesIds) {
+      response.relationship(
+        'commodities',
+        new HTTPObjectResponse(
+          'commodities',
+          id,
+          {},
+          { self: `/locations/${locationId}/relationships/commodities` }
+        )
+      )
     }
 
-    const relationships = {}
-
-    if (commoditiesIds.size > 0) {
-      relationships['commodities'] = {
-        data: [...commoditiesIds].map((id) => ({ type: 'commodities', id })),
-        links: {
-          self: `/locations/${locationId}/relationships/commodities`
-        }
-      }
+    // Add facility relationships (each as a wrapped reference)
+    for (const id of facilitiesIds) {
+      response.relationship(
+        'facilities',
+        new HTTPObjectResponse(
+          'facilities',
+          id,
+          {},
+          { self: `/locations/${locationId}/relationships/facilities` }
+        )
+      )
     }
 
-    if (facilitiesIds.size > 0) {
-      relationships['facilities'] = {
-        data: [...facilitiesIds].map((id) => ({ type: 'facilities', id })),
-        links: {
-          self: `/locations/${locationId}/relationships/facilities`
-        }
-      }
-    }
-
-    if (Object.keys(relationships).length > 0) {
-      // Only include relationships if at least one exists
-      data['relationships'] = relationships
-    }
-
-    // If you prefer to keep using HTTPObjectResponse, you could wrap `data` here.
-    // The ticket’s example shows a plain JSON shape, so we return it directly.
-    return h.response({ data }).code(200)
+    return h.response(response.toResponse()).code(200)
   } catch (error) {
     if (request.logger) {
       request.logger.error(error)

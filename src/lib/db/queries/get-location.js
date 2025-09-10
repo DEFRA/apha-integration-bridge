@@ -1,10 +1,6 @@
 import Joi from 'joi'
 import { query } from '../operations/query.js'
 
-/**
- * @typedef {import('joi')} Joi
- */
-
 export const GetLocationSchema = Joi.object({
   locationId: Joi.string()
     .trim()
@@ -16,12 +12,6 @@ export const GetLocationSchema = Joi.object({
 /**
  * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
  * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
- *
- * Returns BS7666 address fields and any linked Livestock Units ("LU") or Facilities ("F")
- * for the given location, using UNION to deduplicate rows if needed.
- *
- * @param {string} locationId
- * @returns {Query}
  */
 export function getLocation(locationId) {
   const { value, error } = GetLocationSchema.validate({ locationId })
@@ -31,7 +21,29 @@ export function getLocation(locationId) {
 
   const knex = query()
 
-  // First branch: Livestock Units
+  // Shared column list (keep aliases identical across both branches)
+  const sharedSelect = {
+    locationId: 'loc.location_id',
+    paonStartNumber: 'ba.paon_start_number',
+    paonStartNumberSuffix: 'ba.paon_start_number_suffix',
+    paonEndNumber: 'ba.paon_end_number',
+    paonEndNumberSuffix: 'ba.paon_end_number_suffix',
+    paonDescription: 'ba.paon_description',
+    saonDescription: 'ba.saon_description',
+    saonStartNumber: 'ba.saon_start_number',
+    saonStartNumberSuffix: 'ba.saon_start_number_suffix',
+    saonEndNumber: 'ba.saon_end_number',
+    saonEndNumberSuffix: 'ba.saon_end_number_suffix',
+    street: 'ba.street',
+    locality: 'ba.locality',
+    town: 'ba.town',
+    administrativeAreaCounty: 'ba.administrative_area',
+    postcode: 'ba.postcode',
+    ukInternalCode: 'ba.uk_internal_code',
+    countryCode: 'ba.country_code'
+  }
+
+  // Branch 1: Livestock Units
   const luQb = knex
     .from({ loc: 'ahbrp.location' })
     .join({ fa: 'ahbrp.feature_address' }, 'loc.feature_pk', 'fa.feature_pk')
@@ -48,29 +60,12 @@ export function getLocation(locationId) {
     .where('fs.feature_status_code', '<>', 'INACTIVE')
     .whereNull('fs.feature_state_to_dttm')
     .where('loc.location_id', value.locationId)
-    .select({
-      locationId: 'loc.location_id',
-      paonStartNumber: 'ba.paon_start_number',
-      paonStartNumberSuffix: 'ba.paon_start_number_suffix',
-      paonEndNumber: 'ba.paon_end_number',
-      paonEndNumberSuffix: 'ba.paon_end_number_suffix',
-      paonDescription: 'ba.paon_description',
-      saonDescription: 'ba.saon_description',
-      saonStartNumber: 'ba.saon_start_number',
-      saonStartNumberSuffix: 'ba.saon_start_number_suffix',
-      saonEndNumber: 'ba.saon_end_number',
-      saonEndNumberSuffix: 'ba.saon_end_number_suffix',
-      street: 'ba.street',
-      locality: 'ba.locality',
-      town: 'ba.town',
-      administrativeAreaCounty: 'ba.administrative_area', // ADMINISTRATIVE_AREA as COUNTY in the raw SQL
-      postcode: 'ba.postcode',
-      ukInternalCode: 'ba.uk_internal_code',
-      countryCode: 'ba.country_code',
-      unitId: 'lu.unit_id'
-    })
+    .select(sharedSelect)
+    // Cast to common type to satisfy UNION typing
+    .select(knex.raw('CAST(?? AS VARCHAR2(50)) "unitId"', ['lu.unit_id']))
     .select(knex.raw(`'LU' as "unitType"`))
 
+  // Branch 2: Facilities
   const facQb = knex
     .from({ loc: 'ahbrp.location' })
     .join({ fa: 'ahbrp.feature_address' }, 'loc.feature_pk', 'fa.feature_pk')
@@ -87,30 +82,12 @@ export function getLocation(locationId) {
     .where('fs.feature_status_code', '<>', 'INACTIVE')
     .whereNull('fs.feature_state_to_dttm')
     .where('loc.location_id', value.locationId)
-    .select({
-      locationId: 'loc.location_id',
-      paonStartNumber: 'ba.paon_start_number',
-      paonStartNumberSuffix: 'ba.paon_start_number_suffix',
-      paonEndNumber: 'ba.paon_end_number',
-      paonEndNumberSuffix: 'ba.paon_end_number_suffix',
-      paonDescription: 'ba.paon_description',
-      saonDescription: 'ba.saon_description',
-      saonStartNumber: 'ba.saon_start_number',
-      saonStartNumberSuffix: 'ba.saon_start_number_suffix',
-      saonEndNumber: 'ba.saon_end_number',
-      saonEndNumberSuffix: 'ba.saon_end_number_suffix',
-      street: 'ba.street',
-      locality: 'ba.locality',
-      town: 'ba.town',
-      county: 'ba.administrative_area',
-      postcode: 'ba.postcode',
-      ukInternalCode: 'ba.uk_internal_code',
-      countryCode: 'ba.country_code',
-      unitId: 'facility.unit_id'
-    })
+    .select(sharedSelect)
+    // Cast here too; if FACILITY.UNIT_ID is numeric in prod, this is essential
+    .select(knex.raw('CAST(?? AS VARCHAR2(50)) "unitId"', ['facility.unit_id']))
     .select(knex.raw(`'F' as "unitType"`))
 
-  const qb = luQb.union([facQb])
+  const qb = luQb.union([facQb]) // UNION (not ALL) as per your SQL
 
   const { sql, bindings } = qb.toSQL()
   return { sql, bindings }
