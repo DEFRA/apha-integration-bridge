@@ -39,7 +39,8 @@ export const options = {
   ),
   plugins: {
     'hapi-swagger': {
-      id: 'find'
+      id: 'workorders',
+      security: [{ Bearer: [] }]
     }
   },
   validate: {
