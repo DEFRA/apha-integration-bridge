@@ -100,7 +100,7 @@ export async function handler(request, h) {
       /**
        * if no rows were returned, throw a 404 error
        */
-      throw new HTTPException('NOT_FOUND', 'Holding not found')
+      throw new HTTPException('NOT_FOUND', 'Holding not found or inactive')
     }
 
     if (rows.length > 1) {
