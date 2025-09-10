@@ -103,6 +103,16 @@ export async function handler(request, h) {
       throw new HTTPException('NOT_FOUND', 'Holding not found')
     }
 
+    if (rows.length > 1) {
+      /**
+       * if multiple rows were returned, throw a duplicate resources error
+       */
+      throw new HTTPException(
+        'DUPLICATE_RESOURCES_FOUND',
+        'Duplicate Location resources found associated with given CPH number.'
+      )
+    }
+
     const [row] = rows
 
     const { cph, cphtype, locationid } = row

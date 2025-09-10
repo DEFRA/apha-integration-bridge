@@ -114,6 +114,7 @@ FROM   v_cph_customer_unit;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- NEW: Minimal AHBRP structures to support the expanded query
+--      (refactored so a single feature/CPH can have multiple locations)
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Drop if exist (dev-friendly)
@@ -140,9 +141,11 @@ CREATE TABLE feature_involvement (
   feature_involv_to_date      DATE
 );
 
+-- ✅ Refactor: allow multiple locations per feature (and thus per CPH)
 CREATE TABLE location (
-  feature_pk   NUMBER       PRIMARY KEY,
-  location_id  VARCHAR2(50) NOT NULL
+  feature_pk   NUMBER        NOT NULL,
+  location_id  VARCHAR2(50)  NOT NULL,
+  CONSTRAINT location_pk PRIMARY KEY (feature_pk, location_id)
 );
 
 CREATE TABLE feature_state (
@@ -198,18 +201,16 @@ VALUES (301, 1, 101, 201, DATE '9999-12-31');
 INSERT INTO ref_data_code_map (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
 VALUES (302, 1, 102, 202, DATE '9999-12-31');
 
--- Feature graph for each test CPH
+-- Feature graph for each existing test CPH
 -- CPH 01/001/0001
 INSERT INTO feature_involvement (feature_pk, cph,            feature_involvement_type, feature_involv_to_date)
 VALUES                           (5001,      '01/001/0001',  'CPHHOLDERSHIP',          NULL);
-
 INSERT INTO location            (feature_pk, location_id) VALUES (5001, 'LOC-ALPHA');
 INSERT INTO feature_state       (feature_pk, feature_status_code) VALUES (5001, 'ACTIVE');
 
 -- CPH 45/001/0002
 INSERT INTO feature_involvement (feature_pk, cph,            feature_involvement_type, feature_involv_to_date)
 VALUES                           (5002,      '45/001/0002',  'CPHHOLDERSHIP',          NULL);
-
 INSERT INTO location            (feature_pk, location_id) VALUES (5002, 'LOC-BETA');
 INSERT INTO feature_state       (feature_pk, feature_status_code) VALUES (5002, 'ACTIVE');
 
@@ -226,6 +227,31 @@ INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) V
 INSERT INTO ref_data_code_map  (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
 VALUES (3099, 1, 1099, 2099, DATE '9999-12-31');
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- NEW: CPH 01/409/1111 with TWO locations on the SAME feature (multi-location)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Ensure the CPH exists in the base table (surface via view AHBRP.CPH)
+INSERT INTO v_cph_customer_unit (cph, cph_type) VALUES ('01/409/1111', 'MULTI_LOC_TEST');
+
+-- Reference data so SUBSTR(cph,1,6) = '01/409' joins correctly
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (103, 'LA01409', DATE '9999-12-31');
+INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (103, 'Local Authority 01/409');
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (203, '01/409', DATE '9999-12-31');
+INSERT INTO ref_data_code_map  (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
+VALUES (303, 1, 103, 203, DATE '9999-12-31');
+
+-- Single feature node for the CPH...
+INSERT INTO feature_involvement (feature_pk, cph,            feature_involvement_type, feature_involv_to_date)
+VALUES                           (6409,      '01/409/1111',  'CPHHOLDERSHIP',          NULL);
+
+-- ...with TWO locations attached (this is the case we want to support/test)
+INSERT INTO location (feature_pk, location_id) VALUES (6409, 'LOC-OMEGA');
+INSERT INTO location (feature_pk, location_id) VALUES (6409, 'LOC-THETA');
+
+-- Mark that feature ACTIVE
+INSERT INTO feature_state (feature_pk, feature_status_code) VALUES (6409, 'ACTIVE');
+
 COMMIT;
 
 -- Helpful indexes (optional for local XE, but nice to have)
@@ -236,17 +262,3 @@ CREATE INDEX idx_fs_feature_pk    ON feature_state (feature_pk);
 CREATE INDEX idx_rdc_code         ON ref_data_code (code);
 CREATE INDEX idx_rdcm_to_pk       ON ref_data_code_map (to_ref_data_code_pk);
 CREATE INDEX idx_rdcm_from_pk     ON ref_data_code_map (from_ref_data_code_pk);
-
--- 7) Re-grant privileges (so the test user can SELECT cross-schema)
-CONNECT sys/password@FREEPDB1 AS SYSDBA;
-
-GRANT SELECT ON ahbrp.v_cph_customer_unit TO sam;
-GRANT SELECT ON ahbrp.cph                 TO sam;
-
-GRANT SELECT ON ahbrp.feature_involvement TO sam;
-GRANT SELECT ON ahbrp.location            TO sam;
-GRANT SELECT ON ahbrp.feature_state       TO sam;
-GRANT SELECT ON ahbrp.ref_data_set_map    TO sam;
-GRANT SELECT ON ahbrp.ref_data_code       TO sam;
-GRANT SELECT ON ahbrp.ref_data_code_desc  TO sam;
-GRANT SELECT ON ahbrp.ref_data_code_map   TO sam;
