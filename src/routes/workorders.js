@@ -5,15 +5,14 @@ import path from 'node:path'
 
 import { LinksReference } from '../types/links.js'
 import { Workorders } from '../types/workorders.js'
-import {
-  HTTPArrayResponse,
-  HTTPObjectResponse
-} from '../lib/http/http-response.js'
+import { HTTPArrayResponse } from '../lib/http/http-response.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
   HTTPError
 } from '../lib/http/http-exception.js'
+
+import { all } from './workorders.mocks.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -32,7 +31,8 @@ export const options = {
     mode: 'required'
   },
   tags: ['api', 'workorders'],
-  description: 'Retrieve workorders filtered by activation date range',
+  description:
+    'Retrieve workorders filtered by activation date range and paginated',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'workorders.md'),
     'utf8'
@@ -54,7 +54,18 @@ export const options = {
         .isoDate()
         .description(
           'Paginate workorders before or on this end activation date'
-        )
+        ),
+      page: Joi.number()
+        .integer()
+        .min(1)
+        .default(1)
+        .description('The page number to retrieve'),
+      pageSize: Joi.number()
+        .integer()
+        .min(1)
+        .max(10)
+        .default(10)
+        .description('The number of items per page')
     }),
     headers: Joi.object({
       accept: Joi.string()
@@ -139,168 +150,62 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('workordersRequest', 1, Unit.Count)
 
-    const selfQueryParams = new URLSearchParams({
-      startActivationDate: request.query.startActivationDate
-    })
+    const { page, pageSize } = request.query
+
+    const selfQueryParams = new URLSearchParams([
+      ['startActivationDate', request.query.startActivationDate],
+      ['endActivationDate', request.query.endActivationDate],
+      ['page', String(page)],
+      ['pageSize', String(pageSize)]
+    ])
 
     if (endActivationDate) {
       selfQueryParams.set('endActivationDate', request.query.endActivationDate)
     }
 
+    /**
+     * mock paginate over the "all" array
+     */
+    const paginatedWorkorders = all.slice(
+      (page - 1) * pageSize,
+      page * pageSize
+    )
+
+    /**
+     * @type {string | undefined}
+     */
+    let prevLink
+
+    /**
+     * @type {string | undefined}
+     */
+    let nextLink
+
+    if (paginatedWorkorders.length === pageSize) {
+      const nextQueryParams = new URLSearchParams(selfQueryParams.toString())
+
+      nextQueryParams.set('page', String(page + 1))
+
+      nextLink = `/workorders?${nextQueryParams.toString()}`
+    }
+
+    if (page > 1) {
+      const prevQueryParams = new URLSearchParams(selfQueryParams.toString())
+
+      prevQueryParams.set('page', String(page - 1))
+
+      prevLink = `/workorders?${prevQueryParams.toString()}`
+    }
+
     const response = new HTTPArrayResponse({
       self: `/workorders?${selfQueryParams.toString()}`,
-      next: `/workorders?${selfQueryParams.toString()}`
+      next: nextLink,
+      prev: prevLink
     })
 
-    const first = new HTTPObjectResponse('workorders', 'WS-76512', {
-      status: 'Open',
-      startDate: '2024-01-01T09:00:00+00:00',
-      activationDate: '2024-01-05T08:30:00+00:00',
-      purpose: 'Initiate Incident Premises Spread Tracing Action',
-      workArea: 'Tuberculosis',
-      country: 'SCOTLAND',
-      businessArea: 'Endemic Notifiable Disease',
-      aim: 'Contain / Control / Eradicate Endemic Disease',
-      latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-      phase: 'EXPOSURETRACKING'
-    })
-
-    first.relationship(
-      'customer',
-      new HTTPObjectResponse(
-        'customers',
-        'C123456',
-        {},
-        {
-          self: '/workorders/WS-76512/relationships/customer'
-        }
-      )
-    )
-
-    first.relationship(
-      'holding',
-      new HTTPObjectResponse(
-        'holdings',
-        '08/139/0167',
-        {},
-        {
-          self: '/workorders/WS-76512/relationships/holding'
-        }
-      )
-    )
-
-    first.relationship(
-      'location',
-      new HTTPObjectResponse(
-        'locations',
-        'L123456',
-        {},
-        {
-          self: '/workorders/WS-76512/relationships/location'
-        }
-      )
-    )
-
-    first.relationship(
-      'commodity',
-      new HTTPObjectResponse(
-        'commodities',
-        'U000010',
-        {},
-        {
-          self: '/workorders/WS-76512/relationships/commodity'
-        }
-      )
-    )
-
-    first.relationship(
-      'activities',
-      new HTTPObjectResponse(
-        'activities',
-        undefined,
-        {},
-        {
-          self: '/workorders/WS-76512/relationships/activities'
-        }
-      )
-    )
-
-    response.add(first)
-
-    const second = new HTTPObjectResponse('workorders', 'WS-76513', {
-      status: 'Open',
-      startDate: '2024-01-03T09:00:00+00:00',
-      activationDate: '2024-01-06T08:30:00+00:00',
-      purpose: 'Initiate Incident Premises Spread Tracing Action',
-      workArea: 'Tuberculosis',
-      country: 'SCOTLAND',
-      businessArea: 'Endemic Notifiable Disease',
-      aim: 'Contain / Control / Eradicate Endemic Disease',
-      latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-      phase: 'EXPOSURETRACKING'
-    })
-
-    second.relationship(
-      'customer',
-      new HTTPObjectResponse(
-        'customers',
-        'C123457',
-        {},
-        {
-          self: '/workorders/WS-76513/relationships/customer'
-        }
-      )
-    )
-
-    second.relationship(
-      'holding',
-      new HTTPObjectResponse(
-        'holdings',
-        '08/139/0168',
-        {},
-        {
-          self: '/workorders/WS-76513/relationships/holding'
-        }
-      )
-    )
-
-    second.relationship(
-      'location',
-      new HTTPObjectResponse(
-        'locations',
-        'L123457',
-        {},
-        {
-          self: '/workorders/WS-76513/relationships/location'
-        }
-      )
-    )
-
-    second.relationship(
-      'facility',
-      new HTTPObjectResponse(
-        'facilities',
-        'U000030',
-        {},
-        {
-          self: '/workorders/WS-76513/relationships/facility'
-        }
-      )
-    )
-
-    second.relationship(
-      'activities',
-      new HTTPObjectResponse(
-        'activities',
-        'test',
-        {},
-        {
-          self: '/workorders/WS-76513/relationships/activities'
-        }
-      )
-    )
-
-    response.add(second)
+    for (const workorder of paginatedWorkorders) {
+      response.add(workorder)
+    }
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
