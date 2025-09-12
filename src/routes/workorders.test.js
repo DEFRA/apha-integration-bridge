@@ -8,7 +8,9 @@ test('returns the mock workorder', async () => {
 
   const queryParams = new URLSearchParams({
     startActivationDate: new Date('2024-01-01').toISOString(),
-    endActivationDate: new Date('2030-01-01').toISOString()
+    endActivationDate: new Date('2030-01-01').toISOString(),
+    page: '1',
+    pageSize: '1'
   })
 
   /**
@@ -32,12 +34,16 @@ test('returns the mock workorder', async () => {
     method: 'GET'
   })
 
-  const res = await server.inject({
+  const firstPage = await server.inject({
     method: 'GET',
     url: `/workorders?${queryParams.toString()}`
   })
 
-  expect(res.result).toMatchObject({
+  const expectedNextParams = new URLSearchParams(queryParams.toString())
+
+  expectedNextParams.set('page', '2')
+
+  expect(firstPage.result).toMatchObject({
     data: [
       {
         type: 'workorders',
@@ -83,7 +89,29 @@ test('returns the mock workorder', async () => {
             }
           }
         }
-      },
+      }
+    ],
+    links: {
+      self: `/workorders?${queryParams.toString()}`,
+      next: `/workorders?${expectedNextParams.toString()}`
+    }
+  })
+
+  expect(firstPage.statusCode).toBe(200)
+
+  /**
+   * @type {{ links: { next: string; self: string; } }}
+   */
+  // @ts-expect-error - TypeScript doesn't know about the structure of the response
+  const firstPageResponse = firstPage.result
+
+  const secondPage = await server.inject({
+    method: 'GET',
+    url: firstPageResponse.links.next
+  })
+
+  expect(secondPage.result).toMatchObject({
+    data: [
       {
         type: 'workorders',
         id: 'WS-76513',
@@ -131,12 +159,63 @@ test('returns the mock workorder', async () => {
       }
     ],
     links: {
-      self: `/workorders?${queryParams.toString()}`,
-      next: `/workorders?${queryParams.toString()}`
+      self: firstPageResponse.links.next,
+      prev: firstPageResponse.links.self
     }
   })
 
-  expect(res.statusCode).toBe(200)
+  expect(secondPage.statusCode).toBe(200)
+})
+
+test('returns an empty page', async () => {
+  const server = Hapi.server({ port: 0 })
+
+  const queryParams = new URLSearchParams({
+    startActivationDate: new Date('2024-01-01').toISOString(),
+    endActivationDate: new Date('2030-01-01').toISOString(),
+    page: '3',
+    pageSize: '1'
+  })
+
+  /**
+   * create a fake simple auth strategy
+   */
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (_request, h) => {
+        return h.authenticated({ credentials: {} })
+      }
+    }
+  })
+
+  server.auth.strategy('simple', 'simple', {})
+
+  server.auth.default('simple')
+
+  server.route({
+    ...route,
+    path: '/workorders',
+    method: 'GET'
+  })
+
+  const emptyPage = await server.inject({
+    method: 'GET',
+    url: `/workorders?${queryParams.toString()}`
+  })
+
+  const prevQueryParams = new URLSearchParams(queryParams.toString())
+
+  prevQueryParams.set('page', String(2))
+
+  expect(emptyPage.result).toMatchObject({
+    data: [],
+    links: {
+      self: `/workorders?${queryParams.toString()}`,
+      prev: `/workorders?${prevQueryParams.toString()}`
+    }
+  })
+
+  expect(emptyPage.statusCode).toBe(200)
 })
 
 test.skip('returns an empty list if no workorders exist', async () => {
