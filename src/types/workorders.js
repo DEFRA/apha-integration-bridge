@@ -43,4 +43,4 @@ export const Workorders = WorkordersData.keys({
     commodity: CommoditiesReference.optional(),
     activities: ActivitiesReference.optional()
   })
-}).required()
+})
