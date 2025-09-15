@@ -28,6 +28,14 @@ export const openApi = {
         // }
       }
     ],
+    securityDefinitions: {
+      Bearer: {
+        type: 'http',
+        scheme: 'bearer',
+        description:
+          'To make authenticated requests to the APHA Integration API, you must have a valid **Cognito issued access token**.'
+      }
+    },
     grouping: 'tags',
     sortEndpoints: 'ordered'
   }

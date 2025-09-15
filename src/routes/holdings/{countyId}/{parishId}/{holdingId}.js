@@ -43,7 +43,8 @@ export const options = {
   ),
   plugins: {
     'hapi-swagger': {
-      id: 'find'
+      id: 'find',
+      security: [{ Bearer: [] }]
     }
   },
   validate: {
@@ -100,7 +101,17 @@ export async function handler(request, h) {
       /**
        * if no rows were returned, throw a 404 error
        */
-      throw new HTTPException('NOT_FOUND', 'Holding not found')
+      throw new HTTPException('NOT_FOUND', 'Holding not found or inactive')
+    }
+
+    if (rows.length > 1) {
+      /**
+       * if multiple rows were returned, throw a duplicate resources error
+       */
+      throw new HTTPException(
+        'DUPLICATE_RESOURCES_FOUND',
+        'Duplicate Location resources found associated with given CPH number.'
+      )
     }
 
     const [row] = rows

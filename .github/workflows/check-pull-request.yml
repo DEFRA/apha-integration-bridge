@@ -45,15 +45,26 @@ jobs:
 
       - run: npm run lint
 
-      # - run: npm run compose:up
-
       - run: npm test
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
           DEBUG: testcontainers
-          # DOCKER_HOST: unix:///var/run/docker.sock
-          # TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
-          # NODE_OPTIONS: '--network-family-autoselection-attempt-timeout=500'
+
+      - name: Free disk space (Docker and node_modules)
+        if: always()
+        run: |
+          echo "Stopping and removing all containers..."
+          docker ps -aq | xargs -r docker rm -f || true
+          echo "Removing all Docker images..."
+          docker images -aq | xargs -r docker rmi -f || true
+          echo "Pruning builder cache..."
+          docker builder prune -af || true
+          echo "Pruning system (networks/volumes)..."
+          docker system prune -af --volumes || true
+          echo "Removing node_modules to free space..."
+          rm -rf node_modules || true
+          echo "Disk usage after cleanup:"
+          df -h
 
       - name: Test Docker Image Build
         run: |
