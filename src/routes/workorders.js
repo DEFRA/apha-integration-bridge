@@ -155,7 +155,6 @@ export async function handler(request, h) {
 
     const selfQueryParams = new URLSearchParams([
       ['startActivationDate', request.query.startActivationDate],
-      ['endActivationDate', request.query.endActivationDate],
       ['page', String(page)],
       ['pageSize', String(pageSize)]
     ])
