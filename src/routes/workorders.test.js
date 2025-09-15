@@ -205,7 +205,7 @@ test('returns an empty page', async () => {
 
   const prevQueryParams = new URLSearchParams(queryParams.toString())
 
-  prevQueryParams.set('page', String(2))
+  prevQueryParams.set('page', String(3))
 
   expect(emptyPage.result).toMatchObject({
     data: [],
