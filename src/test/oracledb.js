@@ -18,7 +18,7 @@ export const getTestContainer = () => {
       .withEnvironment({
         ORACLE_PW: 'letmein'
       })
-      .withStartupTimeout(90_000)
+      .withStartupTimeout(120_000)
       .withWaitStrategy(
         Wait.forLogMessage('DONE: Executing user defined scripts')
       )

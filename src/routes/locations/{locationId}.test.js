@@ -1,5 +1,5 @@
 import Hapi from '@hapi/hapi'
-import { jest, test, expect } from '@jest/globals'
+import { test, expect } from '@jest/globals'
 
 import { config } from '../../config.js'
 import { getTestContainer, getConnection } from '../../test/oracledb.js'
@@ -7,8 +7,6 @@ import { getTestContainer, getConnection } from '../../test/oracledb.js'
 import * as route from './{locationId}.js'
 
 const container = getTestContainer()
-
-jest.setTimeout(90_000)
 
 test('returns the location, address and related units for a known Location ID', async () => {
   const samConfig = config.get('oracledb.sam')
