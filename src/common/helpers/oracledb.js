@@ -90,12 +90,20 @@ export const oracleDb = {
         try {
           await retry(
             async () => {
-              /**
-               * create the pool for this oracledb connection
-               */
-              await oracledb.createPool(poolAttributes)
+              try {
+                await oracledb.getPool(key)
+              } catch (error) {
+                if (!error.code || error.code !== 'NJS-047') {
+                  throw error
+                }
 
-              server.logger.info(`OracleDB pool created for "${key}"`)
+                /**
+                 * create the pool for this oracledb connection
+                 */
+                await oracledb.createPool(poolAttributes)
+
+                server.logger.info(`OracleDB pool created for "${key}"`)
+              }
             },
             {
               retries: 3,

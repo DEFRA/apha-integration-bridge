@@ -1,21 +1,22 @@
 import Hapi from '@hapi/hapi'
+import hapiPino from 'hapi-pino'
 import { test, expect } from '@jest/globals'
-
-import { config } from '../../../../config.js'
-import { getTestContainer, getConnection } from '../../../../test/oracledb.js'
+import { oracleDb } from '../../../../common/helpers/oracledb.js'
 
 import * as route from './{holdingId}.js'
 
-const container = getTestContainer()
-
 test('returns the cph and type for a CPH ID that exists', async () => {
-  const samConfig = config.get('oracledb.sam')
-
   const server = Hapi.server({ port: 0 })
 
-  server.decorate('server', 'oracledb.sam', () => {
-    return getConnection(container, samConfig)
-  })
+  await server.register([
+    {
+      plugin: hapiPino,
+      options: {
+        enabled: false
+      }
+    },
+    oracleDb
+  ])
 
   /**
    * create a fake simple auth strategy
@@ -68,13 +69,17 @@ test('returns the cph and type for a CPH ID that exists', async () => {
 })
 
 test('returns 404 for a CPH ID that does not exist', async () => {
-  const samConfig = config.get('oracledb.sam')
-
   const server = Hapi.server({ port: 0 })
 
-  server.decorate('server', 'oracledb.sam', () => {
-    return getConnection(container, samConfig)
-  })
+  await server.register([
+    {
+      plugin: hapiPino,
+      options: {
+        enabled: false
+      }
+    },
+    oracleDb
+  ])
 
   /**
    * create a fake simple auth strategy
@@ -106,13 +111,17 @@ test('returns 404 for a CPH ID that does not exist', async () => {
 })
 
 test('returns a 409 conflict error when a CPH ID has multiple locations', async () => {
-  const samConfig = config.get('oracledb.sam')
-
   const server = Hapi.server({ port: 0 })
 
-  server.decorate('server', 'oracledb.sam', () => {
-    return getConnection(container, samConfig)
-  })
+  await server.register([
+    {
+      plugin: hapiPino,
+      options: {
+        enabled: false
+      }
+    },
+    oracleDb
+  ])
 
   /**
    * create a fake simple auth strategy
