@@ -8,9 +8,9 @@ test('returns the mock workorder', async () => {
 
   const queryParams = new URLSearchParams({
     startActivationDate: new Date('2024-01-01').toISOString(),
-    endActivationDate: new Date('2030-01-01').toISOString(),
     page: '1',
-    pageSize: '1'
+    pageSize: '1',
+    endActivationDate: new Date('2030-01-01').toISOString()
   })
 
   /**
@@ -172,9 +172,9 @@ test('returns an empty page', async () => {
 
   const queryParams = new URLSearchParams({
     startActivationDate: new Date('2024-01-01').toISOString(),
-    endActivationDate: new Date('2030-01-01').toISOString(),
-    page: '3',
-    pageSize: '1'
+    page: '4',
+    pageSize: '1',
+    endActivationDate: new Date('2030-01-01').toISOString()
   })
 
   /**
@@ -205,7 +205,7 @@ test('returns an empty page', async () => {
 
   const prevQueryParams = new URLSearchParams(queryParams.toString())
 
-  prevQueryParams.set('page', String(2))
+  prevQueryParams.set('page', String(3))
 
   expect(emptyPage.result).toMatchObject({
     data: [],
