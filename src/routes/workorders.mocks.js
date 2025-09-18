@@ -146,4 +146,77 @@ second.relationship(
   )
 )
 
-export const all = [first, second]
+export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
+  status: 'Open',
+  startDate: '2024-03-14T10:15:00+00:00',
+  activationDate: '2024-03-16T09:00:00+00:00',
+  purpose: 'Implement contact tracing and movement restrictions',
+  workArea: 'Avian Influenza',
+  country: 'WALES',
+  businessArea: 'Exotic Notifiable Disease',
+  aim: 'Contain / Control / Eradicate Exotic Disease',
+  latestActivityCompletionDate: '2024-03-15T15:20:00+00:00',
+  phase: 'EXPOSURETRACKING'
+})
+
+third.relationship(
+  'customer',
+  new HTTPObjectResponse(
+    'customers',
+    'C789654',
+    {},
+    {
+      self: '/workorders/WS-93218/relationships/customer'
+    }
+  )
+)
+
+third.relationship(
+  'holding',
+  new HTTPObjectResponse(
+    'holdings',
+    '12/208/3348',
+    {},
+    {
+      self: '/workorders/WS-93218/relationships/holding'
+    }
+  )
+)
+
+third.relationship(
+  'location',
+  new HTTPObjectResponse(
+    'locations',
+    'L078945',
+    {},
+    {
+      self: '/workorders/WS-93218/relationships/location'
+    }
+  )
+)
+
+third.relationship(
+  'commodity',
+  new HTTPObjectResponse(
+    'commodities',
+    'U005321',
+    {},
+    {
+      self: '/workorders/WS-93218/relationships/commodity'
+    }
+  )
+)
+
+third.relationship(
+  'activities',
+  new HTTPObjectResponse(
+    'activities',
+    undefined,
+    {},
+    {
+      self: '/workorders/WS-93218/relationships/activities'
+    }
+  )
+)
+
+export const all = [first, second, third]
