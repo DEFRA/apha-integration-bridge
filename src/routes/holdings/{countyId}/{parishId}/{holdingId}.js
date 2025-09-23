@@ -90,12 +90,24 @@ export async function handler(request, h) {
      */
     const query = findHoldingQuery(request.params)
 
+    request.logger?.debug(`query: ${JSON.stringify(query)}`)
+
     /**
      * execute the query and determine if any rows were returned
      *
-     * @type {{ cph: string; cphtype: string; locationid: string; laname: string; lanumber: string; cphactive: string; }[]}
+     * @type {{
+     *   cph: string;
+     *   cphtype: string;
+     *   cphholdercustomerid: string;
+     *   locationid: string;
+     *   laname: string;
+     *   lanumber: string;
+     *   cphactive: string;
+     * }[]}
      */
     const rows = await execute(oracledb.connection, query)
+
+    request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
 
     if (rows.length < 1) {
       /**
@@ -140,6 +152,20 @@ export async function handler(request, h) {
         }
       )
     )
+
+    if (row.cphholdercustomerid) {
+      response.relationship(
+        'cphHolder',
+        new HTTPObjectResponse(
+          'customers',
+          row.cphholdercustomerid,
+          {},
+          {
+            self: `/holdings/${cph}/relationships/cphHolder`
+          }
+        )
+      )
+    }
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
