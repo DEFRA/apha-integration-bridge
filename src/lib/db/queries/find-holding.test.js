@@ -17,7 +17,8 @@ test('returns the expected query for valid parameters', () => {
     'CPHHOLDERSHIP',
     'INACTIVE',
     'LOCAL_AUTHORITY_COUNTY_PARISH',
-    '01/000/0333'
+    '01/000/0333',
+    'INACTIVE'
   ])
 })
 
