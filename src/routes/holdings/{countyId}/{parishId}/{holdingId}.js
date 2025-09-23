@@ -156,9 +156,14 @@ export async function handler(request, h) {
     if (row.cphholdercustomerid) {
       response.relationship(
         'cphHolder',
-        new HTTPObjectResponse('customers', row.cphholdercustomerid, {
-          self: `/holdings/${cph}/relationships/cphHolder`
-        })
+        new HTTPObjectResponse(
+          'customers',
+          row.cphholdercustomerid,
+          {},
+          {
+            self: `/holdings/${cph}/relationships/cphHolder`
+          }
+        )
       )
     }
 
