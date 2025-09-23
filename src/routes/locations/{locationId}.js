@@ -80,7 +80,9 @@ const GetLocationResponseSchema = Joi.object({
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 export const options = {
-  auth: { mode: 'required' },
+  auth: {
+    mode: 'required'
+  },
   tags: ['api', 'locations'],
   description:
     'Get a location and its related facilities/commodities by location ID',
@@ -161,19 +163,27 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('locationRequest', 1, Unit.Count)
 
-    // Acquire Oracle connection
+    /**
+     * Acquire Oracle connection
+     */
     await using oracledb = await request.server['oracledb.sam']()
 
-    // 1) Main query: address + commodities/facilities (UNION)
-    const unionQuery = getLocation(locationId)
+    /**
+     * build the query
+     */
+    const query = getLocation(locationId)
+
+    request.logger?.debug(`query: ${JSON.stringify(query)}`)
 
     /**
      * @type {Array<Record<string, any>>}
      *
-     * Example row keys (lowercased by the driver):
-     * - locationid, paonstartnumber, ..., countrycode, unitid, unittype ('LU'|'F')
+     * example row keys (lowercased by the driver):
+     * locationid, paonstartnumber, ..., countrycode, unitid, unittype ('LU'|'F')
      */
-    const rows = await execute(oracledb.connection, unionQuery)
+    const rows = await execute(oracledb.connection, query)
+
+    request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
 
     const address = toAddress(rows[0])
 
@@ -234,9 +244,7 @@ export async function handler(request, h) {
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
-    if (request.logger) {
-      request.logger.error(error)
-    }
+    request.logger?.error(error)
 
     let httpException = error
 

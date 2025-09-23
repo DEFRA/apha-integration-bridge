@@ -38,7 +38,6 @@ export function findHoldingQuery(parameters) {
 
   const cph = `${value.countyId}/${value.parishId}/${value.holdingId}`
 
-  // Use the knex instance returned by query()
   const knex = query()
 
   const qb = knex
@@ -46,7 +45,14 @@ export function findHoldingQuery(parameters) {
     .join({ fi: 'ahbrp.feature_involvement' }, 'cph.cph', 'fi.cph')
     .join({ loc: 'ahbrp.location' }, 'fi.feature_pk', 'loc.feature_pk')
     .join({ fs: 'ahbrp.feature_state' }, 'fi.feature_pk', 'fs.feature_pk')
-    // @ts-expect-error unable to join properly, but still works
+
+    // NEW: party role / party / party state chain
+    .join({ pr: 'ahbrp.party_role' }, 'fi.party_role_pk', 'pr.party_role_pk')
+    .join({ party: 'ahbrp.party' }, 'pr.party_pk', 'party.party_pk')
+    .join({ ps: 'ahbrp.party_state' }, 'party.party_pk', 'ps.party_pk')
+
+    // Same ref data joins as before
+    // @ts-expect-error: 4-arg join signature for expression join
     .join(
       { rdc1: 'ahbrp.ref_data_code' },
       knex.raw('SUBSTR(??, 1, 6)', ['cph.cph']),
@@ -73,7 +79,8 @@ export function findHoldingQuery(parameters) {
       'rdc.ref_data_code_pk',
       'rdcd.ref_data_code_pk'
     )
-    // WHERE clauses
+
+    // WHERE clauses (existing)
     .where('fi.feature_involvement_type', 'CPHHOLDERSHIP')
     .whereNull('fi.feature_involv_to_date')
     .where('fs.feature_status_code', '<>', 'INACTIVE')
@@ -84,10 +91,17 @@ export function findHoldingQuery(parameters) {
     .whereRaw("rdc1.effective_to_date = DATE '9999-12-31'")
     .where('cph.cph', cph)
 
-    // SELECT (camelCase aliases; Knex will quote them for Oracle)
+    // WHERE clauses (NEW from updated SQL)
+    .whereNull('fs.feature_state_to_dttm') // FS.FEATURE_STATE_TO_DTTM IS NULL
+    .whereNull('pr.party_role_to_date') // PR.PARTY_ROLE_TO_DATE IS NULL
+    .where('ps.party_status_code', '<>', 'INACTIVE') // PS.PARTY_STATUS_CODE <> 'INACTIVE'
+    .whereNotNull('ps.party_state_to_dttm') // PS.PARTY_STATE_TO_DTTM IS NOT NULL
+
+    // SELECT (keep existing aliases; add the new one)
     .select({
       cph: 'cph.cph',
       cphType: 'cph.cph_type',
+      cphHolderCustomerId: 'party.party_id',
       locationId: 'loc.location_id',
       laName: 'rdcd.short_description',
       laNumber: 'rdc.code'
