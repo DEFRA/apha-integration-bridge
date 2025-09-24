@@ -9,16 +9,9 @@ test('returns the expected query for valid parameters', () => {
 
   expect(sql).toMatchSnapshot()
 
-  expect(bindings).toEqual([
-    'PRIMARYLOCATION',
-    'INACTIVE',
-    'INACTIVE',
-    locationId,
-    'PRIMARYLOCATION',
-    'INACTIVE',
-    'INACTIVE',
-    locationId
-  ])
+  expect(bindings).toEqual({
+    location: locationId
+  })
 })
 
 test('throws if the parameters are invalid', () => {

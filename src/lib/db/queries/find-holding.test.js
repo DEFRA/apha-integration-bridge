@@ -13,13 +13,9 @@ test('returns the expected query for valid parameters', () => {
 
   expect(sql).toMatchSnapshot()
 
-  expect(bindings).toEqual([
-    'CPHHOLDERSHIP',
-    'INACTIVE',
-    'LOCAL_AUTHORITY_COUNTY_PARISH',
-    '01/000/0333',
-    'INACTIVE'
-  ])
+  expect(bindings).toEqual({
+    cph: '01/000/0333'
+  })
 })
 
 test('throws if the parameters are invalid', () => {

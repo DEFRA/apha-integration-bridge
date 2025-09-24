@@ -1,14 +1,11 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`returns the expected query for valid parameters 1`] = `
-"SELECT
-CPH.CPH CPH_ID,
-'Y' CPH_HOLDERSHIP_ACTIVE, 
-CPH_TYPE,
-PARTY_ID CPH_HOLDER_CUSTOMER_ID,
-LOCATION_ID,
-ref_data_code_desc.short_Description la_name,
-ref_data_Code.code la_number
+SELECT
+CPH.CPH cph,
+'Y' cphactive, 
+CPH_TYPE cphtype,
+PARTY_ID cphholdercustomerid,
+LOCATION_ID locationid,
+ref_data_code_desc.short_Description laname,
+ref_data_Code.code lanumber
 
 FROM
 AHBRP.CPH,
@@ -71,5 +68,4 @@ REF_DATA_CODE_1.EFFECTIVE_TO_DATE = '31/DEC/9999'
 AND
 SUBSTR(CPH.CPH,1,6) = REF_DATA_CODE_1.CODE
 AND
-CPH.CPH = :cph"
-`;
+CPH.CPH = :cph

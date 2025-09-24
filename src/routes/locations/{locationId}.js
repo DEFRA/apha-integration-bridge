@@ -118,32 +118,26 @@ const metrics = createMetricsLogger()
  * @param {Record<string, any>} row
  */
 function toAddress(row) {
-  if (!row) {
-    return null
-  }
-
-  return {
-    paonStartNumber: row.paonstartnumber ?? null,
-    paonStartNumberSuffix: row.paonstartnumbersuffix ?? null,
-    paonEndNumber: row.paonendnumber ?? null,
-    paonEndNumberSuffix: row.paonendnumbersuffix ?? null,
-    paonDescription: row.paondescription ?? null,
-    saonDescription: row.saondescription ?? null,
-    saonStartNumber: row.saonstartnumber ?? null,
-    saonStartNumberSuffix: row.saonstartnumbersuffix ?? null,
-    saonEndNumber: row.saonendnumber ?? null,
-    saonEndNumberSuffix: row.saonendnumbersuffix ?? null,
-    street: row.street ?? null,
-    locality: row.locality ?? null,
-    town: row.town ?? null,
-    administrativeAreaCounty:
-      row.county ??
-      row.administrativeareacounty ??
-      row.administrative_area ??
-      null,
-    postcode: row.postcode ?? null,
-    ukInternalCode: row.ukinternalcode ?? null,
-    countryCode: row.countrycode ?? null
+  if (row) {
+    return {
+      paonStartNumber: row.paonstartnumber ?? null,
+      paonStartNumberSuffix: row.paonstartnumbersuffix ?? null,
+      paonEndNumber: row.paonendnumber ?? null,
+      paonEndNumberSuffix: row.paonendnumbersuffix ?? null,
+      paonDescription: row.paondescription ?? null,
+      saonDescription: row.saondescription ?? null,
+      saonStartNumber: row.saonstartnumber ?? null,
+      saonStartNumberSuffix: row.saonstartnumbersuffix ?? null,
+      saonEndNumber: row.saonendnumber ?? null,
+      saonEndNumberSuffix: row.saonendnumbersuffix ?? null,
+      street: row.street ?? null,
+      locality: row.locality ?? null,
+      town: row.town ?? null,
+      administrativeAreaCounty: row.county ?? null,
+      postcode: row.postcode ?? null,
+      ukInternalCode: row.ukinternalcode ?? null,
+      countryCode: row.countrycode ?? null
+    }
   }
 }
 
@@ -185,15 +179,22 @@ export async function handler(request, h) {
 
     request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
 
+    if (rows.length < 1) {
+      /**
+       * if no rows were returned, throw a 404 error
+       */
+      throw new HTTPException('NOT_FOUND', 'Location not found')
+    }
+
     const address = toAddress(rows[0])
 
     // Build relationship datasets
     const commoditiesIds = new Set()
     const facilitiesIds = new Set()
 
-    for (const r of rows) {
-      const unitId = r.unitid
-      const unitType = r.unittype
+    for (const row of rows) {
+      const unitId = row.unitid
+      const unitType = row.unittype
 
       if (!unitId) {
         continue
@@ -244,6 +245,7 @@ export async function handler(request, h) {
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
+    console.error(error)
     request.logger?.error(error)
 
     let httpException = error

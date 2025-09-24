@@ -1,5 +1,8 @@
 import Joi from 'joi'
 import { query } from '../operations/query.js'
+import { loadSQL } from '../utils/load-sql.js'
+
+const sql = loadSQL(import.meta.filename)
 
 /**
  * @typedef {import('joi')} Joi
@@ -28,87 +31,18 @@ export const FindHoldingSchema = Joi.object({
  * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
  *
  * @param {unknown} parameters
- * @returns {Query}
+ * @returns {{ sql: string; }} The query and its bindings
  */
 export function findHoldingQuery(parameters) {
   const { value, error } = FindHoldingSchema.validate(parameters)
+
   if (error) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
   const cph = `${value.countyId}/${value.parishId}/${value.holdingId}`
 
-  const knex = query()
-
-  const qb = knex
-    .from({ cph: 'ahbrp.cph' })
-    .join({ fi: 'ahbrp.feature_involvement' }, 'cph.cph', 'fi.cph')
-    .join({ loc: 'ahbrp.location' }, 'fi.feature_pk', 'loc.feature_pk')
-    .join({ fs: 'ahbrp.feature_state' }, 'fi.feature_pk', 'fs.feature_pk')
-
-    // NEW: party role / party / party state chain
-    .join({ pr: 'ahbrp.party_role' }, 'fi.party_role_pk', 'pr.party_role_pk')
-    .join({ party: 'ahbrp.party' }, 'pr.party_pk', 'party.party_pk')
-    .join({ ps: 'ahbrp.party_state' }, 'party.party_pk', 'ps.party_pk')
-
-    // Same ref data joins as before
-    // @ts-expect-error: 4-arg join signature for expression join
-    .join(
-      { rdc1: 'ahbrp.ref_data_code' },
-      knex.raw('SUBSTR(??, 1, 6)', ['cph.cph']),
-      '=',
-      knex.ref('rdc1.code')
-    )
-    .join(
-      { rdcm: 'ahbrp.ref_data_code_map' },
-      'rdcm.to_ref_data_code_pk',
-      'rdc1.ref_data_code_pk'
-    )
-    .join(
-      { rdsm: 'ahbrp.ref_data_set_map' },
-      'rdsm.ref_data_set_map_pk',
-      'rdcm.ref_data_set_map_pk'
-    )
-    .join(
-      { rdc: 'ahbrp.ref_data_code' },
-      'rdcm.from_ref_data_code_pk',
-      'rdc.ref_data_code_pk'
-    )
-    .join(
-      { rdcd: 'ahbrp.ref_data_code_desc' },
-      'rdc.ref_data_code_pk',
-      'rdcd.ref_data_code_pk'
-    )
-
-    // WHERE clauses (existing)
-    .where('fi.feature_involvement_type', 'CPHHOLDERSHIP')
-    .whereNull('fi.feature_involv_to_date')
-    .where('fs.feature_status_code', '<>', 'INACTIVE')
-    .where('rdsm.ref_data_set_map_name', 'LOCAL_AUTHORITY_COUNTY_PARISH')
-    .whereRaw("rdsm.effective_to_date = DATE '9999-12-31'")
-    .whereRaw("rdcm.effective_to_date = DATE '9999-12-31'")
-    .whereRaw("rdc.effective_to_date = DATE '9999-12-31'")
-    .whereRaw("rdc1.effective_to_date = DATE '9999-12-31'")
-    .where('cph.cph', cph)
-
-    // WHERE clauses (NEW from updated SQL)
-    .whereNull('fs.feature_state_to_dttm') // FS.FEATURE_STATE_TO_DTTM IS NULL
-    .whereNull('pr.party_role_to_date') // PR.PARTY_ROLE_TO_DATE IS NULL
-    .where('ps.party_status_code', '<>', 'INACTIVE') // PS.PARTY_STATUS_CODE <> 'INACTIVE'
-    .whereNotNull('ps.party_state_to_dttm') // PS.PARTY_STATE_TO_DTTM IS NOT NULL
-
-    // SELECT (keep existing aliases; add the new one)
-    .select({
-      cph: 'cph.cph',
-      cphType: 'cph.cph_type',
-      cphHolderCustomerId: 'party.party_id',
-      locationId: 'loc.location_id',
-      laName: 'rdcd.short_description',
-      laNumber: 'rdc.code'
-    })
-    .select(knex.raw(`'Y' as "cphActive"`))
-    .distinct()
-
-  const { sql, bindings } = qb.toSQL()
-  return { sql, bindings }
+  return {
+    sql: query().raw(sql, { cph }).toString()
+  }
 }
