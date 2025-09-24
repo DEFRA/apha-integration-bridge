@@ -15,25 +15,12 @@ const latencyGauge = meter.createGauge('oracledb.execution.time', {
  * execute a sql query against the supplied connection
  *
  * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
- * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
+ * @typedef {{ sql: string; marshallers?: Marshallers }} Query
  *
  * @param {import('oracledb').Connection} connection - the oracledb connection to use
  * @param {Query} query - a knex query builder instance
  */
 export async function execute(connection, query) {
-  let index = 0
-
-  const sql = query.sql.replace(/\?/g, () => {
-    index += 1
-    /**
-     * replace the '?' with ':0', ':1', etc. to match OracleDB's named binding
-     * syntax, as it does not support positional bindings like Knex does.
-     *
-     * @note knex does not support named bindings
-     */
-    return `:${index}`
-  })
-
   /**
    * @type {OracleDB.Result<any>}
    */
@@ -45,7 +32,7 @@ export async function execute(connection, query) {
       return tracer.startActiveSpan('oracledb#execute', async (span) => {
         try {
           // @ts-ignore - OracleDB does not have a type definition for `execute` that matches the usage here
-          const results = await connection.execute(sql, query.bindings, {
+          const results = await connection.execute(query.sql, [], {
             outFormat: OracleDB.OUT_FORMAT_OBJECT,
             fetchTypeHandler: function (metadata) {
               /**
