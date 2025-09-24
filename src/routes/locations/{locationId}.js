@@ -245,7 +245,6 @@ export async function handler(request, h) {
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
-    console.error(error)
     request.logger?.error(error)
 
     let httpException = error

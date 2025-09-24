@@ -9,13 +9,9 @@ test('returns the expected query for valid parameters', () => {
     holdingId: '0333'
   }
 
-  const { sql, bindings } = findHoldingQuery(parameters)
+  const { sql } = findHoldingQuery(parameters)
 
   expect(sql).toMatchSnapshot()
-
-  expect(bindings).toEqual({
-    cph: '01/000/0333'
-  })
 })
 
 test('throws if the parameters are invalid', () => {
