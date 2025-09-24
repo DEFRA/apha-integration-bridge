@@ -1,7 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`returns the expected query for valid parameters 1`] = `
-"SELECT
+SELECT
 CPH.CPH cph,
 'Y' cphactive, 
 CPH_TYPE cphtype,
@@ -71,5 +68,4 @@ REF_DATA_CODE_1.EFFECTIVE_TO_DATE = '31/DEC/9999'
 AND
 SUBSTR(CPH.CPH,1,6) = REF_DATA_CODE_1.CODE
 AND
-CPH.CPH = '01/000/0333'"
-`;
+CPH.CPH = :cph

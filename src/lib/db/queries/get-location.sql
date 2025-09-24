@@ -1,7 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`returns the expected query for valid parameters 1`] = `
-"SELECT
+SELECT
 LOCATION_ID,
 PAON_START_NUMBER paonstartnumber,
 PAON_START_NUMBER_SUFFIX paonstartnumbersuffix,
@@ -121,6 +118,4 @@ FS.FEATURE_STATUS_CODE <> 'INACTIVE'
 AND
 FS.FEATURE_STATE_TO_DTTM IS NULL
 AND
-LOCATION.LOCATION_ID= 'L97339'
-"
-`;
+LOCATION.LOCATION_ID= :location

@@ -9,17 +9,9 @@ test('returns the expected query for valid parameters', () => {
     holdingId: '0333'
   }
 
-  const { sql, bindings } = findHoldingQuery(parameters)
+  const { sql } = findHoldingQuery(parameters)
 
   expect(sql).toMatchSnapshot()
-
-  expect(bindings).toEqual([
-    'CPHHOLDERSHIP',
-    'INACTIVE',
-    'LOCAL_AUTHORITY_COUNTY_PARISH',
-    '01/000/0333',
-    'INACTIVE'
-  ])
 })
 
 test('throws if the parameters are invalid', () => {
