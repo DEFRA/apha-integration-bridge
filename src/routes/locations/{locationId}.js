@@ -91,7 +91,7 @@ export const options = {
     'utf8'
   ),
   plugins: {
-    'hapi-swagger': { id: 'get' }
+    'hapi-swagger': { id: 'get', security: [{ Bearer: [] }] }
   },
   validate: {
     params: GetLocationParamsSchema,
