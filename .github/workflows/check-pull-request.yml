@@ -39,9 +39,6 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           password: ${{ secrets.ORACLE_SECRET_KEY }}
 
-      - name: Docker pull Oracle DB
-        run: docker pull container-registry.oracle.com/database/free:latest
-
       - name: Start only oracledb compose service
         run: npm run compose:up -- --no-deps -d oracledb
 
