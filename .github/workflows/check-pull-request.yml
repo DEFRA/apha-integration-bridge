@@ -29,6 +29,9 @@ jobs:
         id: oracle
         run: ./.github/scripts/oracle-instant-client.sh
 
+      - name: Free up disk space (before)
+        run: ./.github/scripts/free-disk-space.sh
+
       - name: Login to oracle container registry
         uses: docker/login-action@v3
         with:
@@ -36,13 +39,10 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           password: ${{ secrets.ORACLE_SECRET_KEY }}
 
-      - name: Docker pull Oracle DB
-        run: docker pull container-registry.oracle.com/database/free:latest
-
       - name: Start only oracledb compose service
         run: npm run compose:up -- --no-deps -d oracledb
 
-      - run: npm i
+      - run: npm ci
 
       - run: npm run format:check
 
@@ -52,21 +52,8 @@ jobs:
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
 
-      - name: Free disk space (Docker and node_modules)
-        if: always()
-        run: |
-          echo "Stopping and removing all containers..."
-          docker ps -aq | xargs -r docker rm -f || true
-          echo "Removing all Docker images..."
-          docker images -aq | xargs -r docker rmi -f || true
-          echo "Pruning builder cache..."
-          docker builder prune -af || true
-          echo "Pruning system (networks/volumes)..."
-          docker system prune -af --volumes || true
-          echo "Removing node_modules to free space..."
-          rm -rf node_modules || true
-          echo "Disk usage after cleanup:"
-          df -h
+      - name: Free up disk space (after)
+        run: ./.github/scripts/free-disk-space.sh
 
       - name: Test Docker Image Build
         run: |
