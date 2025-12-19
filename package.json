@@ -54,6 +54,7 @@
     "hapi-pulse": "3.0.1",
     "hapi-swagger": "17.3.2",
     "https-proxy-agent": "7.0.6",
+    "i18n-iso-countries": "7.13.0",
     "joi": "17.13.3",
     "jose": "6.0.11",
     "knex": "3.1.0",

@@ -208,6 +208,54 @@ const config = convict({
       env: 'MONGO_DATABASE'
     }
   },
+  salesforce: {
+    enabled: {
+      doc: 'Enable Salesforce integration',
+      format: Boolean,
+      default: false,
+      env: 'SALESFORCE_ENABLED'
+    },
+    baseUrl: {
+      doc: 'Salesforce instance base URL (e.g. https://my-instance.my.salesforce.com)',
+      format: 'url',
+      nullable: true,
+      default: null,
+      env: 'SALESFORCE_BASE_URL'
+    },
+    authUrl: {
+      doc: 'Salesforce OAuth2 token endpoint. Defaults to {baseUrl}/services/oauth2/token',
+      format: 'url',
+      nullable: true,
+      default: null,
+      env: 'SALESFORCE_AUTH_URL'
+    },
+    clientId: {
+      doc: 'Salesforce connected app client id',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'SALESFORCE_CLIENT_ID'
+    },
+    clientSecret: {
+      doc: 'Salesforce connected app client secret',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'SALESFORCE_CLIENT_SECRET'
+    },
+    apiVersion: {
+      doc: 'Salesforce API version to target (e.g. v62.0)',
+      format: String,
+      default: 'v62.0',
+      env: 'SALESFORCE_API_VERSION'
+    },
+    requestTimeoutMs: {
+      doc: 'HTTP timeout in milliseconds for Salesforce calls',
+      format: Number,
+      default: 10000,
+      env: 'SALESFORCE_TIMEOUT_MS'
+    }
+  },
   httpProxy: {
     doc: 'HTTP Proxy URL',
     format: String,
