@@ -1,6 +1,6 @@
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 
-const customer1 = new HTTPObjectResponse('customers', 'WS-76512', {
+const customer1 = new HTTPObjectResponse('customers', 'C123456', {
   type: 'customers',
   id: 'C123456',
   subType: 'ORGANISATION',

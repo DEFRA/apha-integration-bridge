@@ -47,7 +47,8 @@ const options = {
     headers: Joi.object({
       accept: Joi.string()
         .default('application/vnd.apha.1+json')
-        .description('Accept header for API versioning')
+        .description('Accept header for API versioning'),
+      'Content-Type': Joi.string().allow('application/json')
     }).options({ allowUnknown: true }),
     failAction: HTTPException.failValidation
   },
@@ -67,8 +68,12 @@ async function handler(request, h) {
     self: `/customers/find`
   })
 
+  const { ids } = request.payload
+
   for (const customer of all) {
-    response.add(customer)
+    if (ids.includes(customer.id)) {
+      response.add(customer)
+    }
   }
   return h.response(response.toResponse()).code(200)
 }
