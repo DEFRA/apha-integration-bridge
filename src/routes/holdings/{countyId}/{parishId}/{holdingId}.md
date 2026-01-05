@@ -13,7 +13,9 @@ Below is an example of how to consume this endpoint using the Swagger Client lib
 ```js
 import SwaggerClient from 'swagger-client'
 
-const client = await new SwaggerClient(`${url}/openapi.json`)
+const client = await new SwaggerClient(
+  `${url}/.well-known/openapi/v1/openapi.json`
+)
 
 const response = await client.apis.holdings.find({
   countyId: '45',

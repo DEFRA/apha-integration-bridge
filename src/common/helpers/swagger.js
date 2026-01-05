@@ -8,13 +8,16 @@ Welcome to the APH Integration Bridge API documentation. This API provides secur
 [Find out more about this API](https://github.com/DEFRA/apha-api-documentation)
 `
 
+const OPENAPI_JSON_PATH = '/.well-known/openapi/v1/openapi.json'
+
 export const openApi = {
   plugin: swagger,
   options: {
+    jsonPath: OPENAPI_JSON_PATH,
     OAS: 'v3.0',
     info: {
       title: 'APHA Integration Bridge API',
-      version: '0.0.0',
+      version: '1.0.0',
       description
     },
     tags: [
