@@ -1,18 +1,15 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
+const ActivityId = Joi.string().label('Activity ID')
+const ActivityType = Joi.string()
+  .valid('activities')
+  .required()
+  .label('Activity Type')
+  .description('The “type” value will be "activities" for this endpoint.')
 
-export const ActivitiesReference = Joi.object({
-  data: Joi.object({
-    type: Joi.string()
-      .valid('activities')
-      .required()
-      .label('Activity Type')
-      .description('The “type” value will be "activities" for this endpoint.'),
-    /**
-     * an activity ID is optional, as it may be referenced by a composite identifier
-     */
-    id: Joi.string().label('Activity ID')
-  }).required(),
-  links: LinksReference
+export const Activities = Joi.object({
+  type: ActivityType,
+  id: ActivityId,
+  activityName: Joi.string().required(),
+  default: Joi.boolean().required()
 })

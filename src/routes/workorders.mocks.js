@@ -1,5 +1,26 @@
 import { HTTPObjectResponse } from '../lib/http/http-response.js'
 
+const activity1 = {
+  type: 'activities',
+  id: 'WSA00010',
+  activityName: 'Arrange Visit',
+  default: true
+}
+
+const activity2 = {
+  type: 'activities',
+  id: 'WSA00020',
+  activityName: 'Carry Out Visit',
+  default: false
+}
+
+const activity3 = {
+  type: 'activities',
+  id: 'WSA00030',
+  activityName: 'Capture Sample Details',
+  default: true
+}
+
 export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
   status: 'Open',
   startDate: '2024-01-01T09:00:00+00:00',
@@ -11,7 +32,8 @@ export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
   businessArea: 'Endemic Notifiable Disease',
   aim: 'Contain / Control / Eradicate Endemic Disease',
   latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-  phase: 'EXPOSURETRACKING'
+  phase: 'EXPOSURETRACKING',
+  activities: [activity1]
 })
 
 first.relationship(
@@ -62,18 +84,6 @@ first.relationship(
   )
 )
 
-first.relationship(
-  'activities',
-  new HTTPObjectResponse(
-    'activities',
-    undefined,
-    {},
-    {
-      self: '/workorders/WS-76512/relationships/activities'
-    }
-  )
-)
-
 export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
   status: 'Open',
   startDate: '2024-01-03T09:00:00+00:00',
@@ -85,7 +95,8 @@ export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
   businessArea: 'Endemic Notifiable Disease',
   aim: 'Contain / Control / Eradicate Endemic Disease',
   latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-  phase: 'EXPOSURETRACKING'
+  phase: 'EXPOSURETRACKING',
+  activities: []
 })
 
 second.relationship(
@@ -136,18 +147,6 @@ second.relationship(
   )
 )
 
-second.relationship(
-  'activities',
-  new HTTPObjectResponse(
-    'activities',
-    'test',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/activities'
-    }
-  )
-)
-
 export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
   status: 'Open',
   startDate: '2024-03-14T10:15:00+00:00',
@@ -159,7 +158,8 @@ export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
   businessArea: 'Exotic Notifiable Disease',
   aim: 'Contain / Control / Eradicate Exotic Disease',
   latestActivityCompletionDate: '2024-03-15T15:20:00+00:00',
-  phase: 'EXPOSURETRACKING'
+  phase: 'EXPOSURETRACKING',
+  activities: [activity2, activity3]
 })
 
 third.relationship(
@@ -206,18 +206,6 @@ third.relationship(
     {},
     {
       self: '/workorders/WS-93218/relationships/commodity'
-    }
-  )
-)
-
-third.relationship(
-  'activities',
-  new HTTPObjectResponse(
-    'activities',
-    undefined,
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/activities'
     }
   )
 )
