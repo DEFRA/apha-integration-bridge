@@ -3,6 +3,7 @@ import { HTTPObjectResponse } from '../lib/http/http-response.js'
 export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
   status: 'Open',
   startDate: '2024-01-01T09:00:00+00:00',
+  earliestStartDate: '2024-01-01T09:00:00+00:00',
   activationDate: '2024-01-05T08:30:00+00:00',
   purpose: 'Initiate Incident Premises Spread Tracing Action',
   workArea: 'Tuberculosis',
@@ -76,6 +77,7 @@ first.relationship(
 export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
   status: 'Open',
   startDate: '2024-01-03T09:00:00+00:00',
+  earliestStartDate: '2024-01-01T09:00:00+00:00',
   activationDate: '2024-01-06T08:30:00+00:00',
   purpose: 'Initiate Incident Premises Spread Tracing Action',
   workArea: 'Tuberculosis',
@@ -149,6 +151,7 @@ second.relationship(
 export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
   status: 'Open',
   startDate: '2024-03-14T10:15:00+00:00',
+  earliestStartDate: '2024-01-01T09:00:00+00:00',
   activationDate: '2024-03-16T09:00:00+00:00',
   purpose: 'Implement contact tracing and movement restrictions',
   workArea: 'Avian Influenza',

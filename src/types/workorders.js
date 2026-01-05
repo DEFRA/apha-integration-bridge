@@ -26,6 +26,7 @@ export const Workorders = WorkordersData.keys({
   status: Joi.string().required().label('Status'),
   startDate: Joi.string().required().label('Start Date'),
   activationDate: Joi.string().required().label('Activation Date'),
+  earliestStartDate: Joi.string().required().label('Earliest Start Date'),
   purpose: Joi.string().label('Purpose'),
   workArea: Joi.string().label('Work Area'),
   country: Joi.string().label('Country'),

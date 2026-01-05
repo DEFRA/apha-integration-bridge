@@ -27,9 +27,7 @@ const PaginationWorkordersResponseSchema = Joi.object({
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 export const options = {
-  auth: {
-    mode: 'required'
-  },
+  auth: false,
   tags: ['api', 'workorders'],
   description:
     'Retrieve workorders filtered by activation date range and paginated',
