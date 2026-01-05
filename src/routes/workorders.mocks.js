@@ -21,6 +21,16 @@ const activity3 = {
   default: true
 }
 
+const facility1 = {
+  type: 'facilities',
+  id: 'U000030'
+}
+
+const facility2 = {
+  type: 'facilities',
+  id: 'U000040'
+}
+
 export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
   status: 'Open',
   startDate: '2024-01-01T09:00:00+00:00',
@@ -33,7 +43,8 @@ export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
   aim: 'Contain / Control / Eradicate Endemic Disease',
   latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
   phase: 'EXPOSURETRACKING',
-  activities: [activity1]
+  activities: [activity1],
+  facilities: [facility1]
 })
 
 first.relationship(
@@ -96,7 +107,8 @@ export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
   aim: 'Contain / Control / Eradicate Endemic Disease',
   latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
   phase: 'EXPOSURETRACKING',
-  activities: []
+  activities: [],
+  facilities: []
 })
 
 second.relationship(
@@ -135,18 +147,6 @@ second.relationship(
   )
 )
 
-second.relationship(
-  'facility',
-  new HTTPObjectResponse(
-    'facilities',
-    'U000030',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/facility'
-    }
-  )
-)
-
 export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
   status: 'Open',
   startDate: '2024-03-14T10:15:00+00:00',
@@ -159,7 +159,8 @@ export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
   aim: 'Contain / Control / Eradicate Exotic Disease',
   latestActivityCompletionDate: '2024-03-15T15:20:00+00:00',
   phase: 'EXPOSURETRACKING',
-  activities: [activity2, activity3]
+  activities: [activity2, activity3],
+  facilities: [facility2]
 })
 
 third.relationship(
