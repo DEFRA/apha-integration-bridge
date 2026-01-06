@@ -52,3 +52,8 @@ export const Locations = LocationsData.keys({
     })
   })
 })
+
+export const LocationsHydrated = Locations.keys({
+  livestockUnits: Joi.array().items(CommoditiesData).required(),
+  facilities: Joi.array().items(FacilitiesData).required()
+})

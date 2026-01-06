@@ -21,7 +21,27 @@ const location1 = new HTTPObjectResponse('locations', 'L123456', {
     administrativeAreaCounty: '',
     postcode: '',
     countryCode: ''
-  }
+  },
+  livestockUnits: [
+    {
+      type: 'commodities',
+      id: 'U000010'
+    },
+    {
+      type: 'commodities',
+      id: 'U000010'
+    }
+  ],
+  facilities: [
+    {
+      type: 'facilities',
+      id: 'F000010'
+    },
+    {
+      type: 'facilities',
+      id: 'F000011'
+    }
+  ]
 })
 
 location1.relationship(

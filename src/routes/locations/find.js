@@ -10,10 +10,10 @@ import {
 import { all } from './find.mocks.js'
 import { HTTPArrayResponse } from '../../lib/http/http-response.js'
 import { LinksReference } from '../../types/links.js'
-import { Locations } from '../../types/locations.js'
+import { LocationsHydrated } from '../../types/locations.js'
 
 const PostFindLocationsSchema = Joi.object({
-  data: Joi.array().items(Locations).required(),
+  data: Joi.array().items(LocationsHydrated).required(),
   links: LinksReference
 })
   .description('Location Details')
