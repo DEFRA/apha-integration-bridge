@@ -40,6 +40,7 @@ const Address = Joi.object({
 
 export const Locations = LocationsData.keys({
   address: Address.required(),
+  osMapReference: Joi.string().allow(null, '').label('OS map reference'),
   relationships: Joi.object({
     commodities: Joi.object({
       data: Joi.array().items(CommoditiesData).required(),

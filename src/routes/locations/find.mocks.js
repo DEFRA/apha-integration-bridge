@@ -3,6 +3,7 @@ import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 const location1 = new HTTPObjectResponse('locations', 'L123456', {
   type: 'locations',
   id: 'L123456',
+  osMapReference: 'SO1234567890',
   address: {
     paonStartNumber: 12,
     paonStartNumberSuffix: null,
