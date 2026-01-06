@@ -12,6 +12,9 @@ export const FacilitiesData = Joi.object({
 })
 
 export const FacilitiesReference = Joi.object({
-  data: FacilitiesData.required(),
+  data: Joi.alternatives(
+    FacilitiesData,
+    Joi.array().items(FacilitiesData)
+  ).required(),
   links: LinksReference
 })

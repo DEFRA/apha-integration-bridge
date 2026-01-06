@@ -1,8 +1,6 @@
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 
-const customer1 = new HTTPObjectResponse('customers', 'C123456', {
-  type: 'customers',
-  id: 'C123456',
+export const customer1 = new HTTPObjectResponse('customers', 'C123456', {
   subType: 'ORGANISATION',
   businessName: 'Mr and Mrs. M J & S C Pugh',
   address: {
@@ -35,4 +33,34 @@ const customer1 = new HTTPObjectResponse('customers', 'C123456', {
   }
 })
 
-export const all = [customer1]
+export const customer2 = new HTTPObjectResponse('customers', 'C234567', {
+  subType: 'ORGANISATION',
+  businessName: 'Barney McGrue',
+  address: {
+    paonStartNumber: 12,
+    paonStartNumberSuffix: null,
+    paonEndNumber: null,
+    paonEndNumberSuffix: '',
+    paonDescription: '',
+    saonDescription: '',
+    saonStartNumber: null,
+    saonStartNumberSuffix: null,
+    saonEndNumber: null,
+    saonEndNumberSuffix: '',
+    street: '',
+    locality: null,
+    town: '',
+    administrativeAreaCounty: '',
+    postcode: '',
+    countryCode: ''
+  },
+  contactDetails: {
+    primary: {
+      fullName: 'Barney McGrue',
+      emailAddress: 'barney@example.com',
+      phoneNumber: '07111 111111'
+    }
+  }
+})
+
+export const all = [customer1, customer2]

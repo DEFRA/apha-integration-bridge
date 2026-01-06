@@ -35,20 +35,23 @@ const BusinessContactDetails = Joi.object({
   secondary: ContactDetails
 })
 
-export const BusinessCustomersData = Joi.object({
+export const CustomersData = Joi.object({
   type: Joi.string()
     .valid('customers')
     .required()
     .label('Customer Type')
     .description('The “type” value will be "customers" for this endpoint.'),
-  id: Joi.string().required().label('Customer ID'),
+  id: Joi.string().required().label('Customer ID')
+})
+
+export const BusinessCustomersData = CustomersData.keys({
   subType: Joi.string().required().valid('ORGANISATION'),
   businessName: Joi.string().required().label('Business Name'),
   address: AddressData,
   contactDetails: BusinessContactDetails
 })
 
-export const CustomersData = Joi.alternatives(BusinessCustomersData)
+export const Customers = Joi.alternatives(BusinessCustomersData)
 
 export const CustomersReference = Joi.object({
   data: CustomersData.required(),

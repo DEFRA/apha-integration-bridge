@@ -43,11 +43,17 @@ export const Locations = LocationsData.keys({
   osMapReference: Joi.string().allow(null, '').label('OS map reference'),
   relationships: Joi.object({
     commodities: Joi.object({
-      data: Joi.array().items(CommoditiesData).required(),
+      data: Joi.alternatives(
+        CommoditiesData,
+        Joi.array().items(CommoditiesData)
+      ).required(),
       links: LinksReference
     }),
     facilities: Joi.object({
-      data: Joi.array().items(FacilitiesData).required(),
+      data: Joi.alternatives(
+        FacilitiesData,
+        Joi.array().items(FacilitiesData)
+      ).required(),
       links: LinksReference
     })
   })

@@ -8,12 +8,12 @@ import {
 } from '../../lib/http/http-exception.js'
 
 import { all } from './find.mocks.js'
-import { CustomersData } from '../../types/customers.js'
+import { Customers } from '../../types/customers.js'
 import { HTTPArrayResponse } from '../../lib/http/http-response.js'
 import { LinksReference } from '../../types/links.js'
 
 const PostFindCustomersSchema = Joi.object({
-  data: Joi.array().items(CustomersData).required(),
+  data: Joi.array().items(Customers).required(),
   links: LinksReference
 })
   .description('Customer Details')

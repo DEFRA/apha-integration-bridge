@@ -20,6 +20,7 @@ export const HoldingsReference = Joi.object({
 
 export const Holdings = HoldingsData.keys({
   cphType: Joi.string().required().label('CPH Type'),
+  localAuthority: Joi.string().label('Local Authority'),
   relationships: Joi.object({
     location: LocationsReference.optional(),
     cphHolder: CustomersReference.optional()
