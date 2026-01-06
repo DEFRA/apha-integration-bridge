@@ -115,7 +115,7 @@ second.relationship(
   'customer',
   new HTTPObjectResponse(
     'customers',
-    'C123457',
+    'C123456',
     {},
     {
       self: '/workorders/WS-76513/relationships/customer'
