@@ -25,7 +25,9 @@ const AddressData = Joi.object({
 })
 
 const ContactDetails = Joi.object({
-  fullName: Joi.string().allow(null, '').label('Full name')
+  fullName: Joi.string().allow(null, '').label('Full name'),
+  emailAddress: Joi.string().allow(null, '').label('Email address'),
+  phoneNumber: Joi.string().allow(null, '').label('Phone number')
 })
 
 const BusinessContactDetails = Joi.object({

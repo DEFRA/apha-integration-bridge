@@ -25,7 +25,9 @@ const customer1 = new HTTPObjectResponse('customers', 'C123456', {
   },
   contactDetails: {
     primary: {
-      fullName: 'Mr. M J Pugh'
+      fullName: 'Mr. M J Pugh',
+      emailAddress: 'mjpugh@example.com',
+      phoneNumber: '07111 111111'
     },
     secondary: {
       fullName: 'Mrs. S C Pugh'
