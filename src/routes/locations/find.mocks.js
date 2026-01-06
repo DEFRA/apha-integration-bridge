@@ -25,7 +25,8 @@ const location1 = new HTTPObjectResponse('locations', 'L123456', {
   livestockUnits: [
     {
       type: 'commodities',
-      id: 'U000010'
+      id: 'U000010',
+      fieldStockNumber: 10
     },
     {
       type: 'commodities',

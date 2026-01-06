@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-import { CommoditiesData } from './commodities.js'
+import { Commodities, CommoditiesData } from './commodities.js'
 import { FacilitiesData } from './facilities.js'
 import { LinksReference } from './links.js'
 
@@ -54,6 +54,6 @@ export const Locations = LocationsData.keys({
 })
 
 export const LocationsHydrated = Locations.keys({
-  livestockUnits: Joi.array().items(CommoditiesData).required(),
+  livestockUnits: Joi.array().items(Commodities).required(),
   facilities: Joi.array().items(FacilitiesData).required()
 })
