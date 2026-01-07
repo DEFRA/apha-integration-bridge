@@ -35,33 +35,68 @@ export const customer1 = new HTTPObjectResponse('customers', 'C123456', {
 })
 
 export const customer2 = new HTTPObjectResponse('customers', 'C234567', {
-  subType: 'ORGANISATION',
-  businessName: 'Barney McGrue',
-  address: {
-    paonStartNumber: 12,
-    paonStartNumberSuffix: null,
-    paonEndNumber: null,
-    paonEndNumberSuffix: '',
-    paonDescription: '',
-    saonDescription: '',
-    saonStartNumber: null,
-    saonStartNumberSuffix: null,
-    saonEndNumber: null,
-    saonEndNumberSuffix: '',
-    street: '',
-    locality: null,
-    town: '',
-    administrativeAreaCounty: '',
-    postcode: '',
-    countryCode: ''
-  },
-  contactDetails: {
-    primary: {
-      fullName: 'Barney McGrue',
-      emailAddress: 'barney@example.com',
-      phoneNumber: '07111 111111'
+  subType: 'PERSON',
+  title: 'Mr',
+  firstName: 'John',
+  middleName: 'Chris',
+  lastName: 'Briggs',
+  addresses: [
+    {
+      paonStartNumber: 12,
+      paonStartNumberSuffix: null,
+      paonEndNumber: '',
+      paonEndNumberSuffix: '',
+      paonDescription: '',
+      saonDescription: '',
+      saonStartNumber: '',
+      saonStartNumberSuffix: null,
+      saonEndNumber: '',
+      saonEndNumberSuffix: '',
+      street: '',
+      locality: null,
+      town: '',
+      administrativeAreaCounty: '',
+      postcode: '',
+      countryCode: '',
+      isPreferred: false
+    },
+    {
+      paonStartNumber: 12,
+      paonStartNumberSuffix: null,
+      paonEndNumber: '',
+      paonEndNumberSuffix: '',
+      paonDescription: '',
+      saonDescription: '',
+      saonStartNumber: '',
+      saonStartNumberSuffix: null,
+      saonEndNumber: '',
+      saonEndNumberSuffix: '',
+      street: '',
+      locality: null,
+      town: '',
+      administrativeAreaCounty: '',
+      postcode: '',
+      countryCode: '',
+      isPreferred: true
     }
-  },
+  ],
+  contactDetails: [
+    {
+      type: 'MOBILE',
+      number: '07756896588',
+      isPreferred: true
+    },
+    {
+      type: 'LANDLINE',
+      number: '01856891000',
+      isPreferred: false
+    },
+    {
+      type: 'EMAIL',
+      address: 'contactme@mygreatfarm.co.uk',
+      isPreferred: false
+    }
+  ],
   relationships: {
     srabpiPlant: {
       data: {

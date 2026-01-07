@@ -36,7 +36,30 @@ export const BusinessCustomersData = CustomersData.keys({
   relationships: CustomersRelationships
 })
 
-export const Customers = Joi.alternatives(BusinessCustomersData)
+const IndividualContactDetails = Joi.object({
+  type: Joi.string().valid('MOBILE', 'LANDLINE', 'EMAIL').required(),
+  number: Joi.string().optional(),
+  address: Joi.string().optional(),
+  isPreferred: Joi.boolean()
+})
+
+export const IndividualCustomersData = CustomersData.keys({
+  subType: Joi.string().required().valid('PERSON'),
+  title: Joi.string().required(),
+  firstName: Joi.string().required(),
+  middleName: Joi.string().optional(),
+  lastName: Joi.string().required(),
+  addresses: Joi.array()
+    .items(Address.keys({ isPreferred: Joi.boolean() }))
+    .required(),
+  contactDetails: Joi.array().items(IndividualContactDetails),
+  relationships: CustomersRelationships
+})
+
+export const Customers = Joi.alternatives(
+  BusinessCustomersData,
+  IndividualCustomersData
+)
 
 export const CustomersReference = Joi.object({
   data: CustomersData.required(),
