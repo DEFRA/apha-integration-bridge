@@ -1,6 +1,6 @@
 ## Fetch workorder
 
-via find endpoint, hydrated with activities and facilities already.
+via find endpoint, hydrated with activities already.
 
 **Question** - why is there a commodities relationship, where a commodity is only defind with reference to a location?
 **Question** - should we preserve the relationship links **even when** we hydrate data?

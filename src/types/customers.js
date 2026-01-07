@@ -1,6 +1,7 @@
 import Joi from 'joi'
 
 import { LinksReference } from './links.js'
+import { SrabpiPlantReference } from './srabpi-plants.js'
 
 const OptionalString = Joi.string().allow(null, '')
 const OptionalNumber = Joi.number().allow(null)
@@ -44,11 +45,16 @@ export const CustomersData = Joi.object({
   id: Joi.string().required().label('Customer ID')
 })
 
+export const CustomersRelationships = Joi.object({
+  srabpiPlant: SrabpiPlantReference.optional()
+})
+
 export const BusinessCustomersData = CustomersData.keys({
   subType: Joi.string().required().valid('ORGANISATION'),
   businessName: Joi.string().required().label('Business Name'),
   address: AddressData,
-  contactDetails: BusinessContactDetails
+  contactDetails: BusinessContactDetails,
+  relationships: CustomersRelationships
 })
 
 export const Customers = Joi.alternatives(BusinessCustomersData)

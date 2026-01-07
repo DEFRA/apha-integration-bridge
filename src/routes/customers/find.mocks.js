@@ -30,7 +30,8 @@ export const customer1 = new HTTPObjectResponse('customers', 'C123456', {
     secondary: {
       fullName: 'Mrs. S C Pugh'
     }
-  }
+  },
+  relationships: {}
 })
 
 export const customer2 = new HTTPObjectResponse('customers', 'C234567', {
@@ -59,6 +60,14 @@ export const customer2 = new HTTPObjectResponse('customers', 'C234567', {
       fullName: 'Barney McGrue',
       emailAddress: 'barney@example.com',
       phoneNumber: '07111 111111'
+    }
+  },
+  relationships: {
+    srabpiPlant: {
+      data: {
+        id: 'S12345',
+        type: 'srabpi-plants'
+      }
     }
   }
 })
