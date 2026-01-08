@@ -17,7 +17,9 @@ export const customer1 = new HTTPObjectResponse('customers', 'C123456', {
     street: '',
     locality: null,
     town: '',
-    administrativeAreaCounty: '',
+    // DSFAAP-2110
+    // > removed because not directly needed for WFM use case
+    // administrativeAreaCounty: '',
     postcode: '',
     countryCode: ''
   },
@@ -55,7 +57,9 @@ export const customer2 = new HTTPObjectResponse('customers', 'C234567', {
       street: '',
       locality: null,
       town: '',
-      administrativeAreaCounty: '',
+      // DSFAAP-2110
+      // > removed because not directly needed for WFM use case
+      // administrativeAreaCounty: '',
       postcode: '',
       countryCode: '',
       isPreferred: false
@@ -74,7 +78,9 @@ export const customer2 = new HTTPObjectResponse('customers', 'C234567', {
       street: '',
       locality: null,
       town: '',
-      administrativeAreaCounty: '',
+      // DSFAAP-2110
+      // > removed because not directly needed for WFM use case
+      // administrativeAreaCounty: '',
       postcode: '',
       countryCode: '',
       isPreferred: true

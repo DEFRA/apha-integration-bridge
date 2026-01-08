@@ -1,7 +1,6 @@
 import Joi from 'joi'
 
 import { Commodities, CommoditiesData } from './commodities.js'
-import { FacilitiesData } from './facilities.js'
 import { LinksReference } from './links.js'
 
 export const LocationsData = Joi.object({
@@ -32,7 +31,11 @@ export const Address = Joi.object({
   street: Joi.string().allow(null, ''),
   locality: Joi.string().allow(null, ''),
   town: Joi.string().allow(null, ''),
-  administrativeAreaCounty: Joi.string().allow(null, ''), // maps ADMINISTRATIVE_AREA
+
+  // DSFAAP-2110 - not needed
+  // > commented because not strictly necessary for WFM first use case
+  // > unless this is what is meant by local authority
+  // administrativeAreaCounty: Joi.string().allow(null, ''), // maps ADMINISTRATIVE_AREA
   postcode: Joi.string().allow(null, ''),
   ukInternalCode: Joi.string().allow(null, ''),
   countryCode: Joi.string().allow(null, '')
@@ -48,18 +51,22 @@ export const Locations = LocationsData.keys({
         Joi.array().items(CommoditiesData)
       ).required(),
       links: LinksReference
-    }),
-    facilities: Joi.object({
-      data: Joi.alternatives(
-        FacilitiesData,
-        Joi.array().items(FacilitiesData)
-      ).required(),
-      links: LinksReference
     })
+    // DSFAAP-2110 - not needed
+    // > only the id is needed, which can be acquired from the workorder directly
+    // facilities: Joi.object({
+    //   data: Joi.alternatives(
+    //     FacilitiesData,
+    //     Joi.array().items(FacilitiesData)
+    //   ).required(),
+    //   links: LinksReference
+    // })
   })
 })
 
 export const LocationsHydrated = Locations.keys({
-  livestockUnits: Joi.array().items(Commodities).required(),
-  facilities: Joi.array().items(FacilitiesData).required()
+  livestockUnits: Joi.array().items(Commodities).required()
+  // DSFAAP-2110 - not needed
+  // > only the id is needed, which can be acquired from the workorder directly
+  // facilities: Joi.array().items(FacilitiesData).required()
 })

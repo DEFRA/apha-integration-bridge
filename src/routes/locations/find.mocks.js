@@ -26,21 +26,25 @@ export const location1 = new HTTPObjectResponse('locations', 'L123456', {
     street: '',
     locality: null,
     town: '',
-    administrativeAreaCounty: '',
+    // DSFAAP-2110
+    // > removed because not strictly necessary for WFM
+    // administrativeAreaCounty: '',
     postcode: '',
     countryCode: ''
   },
-  livestockUnits: [commodity1.toResponse().data],
-  facilities: [
-    {
-      type: 'facilities',
-      id: 'F000010'
-    },
-    {
-      type: 'facilities',
-      id: 'F000011'
-    }
-  ]
+  livestockUnits: [commodity1.toResponse().data]
+  // DSFAAP-2110
+  // > removed because not strictly necessary for WFM
+  // facilities: [
+  //   {
+  //     type: 'facilities',
+  //     id: 'F000010'
+  //   },
+  //   {
+  //     type: 'facilities',
+  //     id: 'F000011'
+  //   }
+  // ]
 })
 
 location1.relationship(
@@ -53,25 +57,29 @@ location1.relationship(
   )
 )
 
-location1.relationship(
-  'facilities',
-  new HTTPObjectResponse(
-    'facilities',
-    'F000011',
-    {},
-    { self: `/locations/${location1.id}/relationships/facilities` }
-  )
-)
+// DSFAAP-2110
+// > removed because not strictly necessary for WFM
+// location1.relationship(
+//   'facilities',
+//   new HTTPObjectResponse(
+//     'facilities',
+//     'F000011',
+//     {},
+//     { self: `/locations/${location1.id}/relationships/facilities` }
+//   )
+// )
 
-location1.relationship(
-  'facilities',
-  new HTTPObjectResponse(
-    'facilities',
-    'F000010',
-    {},
-    { self: `/locations/${location1.id}/relationships/facilities` }
-  )
-)
+// DSFAAP-2110
+// > removed because not strictly necessary for WFM
+// location1.relationship(
+//   'facilities',
+//   new HTTPObjectResponse(
+//     'facilities',
+//     'F000010',
+//     {},
+//     { self: `/locations/${location1.id}/relationships/facilities` }
+//   )
+// )
 
 export const location2 = new HTTPObjectResponse('locations', 'L234567', {
   osMapReference: 'SO1234567890',
@@ -89,21 +97,25 @@ export const location2 = new HTTPObjectResponse('locations', 'L234567', {
     street: '',
     locality: null,
     town: '',
-    administrativeAreaCounty: '',
+    // DSFAAP-2110
+    // > removed because not strictly necessary for WFM
+    // administrativeAreaCounty: '',
     postcode: '',
     countryCode: ''
   },
-  livestockUnits: [commodity2.toResponse().data, commodity3.toResponse().data],
-  facilities: [
-    {
-      type: 'facilities',
-      id: 'F000010'
-    },
-    {
-      type: 'facilities',
-      id: 'F000011'
-    }
-  ]
+  livestockUnits: [commodity2.toResponse().data, commodity3.toResponse().data]
+  // DSFAAP-2110
+  // > removed because not strictly necessary for WFM
+  // facilities: [
+  //   {
+  //     type: 'facilities',
+  //     id: 'F000010'
+  //   },
+  //   {
+  //     type: 'facilities',
+  //     id: 'F000011'
+  //   }
+  // ]
 })
 
 location2.relationship(
