@@ -32,6 +32,11 @@ export const Workorders = WorkordersData.keys({
   country: Joi.string().label('Country'),
   businessArea: Joi.string().label('Business Area'),
   aim: Joi.string().label('Aim'),
+  species: Joi.string()
+    .label('Species')
+    .description(
+      'The species (or species list) that this workorder relates to'
+    ),
   latestActivityCompletionDate: Joi.string().label(
     'Latest Activity Completion Date'
   ),
