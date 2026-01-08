@@ -1,8 +1,48 @@
 import { HTTPObjectResponse } from '../lib/http/http-response.js'
+import { customer1, customer2 } from './customers/find.mocks.js'
+import { holding1, holding2 } from './holdings/find.mocks.js'
+import {
+  commodity1,
+  commodity3,
+  location1,
+  location2
+} from './locations/find.mocks.js'
 
-export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
+const activity1 = {
+  type: 'activities',
+  id: 'WSA00010',
+  activityName: 'Arrange Visit',
+  default: true
+}
+
+const activity2 = {
+  type: 'activities',
+  id: 'WSA00020',
+  activityName: 'Carry Out Visit',
+  default: false
+}
+
+const activity3 = {
+  type: 'activities',
+  id: 'WSA00030',
+  activityName: 'Capture Sample Details',
+  default: true
+}
+
+const facility1 = {
+  type: 'facilities',
+  id: 'U000030'
+}
+
+const facility2 = {
+  type: 'facilities',
+  id: 'U000040'
+}
+
+export const workorder1 = new HTTPObjectResponse('workorders', 'WS-76512', {
   status: 'Open',
   startDate: '2024-01-01T09:00:00+00:00',
+  earliestStartDate: '2024-01-01T09:00:00+00:00',
   activationDate: '2024-01-05T08:30:00+00:00',
   purpose: 'Initiate Incident Premises Spread Tracing Action',
   workArea: 'Tuberculosis',
@@ -10,72 +50,86 @@ export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
   businessArea: 'Endemic Notifiable Disease',
   aim: 'Contain / Control / Eradicate Endemic Disease',
   latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-  phase: 'EXPOSURETRACKING'
+  phase: 'EXPOSURETRACKING',
+  activities: [activity1]
 })
 
-first.relationship(
+workorder1.relationship(
   'customer',
   new HTTPObjectResponse(
     'customers',
-    'C123456',
+    customer1.id,
     {},
     {
-      self: '/workorders/WS-76512/relationships/customer'
+      self: `/workorders/${workorder1.id}/relationships/customer`
     }
   )
 )
 
-first.relationship(
+workorder1.relationship(
   'holding',
   new HTTPObjectResponse(
     'holdings',
-    '08/139/0167',
+    holding1.id,
     {},
     {
-      self: '/workorders/WS-76512/relationships/holding'
+      self: `/workorders/${workorder1.id}/relationships/holding`
     }
   )
 )
 
-first.relationship(
+workorder1.relationship(
   'location',
   new HTTPObjectResponse(
     'locations',
-    'L123456',
+    location1.id,
     {},
     {
-      self: '/workorders/WS-76512/relationships/location'
+      self: `/workorders/${workorder1.id}/relationships/location`
     }
   )
 )
 
-first.relationship(
+workorder1.relationship(
   'commodity',
   new HTTPObjectResponse(
     'commodities',
-    'U000010',
+    commodity1.id,
     {},
     {
-      self: '/workorders/WS-76512/relationships/commodity'
+      self: `/workorders/${workorder1.id}/relationships/commodity`
     }
   )
 )
 
-first.relationship(
-  'activities',
+workorder1.relationship(
+  'facilities',
   new HTTPObjectResponse(
-    'activities',
-    undefined,
+    'facilities',
+    facility1.id,
     {},
     {
-      self: '/workorders/WS-76512/relationships/activities'
+      self: `/workorders/${workorder1.id}/relationships/facilities`
     }
   )
 )
 
-export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
+workorder1.relationship(
+  'facilities',
+  new HTTPObjectResponse(
+    'facilities',
+    facility2.id,
+    {},
+    {
+      self: `/workorders/${workorder1.id}/relationships/facilities`
+    }
+  )
+)
+
+export const workorder2 = new HTTPObjectResponse('workorders', 'WS-76513', {
   status: 'Open',
   startDate: '2024-01-03T09:00:00+00:00',
+  earliestStartDate: '2024-01-01T09:00:00+00:00',
   activationDate: '2024-01-06T08:30:00+00:00',
   purpose: 'Initiate Incident Premises Spread Tracing Action',
   workArea: 'Tuberculosis',
@@ -83,140 +137,68 @@ export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
   businessArea: 'Endemic Notifiable Disease',
   aim: 'Contain / Control / Eradicate Endemic Disease',
   latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-  phase: 'EXPOSURETRACKING'
+  phase: 'EXPOSURETRACKING',
+  activities: [activity2, activity3]
 })
 
-second.relationship(
-  'customer',
-  new HTTPObjectResponse(
-    'customers',
-    'C123457',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/customer'
-    }
-  )
-)
-
-second.relationship(
+workorder2.relationship(
   'holding',
   new HTTPObjectResponse(
     'holdings',
-    '08/139/0168',
+    holding2.id,
     {},
     {
-      self: '/workorders/WS-76513/relationships/holding'
+      self: `/workorders/${workorder2.id}/relationships/holding`
     }
   )
 )
 
-second.relationship(
+workorder2.relationship(
   'location',
   new HTTPObjectResponse(
     'locations',
-    'L123457',
+    location2.id,
     {},
     {
-      self: '/workorders/WS-76513/relationships/location'
+      self: `/workorders/${workorder2.id}/relationships/location`
     }
   )
 )
 
-second.relationship(
-  'facility',
-  new HTTPObjectResponse(
-    'facilities',
-    'U000030',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/facility'
-    }
-  )
-)
-
-second.relationship(
-  'activities',
-  new HTTPObjectResponse(
-    'activities',
-    'test',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/activities'
-    }
-  )
-)
-
-export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
-  status: 'Open',
-  startDate: '2024-03-14T10:15:00+00:00',
-  activationDate: '2024-03-16T09:00:00+00:00',
-  purpose: 'Implement contact tracing and movement restrictions',
-  workArea: 'Avian Influenza',
-  country: 'WALES',
-  businessArea: 'Exotic Notifiable Disease',
-  aim: 'Contain / Control / Eradicate Exotic Disease',
-  latestActivityCompletionDate: '2024-03-15T15:20:00+00:00',
-  phase: 'EXPOSURETRACKING'
-})
-
-third.relationship(
-  'customer',
-  new HTTPObjectResponse(
-    'customers',
-    'C789654',
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/customer'
-    }
-  )
-)
-
-third.relationship(
-  'holding',
-  new HTTPObjectResponse(
-    'holdings',
-    '12/208/3348',
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/holding'
-    }
-  )
-)
-
-third.relationship(
-  'location',
-  new HTTPObjectResponse(
-    'locations',
-    'L078945',
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/location'
-    }
-  )
-)
-
-third.relationship(
+workorder2.relationship(
   'commodity',
   new HTTPObjectResponse(
     'commodities',
-    'U005321',
+    commodity3.id,
     {},
     {
-      self: '/workorders/WS-93218/relationships/commodity'
+      self: `/workorders/${workorder2.id}/relationships/commodity`
     }
   )
 )
 
-third.relationship(
-  'activities',
+workorder2.relationship(
+  'facilities',
   new HTTPObjectResponse(
-    'activities',
-    undefined,
+    'facilities',
+    facility2.id,
     {},
     {
-      self: '/workorders/WS-93218/relationships/activities'
+      self: `/workorders/${workorder2.id}/relationships/commodity`
     }
   )
 )
 
-export const all = [first, second, third]
+workorder2.relationship(
+  'customer',
+  new HTTPObjectResponse(
+    'customers',
+    customer2.id,
+    {},
+    {
+      self: `/workorders/${workorder2.id}/relationships/commodity`
+    }
+  )
+)
+
+export const all = [workorder1, workorder2]

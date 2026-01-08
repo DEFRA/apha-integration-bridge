@@ -5,7 +5,7 @@ import { CustomersReference } from './customers.js'
 import { HoldingsReference } from './holdings.js'
 import { LocationsReference } from './locations.js'
 import { CommoditiesReference } from './commodities.js'
-import { ActivitiesReference } from './activities.js'
+import { Activities } from './activities.js'
 import { FacilitiesReference } from './facilities.js'
 
 const WorkordersData = Joi.object({
@@ -26,21 +26,27 @@ export const Workorders = WorkordersData.keys({
   status: Joi.string().required().label('Status'),
   startDate: Joi.string().required().label('Start Date'),
   activationDate: Joi.string().required().label('Activation Date'),
+  earliestStartDate: Joi.string().required().label('Earliest Start Date'),
   purpose: Joi.string().label('Purpose'),
   workArea: Joi.string().label('Work Area'),
   country: Joi.string().label('Country'),
   businessArea: Joi.string().label('Business Area'),
   aim: Joi.string().label('Aim'),
+  species: Joi.string()
+    .label('Species')
+    .description(
+      'The species (or species list) that this workorder relates to'
+    ),
   latestActivityCompletionDate: Joi.string().label(
     'Latest Activity Completion Date'
   ),
   phase: Joi.string().label('Phase'),
+  activities: Joi.array().items(Activities).required().label('Activities'),
   relationships: Joi.object({
     customer: CustomersReference.optional(),
     holding: HoldingsReference.optional(),
-    facility: FacilitiesReference.optional(),
     location: LocationsReference.optional(),
     commodity: CommoditiesReference.optional(),
-    activities: ActivitiesReference.optional()
+    facilities: FacilitiesReference.optional()
   })
 })

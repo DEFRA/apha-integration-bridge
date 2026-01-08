@@ -15,3 +15,7 @@ export const CommoditiesReference = Joi.object({
   data: CommoditiesData.required(),
   links: LinksReference
 })
+
+export const Commodities = CommoditiesData.keys({
+  fieldStockNumber: Joi.number().allow(null)
+})
