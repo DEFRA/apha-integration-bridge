@@ -17,6 +17,7 @@ Core delivery platform Node.js Backend Template.
 - [Development helpers](#development-helpers)
   - [MongoDB Locks](#mongodb-locks)
   - [Proxy](#proxy)
+  - [Azure Service Bus](#azure-service-bus)
 - [Docker](#docker)
   - [Development image](#development-image)
   - [Production image](#production-image)
@@ -197,6 +198,17 @@ Helper methods are also available in `/src/helpers/mongo-lock.js`.
 
 We are using forward-proxy which is set up by default. To make use of this: `import { fetch } from 'undici'` then
 because of the `setGlobalDispatcher(new ProxyAgent(proxyUrl))` calls will use the ProxyAgent Dispatcher
+
+### Azure Service Bus
+
+The app consumes DEFRA Identity events from Azure Service Bus using `@azure/service-bus` in a background processor.
+
+- Enable/disable: set `SERVICEBUS_ENABLED=true` and provide `SERVICEBUS_CONNECTION_STRING` (must include `EntityPath`).
+- Concurrency/locks: `SERVICEBUS_MAX_CONCURRENT_CALLS` (default 5) and `SERVICEBUS_MAX_AUTO_LOCK_RENEW_MS` (default 5m).
+- Retry/settlement: messages are abandoned for retry on transient errors until `SERVICEBUS_MAX_DELIVERY_COUNT` (default 10), then dead-lettered. Validation/mapping errors dead-letter immediately.
+- Metrics: emits `servicebus.message.processed` (outcome, reason) and `servicebus.salesforce.forward` (outcome) via OTEL/EMF.
+- **Local dev:** compose includes the Azure Service Bus emulator (`servicebus-emulator` + `servicebus-sqledge`). Use the emulator connection string in `.env.local`, e.g. `Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=<SAS_KEY>;UseDevelopmentEmulator=true;`.
+- Salesforce forwarding: validated events are mapped to a Salesforce composite call; set Salesforce env vars or disable with `SALESFORCE_ENABLED=false` to just log/return the composite.
 
 If you are not using Wreck, Axios or Undici or a similar http that uses `Request`. Then you may have to provide the
 proxy dispatcher:
