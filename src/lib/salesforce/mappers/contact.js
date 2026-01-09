@@ -81,7 +81,7 @@ function buildContactRequest(contact, addressContext, apiVersion) {
     'MailingCity',
     'MailingState',
     'MailingPostalCode',
-    'MailingCountryCode',
+    null,
     'MailingCountry'
   )
 

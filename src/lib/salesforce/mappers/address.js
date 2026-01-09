@@ -344,7 +344,7 @@ function applyAddressToBody(
     body[postalField] = address.postalCode
   }
 
-  if (address.countryCode !== undefined) {
+  if (countryCodeField && address.countryCode !== undefined) {
     body[countryCodeField] = address.countryCode
   }
 

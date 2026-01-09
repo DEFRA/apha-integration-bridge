@@ -241,7 +241,6 @@ describe('customer-registration route → Salesforce composite', () => {
             APHA_Email__c: 'info@example.com',
             BillingPostalCode: 'ME18 5NF',
             BillingCity: 'Maidstone',
-            BillingCountryCode: 'GB',
             BillingCountry: 'United Kingdom'
           })
         }),
@@ -257,13 +256,18 @@ describe('customer-registration route → Salesforce composite', () => {
             Email: 'jane.doe@test.co.uk',
             MailingPostalCode: 'SG18 8XX',
             MailingCity: 'Stevenage',
-            MailingCountryCode: 'GB',
             MailingCountry: 'United Kingdom',
             AccountId: '@{AccountUpsert.id}'
           })
         })
       ]
     })
+
+    const [accountUpsert, contactUpsert] =
+      receivedCompositeBody.compositeRequest
+
+    expect(accountUpsert.body).not.toHaveProperty('BillingCountryCode')
+    expect(contactUpsert.body).not.toHaveProperty('MailingCountryCode')
   })
 
   test('returns composite only when Salesforce integration is disabled', async () => {

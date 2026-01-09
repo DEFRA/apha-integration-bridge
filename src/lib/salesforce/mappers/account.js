@@ -84,7 +84,7 @@ function buildAccountRequest(account, apiVersion) {
     'BillingCity',
     'BillingState',
     'BillingPostalCode',
-    'BillingCountryCode',
+    null,
     'BillingCountry'
   )
 
