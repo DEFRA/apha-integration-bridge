@@ -115,6 +115,8 @@ const ResponseSchema = Joi.object({
   .label('CustomerRegistrationResponse')
   .description('Result of forwarding the event to Salesforce')
 
+export { CustomerEventSchema }
+
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
