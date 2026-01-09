@@ -5,6 +5,8 @@ include:
   # run the oracledb service locally with mock data
   - path: './.docker-compose/oracledb.compose.yml'
     service: oracledb
+  - path: './.docker-compose/service-bus.compose.yml'
+    service: servicebus
 
 services:
   mongodb:
