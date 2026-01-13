@@ -35,6 +35,8 @@ const CONTACT_MAPPINGS = [
     transform: normaliseString,
     allowMissingFlag: true
   },
+  // Intentionally map to both the custom APHA field and the standard Email field
+  // because downstream processes read from each.
   {
     source: 'emailaddress1',
     target: 'Email',
@@ -89,7 +91,8 @@ function buildContactRequest(contact, addressContext, apiVersion) {
     body.APHA_AddressTypeCode__c = mailingAddress.addressType
   }
 
-  // Temporarily omit custom address flags/UPRN until the Salesforce org has these fields
+  // Temporarily omit custom address flags/UPRN until the Salesforce org has these fields;
+  // keep the extraction in the address mapper so we can wire them up once the fields exist.
   // if (mailingAddress?.uprn !== undefined) {
   //   body.APHA_MailingAddressUPRN__c = mailingAddress.uprn
   // }

@@ -239,6 +239,13 @@ const config = convict({
       format: Number,
       default: 10,
       env: 'SERVICEBUS_MAX_DELIVERY_COUNT'
+    },
+    subscriptionName: {
+      doc: 'Azure Service Bus topic subscription name',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'SERVICEBUS_SUBSCRIPTION'
     }
   },
   salesforce: {
@@ -274,6 +281,7 @@ const config = convict({
       format: String,
       nullable: true,
       default: null,
+      sensitive: true,
       env: 'SALESFORCE_CLIENT_SECRET'
     },
     apiVersion: {

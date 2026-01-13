@@ -10,6 +10,7 @@ class SalesforceClient {
     this.cachedToken = null
     this.cachedInstanceUrl = null
     this.expiresAt = 0
+    this.refreshPromise = null
   }
 
   /**
@@ -55,59 +56,80 @@ class SalesforceClient {
       return this.cachedToken
     }
 
-    if (!this.cfg.clientId || !this.cfg.clientSecret) {
-      throw new Error('Salesforce client credentials are not configured')
+    if (this.refreshPromise) {
+      return this.refreshPromise
     }
 
-    const authUrl = this.resolveAuthUrl()
-    const params = new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: this.cfg.clientId,
-      client_secret: this.cfg.clientSecret
-    })
+    this.refreshPromise = (async () => {
+      const refreshCheck = Date.now()
 
-    const { response, body } = await this.requestWithTimeout(
-      authUrl,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
-      },
-      {
-        timeoutMessage: 'Salesforce token request timed out'
+      if (
+        this.cachedToken &&
+        refreshCheck < this.expiresAt - TOKEN_EXPIRY_BUFFER_MS
+      ) {
+        return this.cachedToken
       }
-    )
 
-    if (!response.ok) {
-      logger?.error(
-        { status: response.status, body },
-        'Salesforce token request failed'
+      if (!this.cfg.clientId || !this.cfg.clientSecret) {
+        throw new Error('Salesforce client credentials are not configured')
+      }
+
+      const authUrl = this.resolveAuthUrl()
+      const params = new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: this.cfg.clientId,
+        client_secret: this.cfg.clientSecret
+      })
+
+      const { response, body } = await this.requestWithTimeout(
+        authUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        },
+        {
+          timeoutMessage: 'Salesforce token request timed out'
+        }
       )
 
-      throw new Error(
-        `Failed to fetch Salesforce token (${response.status}): ${this.safeMessage(
-          body
-        )}`
-      )
+      if (!response.ok) {
+        logger?.error(
+          { status: response.status, body: this.safeMessage(body) },
+          'Salesforce token request failed'
+        )
+
+        throw new Error(
+          `Failed to fetch Salesforce token (${response.status}): ${this.safeMessage(
+            body
+          )}`
+        )
+      }
+
+      const token = body.access_token
+
+      if (!token) {
+        throw new Error('Salesforce token response missing access_token')
+      }
+
+      this.cachedToken = token
+      this.cachedInstanceUrl = body.instance_url || this.cfg.baseUrl || null
+
+      const expiresIn = Number.parseInt(body.expires_in, 10)
+      const expiresInMs = Number.isFinite(expiresIn)
+        ? expiresIn * 1000
+        : 15 * 60 * 1000
+
+      this.expiresAt = Date.now() + expiresInMs
+
+      return this.cachedToken
+    })()
+
+    try {
+      return await this.refreshPromise
+    } finally {
+      this.refreshPromise = null
     }
-
-    const token = body.access_token
-
-    if (!token) {
-      throw new Error('Salesforce token response missing access_token')
-    }
-
-    this.cachedToken = token
-    this.cachedInstanceUrl = body.instance_url || this.cfg.baseUrl || null
-
-    const expiresIn = Number.parseInt(body.expires_in, 10)
-    const expiresInMs = Number.isFinite(expiresIn)
-      ? expiresIn * 1000
-      : 15 * 60 * 1000
-
-    this.expiresAt = Date.now() + expiresInMs
-
-    return this.cachedToken
   }
 
   /**
@@ -151,7 +173,7 @@ class SalesforceClient {
 
     if (!response.ok) {
       logger?.error(
-        { status: response.status, body },
+        { status: response.status, body: this.safeMessage(body) },
         'Salesforce composite request failed'
       )
 
@@ -241,21 +263,18 @@ class SalesforceClient {
 
     try {
       response = await fetch(url, { ...init, signal })
-    } catch (error) {
-      cancel()
+      const body = await this.parseResponseBody(response)
 
+      return { response, body }
+    } catch (error) {
       if (error.name === 'AbortError') {
         throw new Error(timeoutMessage || 'Request timed out')
       }
 
       throw error
+    } finally {
+      cancel()
     }
-
-    cancel()
-
-    const body = await this.parseResponseBody(response)
-
-    return { response, body }
   }
 }
 

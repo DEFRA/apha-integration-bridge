@@ -108,7 +108,7 @@ function isAddressDetailActive(detail) {
     return false
   }
 
-  if (validTo && validTo.getTime() <= now) {
+  if (validTo && validTo.getTime() < now) {
     return false
   }
 
@@ -140,7 +140,8 @@ function mapAddressDetail(detail, address) {
   const street = buildStreet([
     normaliseString(address?.defra_subbuildingname),
     normaliseString(address?.defra_buildingname) ||
-      normaliseString(address?.defra_premises),
+      normaliseString(address?.defra_premises) ||
+      normaliseString(address?.defra_buildingnumber),
     normaliseString(address?.defra_street),
     normaliseString(address?.defra_locality),
     normaliseString(address?.defra_dependentlocality)
@@ -191,6 +192,9 @@ function mapInlineContactAddress(contact) {
       allowMissingFlag: true
     }) ||
       valueWithFlag(contact, 'defra_addrbuildingnumber', {
+        allowMissingFlag: true
+      }) ||
+      valueWithFlag(contact, 'defra_addrpremises', {
         allowMissingFlag: true
       }),
     valueWithFlag(contact, 'defra_addrstreet', { allowMissingFlag: true }),

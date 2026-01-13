@@ -19,7 +19,7 @@ const AddressDetailsSchema = Joi.object({
   defra_phone: Joi.string(),
   defra_mobile: Joi.string(),
   defra_fax: Joi.string(),
-  emailaddress: Joi.string().email().allow(null)
+  emailaddress: Joi.string().trim().email().allow(null, '')
 })
   .label('AddressDetails')
   .unknown(true)
@@ -51,7 +51,7 @@ const ContactSchema = Joi.object({
   defra_title: Joi.alternatives().try(Joi.string(), Joi.number()),
   firstname: Joi.string(),
   lastname: Joi.string(),
-  emailaddress1: Joi.string().email().allow(null),
+  emailaddress1: Joi.string().trim().email().allow(null, ''),
   birthdate: Joi.string().isoDate(),
   telephone1: Joi.string(),
   address1_telephone1: Joi.string()
@@ -63,7 +63,7 @@ const AccountSchema = Joi.object({
   accountid: Joi.string().required(),
   defra_uniquereference: Joi.string(),
   name: Joi.string(),
-  emailaddress1: Joi.string().email().allow(null),
+  emailaddress1: Joi.string().trim().email().allow(null, ''),
   telephone1: Joi.string(),
   defra_charitynumber: Joi.string(),
   defra_charitynumberni: Joi.string(),
@@ -110,7 +110,7 @@ const CustomerEventSchema = Joi.object({
 const ResponseSchema = Joi.object({
   message: Joi.string().required(),
   salesforceRequest: Joi.object().required().unknown(true),
-  salesforceResponse: Joi.object().unknown(true)
+  salesforceResponse: Joi.object().optional().unknown(true)
 })
   .label('CustomerRegistrationResponse')
   .description('Result of forwarding the event to Salesforce')
@@ -126,7 +126,7 @@ export const options = {
   },
   tags: ['api', 'customer-registration'],
   description:
-    'Spike endpoint to accept DEFRA Identity customer events and forward them to Salesforce',
+    'Temporary DEFRA Identity customer events endpoint (spike) that forwards payloads to Salesforce',
   plugins: {
     'hapi-swagger': {
       id: 'customer-registration-events',
@@ -155,10 +155,14 @@ export const options = {
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 export async function handler(request, h) {
-  if (request.pre.apiVersion > 1.0) {
+  const rawVersion = request.pre.apiVersion
+  const apiVersion =
+    typeof rawVersion === 'number' ? rawVersion : Number(rawVersion)
+
+  if (!Number.isFinite(apiVersion) || apiVersion > 1.0) {
     return new HTTPException(
       'UNSUPPORTED_VERSION',
-      `Unknown version: ${request.pre.apiVersion}`
+      `Unknown version: ${rawVersion}`
     ).boomify()
   }
 
@@ -179,6 +183,31 @@ export async function handler(request, h) {
       request.logger
     )
 
+    const compositeResponse = salesforceResponse?.compositeResponse
+    const failedCompositeItems = Array.isArray(compositeResponse)
+      ? compositeResponse.filter(
+          (item) =>
+            item?.httpStatusCode &&
+            ![200, 201].includes(Number.parseInt(item.httpStatusCode, 10))
+        )
+      : []
+
+    if (failedCompositeItems.length > 0) {
+      throw new HTTPException(
+        'SALESFORCE_API_ERROR',
+        'One or more Salesforce composite operations failed',
+        failedCompositeItems.map(
+          (item, index) =>
+            new HTTPError(
+              'SALESFORCE_API_ERROR',
+              item?.body?.message ||
+                `Composite operation failed with status ${item?.httpStatusCode}`,
+              { referenceId: item?.referenceId || `operation-${index}` }
+            )
+        )
+      )
+    }
+
     return h
       .response({
         message: 'Salesforce composite executed',
@@ -194,18 +223,18 @@ export async function handler(request, h) {
     }
 
     const isBadRequest = error instanceof MappingError
-
+    const timedOut = error.message?.toLowerCase().includes('timed out')
+    const httpErrorCode = isBadRequest
+      ? 'VALIDATION_ERROR'
+      : timedOut
+        ? 'TIMEOUT'
+        : 'SALESFORCE_API_ERROR'
     const httpException = new HTTPException(
       isBadRequest ? 'BAD_REQUEST' : 'INTERNAL_SERVER_ERROR',
       isBadRequest
         ? error.message
         : 'Failed to process customer event for Salesforce',
-      [
-        new HTTPError(
-          isBadRequest ? 'VALIDATION_ERROR' : 'UNKNOWN',
-          error.message
-        )
-      ]
+      [new HTTPError(httpErrorCode, error.message)]
     )
 
     return httpException.boomify()

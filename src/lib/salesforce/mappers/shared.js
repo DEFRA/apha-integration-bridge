@@ -1,5 +1,6 @@
 class MappingError extends Error {}
 
+// DEFRA Identity / Dynamics title option codes.
 const TITLE_MAP = {
   1: 'Mr',
   2: 'Mrs',

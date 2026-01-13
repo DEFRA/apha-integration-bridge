@@ -5,6 +5,7 @@ import {
   beforeEach,
   describe,
   expect,
+  jest,
   test
 } from '@jest/globals'
 import { setupServer } from 'msw/node'
@@ -62,7 +63,7 @@ describe('customer-registration route → Salesforce composite', () => {
   /** @type {import('@hapi/hapi').Server | undefined} */
   let server
   let receivedCompositeBody
-  let originalCfgDescriptor
+  let cfgSpy
 
   const originalSalesforceConfig = config.get('salesforce')
 
@@ -94,23 +95,14 @@ describe('customer-registration route → Salesforce composite', () => {
     salesforceClient.cachedInstanceUrl = null
     salesforceClient.expiresAt = 0
 
-    originalCfgDescriptor = Object.getOwnPropertyDescriptor(
-      salesforceClient,
-      'cfg'
-    )
-
-    Object.defineProperty(salesforceClient, 'cfg', {
-      value: {
-        enabled: true,
-        baseUrl: 'https://salesforce.test',
-        authUrl: undefined,
-        clientId: 'client-id',
-        clientSecret: 'client-secret',
-        apiVersion: 'v62.0',
-        requestTimeoutMs: 10000
-      },
-      writable: true,
-      configurable: true
+    cfgSpy = jest.spyOn(salesforceClient, 'cfg', 'get').mockReturnValue({
+      enabled: true,
+      baseUrl: 'https://salesforce.test',
+      authUrl: undefined,
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      apiVersion: 'v62.0',
+      requestTimeoutMs: 10000
     })
 
     mswServer.use(
@@ -137,11 +129,7 @@ describe('customer-registration route → Salesforce composite', () => {
   afterEach(async () => {
     mswServer.resetHandlers()
 
-    if (originalCfgDescriptor) {
-      Object.defineProperty(salesforceClient, 'cfg', originalCfgDescriptor)
-    } else {
-      delete salesforceClient.cfg
-    }
+    cfgSpy?.mockRestore()
 
     if (server) {
       await server.stop()
@@ -270,7 +258,31 @@ describe('customer-registration route → Salesforce composite', () => {
     expect(contactUpsert.body).not.toHaveProperty('MailingCountryCode')
   })
 
-  test('returns composite only when Salesforce integration is disabled', async () => {
+  test('allows empty email strings by trimming before validation', async () => {
+    server = await createTestServer()
+
+    const payload = {
+      defra_serviceuser: {
+        contactid: 'CON-EMPTY-EMAIL',
+        lastname: 'EmailOptional',
+        lastname_hasvalue: true,
+        emailaddress1: '',
+        emailaddress1_hasvalue: true
+      }
+    }
+
+    const response = await server.inject({
+      method: 'POST',
+      url: '/customer-registration/events',
+      payload,
+      headers: { accept: 'application/vnd.apha.1+json' }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result.salesforceResponse).toBeDefined()
+  })
+
+  test('returns 202 with composite payload when Salesforce integration is disabled', async () => {
     config.set('salesforce.enabled', false)
     salesforceClient.cfg.enabled = false
     process.env.SALESFORCE_ENABLED = 'false'
@@ -301,5 +313,40 @@ describe('customer-registration route → Salesforce composite', () => {
 
     expect(body.salesforceRequest).toBeDefined()
     expect(body.message).toContain('disabled')
+  })
+
+  test('returns 500 when any composite operation fails', async () => {
+    server = await createTestServer()
+
+    mswServer.use(
+      http.post(
+        'https://salesforce.test/services/data/v62.0/composite',
+        async () => {
+          return HttpResponse.json({
+            compositeResponse: [
+              { httpStatusCode: 400, body: { message: 'failed op' } }
+            ]
+          })
+        }
+      )
+    )
+
+    const payload = {
+      defra_serviceuser: {
+        contactid: 'CON-ERROR',
+        lastname: 'Doe',
+        lastname_hasvalue: true
+      }
+    }
+
+    const response = await server.inject({
+      method: 'POST',
+      url: '/customer-registration/events',
+      payload,
+      headers: { accept: 'application/vnd.apha.1+json' }
+    })
+
+    expect(response.statusCode).toBe(500)
+    expect(response.result?.code).toBe('SALESFORCE_API_ERROR')
   })
 })

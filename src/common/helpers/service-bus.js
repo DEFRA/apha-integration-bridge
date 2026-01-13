@@ -33,6 +33,7 @@ export const serviceBus = {
       }
 
       const entityPath = resolveEntityPath(serviceBusConfig.connectionString)
+      const subscriptionName = serviceBusConfig.subscriptionName
 
       if (!entityPath) {
         // EntityPath must be present; avoiding guessing queues/topics prevents silent misroutes
@@ -41,9 +42,16 @@ export const serviceBus = {
         )
       }
 
+      if (!subscriptionName) {
+        // Topic consumers must specify a subscription explicitly
+        throw new Error(
+          'Service Bus subscription name is missing (set SERVICEBUS_SUBSCRIPTION)'
+        )
+      }
+
       const client = new ServiceBusClient(serviceBusConfig.connectionString)
 
-      const receiver = client.createReceiver(entityPath, {
+      const receiver = client.createReceiver(entityPath, subscriptionName, {
         maxAutoLockRenewalDurationInMs: serviceBusConfig.maxAutoLockRenewalMs
       })
 
@@ -51,7 +59,11 @@ export const serviceBus = {
 
       server.ext('onPostStart', async () => {
         server.logger.info(
-          { entityPath, namespace: client.fullyQualifiedNamespace },
+          {
+            entityPath,
+            subscriptionName,
+            namespace: client.fullyQualifiedNamespace
+          },
           'Starting Service Bus listener'
         )
 

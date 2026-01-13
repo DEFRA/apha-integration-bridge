@@ -204,6 +204,7 @@ because of the `setGlobalDispatcher(new ProxyAgent(proxyUrl))` calls will use th
 The app consumes DEFRA Identity events from Azure Service Bus using `@azure/service-bus` in a background processor.
 
 - Enable/disable: set `SERVICEBUS_ENABLED=true` and provide `SERVICEBUS_CONNECTION_STRING` (must include `EntityPath`).
+- Topics: set `SERVICEBUS_SUBSCRIPTION` to the subscription name for the topic in your connection string.
 - Concurrency/locks: `SERVICEBUS_MAX_CONCURRENT_CALLS` (default 5) and `SERVICEBUS_MAX_AUTO_LOCK_RENEW_MS` (default 5m).
 - Retry/settlement: messages are abandoned for retry on transient errors until `SERVICEBUS_MAX_DELIVERY_COUNT` (default 10), then dead-lettered. Validation/mapping errors dead-letter immediately.
 - Metrics: emits `servicebus.message.processed` (outcome, reason) and `servicebus.salesforce.forward` (outcome) via OTEL/EMF.

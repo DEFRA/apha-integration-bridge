@@ -30,7 +30,7 @@ export const openApi = {
       {
         name: 'customer-registration',
         description:
-          'Spike endpoint for forwarding DEFRA Identity customer events into the Salesforce Customer Registration composite API.'
+          'Temporary DEFRA Identity customer events endpoint (spike) for forwarding payloads into the Salesforce Customer Registration composite API.'
       }
     ],
     securityDefinitions: {
