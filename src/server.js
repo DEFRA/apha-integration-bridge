@@ -21,6 +21,7 @@ import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { versionPlugin } from './common/helpers/versioning.js'
 import { opentelemetryPlugin } from './common/helpers/telemetry.js'
 import { HTTPException } from './lib/http/http-exception.js'
+import { serviceBus } from './common/helpers/service-bus.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -128,6 +129,10 @@ async function createServer() {
      * sets up OracleDB connection pool(s) and attaches to `server` and `request` objects
      */
     oracleDb,
+    /**
+     * starts Service Bus background listener
+     */
+    serviceBus,
     /**
      * sets up header-based api versioning for the API
      */

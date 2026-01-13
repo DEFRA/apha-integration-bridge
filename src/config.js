@@ -208,6 +208,95 @@ const config = convict({
       env: 'MONGO_DATABASE'
     }
   },
+  serviceBus: {
+    enabled: {
+      doc: 'Enable Azure Service Bus consumer',
+      format: Boolean,
+      default: false,
+      env: 'SERVICEBUS_ENABLED'
+    },
+    connectionString: {
+      doc: 'Azure Service Bus connection string',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'SERVICEBUS_CONNECTION_STRING'
+    },
+    maxConcurrentCalls: {
+      doc: 'Maximum concurrent message handlers',
+      format: Number,
+      default: 5,
+      env: 'SERVICEBUS_MAX_CONCURRENT_CALLS'
+    },
+    maxAutoLockRenewalMs: {
+      doc: 'Max duration to auto-renew message locks (ms)',
+      format: Number,
+      default: 5 * 60 * 1000,
+      env: 'SERVICEBUS_MAX_AUTO_LOCK_RENEW_MS'
+    },
+    maxDeliveryCount: {
+      doc: 'Max attempts before dead-lettering a message',
+      format: Number,
+      default: 10,
+      env: 'SERVICEBUS_MAX_DELIVERY_COUNT'
+    },
+    subscriptionName: {
+      doc: 'Azure Service Bus topic subscription name',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'SERVICEBUS_SUBSCRIPTION'
+    }
+  },
+  salesforce: {
+    enabled: {
+      doc: 'Enable Salesforce integration',
+      format: Boolean,
+      default: false,
+      env: 'SALESFORCE_ENABLED'
+    },
+    baseUrl: {
+      doc: 'Salesforce instance base URL (e.g. https://my-instance.my.salesforce.com)',
+      format: 'url',
+      nullable: true,
+      default: null,
+      env: 'SALESFORCE_BASE_URL'
+    },
+    authUrl: {
+      doc: 'Salesforce OAuth2 token endpoint. Defaults to {baseUrl}/services/oauth2/token',
+      format: 'url',
+      nullable: true,
+      default: null,
+      env: 'SALESFORCE_AUTH_URL'
+    },
+    clientId: {
+      doc: 'Salesforce connected app client id',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'SALESFORCE_CLIENT_ID'
+    },
+    clientSecret: {
+      doc: 'Salesforce connected app client secret',
+      format: String,
+      nullable: true,
+      default: null,
+      sensitive: true,
+      env: 'SALESFORCE_CLIENT_SECRET'
+    },
+    apiVersion: {
+      doc: 'Salesforce API version to target (e.g. v62.0)',
+      format: String,
+      default: 'v62.0',
+      env: 'SALESFORCE_API_VERSION'
+    },
+    requestTimeoutMs: {
+      doc: 'HTTP timeout in milliseconds for Salesforce calls',
+      format: Number,
+      default: 10000,
+      env: 'SALESFORCE_TIMEOUT_MS'
+    }
+  },
   httpProxy: {
     doc: 'HTTP Proxy URL',
     format: String,

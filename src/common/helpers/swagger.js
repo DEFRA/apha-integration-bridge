@@ -29,6 +29,11 @@ export const openApi = {
         //   description: 'Find out more about this endpoint',
         //   url: 'https://example.com/holdings'
         // }
+      },
+      {
+        name: 'customer-registration',
+        description:
+          'Temporary DEFRA Identity customer events endpoint (spike) for forwarding payloads into the Salesforce Customer Registration composite API.'
       }
     ],
     securityDefinitions: {
