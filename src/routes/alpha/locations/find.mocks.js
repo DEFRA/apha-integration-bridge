@@ -1,4 +1,4 @@
-import { HTTPObjectResponse } from '../../lib/http/http-response.js'
+import { HTTPObjectResponse } from '../../../lib/http/http-response.js'
 
 export const commodity1 = new HTTPObjectResponse('commodities', 'U000010', {
   fieldStockNumber: 10

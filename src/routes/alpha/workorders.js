@@ -3,14 +3,14 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { LinksReference } from '../types/links.js'
-import { Workorders } from '../types/workorders.js'
-import { HTTPArrayResponse } from '../lib/http/http-response.js'
+import { LinksReference } from '../../types/links.js'
+import { Workorders } from '../../types/workorders.js'
+import { HTTPArrayResponse } from '../../lib/http/http-response.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
   HTTPError
-} from '../lib/http/http-exception.js'
+} from '../../lib/http/http-exception.js'
 
 import { all } from './workorders.mocks.js'
 

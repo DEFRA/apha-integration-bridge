@@ -1,4 +1,4 @@
-import { HTTPObjectResponse } from '../../lib/http/http-response.js'
+import { HTTPObjectResponse } from '../../../lib/http/http-response.js'
 
 export const holding1 = new HTTPObjectResponse('holdings', '08/139/0167', {
   cphType: 'PERMANENT',

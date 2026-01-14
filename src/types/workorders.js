@@ -7,6 +7,7 @@ import { LocationsReference } from './locations.js'
 import { CommoditiesReference } from './commodities.js'
 import { Activities } from './activities.js'
 import { FacilitiesReference } from './facilities.js'
+import { oneToManyRelationshipSchema } from './helpers.js'
 
 const WorkordersData = Joi.object({
   type: Joi.string()
@@ -47,6 +48,6 @@ export const Workorders = WorkordersData.keys({
     holding: HoldingsReference.optional(),
     location: LocationsReference.optional(),
     commodity: CommoditiesReference.optional(),
-    facilities: FacilitiesReference.optional()
+    facilities: oneToManyRelationshipSchema(FacilitiesReference).optional()
   })
 })

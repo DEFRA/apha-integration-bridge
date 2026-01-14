@@ -1,4 +1,4 @@
-import { HTTPObjectResponse } from '../../lib/http/http-response.js'
+import { HTTPObjectResponse } from '../../../lib/http/http-response.js'
 
 export const customer1 = new HTTPObjectResponse('customers', 'C123456', {
   subType: 'ORGANISATION',

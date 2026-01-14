@@ -5,12 +5,12 @@ import path from 'node:path'
 import {
   HTTPExceptionSchema,
   HTTPException
-} from '../../lib/http/http-exception.js'
+} from '../../../lib/http/http-exception.js'
 
 import { all } from './find.mocks.js'
-import { Customers } from '../../types/customers.js'
-import { HTTPArrayResponse } from '../../lib/http/http-response.js'
-import { LinksReference } from '../../types/links.js'
+import { Customers } from '../../../types/customers.js'
+import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
+import { LinksReference } from '../../../types/links.js'
 
 const PostFindCustomersSchema = Joi.object({
   data: Joi.array().items(Customers).required(),

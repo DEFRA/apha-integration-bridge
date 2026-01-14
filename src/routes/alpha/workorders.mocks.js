@@ -1,4 +1,4 @@
-import { HTTPObjectResponse } from '../lib/http/http-response.js'
+import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { customer1, customer2 } from './customers/find.mocks.js'
 import { holding1, holding2 } from './holdings/find.mocks.js'
 import {
@@ -184,7 +184,7 @@ workorder2.relationship(
     facility2.id,
     {},
     {
-      self: `/workorders/${workorder2.id}/relationships/commodity`
+      self: `/workorders/${workorder2.id}/relationships/facilities`
     }
   )
 )
@@ -196,7 +196,7 @@ workorder2.relationship(
     customer2.id,
     {},
     {
-      self: `/workorders/${workorder2.id}/relationships/commodity`
+      self: `/workorders/${workorder2.id}/relationships/customer`
     }
   )
 )

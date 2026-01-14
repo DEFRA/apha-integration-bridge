@@ -62,13 +62,10 @@ export class HTTPObjectResponse {
       if (items.size === 1) {
         relationships[type] = items.values().next().value.toResponse()
       } else {
-        relationships[type] = {
-          data: []
-        }
+        relationships[type] = []
 
         for (const item of items.values()) {
-          relationships[type].data.push(item.toResponse().data)
-          relationships[type].links = item.toResponse().links
+          relationships[type].push(item.toResponse())
         }
       }
     }

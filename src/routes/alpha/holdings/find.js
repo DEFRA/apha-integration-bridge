@@ -5,15 +5,15 @@ import path from 'node:path'
 import {
   HTTPExceptionSchema,
   HTTPException
-} from '../../lib/http/http-exception.js'
+} from '../../../lib/http/http-exception.js'
 
 import { all } from './find.mocks.js'
-import { HTTPArrayResponse } from '../../lib/http/http-response.js'
-import { LinksReference } from '../../types/links.js'
-import { LocationsHydrated } from '../../types/locations.js'
+import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
+import { LinksReference } from '../../../types/links.js'
+import { Holdings } from '../../../types/holdings.js'
 
-const PostFindLocationsSchema = Joi.object({
-  data: Joi.array().items(LocationsHydrated).required(),
+const PostFindHoldingsSchema = Joi.object({
+  data: Joi.array().items(Holdings).required(),
   links: LinksReference
 })
   .description('Location Details')
@@ -30,15 +30,15 @@ const __dirname = new URL('.', import.meta.url).pathname
  */
 const options = {
   auth: false,
-  tags: ['api', 'locations'],
-  description: 'Retrieve locations by ids',
+  tags: ['api', 'holdings'],
+  description: 'Retrieve holdings by ids',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'find.md'),
     'utf8'
   ),
   plugins: {
     'hapi-swagger': {
-      id: 'locations-find',
+      id: 'holdings-find',
       security: [{ Bearer: [] }]
     }
   },
@@ -54,7 +54,7 @@ const options = {
   },
   response: {
     status: {
-      200: PostFindLocationsSchema,
+      200: PostFindHoldingsSchema,
       '400-500': HTTPExceptionSchema
     }
   }
@@ -65,14 +65,14 @@ const options = {
  */
 async function handler(request, h) {
   const response = new HTTPArrayResponse({
-    self: `/locations/find`
+    self: `/holdings/find`
   })
 
   const { ids } = request.payload
 
-  for (const location of all) {
-    if (ids.includes(location.id)) {
-      response.add(location)
+  for (const holdings of all) {
+    if (ids.includes(holdings.id)) {
+      response.add(holdings)
     }
   }
   return h.response(response.toResponse()).code(200)
