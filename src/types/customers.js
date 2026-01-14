@@ -2,7 +2,7 @@ import Joi from 'joi'
 
 import { LinksReference } from './links.js'
 import { SrabpiPlantReference } from './srabpi-plants.js'
-import { Address } from './locations.js'
+import { Address } from './alpha/locations.js'
 
 const ContactDetails = Joi.object({
   fullName: Joi.string().allow(null, '').label('Full name'),

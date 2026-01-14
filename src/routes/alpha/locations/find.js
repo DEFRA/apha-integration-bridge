@@ -10,7 +10,7 @@ import {
 import { all } from './find.mocks.js'
 import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
 import { LinksReference } from '../../../types/links.js'
-import { LocationsHydrated } from '../../../types/locations.js'
+import { LocationsHydrated } from '../../../types/alpha/locations.js'
 
 const PostFindLocationsSchema = Joi.object({
   data: Joi.array().items(LocationsHydrated).required(),
