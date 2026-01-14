@@ -1,7 +1,7 @@
 import Joi from 'joi'
 
 import { LinksReference } from './links.js'
-import { CustomersReference } from './customers.js'
+import { CustomersReference } from './alpha/customers.js'
 import { HoldingsReference } from './holdings.js'
 import { LocationsReference } from './locations.js'
 import { CommoditiesReference } from './commodities.js'

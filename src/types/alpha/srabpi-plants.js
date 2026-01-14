@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { LinksReference } from './links.js'
+import { LinksReference } from '../links.js'
 
 export const SrabpiPlantData = Joi.object({
   type: Joi.string().valid('srabpi-plants').required().label('SRABPI Plant'),

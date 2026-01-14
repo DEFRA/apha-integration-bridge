@@ -8,7 +8,7 @@ import {
 } from '../../../lib/http/http-exception.js'
 
 import { all } from './find.mocks.js'
-import { Customers } from '../../../types/customers.js'
+import { Customers } from '../../../types/alpha/customers.js'
 import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
 import { LinksReference } from '../../../types/links.js'
 
