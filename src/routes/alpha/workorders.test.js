@@ -58,6 +58,14 @@ test('returns the mock workorder', async () => {
         aim: 'Contain / Control / Eradicate Endemic Disease',
         latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
         phase: 'EXPOSURETRACKING',
+        activities: [
+          {
+            type: 'activities',
+            id: 'WSA00010',
+            activityName: 'Arrange Visit',
+            default: true
+          }
+        ],
         relationships: {
           customer: {
             data: { type: 'customers', id: 'C123456' },
@@ -81,11 +89,6 @@ test('returns the mock workorder', async () => {
             data: { type: 'commodities', id: 'U000010' },
             links: {
               self: '/workorders/WS-76512/relationships/commodity'
-            }
-          },
-          activities: {
-            links: {
-              self: '/workorders/WS-76512/relationships/activities'
             }
           }
         }
@@ -125,34 +128,43 @@ test('returns the mock workorder', async () => {
         aim: 'Contain / Control / Eradicate Endemic Disease',
         latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
         phase: 'EXPOSURETRACKING',
+        activities: [
+          {
+            type: 'activities',
+            id: 'WSA00020',
+            activityName: 'Carry Out Visit',
+            default: false
+          },
+          {
+            type: 'activities',
+            id: 'WSA00030',
+            activityName: 'Capture Sample Details',
+            default: true
+          }
+        ],
         relationships: {
           customer: {
-            data: { type: 'customers', id: 'C123457' },
+            data: { type: 'customers', id: 'C234567' },
             links: {
               self: '/workorders/WS-76513/relationships/customer'
             }
           },
           holding: {
-            data: { type: 'holdings', id: '08/139/0168' },
+            data: { type: 'holdings', id: '12/123/1234' },
             links: {
               self: '/workorders/WS-76513/relationships/holding'
             }
           },
           location: {
-            data: { type: 'locations', id: 'L123457' },
+            data: { type: 'locations', id: 'L234567' },
             links: {
               self: '/workorders/WS-76513/relationships/location'
             }
           },
-          facility: {
-            data: { type: 'facilities', id: 'U000030' },
+          facilities: {
+            data: { type: 'facilities', id: 'U000040' },
             links: {
-              self: '/workorders/WS-76513/relationships/facility'
-            }
-          },
-          activities: {
-            links: {
-              self: '/workorders/WS-76513/relationships/activities'
+              self: '/workorders/WS-76513/relationships/facilities'
             }
           }
         }

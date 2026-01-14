@@ -2,7 +2,7 @@ import Joi from 'joi'
 
 import { LinksReference } from './links.js'
 import { LocationsReference } from './locations.js'
-import { CustomersReference } from './customers.js'
+import { CustomersReference } from './alpha/customers.js'
 
 const HoldingsData = Joi.object({
   type: Joi.string()
