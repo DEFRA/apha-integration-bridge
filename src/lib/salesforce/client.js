@@ -44,8 +44,8 @@ class SalesforceClient {
 
   /**
    * Acquire a bearer token using the client credentials grant.
-   *
    * Tokens are cached until shortly before expiry.
+   * @param {import('pino').Logger} [logger] Optional logger.
    */
   async getAccessToken(logger) {
     const now = Date.now()
@@ -137,10 +137,6 @@ class SalesforceClient {
    * @param {import('pino').Logger} [logger] Optional logger.
    */
   async sendComposite(compositeBody, logger) {
-    if (!this.cfg.enabled) {
-      throw new Error('Salesforce integration is disabled')
-    }
-
     const baseUrl = this.resolveBaseUrl()
 
     if (!baseUrl) {
@@ -187,6 +183,7 @@ class SalesforceClient {
 
   /**
    * Parse response JSON or text without throwing.
+   * @param {Response} response
    */
   async parseResponseBody(response) {
     const contentType = response.headers.get('content-type') || ''
@@ -210,6 +207,7 @@ class SalesforceClient {
 
   /**
    * Normalise unknown objects into short loggable strings.
+   * @param {unknown} body
    */
   safeMessage(body) {
     if (!body) {
