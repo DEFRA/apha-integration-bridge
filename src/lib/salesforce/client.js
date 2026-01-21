@@ -137,18 +137,9 @@ class SalesforceClient {
    * @param {import('pino').Logger} [logger] Optional logger.
    */
   async sendComposite(compositeBody, logger) {
-    const baseUrl = this.resolveBaseUrl()
-
-    if (!baseUrl) {
-      throw new Error('Salesforce base URL is not configured')
-    }
-
     const token = await this.getAccessToken(logger)
 
-    const compositeUrl = `${baseUrl.replace(
-      /\/$/,
-      ''
-    )}/services/data/${this.cfg.apiVersion}/composite`
+    const compositeUrl = this.getBaseUrl() + '/composite'
 
     const { response, body } = await this.requestWithTimeout(
       compositeUrl,
@@ -173,6 +164,40 @@ class SalesforceClient {
 
       throw new Error(
         `Salesforce composite request failed (${response.status}): ${this.safeMessage(
+          body
+        )}`
+      )
+    }
+
+    return body
+  }
+
+  async sendQuery(query, logger) {
+    const token = await this.getAccessToken(logger)
+
+    const queryUrl = this.getBaseUrl() + '/query?q=' + encodeURIComponent(query)
+
+    const { response, body } = await this.requestWithTimeout(
+      queryUrl,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      },
+      {
+        timeoutMessage: 'Salesforce query request timed out'
+      }
+    )
+
+    if (!response.ok) {
+      logger?.error(
+        { status: response.status, body: this.safeMessage(body) },
+        'Salesforce query request failed'
+      )
+
+      throw new Error(
+        `Salesforce query request failed (${response.status}): ${this.safeMessage(
           body
         )}`
       )
@@ -275,6 +300,16 @@ class SalesforceClient {
     } finally {
       cancel()
     }
+  }
+
+  getBaseUrl() {
+    const baseUrl = this.resolveBaseUrl()
+
+    if (!baseUrl) {
+      throw new Error('Salesforce base URL is not configured')
+    }
+
+    return `${baseUrl.replace(/\/$/, '')}/services/data/${this.cfg.apiVersion}`
   }
 }
 
