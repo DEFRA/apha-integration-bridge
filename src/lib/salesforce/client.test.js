@@ -96,6 +96,85 @@ describe('salesforce client', () => {
     expect(b).toBe('token-concurrent')
   })
 
+  test('sendComposite returns response body on success', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, {
+            access_token: 'token-123',
+            instance_url: 'https://salesforce.test',
+            expires_in: 3600
+          })
+        )
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, {
+            compositeResponse: [
+              {
+                body: { id: '001', success: true },
+                httpStatusCode: 201,
+                referenceId: 'ref1'
+              },
+              {
+                body: { id: '002', success: true },
+                httpStatusCode: 201,
+                referenceId: 'ref2'
+              }
+            ]
+          })
+        )
+      )
+
+    const result = await salesforceClient.sendComposite(
+      {
+        compositeRequest: [
+          {
+            method: 'POST',
+            url: '/services/data/v62.0/sobjects/Account',
+            referenceId: 'ref1',
+            body: { Name: 'Test Account 1' }
+          },
+          {
+            method: 'POST',
+            url: '/services/data/v62.0/sobjects/Account',
+            referenceId: 'ref2',
+            body: { Name: 'Test Account 2' }
+          }
+        ]
+      },
+      /** @type {any} */ (mockLogger)
+    )
+
+    expect(result).toEqual({
+      compositeResponse: [
+        {
+          body: { id: '001', success: true },
+          httpStatusCode: 201,
+          referenceId: 'ref1'
+        },
+        {
+          body: { id: '002', success: true },
+          httpStatusCode: 201,
+          referenceId: 'ref2'
+        }
+      ]
+    })
+
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/composite'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer token-123',
+          'Content-Type': 'application/json'
+        },
+        body: expect.any(String)
+      })
+    )
+  })
+
   test('sendComposite throws with sanitised logging when Salesforce returns error', async () => {
     mockFetch
       .mockResolvedValueOnce(
@@ -123,6 +202,91 @@ describe('salesforce client', () => {
     expect(mockLogger.error).toHaveBeenCalledWith(
       { status: 500, body: expect.any(String) },
       'Salesforce composite request failed'
+    )
+  })
+
+  test('sendQuery returns response body on success', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, {
+            access_token: 'token-123',
+            instance_url: 'https://salesforce.test',
+            expires_in: 3600
+          })
+        )
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, {
+            totalSize: 2,
+            done: true,
+            records: [
+              { Id: '001', Name: 'Test Record 1' },
+              { Id: '002', Name: 'Test Record 2' }
+            ]
+          })
+        )
+      )
+
+    const result = await salesforceClient.sendQuery(
+      'SELECT Id, Name FROM Account',
+      /** @type {any} */ (mockLogger)
+    )
+
+    expect(result).toEqual({
+      totalSize: 2,
+      done: true,
+      records: [
+        { Id: '001', Name: 'Test Record 1' },
+        { Id: '002', Name: 'Test Record 2' }
+      ]
+    })
+
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining(
+        '/query?q=' + encodeURIComponent('SELECT Id, Name FROM Account')
+      ),
+      expect.objectContaining({
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer token-123'
+        }
+      })
+    )
+  })
+
+  test('sendQuery throws with sanitised logging when Salesforce returns error', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, {
+            access_token: 'token-123',
+            instance_url: 'https://salesforce.test',
+            expires_in: 3600
+          })
+        )
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(400, {
+            message: 'Invalid SOQL query',
+            errorCode: 'MALFORMED_QUERY'
+          })
+        )
+      )
+
+    await expect(
+      salesforceClient.sendQuery(
+        'SELECT * FORM Account',
+        /** @type {any} */ (mockLogger)
+      )
+    ).rejects.toThrow(/Salesforce query request failed/)
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      { status: 400, body: expect.any(String) },
+      'Salesforce query request failed'
     )
   })
 
