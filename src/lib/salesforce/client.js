@@ -1,5 +1,9 @@
 import { config } from '../../config.js'
 
+/**
+ * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
+ */
+
 const TOKEN_EXPIRY_BUFFER_MS = 5000
 
 /**
@@ -135,6 +139,7 @@ class SalesforceClient {
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {import('pino').Logger} [logger] Optional logger.
+   * @returns {Promise<CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger) {
     const token = await this.getAccessToken(logger)

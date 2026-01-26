@@ -15,7 +15,15 @@ import {
 } from '../../lib/http/http-response.js'
 import { LinksReference } from '../../types/links.js'
 import { salesforceClient } from '../../lib/salesforce/client.js'
-import { Case } from '../../types/case-management/case.js'
+import {
+  Case,
+  CreateCasePayloadSchema
+} from '../../types/case-management/case.js'
+import { buildCaseCreationCompositeRequest } from '../../lib/salesforce/composite-request-builder.js'
+
+/**
+ * @import {CreateCasePayload} from '../../types/case-management/case.js'
+ */
 
 const PostCreateCaseResponseSchema = Joi.object({
   data: Joi.array().items(Case).required(),
@@ -23,31 +31,6 @@ const PostCreateCaseResponseSchema = Joi.object({
 })
   .description('Case Management Case Details')
   .label('Create Case Response')
-
-// const CompositeRequestItemSchema = Joi.object({
-//   method: Joi.string()
-//     .valid('GET', 'POST', 'PATCH', 'PUT', 'DELETE')
-//     .required()
-//     .description('HTTP method for the composite request'),
-//   url: Joi.string().required().description('Salesforce API endpoint URL'),
-//   referenceId: Joi.string()
-//     .required()
-//     .description('Reference ID to identify this sub-request'),
-//   body: Joi.object()
-//     .unknown(true)
-//     .optional()
-//     .description('Request body for POST/PATCH/PUT requests')
-// })
-//   .description('Individual composite request item')
-//   .label('Composite Request Item')
-
-// const CreateCasePayloadSchema = Joi.object({
-//   reference: Joi.string()
-//     .required()
-//     .description('Reference ID for the case')
-//     .description('Case creation API request payload')
-//     .label('Create Case Request')
-// })
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -69,7 +52,7 @@ const options = {
     }
   },
   validate: {
-    // payload: CreateCasePayloadSchema,
+    payload: CreateCasePayloadSchema,
     headers: Joi.object({
       accept: Joi.string()
         .default('application/vnd.apha.1+json')
@@ -91,10 +74,12 @@ const options = {
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 async function handler(request, h) {
-  const compositeRequest = buildCaseCreationCompositeRequest(request)
+  const compositeRequest = buildCaseCreationCompositeRequest(
+    /** @type {CreateCasePayload} */ (request.payload)
+  )
 
   try {
-    const result = await retry(
+    const salesforceResponse = await retry(
       async () => {
         return await salesforceClient.sendComposite(
           compositeRequest,
@@ -110,110 +95,78 @@ async function handler(request, h) {
       }
     )
 
+    const compositeResponse = salesforceResponse?.compositeResponse
+    const failedCompositeItems = Array.isArray(compositeResponse)
+      ? compositeResponse.filter(
+          (item) =>
+            item?.httpStatusCode && ![200, 201].includes(item.httpStatusCode)
+        )
+      : []
+
+    if (failedCompositeItems.length > 0) {
+      const compositeError = /** @type {Error & {failedItems: any[]}} */ (
+        new Error('One or more composite operations failed')
+      )
+      compositeError.name = 'CompositeOperationError'
+      compositeError.failedItems = failedCompositeItems
+      throw compositeError
+    }
+
     const response = new HTTPArrayResponse({
       self: 'case-management/case'
     })
 
-    if (result) {
+    if (salesforceResponse) {
       response.add(
-        new HTTPObjectResponse('case-management-case', 'TB-AB12-345689', result)
+        new HTTPObjectResponse(
+          'case-management-case',
+          'TB-AB12-345689',
+          salesforceResponse
+        )
       )
     }
 
-    return h.response(response.toResponse()).code(200)
+    return h.response(response.toResponse()).code(201)
   } catch (error) {
-    request.logger?.error(
-      {
-        err: error,
-        endpoint: 'case-management/case'
-      },
-      'Failed to create case in Salesforce'
-    )
+    if (error.name === 'CompositeOperationError') {
+      const failedOperations = error.failedItems.map((item) => ({
+        referenceId: item.referenceId,
+        httpStatusCode: item.httpStatusCode,
+        errors: Array.isArray(item.body)
+          ? item.body.map((err) => ({
+              errorCode: err.errorCode,
+              message: err.message
+            }))
+          : []
+      }))
+
+      request.logger?.error(
+        {
+          endpoint: 'case-management/case',
+          failedOperations
+        },
+        'Composite operations failed in Salesforce'
+      )
+    } else {
+      request.logger?.error(
+        {
+          err: error,
+          endpoint: 'case-management/case'
+        },
+        'Failed to create case in Salesforce'
+      )
+    }
 
     return new HTTPException(
       'INTERNAL_SERVER_ERROR',
       'Your request could not be processed',
       [
         new HTTPError(
-          'DATABASE_ERROR',
-          'Cannot create case successfully on the case management service'
+          'INTERNAL_SERVER_ERROR',
+          'Could not create case on the case management service'
         )
       ]
     ).boomify()
-  }
-}
-
-function buildCaseCreationCompositeRequest(event, options = {}) {
-  const licenceTypeRequest = buildLicenceTypeRequest()
-  const createIndividualApplicationRequest = buildCreateApplicationRequest()
-  const uploadFileRequest = buildUploadFileRequest()
-  const fileIdRequest = buildFileIdRequest()
-  const linkFileRequest = buildLinkFileRequest()
-
-  return {
-    allOrNone: true,
-    compositeRequest: [
-      licenceTypeRequest,
-      createIndividualApplicationRequest,
-      uploadFileRequest,
-      fileIdRequest,
-      linkFileRequest
-    ]
-  }
-}
-
-function buildLicenceTypeRequest() {
-  return {
-    method: 'GET',
-    url: "/services/data/v62.0/query?q=SELECT+Id+FROM+RegulatoryAuthorizationType+WHERE+Name='TB15'+LIMIT+1",
-    referenceId: 'licenseTypeQuery'
-  }
-}
-
-function buildCreateApplicationRequest() {
-  return {
-    method: 'PATCH',
-    url: '/services/data/v62.0/sobjects/IndividualApplication/APHA_ExternalReferenceNumber__c/TB-AB12-345689',
-    referenceId: 'applicationRef',
-    body: {
-      Category: 'License',
-      LicenseTypeId: '@{licenseTypeQuery.records[0].Id}'
-    }
-  }
-}
-
-function buildUploadFileRequest() {
-  return {
-    method: 'POST',
-    url: '/services/data/v62.0/sobjects/ContentVersion',
-    referenceId: 'file',
-    body: {
-      Title: 'TB-AB12-34567-v2.0',
-      PathOnClient: 'TB-AB12-34567-v2.0.json',
-      VersionData: 'iVBORw0KGgoAAAANSUhEUgAA...'
-    }
-  }
-}
-
-function buildFileIdRequest() {
-  return {
-    method: 'GET',
-    url: '/services/data/v62.0/sobjects/ContentVersion/@{file.id}?fields=ContentDocumentId',
-    referenceId: 'fileQuery'
-  }
-}
-
-function buildLinkFileRequest() {
-  return {
-    method: 'POST',
-    url: '/services/data/v62.0/sobjects/ContentDocumentLink',
-    referenceId: 'linkfile',
-    body: {
-      LinkedEntityId: '@{applicationRef.id}',
-      ContentDocumentId: '@{fileQuery.ContentDocumentId}',
-      ShareType: 'V',
-      Visibility: 'AllUsers'
-    }
   }
 }
 
@@ -223,49 +176,3 @@ export default {
   handler,
   options
 }
-
-// {
-//     "allOrNone": true,
-//     "compositeRequest": [
-//         {
-//             "method": "GET",
-//             "url": "/services/data/v62.0/query?q=SELECT+Id+FROM+RegulatoryAuthorizationType+WHERE+Name='TB15'+LIMIT+1", //licenceType
-//             "referenceId": "licenseTypeQuery"
-//         },
-//         {
-//             "method": "PATCH",
-//             "url": "/services/data/v62.0/sobjects/IndividualApplication/APHA_ExternalReferenceNumber__c/TB-AB12-345689", //Applicantion Refren
-//             "referenceId": "applicationRef",
-//             "body": {
-//                 "Category": "License",
-//                 "LicenseTypeId": "@{licenseTypeQuery.records[0].Id}"
-//             }
-//         },
-//         {
-//             "method": "POST",
-//             "url": "/services/data/v62.0/sobjects/ContentVersion",
-//             "referenceId": "file",
-//             "body": {
-//                 "Title": "TB-AB12-34567-v2.0", //Applicantion Reference
-//                 "PathOnClient": "TB-AB12-34567-v2.0.json", //Applicantion Reference
-//                 "VersionData": "iVBORw0KGgoAAAANSUhEUgAA..." //Base64 encoded file data
-//             }
-//         },
-//         {
-//             "method": "GET",
-//             "url": "/services/data/v62.0/sobjects/ContentVersion/@{file.id}?fields=ContentDocumentId",
-//             "referenceId": "fileQuery"
-//         },
-//         {
-//             "method": "POST",
-//             "url": "/services/data/v62.0/sobjects/ContentDocumentLink",
-//             "referenceId": "linkfile",
-//             "body": {
-//                 "LinkedEntityId": "@{applicationRef.id}",
-//                 "ContentDocumentId": "@{fileQuery.ContentDocumentId}",
-//                 "ShareType": "V",
-//                 "Visibility": "AllUsers"
-//             }
-//         }
-//     ]
-// }
