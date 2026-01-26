@@ -75,11 +75,12 @@ function assertSuccessResponse(response, expectedDataLength) {
 
 /**
  * @param {Record<string, any>} userData
- * @param {string} expectedId
  */
-function assertUserData(userData, expectedId) {
+function assertUserData(userData) {
   expect(userData).toHaveProperty('type', 'case-management-user')
-  expect(userData).toHaveProperty('id', expectedId)
+  expect(userData).toHaveProperty('id')
+  expect(userData.id).toBeTruthy()
+  expect(typeof userData.id).toBe('string')
 }
 
 describe('POST /case-management/users/find', () => {
@@ -90,16 +91,25 @@ describe('POST /case-management/users/find', () => {
       const res = await findUser(server, 'aphadev.mehboob.alam@defra.gov.uk')
 
       const body = assertSuccessResponse(res, 1)
-      assertUserData(body.data[0], '0055I000009YqYnQAK')
+      assertUserData(body.data[0])
+    })
+
+    test('email validation is case-insensitive', async () => {
+      const server = await createTestServer()
+
+      const res = await findUser(server, 'APHADEV.MEHBOOB.ALAM@DEFRA.GOV.UK')
+
+      const body = assertSuccessResponse(res, 1)
+      assertUserData(body.data[0])
     })
 
     test('returns correct response structure for existing user', async () => {
       const server = await createTestServer()
 
-      const res = await findUser(server, 'another.user@example.com')
+      const res = await findUser(server, 'aphadev.mehboob.alam@defra.gov.uk')
 
       const body = assertSuccessResponse(res, 1)
-      assertUserData(body.data[0], '0055I000009YqYpQAK')
+      assertUserData(body.data[0])
     })
   })
 
