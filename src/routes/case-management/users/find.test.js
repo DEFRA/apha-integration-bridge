@@ -44,20 +44,6 @@ async function findUser(server, emailAddress, headers = {}) {
 }
 
 /**
- * @param {Hapi.Server} server
- * @param {Record<string, any>} payload
- * @param {Record<string, string>} [headers]
- */
-async function makeRequest(server, payload, headers = {}) {
-  return server.inject({
-    method: ENDPOINT_METHOD,
-    url: ENDPOINT_PATH,
-    headers,
-    payload
-  })
-}
-
-/**
  * @param {Hapi.ServerInjectResponse} response
  * @param {number} expectedDataLength
  */
@@ -156,7 +142,11 @@ describe('POST /case-management/users/find', () => {
     test('returns 400 for missing emailAddress field', async () => {
       const server = await createTestServer()
 
-      const res = await makeRequest(server, {})
+      const res = await server.inject({
+        method: ENDPOINT_METHOD,
+        url: ENDPOINT_PATH,
+        payload: {}
+      })
 
       expect(res.statusCode).toBe(400)
 
