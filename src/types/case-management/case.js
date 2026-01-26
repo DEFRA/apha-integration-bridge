@@ -91,6 +91,8 @@ const GuestCustomerDetailsSchema = Joi.object({
  * @typedef {Object} KeyFacts
  * @property {string} licenceType
  * @property {'origin'|'destination'} requester
+ * @property {'on'|'off'} [movementDirection]
+ * @property {string} [additionalInformation]
  * @property {number} [numberOfCattle]
  * @property {string} [originCph]
  * @property {Address} [originAddress]
@@ -99,7 +101,6 @@ const GuestCustomerDetailsSchema = Joi.object({
  * @property {Address} [destinationAddress]
  * @property {Name} [destinationKeeperName]
  * @property {string} [requesterCph]
- * @property {string} [additionalInfomation]
  * @property {string[]} [biosecurityMaps]
  */
 
@@ -116,7 +117,6 @@ const KeyFactsSchema = Joi.object({
   destinationAddress: AddressSchema.optional(),
   destinationKeeperName: NameSchema.optional(),
   requesterCph: Joi.string().optional(),
-  additionalInfomation: Joi.string().allow('').optional(),
   biosecurityMaps: Joi.array().items(Joi.string()).optional()
 })
 
