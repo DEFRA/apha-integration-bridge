@@ -74,9 +74,8 @@ const options = {
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 async function handler(request, h) {
-  const compositeRequest = buildCaseCreationCompositeRequest(
-    /** @type {CreateCasePayload} */ (request.payload)
-  )
+  const payload = /** @type {CreateCasePayload} */ (request.payload)
+  const compositeRequest = buildCaseCreationCompositeRequest(payload)
 
   try {
     const salesforceResponse = await retry(
@@ -120,7 +119,7 @@ async function handler(request, h) {
       response.add(
         new HTTPObjectResponse(
           'case-management-case',
-          'TB-AB12-345689',
+          payload.applicationReferenceNumber,
           salesforceResponse
         )
       )
