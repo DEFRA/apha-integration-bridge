@@ -1,11 +1,19 @@
 import Hapi from '@hapi/hapi'
-import { test, expect, describe } from '@jest/globals'
+import { test, expect, describe, jest, beforeEach } from '@jest/globals'
 import hapiPino from 'hapi-pino'
-
 import * as route from './find.js'
+import { salesforceClient } from '../../../lib/salesforce/client.js'
 
 const ENDPOINT_PATH = '/case-management/users/find'
 const ENDPOINT_METHOD = 'POST'
+const TEST_USER_EMAIL = 'test.user@example.com'
+const TEST_USER_ID = '005ABC123456789'
+
+const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
+
+beforeEach(() => {
+  jest.clearAllMocks()
+})
 
 async function createTestServer() {
   const server = Hapi.server({ port: 0 })
@@ -59,9 +67,6 @@ function assertSuccessResponse(response, expectedDataLength) {
   return body
 }
 
-/**
- * @param {Record<string, any>} userData
- */
 function assertUserData(userData) {
   expect(userData).toHaveProperty('type', 'case-management-user')
   expect(userData).toHaveProperty('id')
@@ -74,46 +79,58 @@ describe('POST /case-management/users/find', () => {
     test('returns user when email exists in Salesforce', async () => {
       const server = await createTestServer()
 
-      const res = await findUser(server, 'aphadev.mehboob.alam@defra.gov.uk')
+      mockSendQuery.mockResolvedValueOnce({
+        records: [{ Id: TEST_USER_ID }],
+        totalSize: 1,
+        done: true
+      })
+
+      const res = await findUser(server, TEST_USER_EMAIL)
 
       const body = assertSuccessResponse(res, 1)
       assertUserData(body.data[0])
-    })
+      expect(body.data[0].id).toBe(TEST_USER_ID)
 
-    test('email validation is case-insensitive', async () => {
-      const server = await createTestServer()
-
-      const res = await findUser(server, 'APHADEV.MEHBOOB.ALAM@DEFRA.GOV.UK')
-
-      const body = assertSuccessResponse(res, 1)
-      assertUserData(body.data[0])
+      expect(mockSendQuery).toHaveBeenCalledTimes(1)
+      expect(mockSendQuery).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT Id FROM User WHERE Username'),
+        expect.anything()
+      )
+      expect(mockSendQuery).toHaveBeenCalledWith(
+        expect.stringContaining(TEST_USER_EMAIL),
+        expect.anything()
+      )
     })
 
     test('returns correct response structure for existing user', async () => {
       const server = await createTestServer()
 
-      const res = await findUser(server, 'aphadev.mehboob.alam@defra.gov.uk')
+      mockSendQuery.mockResolvedValueOnce({
+        records: [{ Id: '005XYZ987654321' }],
+        totalSize: 1,
+        done: true
+      })
+
+      const res = await findUser(server, 'another.user@example.com')
 
       const body = assertSuccessResponse(res, 1)
       assertUserData(body.data[0])
+      expect(body.data[0].id).toBe('005XYZ987654321')
     })
-  })
 
-  describe('User not found', () => {
     test('returns empty data array when user does not exist', async () => {
       const server = await createTestServer()
+
+      mockSendQuery.mockResolvedValueOnce({
+        records: [],
+        totalSize: 0,
+        done: true
+      })
 
       const res = await findUser(server, 'nonexistent.user@example.com')
 
       assertSuccessResponse(res, 0)
-    })
-
-    test('returns empty array for non-existent user', async () => {
-      const server = await createTestServer()
-
-      const res = await findUser(server, 'does.not.exist@nowhere.com')
-
-      assertSuccessResponse(res, 0)
+      expect(mockSendQuery).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -137,6 +154,8 @@ describe('POST /case-management/users/find', () => {
           }
         ]
       })
+
+      expect(mockSendQuery).not.toHaveBeenCalled()
     })
 
     test('returns 400 for missing emailAddress field', async () => {
@@ -155,6 +174,62 @@ describe('POST /case-management/users/find', () => {
       expect(body.code).toBe('BAD_REQUEST')
       expect(body.errors).toBeDefined()
       expect(body.errors.length).toBeGreaterThan(0)
+      expect(mockSendQuery).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Salesforce error handling', () => {
+    test('returns 500 when Salesforce query fails', async () => {
+      const server = await createTestServer()
+
+      // Mock Salesforce error - will be retried 4 times (initial + 3 retries)
+      mockSendQuery
+        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
+        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
+        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
+        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
+
+      const res = await findUser(server, TEST_USER_EMAIL)
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+
+      expect(body).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+        errors: [
+          {
+            code: 'DATABASE_ERROR',
+            message:
+              'Cannot perform query successfully on the case management service'
+          }
+        ]
+      })
+
+      // Verify retry logic - should be called 4 times (initial + 3 retries)
+      expect(mockSendQuery).toHaveBeenCalledTimes(4)
+    })
+
+    test('escapes single quotes to prevent SOQL injection', async () => {
+      const server = await createTestServer()
+
+      mockSendQuery.mockResolvedValueOnce({
+        records: [],
+        totalSize: 0,
+        done: true
+      })
+
+      const maliciousEmail = "test'user@example.com"
+      const res = await findUser(server, maliciousEmail)
+
+      expect(res.statusCode).toBe(200)
+      expect(mockSendQuery).toHaveBeenCalledWith(
+        expect.stringContaining("\\'"),
+        expect.anything()
+      )
+
+      const calledQuery = mockSendQuery.mock.calls[0][0]
+      expect(calledQuery).toContain("test\\'user@example.com")
     })
   })
 })
