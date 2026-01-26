@@ -2,29 +2,31 @@
 
 Core delivery platform Node.js Backend Template.
 
-- [Requirements](#requirements)
-  - [Node.js](#nodejs)
-- [Local development](#local-development)
-  - [Setup](#setup)
-  - [Development](#development)
-  - [Testing](#testing)
-  - [Production](#production)
-  - [Npm scripts](#npm-scripts)
-  - [Update dependencies](#update-dependencies)
-  - [Formatting](#formatting)
-    - [Windows prettier issue](#windows-prettier-issue)
-- [API endpoints](#api-endpoints)
-- [Development helpers](#development-helpers)
-  - [MongoDB Locks](#mongodb-locks)
-  - [Proxy](#proxy)
-- [Docker](#docker)
-  - [Development image](#development-image)
-  - [Production image](#production-image)
-  - [Docker Compose](#docker-compose)
-  - [Dependabot](#dependabot)
-  - [SonarCloud](#sonarcloud)
-- [Licence](#licence)
-  - [About the licence](#about-the-licence)
+- [APHA: Integration Bridge](#apha-integration-bridge)
+  - [Requirements](#requirements)
+    - [Node.js](#nodejs)
+  - [Local development](#local-development)
+    - [Environment variables](#environment-variables)
+    - [Setup](#setup)
+    - [Development](#development)
+    - [Testing](#testing)
+    - [Production](#production)
+    - [Npm scripts](#npm-scripts)
+    - [Update dependencies](#update-dependencies)
+    - [Formatting](#formatting)
+      - [Windows prettier issue](#windows-prettier-issue)
+  - [API endpoints](#api-endpoints)
+  - [Development helpers](#development-helpers)
+    - [MongoDB Locks](#mongodb-locks)
+    - [Proxy](#proxy)
+  - [Docker](#docker)
+    - [Development image](#development-image)
+    - [Production image](#production-image)
+    - [Docker Compose](#docker-compose)
+    - [Dependabot](#dependabot)
+    - [SonarCloud](#sonarcloud)
+  - [Licence](#licence)
+    - [About the licence](#about-the-licence)
 
 ## Requirements
 
@@ -46,13 +48,15 @@ In-order to run this application locally, you will need to register and obtain a
 
 You can find the instructions on how to do this in the [Oracle Container Registry documentation](https://container-registry.oracle.com/).
 
-Once you have obtained your personal access token, you can log in to the Oracle Container Registry by running `docker login container-registry.oracle.com` and providing your email address as the username and your personal access token as the password.
+Once you have obtained your personal access token (in your Oracle Container Registry account and NOT in an Oracle Cloud account), you can log in to the Oracle Container Registry by running `docker login container-registry.oracle.com` and providing your email address as the username and your personal access token as the password.
 
 Test your login by pulling the OracleDB image:
 
 ```bash
 docker pull container-registry.oracle.com/database/free:latest
 ```
+
+Note: if you were already running the docker container you will need to compose it again with `npm run compose:up` and then it will also include the oracle DB.
 
 ### Environment variables
 
@@ -83,7 +87,7 @@ npm run dev
 
 ### Testing
 
-In-order to run the tests locally, against testcontainers that run the free version of OracleDB, you will need to install the "OracleDB Instant Client libraries".
+In-order to run the tests locally, against test containers that run the free version of OracleDB, you will need to install the "OracleDB Instant Client libraries".
 You can find the instructions on how to install them in the [OracleDB documentation](https://www.oracle.com/database/technologies/instant-client/downloads.html).
 
 Once this is done, create a `.env.test.local` file at the root of the project, with the location of the "OracleDB Instant Client libraries". For example:
