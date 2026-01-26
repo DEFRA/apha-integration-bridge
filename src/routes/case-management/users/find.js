@@ -9,13 +9,13 @@ import {
   HTTPError
 } from '../../../lib/http/http-exception.js'
 
-import { testUsers } from './find.mocks.js'
 import {
   HTTPArrayResponse,
   HTTPObjectResponse
 } from '../../../lib/http/http-response.js'
 import { LinksReference } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
+import { salesforceClient } from '../../../lib/salesforce/client.js'
 
 const PostFindUsersResponseSchema = Joi.object({
   data: Joi.array().items(CaseManagementUser).required(),
@@ -96,16 +96,15 @@ async function handler(request, h) {
   )
 
   try {
-    const user = await retry(
+    const result = await retry(
       async (bail) => {
-        // Mock implementation - simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 100))
+        const query = `SELECT Id FROM User WHERE Username = '${emailAddress.replace(/'/g, "\\'")}' AND IsActive = true LIMIT 1`
 
-        // Use test data for demonstration
-        return testUsers.find(
-          (testUser) =>
-            testUser.emailAddress.toLowerCase() === emailAddress.toLowerCase()
+        request.logger?.debug(
+          `Executing Salesforce query: ${JSON.stringify(query)}`
         )
+
+        return await salesforceClient.sendQuery(query, request.logger)
       },
       {
         retries: 3,
@@ -120,8 +119,11 @@ async function handler(request, h) {
       self: 'case-management/users/find'
     })
 
-    if (user) {
-      response.add(new HTTPObjectResponse('case-management-user', user.id, {}))
+    if (result.records && result.records.length > 0) {
+      const user = result.records?.[0]
+      if (!user) return
+
+      response.add(new HTTPObjectResponse('case-management-user', user.Id, {}))
     }
 
     return h.response(response.toResponse()).code(200)
