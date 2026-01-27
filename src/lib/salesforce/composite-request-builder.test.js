@@ -10,7 +10,7 @@ describe('buildCaseCreationCompositeRequest', () => {
     authUrl: undefined,
     clientId: 'client-id',
     clientSecret: 'client-secret',
-    apiVersion: apiVersion,
+    apiVersion,
     requestTimeoutMs: 1000
   }
 
