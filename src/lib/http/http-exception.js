@@ -86,6 +86,7 @@ export class HTTPException extends Error {
     })
 
     Object.assign(boom.output.payload, {
+      message: this.message,
       code: this.code,
       errors: this.errors
     })
