@@ -8,29 +8,13 @@ import {
   HTTPException,
   HTTPError
 } from '../../../lib/http/http-exception.js'
-
-import {
-  HTTPArrayResponse,
-  HTTPObjectResponse
-} from '../../../lib/http/http-response.js'
-import { LinksReference } from '../../../types/links.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
-import {
-  Case,
-  CreateCasePayloadSchema
-} from '../../../types/case-management/case.js'
+import { CreateCasePayloadSchema } from '../../../types/case-management/case.js'
 import { buildCaseCreationCompositeRequest } from '../../../lib/salesforce/composite-request-builder.js'
 
 /**
  * @import {CreateCasePayload} from '../../../types/case-management/case.js'
  */
-
-const PostCreateCaseResponseSchema = Joi.object({
-  data: Joi.array().items(Case).required(),
-  links: LinksReference
-})
-  .description('Case Management Case Details')
-  .label('Create Case Response')
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -64,7 +48,7 @@ const options = {
   },
   response: {
     status: {
-      200: PostCreateCaseResponseSchema,
+      201: Joi.any().allow(null, '').optional().description('No content'),
       '400-500': HTTPExceptionSchema
     }
   }
@@ -102,7 +86,7 @@ async function handler(request, h) {
         )
       : []
 
-    if (failedCompositeItems.length > 0) {
+    if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
       const compositeError = /** @type {Error & {failedItems: any[]}} */ (
         new Error('One or more composite operations failed')
       )
@@ -111,21 +95,7 @@ async function handler(request, h) {
       throw compositeError
     }
 
-    const response = new HTTPArrayResponse({
-      self: 'case-management/case'
-    })
-
-    if (salesforceResponse) {
-      response.add(
-        new HTTPObjectResponse(
-          'case-management-case',
-          payload.applicationReferenceNumber,
-          salesforceResponse
-        )
-      )
-    }
-
-    return h.response(response.toResponse()).code(201)
+    return h.response().code(201)
   } catch (error) {
     if (error.name === 'CompositeOperationError') {
       const failedOperations = error.failedItems.map((item) => ({

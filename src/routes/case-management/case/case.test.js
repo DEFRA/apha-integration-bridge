@@ -9,6 +9,7 @@ const ENDPOINT_METHOD = 'POST'
 const TEST_APP_REF = 'TB-1234-ABCD'
 
 const mockSendComposite = jest.spyOn(salesforceClient, 'sendComposite')
+const mockLoggerError = jest.fn()
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -25,6 +26,14 @@ async function createTestServer() {
       }
     }
   ])
+
+  server.ext('onPreHandler', (request, h) => {
+    request.logger = /** @type {any} */ ({
+      error: mockLoggerError,
+      info: jest.fn()
+    })
+    return h.continue
+  })
 
   server.route({
     handler: route.default.handler,
@@ -51,30 +60,6 @@ async function createCase(server, payload, headers = {}) {
     },
     payload
   })
-}
-
-/**
- * @param {Hapi.ServerInjectResponse} response
- * @param {number} expectedDataLength
- */
-function assertSuccessResponse(response, expectedDataLength) {
-  expect(response.statusCode).toBe(201)
-
-  const body = /** @type {Record<string, any>} */ (response.result)
-
-  expect(body.data).toBeInstanceOf(Array)
-  expect(body.data.length).toBe(expectedDataLength)
-  expect(body.links).toHaveProperty('self', 'case-management/case')
-
-  return body
-}
-
-function assertCaseData(caseData, expectedRefNumber) {
-  expect(caseData).toHaveProperty('type', 'case-management-case')
-  expect(caseData).toHaveProperty('id')
-  expect(caseData.id).toBe(expectedRefNumber)
-  expect(caseData).toHaveProperty('compositeResponse')
-  expect(caseData.compositeResponse).toBeInstanceOf(Array)
 }
 
 function createValidPayload() {
@@ -141,12 +126,7 @@ describe('POST /case-management/case', () => {
       const payload = createValidPayload()
       const res = await createCase(server, payload)
 
-      const body = assertSuccessResponse(res, 1)
-      assertCaseData(body.data[0], TEST_APP_REF)
-      expect(body.data[0].compositeResponse).toEqual(
-        mockCompositeResponse.compositeResponse
-      )
-
+      expect(res.statusCode).toBe(201)
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
       expect(mockSendComposite).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -271,6 +251,17 @@ describe('POST /case-management/case', () => {
   })
 
   describe('Salesforce error handling', () => {
+    const genericError = {
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Your request could not be processed',
+      errors: [
+        {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Could not create case on the case management service'
+        }
+      ]
+    }
+
     test('returns 500 when Salesforce composite fails', async () => {
       const server = await createTestServer()
 
@@ -287,20 +278,19 @@ describe('POST /case-management/case', () => {
       expect(res.statusCode).toBe(500)
 
       const body = /** @type {Record<string, any>} */ (res.result)
-
-      expect(body).toMatchObject({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Your request could not be processed',
-        errors: [
-          {
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Could not create case on the case management service'
-          }
-        ]
-      })
+      expect(body).toMatchObject(genericError)
 
       // Verify retry logic - should be called 4 times (initial + 3 retries)
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
+
+      // Verify logger was called with correct details
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          err: expect.any(Error),
+          endpoint: 'case-management/case'
+        }),
+        'Failed to create case in Salesforce'
+      )
     })
 
     test('returns 500 when composite operations partially fail', async () => {
@@ -342,17 +332,49 @@ describe('POST /case-management/case', () => {
       expect(res.statusCode).toBe(500)
 
       const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
 
-      expect(body).toMatchObject({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Your request could not be processed',
-        errors: [
-          {
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Could not create case on the case management service'
-          }
-        ]
-      })
+      expect(mockSendComposite).toHaveBeenCalledTimes(1)
+
+      // Verify logger was called with correct details for composite operation error
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endpoint: 'case-management/case',
+          failedOperations: [
+            {
+              referenceId: 'updateContact',
+              httpStatusCode: 400,
+              errors: [
+                {
+                  errorCode: 'REQUIRED_FIELD_MISSING',
+                  message: 'Required field missing'
+                }
+              ]
+            }
+          ]
+        }),
+        'Composite operations failed in Salesforce'
+      )
+    })
+
+    test('returns 500 when composite response is not an array', async () => {
+      const server = await createTestServer()
+      const mockInvalidCompositeResponse = {
+        compositeResponse: {
+          prop: 'value'
+        }
+      }
+
+      mockSendComposite.mockResolvedValueOnce(
+        /** @type {any} */ (mockInvalidCompositeResponse)
+      )
+      const payload = createValidPayload()
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
     })
@@ -385,9 +407,6 @@ describe('POST /case-management/case', () => {
       const res = await createCase(server, payload)
 
       expect(res.statusCode).toBe(201)
-
-      const body = assertSuccessResponse(res, 1)
-      assertCaseData(body.data[0], TEST_APP_REF)
 
       // Should have been called 3 times (initial + 2 retries)
       expect(mockSendComposite).toHaveBeenCalledTimes(3)
@@ -451,9 +470,7 @@ describe('POST /case-management/case', () => {
       const payload = createValidPayload()
       const res = await createCase(server, payload)
 
-      const body = assertSuccessResponse(res, 1)
-      assertCaseData(body.data[0], TEST_APP_REF)
-      expect(body.data[0].compositeResponse.length).toBe(3)
+      expect(res.statusCode).toBe(201)
     })
 
     test('handles composite response with 200 status codes', async () => {
@@ -483,9 +500,6 @@ describe('POST /case-management/case', () => {
       const res = await createCase(server, payload)
 
       expect(res.statusCode).toBe(201)
-
-      const body = assertSuccessResponse(res, 1)
-      assertCaseData(body.data[0], TEST_APP_REF)
     })
 
     test('handles mixed success and error codes correctly', async () => {

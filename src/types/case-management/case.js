@@ -1,51 +1,5 @@
 import Joi from 'joi'
 
-import { LinksReference } from '../links.js'
-
-const CompositeResponseItemSchema = Joi.object({
-  body: Joi.object()
-    .unknown(true)
-    .required()
-    .description('Response body from the sub-request'),
-  httpHeaders: Joi.object()
-    .unknown(true)
-    .default({})
-    .description('HTTP headers from the sub-request response'),
-  httpStatusCode: Joi.number()
-    .integer()
-    .min(100)
-    .max(599)
-    .required()
-    .description('HTTP status code from the sub-request'),
-  referenceId: Joi.string()
-    .required()
-    .description('Reference ID matching the original request')
-})
-  .description('Individual composite response item')
-  .label('Composite Response Item')
-
-const CaseData = Joi.object({
-  id: Joi.string().required().label('Case reference'),
-  type: Joi.string()
-    .valid('case-management-case')
-    .required()
-    .label('Case Management Case Creation')
-    .description(
-      'The "type" value will be "case-management-case" for this endpoint.'
-    ),
-  compositeResponse: Joi.array()
-    .items(CompositeResponseItemSchema)
-    .required()
-    .description('Array of responses from composite sub-requests')
-})
-  .description('Salesforce composite response')
-  .label('Case Composite Response')
-
-export const CaseReference = Joi.object({
-  data: CaseData.required(),
-  links: LinksReference
-})
-
 /**
  * @typedef {Object} Name
  * @property {string} firstName
@@ -190,12 +144,3 @@ export const CreateCasePayloadSchema = Joi.object({
 })
   .description('Case creation API request payload')
   .label('Create Case Request')
-
-export const PostCreateCaseResponseSchema = Joi.object({
-  data: Joi.array().items(CaseData).required(),
-  links: LinksReference
-})
-  .description('Case Management Case Details')
-  .label('Create Case Response')
-
-export const Case = CaseData
