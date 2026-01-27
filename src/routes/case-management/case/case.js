@@ -7,22 +7,22 @@ import {
   HTTPExceptionSchema,
   HTTPException,
   HTTPError
-} from '../../lib/http/http-exception.js'
+} from '../../../lib/http/http-exception.js'
 
 import {
   HTTPArrayResponse,
   HTTPObjectResponse
-} from '../../lib/http/http-response.js'
-import { LinksReference } from '../../types/links.js'
-import { salesforceClient } from '../../lib/salesforce/client.js'
+} from '../../../lib/http/http-response.js'
+import { LinksReference } from '../../../types/links.js'
+import { salesforceClient } from '../../../lib/salesforce/client.js'
 import {
   Case,
   CreateCasePayloadSchema
-} from '../../types/case-management/case.js'
-import { buildCaseCreationCompositeRequest } from '../../lib/salesforce/composite-request-builder.js'
+} from '../../../types/case-management/case.js'
+import { buildCaseCreationCompositeRequest } from '../../../lib/salesforce/composite-request-builder.js'
 
 /**
- * @import {CreateCasePayload} from '../../types/case-management/case.js'
+ * @import {CreateCasePayload} from '../../../types/case-management/case.js'
  */
 
 const PostCreateCaseResponseSchema = Joi.object({
@@ -40,7 +40,7 @@ const __dirname = new URL('.', import.meta.url).pathname
 const options = {
   auth: false,
   tags: ['api', 'case-management', 'case'],
-  description: 'Create a case in Salesforce',
+  description: 'Create a case in APHA CRM (Salesforce)',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'case.md'),
     'utf8'
