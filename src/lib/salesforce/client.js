@@ -1,3 +1,4 @@
+import { proxyFetch } from '../../common/helpers/proxy/proxy-fetch.js'
 import { config } from '../../config.js'
 
 /**
@@ -292,7 +293,7 @@ class SalesforceClient {
     let response
 
     try {
-      response = await fetch(url, { ...init, signal })
+      response = await proxyFetch(url, { ...init, signal })
       const body = await this.parseResponseBody(response)
 
       return { response, body }
