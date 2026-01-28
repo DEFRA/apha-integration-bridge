@@ -94,18 +94,32 @@ describe('HTTPException', () => {
 
   describe('boomify()', () => {
     it('returns a Boom error with overridden payload', () => {
-      const he = new HTTPError('MISSING_QUERY_PARAMETER', 'Missing')
-      const exc = new HTTPException('BAD_REQUEST', 'Bad', [he])
-      const boomErr = exc.boomify()
+      const errorMessage = 'Error message'
+      const httpError = new HTTPError('MISSING_QUERY_PARAMETER', 'Missing')
+      const httpException = new HTTPException('BAD_REQUEST', errorMessage, [
+        httpError
+      ])
+      const boomErr = httpException.boomify()
 
       expect(boomErr.isBoom).toBe(true)
       expect(boomErr.output.statusCode).toBe(HTTPExceptionCode.BAD_REQUEST)
 
       const payload = boomErr.output.payload
       expect(payload.code).toBe('BAD_REQUEST')
-      expect(payload.errors).toEqual([he])
+      expect(payload.message).toBe(errorMessage)
+      expect(payload.errors).toEqual([httpError])
       expect(payload).not.toHaveProperty('error')
       expect(payload).not.toHaveProperty('statusCode')
+    })
+
+    it('keeps error message after boomify when exception is INTERNAL_SERVER_ERROR', () => {
+      const errorMessage = 'Another error message'
+      const httpException = new HTTPException(
+        'INTERNAL_SERVER_ERROR',
+        errorMessage
+      )
+      const boomErr = httpException.boomify()
+      expect(boomErr.output.payload.message).toBe(errorMessage)
     })
   })
 })
