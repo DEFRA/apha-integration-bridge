@@ -86,6 +86,7 @@ export class HTTPException extends Error {
     })
 
     Object.assign(boom.output.payload, {
+      message: this.message,
       code: this.code,
       errors: this.errors
     })
@@ -118,7 +119,8 @@ export const HTTPErrorCode = {
   UNKNOWN: 'UNKNOWN',
   DATABASE_ERROR: 'DATABASE_ERROR',
   MISSING_QUERY_PARAMETER: 'MISSING_QUERY_PARAMETER',
-  VALIDATION_ERROR: 'VALIDATION_ERROR'
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR'
 }
 
 export class HTTPError extends Error {
