@@ -1,30 +1,14 @@
-import { createLocalJWKSet, jwtVerify } from 'jose'
+import { createRemoteJWKSet, jwtVerify } from 'jose'
 import Boom from '@hapi/boom'
 import { config } from '../../config.js'
-import { fetch, ProxyAgent } from 'undici'
 
 const expectedScope = config.get('auth.scope')
-
-const httpProxy = config.get('httpProxy')
 
 /**
  * @typedef {import('@hapi/hapi').Server} Server
  * @typedef {import('@hapi/hapi').Request} Request
  * @typedef {import('@hapi/hapi').ResponseToolkit} ResponseToolkit
  */
-
-const getJWKSetResponse = async (url, options = {}) => {
-  if (httpProxy) {
-    return fetch(url, {
-      ...options,
-      dispatcher: new ProxyAgent({
-        uri: httpProxy
-      })
-    })
-  }
-
-  return fetch(url, options)
-}
 
 /**
  * Creates a Hapi.js plugin for authenticating JWT using a remote JWK set.
@@ -68,16 +52,9 @@ export const authPlugin = {
                 return Boom.unauthorized('Missing `iss` claim in token')
               }
 
-              const jwkSet = await getJWKSetResponse(
+              const JWKS = createRemoteJWKSet(
                 new URL(`${issuer}/.well-known/jwks.json`)
               )
-
-              /**
-               * @type {any}
-               */
-              const json = await jwkSet.json()
-
-              const JWKS = createLocalJWKSet(json)
 
               const { payload } = await jwtVerify(token, JWKS, {
                 issuer,
@@ -97,10 +74,6 @@ export const authPlugin = {
                 artifacts: payload
               })
             } catch (err) {
-              if (Boom.isBoom(err)) {
-                return err
-              }
-
               return Boom.unauthorized('Token verification failed')
             }
           }
