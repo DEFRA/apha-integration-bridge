@@ -25,18 +25,20 @@ export const first = {
         id: '08/139/0167'
       }
     },
-    location: {
-      data: {
-        type: 'locations',
-        id: 'L123456'
-      }
+    locations: {
+      data: [
+        {
+          type: 'locations',
+          id: 'L123456'
+        }
+      ]
+    },
+    commodities: {
+      data: []
+    },
+    facilities: {
+      data: []
     }
-    // commodity: {
-    //   data: {
-    //     type: 'commodities',
-    //     id: 'U000010'
-    //   }
-    // }
   }
 }
 
@@ -67,24 +69,22 @@ export const second = {
         id: '08/139/0168'
       }
     },
-    location: {
-      data: {
-        type: 'locations',
-        id: 'L123457'
-      }
+    locations: {
+      data: [
+        {
+          type: 'locations',
+          id: 'L123457'
+        }
+      ]
+    },
+    facilities: {
+      data: [
+        {
+          type: 'facilities',
+          id: 'U000030'
+        }
+      ]
     }
-    // facility: {
-    //   data: {
-    //     type: 'facilities',
-    //     id: 'U000030',
-    //   }
-    // },
-    // activities: {
-    //   data: {
-    //     type: 'activities',
-    //     id: 'test',
-    //   }
-    // }
   }
 }
 

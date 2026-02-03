@@ -1,6 +1,6 @@
-import { relationshipSchema } from './relationships.js'
+import { relationshipToOne } from './relationships.js'
 
-export const CustomerRelationship = relationshipSchema({
+export const CustomerRelationship = relationshipToOne({
   plural: 'customers',
   singular: 'customer'
 })
