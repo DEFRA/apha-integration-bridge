@@ -1,4 +1,4 @@
-import { HTTPObjectResponse } from '../lib/http/http-response.js'
+import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 
 export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
   status: 'Open',
