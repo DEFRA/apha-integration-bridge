@@ -195,7 +195,7 @@ export async function handler(request, h) {
     }
 
     const response = {
-      data: data,
+      data,
       links: {
         self: `/workorders?${selfQueryParams.toString()}`,
         next: nextLink,
