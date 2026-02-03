@@ -39,5 +39,8 @@ export const relationshipToOne = (entityTerms) =>
  */
 export const relationshipToMany = (entityTerms) =>
   Joi.object({
-    data: Joi.array().items(baseData(entityTerms)).required().label(`${capitalise(entityTerms.plural)}`)
+    data: Joi.array()
+      .items(baseData(entityTerms))
+      .required()
+      .label(`${capitalise(entityTerms.plural)}`)
   }).label(`${capitalise(entityTerms.plural)} relationship`)

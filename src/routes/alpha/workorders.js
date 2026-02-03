@@ -2,7 +2,6 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { LinksReference } from '../../types/links.js'
 import { Workorders } from '../../types/alpha/workorders.js'
 import {
   HTTPExceptionSchema,
@@ -11,12 +10,13 @@ import {
 } from '../../lib/http/http-exception.js'
 
 import { all } from './workorders.mocks.js'
+import { PaginatedLink } from '../../types/alpha/links.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
 const PaginationWorkordersResponseSchema = Joi.object({
   data: Joi.array().items(Workorders).required().label('Workorders'),
-  links: LinksReference
+  links: PaginatedLink
 })
   .description('A response from the workorders endpoint')
   .label('Workorders Response')
@@ -198,8 +198,8 @@ export async function handler(request, h) {
       data,
       links: {
         self: `/workorders?${selfQueryParams.toString()}`,
-        next: nextLink,
-        prev: prevLink
+        next: nextLink ?? null,
+        prev: prevLink ?? null
       }
     }
 
