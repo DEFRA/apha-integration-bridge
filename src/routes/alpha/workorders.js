@@ -43,19 +43,21 @@ export const options = {
     query: Joi.object({
       startActivationDate: Joi.string()
         .isoDate()
+        .required()
         .default(() => new Date().toISOString())
         .description(
           'Paginate workorders after or on this start activation date'
         ),
       endActivationDate: Joi.string()
         .isoDate()
+        .required()
         .description(
           'Paginate workorders before or on this end activation date'
         ),
       page: Joi.number()
         .integer()
         .min(1)
-        .default(1)
+        .required()
         .description('The page number to retrieve'),
       pageSize: Joi.number()
         .integer()
