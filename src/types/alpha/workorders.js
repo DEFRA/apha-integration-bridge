@@ -14,22 +14,26 @@ export const Workorders = WorkordersData.keys({
   // status: Joi.string().required().label('Status').description('Status of the work order - e.g. Open'),
   activationDate: Joi.string().required().label('Activation Date'),
   businessArea: Joi.string()
+    .required()
     .label('Business Area')
     .description(
       'The broad business area this workorder relates to - e.g. Disease Risk Reduction'
     ),
   workArea: Joi.string()
+    .required()
     .label('Work Area')
     .description(
       'The specific area this workorder relates to - e.g. Sheep Scab / TB'
     ),
-  country: Joi.string().label('Country'),
+  country: Joi.string().required().label('Country'),
   aim: Joi.string()
+    .required()
     .label('Aim')
     .description(
       'The broad outcome this workorder contributes to - e.g. Contain / Control / Eradicate Endemic Disease'
     ),
   purpose: Joi.string()
+    .required()
     .label('Purpose')
     .description(
       'The activity to be undertaken during the workorder - e.g. Sheep & Goat on Farm Survey'
@@ -43,7 +47,7 @@ export const Workorders = WorkordersData.keys({
   // latestActivityCompletionDate: Joi.string().label(
   //   'Latest Activity Completion Date'
   // ),
-  phase: Joi.string().label('Phase'),
+  phase: Joi.string().required().label('Phase'),
   relationships: Joi.object({
     customer: CustomerRelationship,
     holding: HoldingsRelationship,
@@ -59,5 +63,5 @@ export const Workorders = WorkordersData.keys({
       plural: 'commodities',
       singular: 'comodities'
     })
-  })
+  }).required()
 })
