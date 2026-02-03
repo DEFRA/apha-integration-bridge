@@ -1,12 +1,12 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
-import { CustomersReference } from './customers.js'
-import { HoldingsReference } from './holdings.js'
-import { LocationsReference } from './locations.js'
-import { CommoditiesReference } from './commodities.js'
-import { ActivitiesReference } from './activities.js'
-import { FacilitiesReference } from './facilities.js'
+import { LinksReference } from '../links.js'
+import { CustomersReference } from '../customers.js'
+import { HoldingsReference } from '../holdings.js'
+import { LocationsReference } from '../locations.js'
+import { CommoditiesReference } from '../commodities.js'
+import { ActivitiesReference } from '../activities.js'
+import { FacilitiesReference } from '../facilities.js'
 
 const WorkordersData = Joi.object({
   type: Joi.string()
