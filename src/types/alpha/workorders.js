@@ -1,11 +1,9 @@
 import Joi from 'joi'
 
-import { CustomersReference } from '../customers.js'
-import { HoldingsReference } from '../holdings.js'
-import { LocationsReference } from '../locations.js'
-import { CommoditiesReference } from '../commodities.js'
 import { ActivitiesReference } from '../activities.js'
-import { FacilitiesReference } from '../facilities.js'
+import { CustomerRelationship } from './customers.js'
+import { HoldingsRelationship } from './holdings.js'
+import { LocationsRelationship } from './locations.js'
 
 const WorkordersData = Joi.object({
   type: Joi.string()
@@ -30,11 +28,11 @@ export const Workorders = WorkordersData.keys({
   ),
   phase: Joi.string().label('Phase'),
   relationships: Joi.object({
-    customer: CustomersReference.optional(),
-    holding: HoldingsReference.optional(),
-    facility: FacilitiesReference.optional(),
-    location: LocationsReference.optional(),
-    commodity: CommoditiesReference.optional(),
+    customer: CustomerRelationship,
+    holding: HoldingsRelationship,
+    // facility: FacilitiesReference.optional(),
+    location: LocationsRelationship,
+    // commodity: CommoditiesReference.optional(),
     activities: ActivitiesReference.optional()
   })
 })
