@@ -17,5 +17,5 @@ export const CommoditiesReference = Joi.object({
 }).label('Commodities reference')
 
 export const Commodities = CommoditiesData.keys({
-  fieldStockNumber: Joi.number().allow(null)
+  animalQuantity: Joi.number().allow(null)
 })
