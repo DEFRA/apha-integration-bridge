@@ -1,6 +1,6 @@
-import { relationshipSchema } from './relationships.js'
+import { relationshipToOne } from './relationships.js'
 
-export const HoldingsRelationship = relationshipSchema({
+export const HoldingsRelationship = relationshipToOne({
   plural: 'holdings',
   singular: 'holding'
 })
