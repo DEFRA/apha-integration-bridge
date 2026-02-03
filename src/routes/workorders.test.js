@@ -60,47 +60,39 @@ test('returns the mock workorder', async () => {
         phase: 'EXPOSURETRACKING',
         relationships: {
           customer: {
-            data: { type: 'customers', id: 'C123456' },
-            links: {
-              self: '/workorders/WS-76512/relationships/customer'
-            }
+            data: { type: 'customers', id: 'C123456' }
           },
           holding: {
-            data: { type: 'holdings', id: '08/139/0167' },
-            links: {
-              self: '/workorders/WS-76512/relationships/holding'
-            }
+            data: { type: 'holdings', id: '08/139/0167' }
           },
           location: {
-            data: { type: 'locations', id: 'L123456' },
-            links: {
-              self: '/workorders/WS-76512/relationships/location'
-            }
+            data: { type: 'locations', id: 'L123456' }
           },
           commodity: {
-            data: { type: 'commodities', id: 'U000010' },
-            links: {
-              self: '/workorders/WS-76512/relationships/commodity'
-            }
+            data: { type: 'commodities', id: 'U000010' }
           },
-          activities: {
-            links: {
-              self: '/workorders/WS-76512/relationships/activities'
-            }
-          }
+          activities: {}
         }
       }
     ],
     links: {
-      self: `/workorders?${queryParams.toString()}`,
       next: `/workorders?${expectedNextParams.toString()}`
     }
   })
 
+  const firstRelationships =
+    /** @type {{ relationships: Record<string, { links?: unknown }> }} */ (
+      firstPage.result
+    ).data[0].relationships
+
+  for (const relationship of Object.values(firstRelationships)) {
+    expect(relationship).not.toHaveProperty('links')
+  }
+
   expect(firstPage.statusCode).toBe(200)
 
   /**
-   * @type {{ links: { next: string; self: string; } }}
+   * @type {{ links: { next: string; prev?: string } }}
    */
   // @ts-expect-error - TypeScript doesn't know about the structure of the response
   const firstPageResponse = firstPage.result
@@ -109,6 +101,12 @@ test('returns the mock workorder', async () => {
     method: 'GET',
     url: firstPageResponse.links.next
   })
+
+  const expectedSecondNextParams = new URLSearchParams(queryParams.toString())
+  const expectedSecondPrevParams = new URLSearchParams(queryParams.toString())
+
+  expectedSecondNextParams.set('page', '3')
+  expectedSecondPrevParams.set('page', '1')
 
   expect(secondPage.result).toMatchObject({
     data: [
@@ -127,42 +125,35 @@ test('returns the mock workorder', async () => {
         phase: 'EXPOSURETRACKING',
         relationships: {
           customer: {
-            data: { type: 'customers', id: 'C123457' },
-            links: {
-              self: '/workorders/WS-76513/relationships/customer'
-            }
+            data: { type: 'customers', id: 'C123457' }
           },
           holding: {
-            data: { type: 'holdings', id: '08/139/0168' },
-            links: {
-              self: '/workorders/WS-76513/relationships/holding'
-            }
+            data: { type: 'holdings', id: '08/139/0168' }
           },
           location: {
-            data: { type: 'locations', id: 'L123457' },
-            links: {
-              self: '/workorders/WS-76513/relationships/location'
-            }
+            data: { type: 'locations', id: 'L123457' }
           },
           facility: {
-            data: { type: 'facilities', id: 'U000030' },
-            links: {
-              self: '/workorders/WS-76513/relationships/facility'
-            }
+            data: { type: 'facilities', id: 'U000030' }
           },
-          activities: {
-            links: {
-              self: '/workorders/WS-76513/relationships/activities'
-            }
-          }
+          activities: {}
         }
       }
     ],
     links: {
-      self: firstPageResponse.links.next,
-      prev: firstPageResponse.links.self
+      next: `/workorders?${expectedSecondNextParams.toString()}`,
+      prev: `/workorders?${expectedSecondPrevParams.toString()}`
     }
   })
+
+  const secondRelationships =
+    /** @type {{ relationships: Record<string, { links?: unknown }> }} */ (
+      secondPage.result
+    ).data[0].relationships
+
+  for (const relationship of Object.values(secondRelationships)) {
+    expect(relationship).not.toHaveProperty('links')
+  }
 
   expect(secondPage.statusCode).toBe(200)
 })
@@ -210,7 +201,6 @@ test('returns an empty page', async () => {
   expect(emptyPage.result).toMatchObject({
     data: [],
     links: {
-      self: `/workorders?${queryParams.toString()}`,
       prev: `/workorders?${prevQueryParams.toString()}`
     }
   })

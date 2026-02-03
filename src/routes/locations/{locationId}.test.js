@@ -69,18 +69,15 @@ test('returns the location, address and related units for a known Location ID', 
   expect(rel.commodities).toEqual(
     expect.arrayContaining([
       {
-        data: { type: 'commodities', id: 'U000010' },
-        links: { self: '/locations/L97339/relationships/commodities' }
+        data: { type: 'commodities', id: 'U000010' }
       },
       {
-        data: { type: 'commodities', id: 'U000020' },
-        links: { self: '/locations/L97339/relationships/commodities' }
+        data: { type: 'commodities', id: 'U000020' }
       }
     ])
   )
 
   expect(rel.facilities).toMatchObject({
-    data: { type: 'facilities', id: 'U000030' },
-    links: { self: '/locations/L97339/relationships/facilities' }
+    data: { type: 'facilities', id: 'U000030' }
   })
 })

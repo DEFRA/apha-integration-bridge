@@ -115,9 +115,7 @@ async function handler(request, h) {
       }
     )
 
-    const response = new HTTPArrayResponse({
-      self: 'case-management/users/find'
-    })
+    const response = new HTTPArrayResponse()
 
     if (result.records && result.records.length > 0) {
       const user = result.records?.[0]

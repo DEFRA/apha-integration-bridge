@@ -3,14 +3,26 @@ export class HTTPObjectResponse {
    * @param {string} type The type of the resource
    * @param {*} id The unique identifier for the resource
    * @param {Object | undefined | null} data The data of the resource
-   * @param {Object | undefined | null} links The links for the resource
    */
-  constructor(type, id, data, links) {
+  constructor(type, id, data) {
     this.type = type
     this.id = id
     this.data = data || {}
-    this.links = links || {}
     this.relationships = new Map()
+
+    /**
+     * define private links property
+     */
+    this._links = undefined
+  }
+
+  /**
+   * set links for the top-level response
+   * @param {Object} links
+   */
+  links(links) {
+    this._links = links
+    return this
   }
 
   /**
@@ -40,8 +52,12 @@ export class HTTPObjectResponse {
     return this
   }
 
-  toResponse() {
-    const { type, id, links } = this
+  toResponse(isRoot = true) {
+    const { type, id } = this
+
+    if (!isRoot && this._links !== undefined) {
+      throw new TypeError('Links are only supported on top-level responses')
+    }
 
     /**
      * @type {Object | undefined}
@@ -60,12 +76,12 @@ export class HTTPObjectResponse {
      */
     for (const [type, items] of this.relationships.entries()) {
       if (items.size === 1) {
-        relationships[type] = items.values().next().value.toResponse()
+        relationships[type] = items.values().next().value.toResponse(false)
       } else {
         relationships[type] = []
 
         for (const item of items.values()) {
-          relationships[type].push(item.toResponse())
+          relationships[type].push(item.toResponse(false))
         }
       }
     }
@@ -80,20 +96,29 @@ export class HTTPObjectResponse {
       data.relationships = relationships
     }
 
-    return {
-      data,
-      links
+    const response = { data }
+
+    if (isRoot && this._links !== undefined) {
+      response.links = this._links
     }
+
+    return response
   }
 }
 
 export class HTTPArrayResponse {
-  /**
-   * @param {Object | undefined | null} links links for the response
-   */
-  constructor(links) {
+  constructor() {
     this.items = new Map()
-    this.links = links || {}
+    this._links = undefined
+  }
+
+  /**
+   * set links for the top-level response
+   * @param {Object} links
+   */
+  links(links) {
+    this._links = links
+    return this
   }
 
   /**
@@ -120,17 +145,20 @@ export class HTTPArrayResponse {
   }
 
   toResponse() {
-    const { links, items } = this
+    const { items } = this
 
     const data = []
 
     for (const item of items.values()) {
-      data.push(item.toResponse().data)
+      data.push(item.toResponse(false).data)
     }
 
-    return {
-      data,
-      links
+    const response = { data }
+
+    if (this._links !== undefined) {
+      response.links = this._links
     }
+
+    return response
   }
 }

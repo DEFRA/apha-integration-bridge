@@ -130,40 +130,19 @@ export async function handler(request, h) {
 
     const { cph, cphtype, locationid } = row
 
-    const response = new HTTPObjectResponse(
-      'holdings',
-      cph,
-      {
-        cphType: cphtype
-      },
-      {
-        self: `/holdings/${cph}`
-      }
-    )
+    const response = new HTTPObjectResponse('holdings', cph, {
+      cphType: cphtype
+    })
 
     response.relationship(
       'location',
-      new HTTPObjectResponse(
-        'locations',
-        locationid,
-        {},
-        {
-          self: `/holdings/${cph}/relationships/location`
-        }
-      )
+      new HTTPObjectResponse('locations', locationid, {})
     )
 
     if (row.cphholdercustomerid) {
       response.relationship(
         'cphHolder',
-        new HTTPObjectResponse(
-          'customers',
-          row.cphholdercustomerid,
-          {},
-          {
-            self: `/holdings/${cph}/relationships/cphHolder`
-          }
-        )
+        new HTTPObjectResponse('customers', row.cphholdercustomerid, {})
       )
     }
 

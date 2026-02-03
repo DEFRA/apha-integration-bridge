@@ -15,62 +15,27 @@ export const first = new HTTPObjectResponse('workorders', 'WS-76512', {
 
 first.relationship(
   'customer',
-  new HTTPObjectResponse(
-    'customers',
-    'C123456',
-    {},
-    {
-      self: '/workorders/WS-76512/relationships/customer'
-    }
-  )
+  new HTTPObjectResponse('customers', 'C123456', {})
 )
 
 first.relationship(
   'holding',
-  new HTTPObjectResponse(
-    'holdings',
-    '08/139/0167',
-    {},
-    {
-      self: '/workorders/WS-76512/relationships/holding'
-    }
-  )
+  new HTTPObjectResponse('holdings', '08/139/0167', {})
 )
 
 first.relationship(
   'location',
-  new HTTPObjectResponse(
-    'locations',
-    'L123456',
-    {},
-    {
-      self: '/workorders/WS-76512/relationships/location'
-    }
-  )
+  new HTTPObjectResponse('locations', 'L123456', {})
 )
 
 first.relationship(
   'commodity',
-  new HTTPObjectResponse(
-    'commodities',
-    'U000010',
-    {},
-    {
-      self: '/workorders/WS-76512/relationships/commodity'
-    }
-  )
+  new HTTPObjectResponse('commodities', 'U000010', {})
 )
 
 first.relationship(
   'activities',
-  new HTTPObjectResponse(
-    'activities',
-    undefined,
-    {},
-    {
-      self: '/workorders/WS-76512/relationships/activities'
-    }
-  )
+  new HTTPObjectResponse('activities', undefined, {})
 )
 
 export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
@@ -88,62 +53,27 @@ export const second = new HTTPObjectResponse('workorders', 'WS-76513', {
 
 second.relationship(
   'customer',
-  new HTTPObjectResponse(
-    'customers',
-    'C123457',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/customer'
-    }
-  )
+  new HTTPObjectResponse('customers', 'C123457', {})
 )
 
 second.relationship(
   'holding',
-  new HTTPObjectResponse(
-    'holdings',
-    '08/139/0168',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/holding'
-    }
-  )
+  new HTTPObjectResponse('holdings', '08/139/0168', {})
 )
 
 second.relationship(
   'location',
-  new HTTPObjectResponse(
-    'locations',
-    'L123457',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/location'
-    }
-  )
+  new HTTPObjectResponse('locations', 'L123457', {})
 )
 
 second.relationship(
   'facility',
-  new HTTPObjectResponse(
-    'facilities',
-    'U000030',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/facility'
-    }
-  )
+  new HTTPObjectResponse('facilities', 'U000030', {})
 )
 
 second.relationship(
   'activities',
-  new HTTPObjectResponse(
-    'activities',
-    'test',
-    {},
-    {
-      self: '/workorders/WS-76513/relationships/activities'
-    }
-  )
+  new HTTPObjectResponse('activities', 'test', {})
 )
 
 export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
@@ -161,62 +91,27 @@ export const third = new HTTPObjectResponse('workorders', 'WS-93218', {
 
 third.relationship(
   'customer',
-  new HTTPObjectResponse(
-    'customers',
-    'C789654',
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/customer'
-    }
-  )
+  new HTTPObjectResponse('customers', 'C789654', {})
 )
 
 third.relationship(
   'holding',
-  new HTTPObjectResponse(
-    'holdings',
-    '12/208/3348',
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/holding'
-    }
-  )
+  new HTTPObjectResponse('holdings', '12/208/3348', {})
 )
 
 third.relationship(
   'location',
-  new HTTPObjectResponse(
-    'locations',
-    'L078945',
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/location'
-    }
-  )
+  new HTTPObjectResponse('locations', 'L078945', {})
 )
 
 third.relationship(
   'commodity',
-  new HTTPObjectResponse(
-    'commodities',
-    'U005321',
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/commodity'
-    }
-  )
+  new HTTPObjectResponse('commodities', 'U005321', {})
 )
 
 third.relationship(
   'activities',
-  new HTTPObjectResponse(
-    'activities',
-    undefined,
-    {},
-    {
-      self: '/workorders/WS-93218/relationships/activities'
-    }
-  )
+  new HTTPObjectResponse('activities', undefined, {})
 )
 
 export const all = [first, second, third]

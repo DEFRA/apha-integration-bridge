@@ -197,11 +197,21 @@ export async function handler(request, h) {
       prevLink = `/workorders?${prevQueryParams.toString()}`
     }
 
-    const response = new HTTPArrayResponse({
-      self: `/workorders?${selfQueryParams.toString()}`,
-      next: nextLink,
-      prev: prevLink
-    })
+    const response = new HTTPArrayResponse()
+
+    const links = {}
+
+    if (nextLink) {
+      links.next = nextLink
+    }
+
+    if (prevLink) {
+      links.prev = prevLink
+    }
+
+    if (Object.keys(links).length > 0) {
+      response.links(links)
+    }
 
     for (const workorder of paginatedWorkorders) {
       response.add(workorder)

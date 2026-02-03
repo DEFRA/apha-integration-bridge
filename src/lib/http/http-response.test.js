@@ -23,8 +23,7 @@ describe('HTTPObjectResponse', () => {
         type: 'user',
         id: 42,
         username: 'alice'
-      },
-      links: {}
+      }
     })
   })
 
@@ -35,8 +34,7 @@ describe('HTTPObjectResponse', () => {
       data: {
         type: 'item',
         id: 'xyz'
-      },
-      links: {}
+      }
     })
   })
 
@@ -47,8 +45,21 @@ describe('HTTPObjectResponse', () => {
       data: {
         type: 'thing',
         id: undefined
+      }
+    })
+  })
+
+  test('links() sets top-level links and is chainable', () => {
+    const response = new HTTPObjectResponse('user', 42, { username: 'alice' })
+
+    expect(response.links({ next: '/users?page=2' })).toBe(response)
+    expect(response.toResponse()).toEqual({
+      data: {
+        type: 'user',
+        id: 42,
+        username: 'alice'
       },
-      links: {}
+      links: { next: '/users?page=2' }
     })
   })
 
@@ -75,8 +86,7 @@ describe('HTTPObjectResponse', () => {
     const out = user.toResponse()
     expect(Array.isArray(out.data.relationships.org)).toBe(false)
     expect(out.data.relationships.org).toEqual({
-      data: { type: 'org', id: 'o1', name: 'Acme' },
-      links: {}
+      data: { type: 'org', id: 'o1', name: 'Acme' }
     })
   })
 
@@ -90,8 +100,8 @@ describe('HTTPObjectResponse', () => {
     const out = user.toResponse()
     expect(Array.isArray(out.data.relationships.org)).toBe(true)
     expect(out.data.relationships.org).toEqual([
-      { data: { type: 'org', id: 'o1', name: 'Acme' }, links: {} },
-      { data: { type: 'org', id: 'o2', name: 'Beta' }, links: {} }
+      { data: { type: 'org', id: 'o1', name: 'Acme' } },
+      { data: { type: 'org', id: 'o2', name: 'Beta' } }
     ])
   })
 
@@ -106,8 +116,7 @@ describe('HTTPObjectResponse', () => {
     const out = user.toResponse()
     // With a single item for this type, it should serialize as an object (full wrapper)
     expect(out.data.relationships.org).toEqual({
-      data: { type: 'org', id: 'o1', name: 'NewCo' },
-      links: {}
+      data: { type: 'org', id: 'o1', name: 'NewCo' }
     })
   })
 
@@ -120,8 +129,8 @@ describe('HTTPObjectResponse', () => {
 
     const out = user.toResponse()
     expect(out.data.relationships).toEqual({
-      org: { data: { type: 'org', id: 'o1', name: 'Acme' }, links: {} },
-      role: { data: { type: 'role', id: 'r1', title: 'Admin' }, links: {} }
+      org: { data: { type: 'org', id: 'o1', name: 'Acme' } },
+      role: { data: { type: 'role', id: 'r1', title: 'Admin' } }
     })
   })
 
@@ -137,8 +146,7 @@ describe('HTTPObjectResponse', () => {
         hello: 'world',
         type: 'realType',
         id: 123
-      },
-      links: {}
+      }
     })
   })
 
@@ -170,17 +178,28 @@ describe('HTTPObjectResponse', () => {
                     type: 'org',
                     id: 'p1',
                     name: 'Acme Holdings'
-                  },
-                  links: {}
+                  }
                 }
               }
-            },
-            links: {}
+            }
           }
         }
-      },
-      links: {}
+      }
     })
+  })
+
+  test('toResponse() throws when a relationship response includes links', () => {
+    const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
+
+    const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' }).links({
+      next: '/orgs?page=2'
+    })
+
+    user.relationship('org', org)
+
+    expect(() => user.toResponse()).toThrow(
+      'Links are only supported on top-level responses'
+    )
   })
 })
 
@@ -194,15 +213,16 @@ describe('HTTPArrayResponse', () => {
       data: [
         { type: 'user', id: 1, username: 'alice' },
         { type: 'user', id: 2, username: 'bob' }
-      ],
-      links: {}
+      ]
     })
   })
 
   test('add() requires HTTPObjectResponse', () => {
     const res = new HTTPArrayResponse()
-    // invalid inputs
+    // @ts-expect-error - testing invalid input
     expect(() => res.add({})).toThrow(TypeError)
+
+    // @ts-expect-error - testing invalid input
     expect(() => res.add({})).toThrow(
       'Response must be an instance of HTTPObjectResponse'
     )
@@ -214,8 +234,7 @@ describe('HTTPArrayResponse', () => {
       .add(new HTTPObjectResponse('user', 1, { username: 'alice-updated' }))
 
     expect(res.toResponse()).toEqual({
-      data: [{ type: 'user', id: 1, username: 'alice-updated' }],
-      links: {}
+      data: [{ type: 'user', id: 1, username: 'alice-updated' }]
     })
   })
 
@@ -228,8 +247,7 @@ describe('HTTPArrayResponse', () => {
       data: [
         { type: 'item', id: 'a' },
         { type: 'item', id: 'b', name: 'Beta' }
-      ],
-      links: {}
+      ]
     })
   })
 
@@ -241,38 +259,24 @@ describe('HTTPArrayResponse', () => {
     res.remove('x')
 
     expect(res.toResponse()).toEqual({
-      data: [{ type: 'thing', id: 'y', value: 2 }],
-      links: {}
+      data: [{ type: 'thing', id: 'y', value: 2 }]
     })
   })
 
-  test('array-level "links" object is kept as-is at the top level', () => {
-    const res = new HTTPArrayResponse({
-      meta: { total: 2 },
-      links: { self: '/users' }
-    })
+  test('links() sets array-level links and is chainable', () => {
+    const res = new HTTPArrayResponse()
+      .links({ next: '/users?page=2' })
       .add(new HTTPObjectResponse('user', 1, { username: 'alice' }))
-      .add(new HTTPObjectResponse('user', 2, { username: 'bob' }))
 
     expect(res.toResponse()).toEqual({
-      data: [
-        { type: 'user', id: 1, username: 'alice' },
-        { type: 'user', id: 2, username: 'bob' }
-      ],
-      // The constructor argument is used verbatim as `links`
-      links: { meta: { total: 2 }, links: { self: '/users' } }
+      data: [{ type: 'user', id: 1, username: 'alice' }],
+      links: { next: '/users?page=2' }
     })
   })
 
-  test('empty array response returns { data: [] } with provided object stored under links', () => {
-    const withAttrs = new HTTPArrayResponse({ meta: { total: 0 } })
-    expect(withAttrs.toResponse()).toEqual({
-      data: [],
-      links: { meta: { total: 0 } }
-    })
-
-    const noAttrs = new HTTPArrayResponse()
-    expect(noAttrs.toResponse()).toEqual({ data: [], links: {} })
+  test('empty array response omits links when not set', () => {
+    const empty = new HTTPArrayResponse()
+    expect(empty.toResponse()).toEqual({ data: [] })
   })
 
   test('items can include their own nested relationships (wrappers preserved inside relationships)', () => {
@@ -299,17 +303,14 @@ describe('HTTPArrayResponse', () => {
                 username: 'alice',
                 relationships: {
                   org: {
-                    data: { type: 'org', id: 'o1', name: 'Acme' },
-                    links: {}
+                    data: { type: 'org', id: 'o1', name: 'Acme' }
                   }
                 }
-              },
-              links: {}
+              }
             }
           }
         }
-      ],
-      links: {}
+      ]
     })
   })
 
@@ -321,8 +322,7 @@ describe('HTTPArrayResponse', () => {
     expect(list.add(a)).toBe(list)
     expect(list.add(b).remove('a')).toBe(list)
     expect(list.toResponse()).toEqual({
-      data: [{ type: 'x', id: 'b' }],
-      links: {}
+      data: [{ type: 'x', id: 'b' }]
     })
   })
 

@@ -210,23 +210,15 @@ export async function handler(request, h) {
     }
 
     // Build response using HTTPObjectResponse
-    const response = new HTTPObjectResponse(
-      'locations',
-      locationId,
-      { address },
-      { self: `/locations/${locationId}` }
-    )
+    const response = new HTTPObjectResponse('locations', locationId, {
+      address
+    })
 
     // Add commodity relationships (each as a wrapped reference)
     for (const id of commoditiesIds) {
       response.relationship(
         'commodities',
-        new HTTPObjectResponse(
-          'commodities',
-          id,
-          {},
-          { self: `/locations/${locationId}/relationships/commodities` }
-        )
+        new HTTPObjectResponse('commodities', id, {})
       )
     }
 
@@ -234,12 +226,7 @@ export async function handler(request, h) {
     for (const id of facilitiesIds) {
       response.relationship(
         'facilities',
-        new HTTPObjectResponse(
-          'facilities',
-          id,
-          {},
-          { self: `/locations/${locationId}/relationships/facilities` }
-        )
+        new HTTPObjectResponse('facilities', id, {})
       )
     }
 
