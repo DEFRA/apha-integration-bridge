@@ -1,11 +1,11 @@
 import { HTTPObjectResponse } from '../../../lib/http/http-response.js'
 
 export const commodity1 = new HTTPObjectResponse('commodities', 'U000010', {
-  fieldStockNumber: 10
+  animalQuantity: 10
 })
 
 export const commodity2 = new HTTPObjectResponse('commodities', 'U000011', {
-  fieldStockNumber: 1000
+  animalQuantity: 1000
 })
 
 export const commodity3 = new HTTPObjectResponse('commodities', 'U000012', {})

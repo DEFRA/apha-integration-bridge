@@ -2,7 +2,7 @@ import { HTTPObjectResponse } from '../../../lib/http/http-response.js'
 
 export const customer1 = new HTTPObjectResponse('customers', 'C123456', {
   subType: 'ORGANISATION',
-  businessName: 'Mr and Mrs. M J & S C Pugh',
+  organisationName: 'Mr and Mrs. M J & S C Pugh',
   address: {
     paonStartNumber: 12,
     paonStartNumberSuffix: null,
