@@ -1,6 +1,5 @@
 import Joi from 'joi'
 
-import { LinksReference } from '../links.js'
 import { CustomersReference } from '../customers.js'
 import { HoldingsReference } from '../holdings.js'
 import { LocationsReference } from '../locations.js'
@@ -15,11 +14,6 @@ const WorkordersData = Joi.object({
     .label('Workorder Type')
     .description('The “type” value will be "workorders" for this endpoint.'),
   id: Joi.string().required().label('Workorder ID')
-})
-
-export const WorkordersReference = Joi.object({
-  data: WorkordersData.required(),
-  links: LinksReference
 })
 
 export const Workorders = WorkordersData.keys({
