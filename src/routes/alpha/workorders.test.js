@@ -108,4 +108,45 @@ describe('Workorders', () => {
 
     expect(res.statusCode).toBe(200)
   })
+
+  test.each([
+    [
+      new URLSearchParams({
+        pageSize: '1',
+        startActivationDate: new Date('1924-01-01').toISOString(),
+        endActivationDate: new Date('1930-01-01').toISOString()
+      })
+    ],
+    [
+      new URLSearchParams({
+        page: '1',
+        pageSize: '1',
+        endActivationDate: new Date('1930-01-01').toISOString()
+      })
+    ],
+    [
+      new URLSearchParams({
+        page: '1',
+        pageSize: '1',
+        startActivationDate: new Date('1924-01-01').toISOString()
+      })
+    ],
+    [
+      new URLSearchParams({
+        page: '1',
+        pageSize: '11',
+        startActivationDate: new Date('1924-01-01').toISOString()
+      })
+    ]
+  ])(
+    'returns BAD_REQUEST if query parameters are malformed: %s',
+    async (queryParams) => {
+      const res = await server.inject({
+        method: 'GET',
+        url: `${path}?${queryParams.toString()}`
+      })
+
+      expect(res.statusCode).toBe(400)
+    }
+  )
 })
