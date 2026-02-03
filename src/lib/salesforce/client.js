@@ -165,7 +165,7 @@ class SalesforceClient {
   async sendPost(relativePath, payload, logger) {
     const token = await this.getAccessToken(logger)
 
-    const postUrl = this.getBaseUrl() + '/' + relativePath
+    const postUrl = this.getBaseUrl() + '/' + relativePath.replace(/^\/+/, '')
 
     const { response, body } = await this.requestWithTimeout(
       postUrl,
