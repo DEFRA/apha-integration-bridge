@@ -30,7 +30,7 @@ export const CustomersRelationships = Joi.object({
 
 export const BusinessCustomersData = CustomersData.keys({
   subType: Joi.string().required().valid('ORGANISATION'),
-  businessName: Joi.string().required().label('Business Name'),
+  organisationName: Joi.string().required().label('Organisation Name'),
   address: Address,
   contactDetails: BusinessContactDetails,
   relationships: CustomersRelationships
