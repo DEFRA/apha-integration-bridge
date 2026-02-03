@@ -17,7 +17,7 @@ import { all } from './workorders.mocks.js'
 const __dirname = new URL('.', import.meta.url).pathname
 
 const PaginationWorkordersResponseSchema = Joi.object({
-  data: Joi.array().items(Workorders).required(),
+  data: Joi.array().items(Workorders).required().label('Workorders'),
   links: LinksReference
 })
   .description('A response from the workorders endpoint')

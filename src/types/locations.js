@@ -16,7 +16,7 @@ export const LocationsData = Joi.object({
 export const LocationsReference = Joi.object({
   data: LocationsData.required(),
   links: LinksReference
-})
+}).label('Locations reference')
 
 const Address = Joi.object({
   paonStartNumber: Joi.alternatives(Joi.number(), Joi.string()).allow(null, ''),

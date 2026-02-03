@@ -12,4 +12,4 @@ export const Activities = Joi.object({
   id: ActivityId,
   activityName: Joi.string().required(),
   default: Joi.boolean().required()
-})
+}).label('Activity')

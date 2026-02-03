@@ -17,4 +17,4 @@ export const FacilitiesReference = Joi.object({
     Joi.array().items(FacilitiesData)
   ).required(),
   links: LinksReference
-})
+}).label('Facilities reference')

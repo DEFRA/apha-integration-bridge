@@ -25,29 +25,40 @@ export const WorkordersReference = Joi.object({
 
 export const Workorders = WorkordersData.keys({
   status: Joi.string().required().label('Status'),
-  startDate: Joi.string().required().label('Start Date'),
-  activationDate: Joi.string().required().label('Activation Date'),
-  earliestStartDate: Joi.string().required().label('Earliest Start Date'),
-  purpose: Joi.string().label('Purpose'),
-  workArea: Joi.string().label('Work Area'),
-  country: Joi.string().label('Country'),
-  businessArea: Joi.string().label('Business Area'),
-  aim: Joi.string().label('Aim'),
+  startDate: Joi.string().isoDate().required().label('Start Date'),
+  activationDate: Joi.string().isoDate().required().label('Activation Date'),
+  earliestStartDate: Joi.string()
+    .isoDate()
+    .required()
+    .label('Earliest Start Date'),
+  purpose: Joi.string().label('Purpose').allow(null),
+  workArea: Joi.string().label('Work Area').allow(null),
+  country: Joi.string().label('Country').allow(null),
+  businessArea: Joi.string().label('Business Area').allow(null),
+  aim: Joi.string().label('Aim').allow(null),
   species: Joi.string()
+    .allow(null)
     .label('Species')
     .description(
       'The species (or species list) that this workorder relates to'
     ),
-  latestActivityCompletionDate: Joi.string().label(
-    'Latest Activity Completion Date'
-  ),
-  phase: Joi.string().label('Phase'),
+  phase: Joi.string().label('Phase').allow(null),
   activities: Joi.array().items(Activities).required().label('Activities'),
+  latestActivityCompletionDate: Joi.string()
+    .isoDate()
+    .label('Latest Activity Completion Date')
+    .allow(null),
   relationships: Joi.object({
-    customer: CustomersReference.optional(),
-    holding: HoldingsReference.optional(),
-    location: LocationsReference.optional(),
-    commodity: CommoditiesReference.optional(),
-    facilities: oneToManyRelationshipSchema(FacilitiesReference).optional()
-  })
-})
+    customer: CustomersReference.allow(null),
+    holding: HoldingsReference.allow(null),
+    locations: oneToManyRelationshipSchema(LocationsReference).label(
+      'Locations references'
+    ),
+    commodities: oneToManyRelationshipSchema(CommoditiesReference).label(
+      'Commodities references'
+    ),
+    facilities: oneToManyRelationshipSchema(FacilitiesReference).label(
+      'Facilities references'
+    )
+  }).label('Relationships')
+}).label('Workorder')

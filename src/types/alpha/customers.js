@@ -64,4 +64,4 @@ export const Customers = Joi.alternatives(
 export const CustomersReference = Joi.object({
   data: CustomersData.required(),
   links: LinksReference
-})
+}).label('Customers reference')
