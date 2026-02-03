@@ -2,6 +2,7 @@ import Hapi from '@hapi/hapi'
 import { test, expect, describe } from '@jest/globals'
 
 import * as route from './workorders.js'
+import { first, second } from './workorders.mocks.js'
 
 const path = '/workorders'
 
@@ -32,38 +33,7 @@ describe('Workorders', () => {
     expectedNextParams.set('page', '2')
 
     expect(firstPage.result).toMatchObject({
-      data: [
-        {
-          type: 'workorders',
-          id: 'WS-76512',
-          status: 'Open',
-          startDate: '2024-01-01T09:00:00+00:00',
-          activationDate: '2024-01-05T08:30:00+00:00',
-          purpose: 'Initiate Incident Premises Spread Tracing Action',
-          workArea: 'Tuberculosis',
-          country: 'SCOTLAND',
-          businessArea: 'Endemic Notifiable Disease',
-          aim: 'Contain / Control / Eradicate Endemic Disease',
-          latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-          phase: 'EXPOSURETRACKING',
-          relationships: {
-            customer: {
-              data: { type: 'customers', id: 'C123456' }
-            },
-            holding: {
-              data: { type: 'holdings', id: '08/139/0167' }
-            },
-            location: {
-              data: { type: 'locations', id: 'L123456' }
-            }
-            // commodity: {
-            //   data: { type: 'commodities', id: 'U000010' },
-            // },
-            // activities: {
-            // }
-          }
-        }
-      ],
+      data: [first],
       links: {
         self: `/workorders?${queryParams.toString()}`,
         next: `/workorders?${expectedNextParams.toString()}`
@@ -84,44 +54,7 @@ describe('Workorders', () => {
     })
 
     expect(secondPage.result).toMatchObject({
-      data: [
-        {
-          type: 'workorders',
-          id: 'WS-76513',
-          status: 'Open',
-          startDate: '2024-01-03T09:00:00+00:00',
-          activationDate: '2024-01-06T08:30:00+00:00',
-          purpose: 'Initiate Incident Premises Spread Tracing Action',
-          workArea: 'Tuberculosis',
-          country: 'SCOTLAND',
-          businessArea: 'Endemic Notifiable Disease',
-          aim: 'Contain / Control / Eradicate Endemic Disease',
-          latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
-          phase: 'EXPOSURETRACKING',
-          relationships: {
-            customer: {
-              data: { type: 'customers', id: 'C123457' }
-            },
-            holding: {
-              data: { type: 'holdings', id: '08/139/0168' }
-            },
-            location: {
-              data: { type: 'locations', id: 'L123457' }
-            }
-            // facility: {
-            //   data: { type: 'facilities', id: 'U000030' },
-            //   links: {
-            //     self: '/workorders/WS-76513/relationships/facility'
-            //   }
-            // },
-            // activities: {
-            //   links: {
-            //     self: '/workorders/WS-76513/relationships/activities'
-            //   }
-            // }
-          }
-        }
-      ],
+      data: [second],
       links: {
         self: firstPageResponse.links.next,
         prev: firstPageResponse.links.self
