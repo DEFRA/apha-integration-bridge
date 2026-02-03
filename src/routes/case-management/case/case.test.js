@@ -12,6 +12,12 @@ const mockSendComposite = jest.spyOn(salesforceClient, 'sendComposite')
 const mockCreateCustomer = jest.spyOn(salesforceClient, 'createCustomer')
 const mockLoggerError = jest.fn()
 
+const mockCreateCustomerResponse = {
+  id: 'TEST-CUSTOMER-123',
+  errors: [],
+  success: true
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
 })
@@ -105,11 +111,6 @@ describe('POST /case-management/case', () => {
     test('creates case and returns 201 Created', async () => {
       const server = await createTestServer()
 
-      const mockCreateCustomerResponse = {
-        id: 'TEST-CUSTOMER-123',
-        errors: [],
-        success: true
-      }
       mockCreateCustomer.mockResolvedValueOnce(mockCreateCustomerResponse)
 
       const mockCompositeResponse = {
@@ -455,6 +456,10 @@ describe('POST /case-management/case', () => {
   })
 
   describe('Composite response handling', () => {
+    beforeEach(() => {
+      mockCreateCustomer.mockResolvedValueOnce(mockCreateCustomerResponse)
+    })
+
     test('handles multiple composite operations successfully', async () => {
       const server = await createTestServer()
 
