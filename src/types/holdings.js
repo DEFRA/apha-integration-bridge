@@ -2,7 +2,7 @@ import Joi from 'joi'
 
 import { LinksReference } from './links.js'
 import { LocationsReference } from './locations.js'
-import { CustomersReference } from './customers.js'
+import { CustomersReference } from './alpha/customers.js'
 
 const HoldingsData = Joi.object({
   type: Joi.string()
@@ -16,7 +16,7 @@ const HoldingsData = Joi.object({
 export const HoldingsReference = Joi.object({
   data: HoldingsData.required(),
   links: LinksReference
-})
+}).label('Holdings reference')
 
 export const Holdings = HoldingsData.keys({
   cphType: Joi.string().required().label('CPH Type'),
@@ -24,4 +24,4 @@ export const Holdings = HoldingsData.keys({
     location: LocationsReference.optional(),
     cphHolder: CustomersReference.optional()
   })
-}).label('Holdings Data')
+}).label('Holdings data')

@@ -3,21 +3,21 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { LinksReference } from '../types/links.js'
-import { Workorders } from '../types/workorders.js'
-import { HTTPArrayResponse } from '../lib/http/http-response.js'
+import { LinksReference } from '../../types/links.js'
+import { Workorders } from '../../types/workorders.js'
+import { HTTPArrayResponse } from '../../lib/http/http-response.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
   HTTPError
-} from '../lib/http/http-exception.js'
+} from '../../lib/http/http-exception.js'
 
 import { all } from './workorders.mocks.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
 const PaginationWorkordersResponseSchema = Joi.object({
-  data: Joi.array().items(Workorders).required(),
+  data: Joi.array().items(Workorders).required().label('Workorders'),
   links: LinksReference
 })
   .description('A response from the workorders endpoint')
@@ -27,9 +27,7 @@ const PaginationWorkordersResponseSchema = Joi.object({
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 export const options = {
-  auth: {
-    mode: 'required'
-  },
+  auth: false,
   tags: ['api', 'workorders'],
   description:
     'Retrieve workorders filtered by activation date range and paginated',
