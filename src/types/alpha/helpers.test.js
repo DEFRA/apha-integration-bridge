@@ -1,5 +1,5 @@
 import { expect, describe, test } from '@jest/globals'
-import { relationshipToMany, relationshipToOne } from './relationships.js'
+import { relationshipToMany, relationshipToOne } from './helpers.js'
 
 describe('relationshipToOne', () => {
   const schema = relationshipToOne({

@@ -1,4 +1,4 @@
-import { relationshipToOne } from './relationships.js'
+import { relationshipToOne } from './helpers.js'
 
 export const LocationsRelationship = relationshipToOne({
   plural: 'locations',

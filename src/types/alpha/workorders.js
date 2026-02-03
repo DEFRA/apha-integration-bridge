@@ -2,15 +2,12 @@ import Joi from 'joi'
 
 import { CustomerRelationship } from './customers.js'
 import { HoldingsRelationship } from './holdings.js'
-import { relationshipToMany } from './relationships.js'
+import { baseData, relationshipToMany } from './helpers.js'
+import { Activities } from './activities.js'
 
-const WorkordersData = Joi.object({
-  type: Joi.string()
-    .valid('workorders')
-    .required()
-    .label('Workorder Type')
-    .description('The “type” value will be "workorders" for this endpoint.'),
-  id: Joi.string().required().label('Workorder ID')
+const WorkordersData = baseData({
+  plural: 'workorders',
+  singular: 'workorder'
 })
 
 export const Workorders = WorkordersData.keys({
@@ -42,6 +39,7 @@ export const Workorders = WorkordersData.keys({
     .label('Start Date')
     .description('The start date of the earliest activity'),
   species: Joi.string().required().label('Species'),
+  activities: Joi.array().items(Activities).required().label('Activities'),
   // latestActivityCompletionDate: Joi.string().label(
   //   'Latest Activity Completion Date'
   // ),
