@@ -3,6 +3,7 @@ import { config } from '../../config.js'
 
 /**
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
+ * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
  */
 
 const TOKEN_EXPIRY_BUFFER_MS = 5000
@@ -143,33 +144,52 @@ class SalesforceClient {
    * @returns {Promise<CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger) {
+    return this.sendPost('composite', compositeBody, logger)
+  }
+
+  /**
+   * @param {object} payload The request payload to forward.
+   * @param {import('pino').Logger} [logger] Optional logger.
+   * @returns {Promise<CreateGuestResponse>} The Salesforce composite response.
+   */
+  async createCustomer(payload, logger) {
+    return this.sendPost('sobjects/Contact', payload, logger)
+  }
+
+  /**
+   * @param {string} relativePath
+   * @param {object} payload
+   * @param {import('pino').Logger} [logger] Optional logger.
+   * @returns {Promise<any>} The Salesforce response body.
+   */
+  async sendPost(relativePath, payload, logger) {
     const token = await this.getAccessToken(logger)
 
-    const compositeUrl = this.getBaseUrl() + '/composite'
+    const postUrl = this.getBaseUrl() + '/' + relativePath
 
     const { response, body } = await this.requestWithTimeout(
-      compositeUrl,
+      postUrl,
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(compositeBody)
+        body: JSON.stringify(payload)
       },
       {
-        timeoutMessage: 'Salesforce composite request timed out'
+        timeoutMessage: 'Salesforce POST request timed out'
       }
     )
 
     if (!response.ok) {
       logger?.error(
         { status: response.status, body: this.safeMessage(body) },
-        'Salesforce composite request failed'
+        'Salesforce POST request failed'
       )
 
       throw new Error(
-        `Salesforce composite request failed (${response.status}): ${this.safeMessage(
+        `Salesforce POST request failed (${response.status}): ${this.safeMessage(
           body
         )}`
       )
