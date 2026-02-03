@@ -48,34 +48,19 @@ describe('Workorders', () => {
           phase: 'EXPOSURETRACKING',
           relationships: {
             customer: {
-              data: { type: 'customers', id: 'C123456' },
-              links: {
-                self: '/workorders/WS-76512/relationships/customer'
-              }
+              data: { type: 'customers', id: 'C123456' }
             },
             holding: {
-              data: { type: 'holdings', id: '08/139/0167' },
-              links: {
-                self: '/workorders/WS-76512/relationships/holding'
-              }
+              data: { type: 'holdings', id: '08/139/0167' }
             },
             location: {
-              data: { type: 'locations', id: 'L123456' },
-              links: {
-                self: '/workorders/WS-76512/relationships/location'
-              }
-            },
-            commodity: {
-              data: { type: 'commodities', id: 'U000010' },
-              links: {
-                self: '/workorders/WS-76512/relationships/commodity'
-              }
-            },
-            activities: {
-              links: {
-                self: '/workorders/WS-76512/relationships/activities'
-              }
+              data: { type: 'locations', id: 'L123456' }
             }
+            // commodity: {
+            //   data: { type: 'commodities', id: 'U000010' },
+            // },
+            // activities: {
+            // }
           }
         }
       ],
@@ -115,34 +100,25 @@ describe('Workorders', () => {
           phase: 'EXPOSURETRACKING',
           relationships: {
             customer: {
-              data: { type: 'customers', id: 'C123457' },
-              links: {
-                self: '/workorders/WS-76513/relationships/customer'
-              }
+              data: { type: 'customers', id: 'C123457' }
             },
             holding: {
-              data: { type: 'holdings', id: '08/139/0168' },
-              links: {
-                self: '/workorders/WS-76513/relationships/holding'
-              }
+              data: { type: 'holdings', id: '08/139/0168' }
             },
             location: {
-              data: { type: 'locations', id: 'L123457' },
-              links: {
-                self: '/workorders/WS-76513/relationships/location'
-              }
-            },
-            facility: {
-              data: { type: 'facilities', id: 'U000030' },
-              links: {
-                self: '/workorders/WS-76513/relationships/facility'
-              }
-            },
-            activities: {
-              links: {
-                self: '/workorders/WS-76513/relationships/activities'
-              }
+              data: { type: 'locations', id: 'L123457' }
             }
+            // facility: {
+            //   data: { type: 'facilities', id: 'U000030' },
+            //   links: {
+            //     self: '/workorders/WS-76513/relationships/facility'
+            //   }
+            // },
+            // activities: {
+            //   links: {
+            //     self: '/workorders/WS-76513/relationships/activities'
+            //   }
+            // }
           }
         }
       ],

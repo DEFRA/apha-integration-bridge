@@ -1,11 +1,9 @@
-import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
 import { LinksReference } from '../../types/links.js'
 import { Workorders } from '../../types/alpha/workorders.js'
-import { HTTPArrayResponse } from '../../lib/http/http-response.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -81,8 +79,6 @@ export const options = {
   }
 }
 
-const metrics = createMetricsLogger()
-
 /**
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
@@ -147,8 +143,6 @@ export async function handler(request, h) {
   }
 
   try {
-    metrics.putMetric('workordersRequest', 1, Unit.Count)
-
     const { page, pageSize } = request.query
 
     const selfQueryParams = new URLSearchParams([
@@ -162,7 +156,7 @@ export async function handler(request, h) {
     }
 
     const filteredAll = all.filter((workOrder) => {
-      const activationDate = new Date(workOrder.data.activationDate)
+      const activationDate = new Date(workOrder.activationDate)
       const start = new Date(request.query.startActivationDate)
       const end = new Date(request.query.endActivationDate)
 
@@ -172,10 +166,7 @@ export async function handler(request, h) {
     /**
      * mock paginate over the "all" array
      */
-    const paginatedWorkorders = filteredAll.slice(
-      (page - 1) * pageSize,
-      page * pageSize
-    )
+    const data = filteredAll.slice((page - 1) * pageSize, page * pageSize)
 
     /**
      * @type {string | undefined}
@@ -187,7 +178,7 @@ export async function handler(request, h) {
      */
     let nextLink
 
-    if (paginatedWorkorders.length === pageSize) {
+    if (data.length === pageSize) {
       const nextQueryParams = new URLSearchParams(selfQueryParams.toString())
 
       nextQueryParams.set('page', String(page + 1))
@@ -203,17 +194,16 @@ export async function handler(request, h) {
       prevLink = `/workorders?${prevQueryParams.toString()}`
     }
 
-    const response = new HTTPArrayResponse({
-      self: `/workorders?${selfQueryParams.toString()}`,
-      next: nextLink,
-      prev: prevLink
-    })
-
-    for (const workorder of paginatedWorkorders) {
-      response.add(workorder)
+    const response = {
+      data: data,
+      links: {
+        self: `/workorders?${selfQueryParams.toString()}`,
+        next: nextLink,
+        prev: prevLink
+      }
     }
 
-    return h.response(response.toResponse()).code(200)
+    return h.response(response).code(200)
   } catch (error) {
     if (request.logger) {
       request.logger.error(error)
