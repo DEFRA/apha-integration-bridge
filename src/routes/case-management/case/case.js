@@ -11,9 +11,10 @@ import {
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import { CreateCasePayloadSchema } from '../../../types/case-management/case.js'
 import { buildCaseCreationCompositeRequest } from '../../../lib/salesforce/composite-request-builder.js'
+import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
 
 /**
- * @import {CreateCasePayload} from '../../../types/case-management/case.js'
+ * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -58,85 +59,111 @@ const options = {
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 async function handler(request, h) {
+  await Promise.all([
+    createApplication(request),
+    createCustomerAccount(request)
+  ]).catch((err) => handleCaseCreationError(err, request))
+
+  return h.response().code(201)
+}
+
+async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const compositeRequest = buildCaseCreationCompositeRequest(payload)
 
-  try {
-    const salesforceResponse = await retry(
-      async () => {
-        return await salesforceClient.sendComposite(
-          compositeRequest,
-          request.logger
-        )
-      },
-      {
-        retries: 3,
-        maxRetryTime: 10000,
-        factor: 2,
-        minTimeout: 1000,
-        maxTimeout: 4000
-      }
+  const salesforceResponse = await retry(
+    async () => {
+      return await salesforceClient.sendComposite(
+        compositeRequest,
+        request.logger
+      )
+    },
+    {
+      retries: 3,
+      maxRetryTime: 10000,
+      factor: 2,
+      minTimeout: 1000,
+      maxTimeout: 4000
+    }
+  )
+
+  const compositeResponse = salesforceResponse?.compositeResponse
+  const failedCompositeItems = Array.isArray(compositeResponse)
+    ? compositeResponse.filter(
+        (item) =>
+          item?.httpStatusCode && ![200, 201].includes(item.httpStatusCode)
+      )
+    : []
+
+  if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
+    const compositeError = /** @type {Error & {failedItems: any[]}} */ (
+      new Error('One or more composite operations failed')
     )
-
-    const compositeResponse = salesforceResponse?.compositeResponse
-    const failedCompositeItems = Array.isArray(compositeResponse)
-      ? compositeResponse.filter(
-          (item) =>
-            item?.httpStatusCode && ![200, 201].includes(item.httpStatusCode)
-        )
-      : []
-
-    if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-      const compositeError = /** @type {Error & {failedItems: any[]}} */ (
-        new Error('One or more composite operations failed')
-      )
-      compositeError.name = 'CompositeOperationError'
-      compositeError.failedItems = failedCompositeItems
-      throw compositeError
-    }
-
-    return h.response().code(201)
-  } catch (error) {
-    if (error.name === 'CompositeOperationError') {
-      const failedOperations = error.failedItems.map((item) => ({
-        referenceId: item.referenceId,
-        httpStatusCode: item.httpStatusCode,
-        errors: Array.isArray(item.body)
-          ? item.body.map((err) => ({
-              errorCode: err.errorCode,
-              message: err.message
-            }))
-          : []
-      }))
-
-      request.logger?.error(
-        {
-          endpoint: 'case-management/case',
-          failedOperations
-        },
-        'Composite operations failed in Salesforce'
-      )
-    } else {
-      request.logger?.error(
-        {
-          err: error,
-          endpoint: 'case-management/case'
-        },
-        'Failed to create case in Salesforce'
-      )
-    }
-
-    return new HTTPException(
-      'INTERNAL_SERVER_ERROR',
-      'Your request could not be processed',
-      [
-        new HTTPError(
-          'INTERNAL_SERVER_ERROR',
-          'Could not create case on the case management service'
-        )
-      ]
-    ).boomify()
+    compositeError.name = 'CompositeOperationError'
+    compositeError.failedItems = failedCompositeItems
+    throw compositeError
   }
+}
+
+async function createCustomerAccount(request) {
+  const applicant = /** @type {GuestCustomerDetails} */ (
+    request.payload.applicant
+  )
+  const payload = buildCustomerCreationPayload(applicant)
+
+  return await retry(
+    async () => {
+      return await salesforceClient.createCustomer(payload, request.logger)
+    },
+    {
+      retries: 3,
+      maxRetryTime: 10000,
+      factor: 2,
+      minTimeout: 1000,
+      maxTimeout: 4000
+    }
+  )
+}
+
+function handleCaseCreationError(error, request) {
+  if (error.name === 'CompositeOperationError') {
+    const failedOperations = error.failedItems.map((item) => ({
+      referenceId: item.referenceId,
+      httpStatusCode: item.httpStatusCode,
+      errors: Array.isArray(item.body)
+        ? item.body.map((err) => ({
+            errorCode: err.errorCode,
+            message: err.message
+          }))
+        : []
+    }))
+
+    request.logger?.error(
+      {
+        endpoint: 'case-management/case',
+        failedOperations
+      },
+      'Composite operations failed in Salesforce'
+    )
+  } else {
+    request.logger?.error(
+      {
+        err: error,
+        endpoint: 'case-management/case'
+      },
+      'Failed to create case in Salesforce'
+    )
+  }
+  throw new HTTPException(
+    'INTERNAL_SERVER_ERROR',
+    'Your request could not be processed',
+    [
+      new HTTPError(
+        'INTERNAL_SERVER_ERROR',
+        'Could not create case on the case management service'
+      )
+    ]
+  ).boomify()
 }
 
 export default {
