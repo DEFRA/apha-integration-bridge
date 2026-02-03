@@ -15,17 +15,37 @@ const WorkordersData = Joi.object({
 })
 
 export const Workorders = WorkordersData.keys({
-  status: Joi.string().required().label('Status'),
-  startDate: Joi.string().required().label('Start Date'),
+  // status: Joi.string().required().label('Status').description('Status of the work order - e.g. Open'),
   activationDate: Joi.string().required().label('Activation Date'),
-  purpose: Joi.string().label('Purpose'),
-  workArea: Joi.string().label('Work Area'),
+  businessArea: Joi.string()
+    .label('Business Area')
+    .description(
+      'The broad business area this workorder relates to - e.g. Disease Risk Reduction'
+    ),
+  workArea: Joi.string()
+    .label('Work Area')
+    .description(
+      'The specific area this workorder relates to - e.g. Sheep Scab / TB'
+    ),
   country: Joi.string().label('Country'),
-  businessArea: Joi.string().label('Business Area'),
-  aim: Joi.string().label('Aim'),
-  latestActivityCompletionDate: Joi.string().label(
-    'Latest Activity Completion Date'
-  ),
+  aim: Joi.string()
+    .label('Aim')
+    .description(
+      'The broad outcome this workorder contributes to - e.g. Contain / Control / Eradicate Endemic Disease'
+    ),
+  purpose: Joi.string()
+    .label('Purpose')
+    .description(
+      'The activity to be undertaken during the workorder - e.g. Sheep & Goat on Farm Survey'
+    ),
+  earliestActivityStartDate: Joi.string()
+    .required()
+    .label('Start Date')
+    .description('The start date of the earliest activity'),
+  species: Joi.string().required().label('Species'),
+  // latestActivityCompletionDate: Joi.string().label(
+  //   'Latest Activity Completion Date'
+  // ),
   phase: Joi.string().label('Phase'),
   relationships: Joi.object({
     customer: CustomerRelationship,
