@@ -12,6 +12,7 @@ export const first = {
   species: 'Cattle',
   // latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
   phase: 'EXPOSURETRACKING',
+  activities: [],
   relationships: {
     customer: {
       data: {
@@ -56,6 +57,14 @@ export const second = {
   species: 'Sheep',
   // latestActivityCompletionDate: '2024-01-01T12:00:00+00:00',
   phase: 'EXPOSURETRACKING',
+  activities: [
+    {
+      type: 'activities',
+      id: 'activity-1',
+      activityName: 'WS1',
+      default: true
+    }
+  ],
   relationships: {
     customer: {
       data: {
