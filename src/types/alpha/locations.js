@@ -78,7 +78,7 @@ export const Address = Joi.object({
   postcode: Joi.string().allow(null).required(),
   // ukInternalCode: Joi.string().allow(null).required(), // not sure what this is?
   countryCode: Joi.string().allow(null).required()
-}).required()
+})
 
 export const Locations = baseData({
   singular: 'location',
