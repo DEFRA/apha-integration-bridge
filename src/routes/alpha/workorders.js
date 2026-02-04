@@ -11,6 +11,7 @@ import {
 
 import { all } from './workorders.mocks.js'
 import { PaginatedLink } from '../../types/alpha/links.js'
+import { PaginationSchema } from '../../types/alpha/pagination.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -40,7 +41,7 @@ export const options = {
     }
   },
   validate: {
-    query: Joi.object({
+    query: PaginationSchema.keys({
       startActivationDate: Joi.string()
         .isoDate()
         .required()
@@ -53,18 +54,7 @@ export const options = {
         .required()
         .description(
           'Paginate workorders before or on this end activation date'
-        ),
-      page: Joi.number()
-        .integer()
-        .min(1)
-        .required()
-        .description('The page number to retrieve'),
-      pageSize: Joi.number()
-        .integer()
-        .min(1)
-        .max(10)
-        .default(10)
-        .description('The number of items per page')
+        )
     }),
     headers: Joi.object({
       accept: Joi.string()
