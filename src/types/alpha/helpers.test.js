@@ -1,11 +1,13 @@
 import { expect, describe, test } from '@jest/globals'
-import { relationshipToMany, relationshipToOne } from './helpers.js'
+import { baseData, relationshipToMany, relationshipToOne } from './helpers.js'
 
 describe('relationshipToOne', () => {
-  const schema = relationshipToOne({
-    plural: 'customers',
-    singular: 'customer'
-  })
+  const schema = relationshipToOne(
+    baseData({
+      plural: 'customers',
+      singular: 'customer'
+    })
+  )
 
   test('should require a data field', () => {
     const result = schema.validate({})
@@ -89,10 +91,12 @@ describe('relationshipToOne', () => {
 })
 
 describe('relationshipToMany', () => {
-  const schema = relationshipToMany({
-    plural: 'customers',
-    singular: 'customer'
-  })
+  const schema = relationshipToMany(
+    baseData({
+      plural: 'customers',
+      singular: 'customer'
+    })
+  )
 
   test('should require a data field', () => {
     const result = schema.validate({})

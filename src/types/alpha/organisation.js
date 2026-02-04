@@ -20,10 +20,12 @@ export const OrganisationData = baseData({
 })
 
 export const OrganisationRelationships = Joi.object({
-  srabpiPlants: relationshipToMany({
-    singular: 'srabpi-plant',
-    plural: 'srabpi-plants'
-  })
+  srabpiPlants: relationshipToMany(
+    baseData({
+      singular: 'srabpi-plant',
+      plural: 'srabpi-plants'
+    })
+  )
 }).required()
 
 export const Organisation = OrganisationData.keys({

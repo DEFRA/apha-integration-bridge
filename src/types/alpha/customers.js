@@ -3,10 +3,12 @@ import Joi from 'joi'
 import { baseData, relationshipToMany, relationshipToOne } from './helpers.js'
 import { Address } from './locations.js'
 
-export const CustomerRelationship = relationshipToOne({
-  plural: 'customers',
-  singular: 'customer'
-})
+export const CustomerRelationship = relationshipToOne(
+  baseData({
+    plural: 'customers',
+    singular: 'customer'
+  })
+)
 
 export const CustomersData = baseData({
   plural: 'customers',
@@ -14,10 +16,12 @@ export const CustomersData = baseData({
 })
 
 export const CustomersRelationships = Joi.object({
-  srabpiPlants: relationshipToMany({
-    singular: 'srabpi-plant',
-    plural: 'srabpi-plants'
-  })
+  srabpiPlants: relationshipToMany(
+    baseData({
+      singular: 'srabpi-plant',
+      plural: 'srabpi-plants'
+    })
+  )
 }).required()
 
 const PreferredContact = Joi.object({
