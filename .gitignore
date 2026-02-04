@@ -13,3 +13,10 @@ coverage
 globalConfig.json
 
 .env*.local
+
+# Private keys and certificates
+*.key
+*.pem
+*.crt
+salesforce-jwt-*
+generate-test-jwt.js
