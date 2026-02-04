@@ -11,6 +11,7 @@ import { Holdings } from '../../../types/alpha/holdings.js'
 import { holdings } from './find.mocks.js'
 import { PaginatedLink } from '../../../types/alpha/links.js'
 import { PaginationSchema } from '../../../types/alpha/pagination.js'
+import { mockFindHandler } from '../helpers/find.js'
 
 const PostFindHoldingsSchema = Joi.object({
   data: Joi.array().items(Holdings).required(),
@@ -60,55 +61,7 @@ const options = {
     }
   }
 }
-
-/**
- * @param {URLSearchParams} query
- */
-const movePage = (query, moveBy) => {
-  const page = parseInt(query.get('page'))
-  const newQuery = new URLSearchParams(query.toString())
-  newQuery.set('page', page + moveBy)
-  return newQuery
-}
-
-/**
- * @type {import('@hapi/hapi').Lifecycle.Method}
- */
-async function handler(request, h) {
-  const holdingMap = Object.fromEntries(
-    holdings.map((holding) => [holding.id, holding])
-  )
-  const { page, pageSize } = request.query
-  const query = new URLSearchParams(request.query)
-
-  const zeroIndexedPage = page - 1
-  const firstPageOffset = pageSize * zeroIndexedPage
-
-  const ids = request.payload.ids.slice(
-    firstPageOffset,
-    firstPageOffset + pageSize
-  )
-  const data = ids
-    .map((id) => holdingMap[id])
-    .filter((holding) => holding !== undefined)
-
-  const links = {
-    self: `${request.path}?${query.toString()}`,
-    next:
-      firstPageOffset + pageSize < holdings.length
-        ? `${request.path}?${movePage(query, 1).toString()}`
-        : null,
-    prev:
-      page !== 1 ? `${request.path}?${movePage(query, -1).toString()}` : null
-  }
-
-  const response = {
-    data,
-    links
-  }
-
-  return h.response(response).code(200)
-}
+const handler = mockFindHandler(holdings)
 
 export default {
   method: 'POST',
