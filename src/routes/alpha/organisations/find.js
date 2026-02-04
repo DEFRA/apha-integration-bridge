@@ -11,17 +11,17 @@ import { all } from './find.mocks.js'
 import { mockFindHandler } from '../helpers/find.js'
 import { PaginationSchema } from '../../../types/alpha/pagination.js'
 import { PaginatedLink } from '../../../types/alpha/links.js'
-import { Customer } from '../../../types/alpha/customers.js'
+import { Organisation } from '../../../types/alpha/organisation.js'
 
-const PostFindCustomersSchema = Joi.object({
-  data: Joi.array().items(Customer).required(),
+const PostFindOrganisationsSchema = Joi.object({
+  data: Joi.array().items(Organisation).required(),
   links: PaginatedLink
 })
-  .description('Customer Details')
-  .label('Find Customer Response')
+  .description('Organisation Details')
+  .label('Find Organisation Response')
 
 const PostFindPayloadSchema = Joi.object({
-  ids: Joi.array().items(Joi.string()).required().label('Customer ids')
+  ids: Joi.array().items(Joi.string()).required().label('Organisation ids')
 })
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -39,7 +39,7 @@ const options = {
   ),
   plugins: {
     'hapi-swagger': {
-      id: 'customers-find',
+      id: 'organisations-find',
       security: [{ Bearer: [] }]
     }
   },
@@ -56,7 +56,7 @@ const options = {
   },
   response: {
     status: {
-      200: PostFindCustomersSchema,
+      200: PostFindOrganisationsSchema,
       '400-500': HTTPExceptionSchema
     }
   }
