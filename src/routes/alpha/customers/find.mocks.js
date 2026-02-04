@@ -55,7 +55,13 @@ export const customer2 = {
   middleName: null,
   lastName: 'Farmer',
   addresses: [],
-  contactDetails: [],
+  contactDetails: [
+    {
+      type: 'landline',
+      phoneNumber: '+44 1111 11111',
+      isPreferred: false
+    }
+  ],
   relationships: {
     srabpiPlants: {
       data: []
