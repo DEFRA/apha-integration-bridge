@@ -47,23 +47,28 @@ export const organisation1 = {
 export const organisation2 = {
   type: 'organisations',
   id: 'O234567',
-  organisationName: 'Farming Ltd',
+  organisationName: 'Soil testing lab',
   address: address1,
   contactDetails: {
     primaryContact: {
-      fullName: 'Bob Farmer',
+      fullName: 'Sally Scientist',
       emailAddress: null,
       phoneNumber: '+44 1111 11111'
     },
     secondaryContact: {
-      fullName: 'Roberta Farmer',
-      emailAddress: 'example@example.com',
+      fullName: null,
+      emailAddress: null,
       phoneNumber: null
     }
   },
   relationships: {
     srabpiPlants: {
-      data: []
+      data: [
+        {
+          type: 'srabpi-plants',
+          id: 'SP123456'
+        }
+      ]
     }
   }
 }

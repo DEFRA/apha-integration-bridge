@@ -14,7 +14,7 @@ export const first = {
   phase: 'EXPOSURETRACKING',
   activities: [],
   relationships: {
-    customer: {
+    customerOrOrganisation: {
       data: {
         type: 'customers',
         id: 'C123456'
@@ -66,10 +66,10 @@ export const second = {
     }
   ],
   relationships: {
-    customer: {
+    customerOrOrganisation: {
       data: {
-        type: 'customers',
-        id: 'C123457'
+        type: 'organisations',
+        id: 'O123456'
       }
     },
     holding: {

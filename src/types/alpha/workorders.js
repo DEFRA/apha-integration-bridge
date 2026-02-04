@@ -1,14 +1,26 @@
 import Joi from 'joi'
 
-import { CustomerRelationship } from './customers.js'
 import { HoldingsRelationship } from './holdings.js'
-import { baseData, relationshipToMany } from './helpers.js'
+import { baseData, relationshipToMany, relationshipToOne } from './helpers.js'
 import { Activities } from './activities.js'
 
 const WorkordersData = baseData({
   plural: 'workorders',
   singular: 'workorder'
 })
+
+const CustomerOrOrganisationRelationship = relationshipToOne(
+  Joi.alternatives(
+    baseData({
+      plural: 'customers',
+      singular: 'customer'
+    }),
+    baseData({
+      plural: 'organisations',
+      singular: 'organisation'
+    })
+  )
+)
 
 export const Workorders = WorkordersData.keys({
   // status: Joi.string().required().label('Status').description('Status of the work order - e.g. Open'),
@@ -49,7 +61,7 @@ export const Workorders = WorkordersData.keys({
   // ),
   phase: Joi.string().required().label('Phase'),
   relationships: Joi.object({
-    customer: CustomerRelationship.description(
+    customerOrOrganisation: CustomerOrOrganisationRelationship.description(
       'The individual or organisation that has the contact for the workorder'
     ),
     holding: HoldingsRelationship.description(
