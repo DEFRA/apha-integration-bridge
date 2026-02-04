@@ -31,8 +31,8 @@ const __dirname = new URL('.', import.meta.url).pathname
  */
 const options = {
   auth: false,
-  tags: ['api', 'customers'],
-  description: 'Retrieve customers by ids',
+  tags: ['api', 'organisations'],
+  description: 'Retrieve organisations by ids',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'find.md'),
     'utf8'
