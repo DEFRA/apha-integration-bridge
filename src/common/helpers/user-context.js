@@ -5,15 +5,15 @@
 export function getUserEmail(request) {
   // Check if request is authenticated
   if (!request.auth?.isAuthenticated || !request.auth?.artifacts) {
-    request.logger?.warn('Request is not authenticated or missing JWT artifacts')
+    request.logger?.warn(
+      'Request is not authenticated or missing JWT artifacts'
+    )
     return null
   }
 
   const artifacts = request.auth.artifacts
 
-  const email =
-    artifacts.upn ||
-    artifacts.unique_name
+  const email = artifacts.upn || artifacts.unique_name
 
   if (!email || typeof email !== 'string') {
     request.logger?.warn('No email claim found in JWT token', {
@@ -23,7 +23,7 @@ export function getUserEmail(request) {
   }
 
   request.logger?.debug('Extracted user email from JWT', {
-    email,
+    email
   })
 
   return email
@@ -41,13 +41,10 @@ export function getUserName(request) {
 
   const artifacts = request.auth.artifacts
 
-  return (
-    artifacts.given_name && artifacts.family_name
-      ? `${artifacts.given_name} ${artifacts.family_name}`
-      : null
-  )
+  return artifacts.given_name && artifacts.family_name
+    ? `${artifacts.given_name} ${artifacts.family_name}`
+    : null
 }
-
 
 /**
  * Gets all available user context information from the JWT token.
