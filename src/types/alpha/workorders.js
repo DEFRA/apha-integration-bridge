@@ -55,17 +55,23 @@ export const Workorders = WorkordersData.keys({
     holding: HoldingsRelationship.description(
       'Holding on which the workorder takes place'
     ),
-    facilities: relationshipToMany({
-      plural: 'facilities',
-      singular: 'facility'
-    }).description('Facilities involved in the workorder'),
-    locations: relationshipToMany({
-      plural: 'locations',
-      singular: 'location'
-    }).description('Locations involved during the workorder'),
-    commodities: relationshipToMany({
-      plural: 'commodities',
-      singular: 'comodities'
-    }).description('Commodities to be inspected during the workorder')
+    facilities: relationshipToMany(
+      baseData({
+        plural: 'facilities',
+        singular: 'facility'
+      })
+    ).description('Facilities involved in the workorder'),
+    locations: relationshipToMany(
+      baseData({
+        plural: 'locations',
+        singular: 'location'
+      })
+    ).description('Locations involved during the workorder'),
+    commodities: relationshipToMany(
+      baseData({
+        plural: 'commodities',
+        singular: 'comodities'
+      })
+    ).description('Commodities to be inspected during the workorder')
   }).required()
 })

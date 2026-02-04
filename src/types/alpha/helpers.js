@@ -25,22 +25,19 @@ export const baseData = ({ plural, singular }) =>
   }).label(`${capitalise(singular)}`)
 
 /**
- * @param {EntityTerms} entityTerms
+ * @param {Joi.Schema} entityDataSchema
  * @returns {Joi.ObjectSchema}
  */
-export const relationshipToOne = (entityTerms) =>
+export const relationshipToOne = (entityDataSchema) =>
   Joi.object({
-    data: baseData(entityTerms).required().allow(null)
-  }).label(`${capitalise(entityTerms.singular)} relationship`)
+    data: entityDataSchema.required().allow(null)
+  })
 
 /**
- * @param {EntityTerms} entityTerms
+ * @param {Joi.Schema} entityDataSchema
  * @returns {Joi.ObjectSchema}
  */
-export const relationshipToMany = (entityTerms) =>
+export const relationshipToMany = (entityDataSchema) =>
   Joi.object({
-    data: Joi.array()
-      .items(baseData(entityTerms))
-      .required()
-      .label(`${capitalise(entityTerms.plural)}`)
-  }).label(`${capitalise(entityTerms.plural)} relationship`)
+    data: Joi.array().items(entityDataSchema).required()
+  })

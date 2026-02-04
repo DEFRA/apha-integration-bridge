@@ -11,10 +11,12 @@ export const LocationsData = Joi.object({
   id: Joi.string().required().label('Location ID')
 })
 
-export const LocationsRelationship = relationshipToOne({
-  plural: 'locations',
-  singular: 'location'
-})
+export const LocationsRelationship = relationshipToOne(
+  baseData({
+    plural: 'locations',
+    singular: 'location'
+  })
+)
 
 const LiveStockUnits = baseData({
   plural: 'animal-commodities',
