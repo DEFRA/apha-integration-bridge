@@ -71,7 +71,6 @@ export const Address = Joi.object({
   street: Joi.string().allow(null).required(),
   locality: Joi.string().allow(null).required(),
   town: Joi.string().allow(null).required(),
-
   // DSFAAP-2110 - not needed
   // > commented because not strictly necessary for WFM first use case
   // > unless this is what is meant by local authority
