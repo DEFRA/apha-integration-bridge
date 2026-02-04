@@ -59,7 +59,7 @@ export const customer2 = {
     {
       type: 'landline',
       phoneNumber: '+44 1111 11111',
-      isPreferred: false
+      isPreferred: true
     }
   ],
   relationships: {
