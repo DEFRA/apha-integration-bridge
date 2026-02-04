@@ -121,7 +121,14 @@ async function handler(request, h) {
       const user = result.records?.[0]
       if (!user) return
 
-      response.add(new HTTPObjectResponse('case-management-user', user.Id, {}))
+      response.add(
+        new HTTPObjectResponse(
+          CaseManagementUser,
+          'case-management-user',
+          user.Id,
+          {}
+        )
+      )
     }
 
     return h.response(response.toResponse()).code(200)

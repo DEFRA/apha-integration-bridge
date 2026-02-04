@@ -1,7 +1,5 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
-
 export const CustomersData = Joi.object({
   type: Joi.string()
     .valid('customers')
@@ -12,6 +10,5 @@ export const CustomersData = Joi.object({
 })
 
 export const CustomersReference = Joi.object({
-  data: CustomersData.required(),
-  links: LinksReference
+  data: CustomersData.allow(null).required()
 })

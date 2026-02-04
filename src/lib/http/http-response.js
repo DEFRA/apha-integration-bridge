@@ -1,10 +1,16 @@
 export class HTTPObjectResponse {
   /**
+   * @param {import('joi').Schema} schema The Joi schema for this resource
    * @param {string} type The type of the resource
    * @param {*} id The unique identifier for the resource
    * @param {Object | undefined | null} data The data of the resource
    */
-  constructor(type, id, data) {
+  constructor(schema, type, id, data) {
+    if (!schema || typeof schema.describe !== 'function') {
+      throw new TypeError('Schema must be a Joi schema')
+    }
+
+    this.schema = schema
     this.type = type
     this.id = id
     this.data = data || {}
@@ -59,12 +65,22 @@ export class HTTPObjectResponse {
       throw new TypeError('Links are only supported on top-level responses')
     }
 
+    const relationshipMap = this._getRelationshipCardinality()
+
     /**
      * @type {Object | undefined}
      */
     let relationships
 
-    if (this.relationships.size > 0) {
+    if (relationshipMap) {
+      relationships = {}
+
+      for (const [name, kind] of Object.entries(relationshipMap)) {
+        relationships[name] = {
+          data: kind === 'many' ? [] : null
+        }
+      }
+    } else if (this.relationships.size > 0) {
       relationships = {}
     }
 
@@ -75,6 +91,28 @@ export class HTTPObjectResponse {
      * in the relationship.
      */
     for (const [type, items] of this.relationships.entries()) {
+      const relationshipKind = relationshipMap?.[type]
+
+      if (relationshipKind === 'many') {
+        const data = []
+
+        for (const item of items.values()) {
+          data.push(item.toResponse(false).data)
+        }
+
+        relationships[type] = { data }
+
+        continue
+      }
+
+      if (relationshipKind === 'one') {
+        const first = items.values().next().value
+
+        relationships[type] = { data: first.toResponse(false).data }
+
+        continue
+      }
+
       if (items.size === 1) {
         relationships[type] = items.values().next().value.toResponse(false)
       } else {
@@ -103,6 +141,30 @@ export class HTTPObjectResponse {
     }
 
     return response
+  }
+
+  _getRelationshipCardinality() {
+    const description = this.schema.describe()
+
+    const relationships = description?.keys?.relationships?.keys
+
+    if (!relationships) {
+      return null
+    }
+
+    const map = {}
+
+    for (const [name, relDesc] of Object.entries(relationships)) {
+      const dataDesc = relDesc?.keys?.data
+
+      if (!dataDesc) {
+        continue
+      }
+
+      map[name] = dataDesc.type === 'array' ? 'many' : 'one'
+    }
+
+    return Object.keys(map).length > 0 ? map : null
   }
 }
 

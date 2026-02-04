@@ -1,11 +1,10 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
 import { CustomersReference } from './customers.js'
 import { HoldingsReference } from './holdings.js'
 import { LocationsReference } from './locations.js'
 import { CommoditiesReference } from './commodities.js'
-import { ActivitiesReference } from './activities.js'
+import { ActivitiesData } from './activities.js'
 import { FacilitiesReference } from './facilities.js'
 
 const WorkordersData = Joi.object({
@@ -18,8 +17,7 @@ const WorkordersData = Joi.object({
 })
 
 export const WorkordersReference = Joi.object({
-  data: WorkordersData.required(),
-  links: LinksReference
+  data: WorkordersData.allow(null).required()
 })
 
 export const Workorders = WorkordersData.keys({
@@ -41,6 +39,8 @@ export const Workorders = WorkordersData.keys({
     facility: FacilitiesReference.optional(),
     location: LocationsReference.optional(),
     commodity: CommoditiesReference.optional(),
-    activities: ActivitiesReference.optional()
+    activities: Joi.object({
+      data: Joi.array().items(ActivitiesData).required()
+    }).optional()
   })
 })

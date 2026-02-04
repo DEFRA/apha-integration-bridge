@@ -17,6 +17,7 @@ import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { LinksReference } from '../../types/links.js'
 import { CommoditiesReference } from '../../types/commodities.js'
 import { FacilitiesReference } from '../../types/facilities.js'
+import { Locations } from '../../types/locations.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -28,47 +29,8 @@ export const GetLocationParamsSchema = Joi.object({
   locationId: GetLocationSchema.extract('locationId')
 }).label('Get Location Parameters')
 
-/**
- * Response schemas (for Swagger & runtime 200 validation)
- */
-const LocationAddressSchema = Joi.object({
-  paonStartNumber: Joi.alternatives(Joi.number(), Joi.string()).allow(null, ''),
-  paonStartNumberSuffix: Joi.string().allow(null, ''),
-  paonEndNumber: Joi.alternatives(Joi.number(), Joi.string()).allow(null, ''),
-  paonEndNumberSuffix: Joi.string().allow(null, ''),
-  paonDescription: Joi.string().allow(null, ''),
-  saonDescription: Joi.string().allow(null, ''),
-  saonStartNumber: Joi.alternatives(Joi.number(), Joi.string()).allow(null, ''),
-  saonStartNumberSuffix: Joi.string().allow(null, ''),
-  saonEndNumber: Joi.alternatives(Joi.number(), Joi.string()).allow(null, ''),
-  saonEndNumberSuffix: Joi.string().allow(null, ''),
-  street: Joi.string().allow(null, ''),
-  locality: Joi.string().allow(null, ''),
-  town: Joi.string().allow(null, ''),
-  administrativeAreaCounty: Joi.string().allow(null, ''), // maps ADMINISTRATIVE_AREA
-  postcode: Joi.string().allow(null, ''),
-  ukInternalCode: Joi.string().allow(null, ''),
-  countryCode: Joi.string().allow(null, '')
-}).required()
-
 const GetLocationResponseSchema = Joi.object({
-  data: Joi.object({
-    type: Joi.string().valid('locations').required(),
-    id: Joi.string().required(),
-    address: LocationAddressSchema,
-    relationships: Joi.object({
-      // HTTPObjectResponse serializes a single related item as an object,
-      // and multiple items as an array of wrapped references.
-      commodities: Joi.alternatives()
-        .try(CommoditiesReference, Joi.array().items(CommoditiesReference))
-        .optional(),
-      facilities: Joi.alternatives()
-        .try(FacilitiesReference, Joi.array().items(FacilitiesReference))
-        .optional()
-    })
-      .min(1)
-      .optional()
-  }).required(),
+  data: Locations.required(),
   links: LinksReference
 })
   .description(
@@ -210,15 +172,20 @@ export async function handler(request, h) {
     }
 
     // Build response using HTTPObjectResponse
-    const response = new HTTPObjectResponse('locations', locationId, {
-      address
-    })
+    const response = new HTTPObjectResponse(
+      Locations,
+      'locations',
+      locationId,
+      {
+        address
+      }
+    )
 
     // Add commodity relationships (each as a wrapped reference)
     for (const id of commoditiesIds) {
       response.relationship(
         'commodities',
-        new HTTPObjectResponse('commodities', id, {})
+        new HTTPObjectResponse(CommoditiesReference, 'commodities', id, {})
       )
     }
 
@@ -226,7 +193,7 @@ export async function handler(request, h) {
     for (const id of facilitiesIds) {
       response.relationship(
         'facilities',
-        new HTTPObjectResponse('facilities', id, {})
+        new HTTPObjectResponse(FacilitiesReference, 'facilities', id, {})
       )
     }
 

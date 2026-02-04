@@ -4,6 +4,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import { Holdings } from '../../../../types/holdings.js'
+import { LocationsReference } from '../../../../types/locations.js'
+import { CustomersReference } from '../../../../types/customers.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -130,19 +132,24 @@ export async function handler(request, h) {
 
     const { cph, cphtype, locationid } = row
 
-    const response = new HTTPObjectResponse('holdings', cph, {
+    const response = new HTTPObjectResponse(Holdings, 'holdings', cph, {
       cphType: cphtype
     })
 
     response.relationship(
       'location',
-      new HTTPObjectResponse('locations', locationid, {})
+      new HTTPObjectResponse(LocationsReference, 'locations', locationid, {})
     )
 
     if (row.cphholdercustomerid) {
       response.relationship(
         'cphHolder',
-        new HTTPObjectResponse('customers', row.cphholdercustomerid, {})
+        new HTTPObjectResponse(
+          CustomersReference,
+          'customers',
+          row.cphholdercustomerid,
+          {}
+        )
       )
     }
 

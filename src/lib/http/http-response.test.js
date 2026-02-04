@@ -1,13 +1,36 @@
 import { describe, test, expect } from '@jest/globals'
+import Joi from 'joi'
 import { HTTPObjectResponse, HTTPArrayResponse } from './http-response.js'
 
+const BaseSchema = Joi.object({
+  type: Joi.string().required(),
+  id: Joi.any().required()
+})
+
 describe('HTTPObjectResponse', () => {
+  test('constructor requires a Joi schema', () => {
+    expect(() => new HTTPObjectResponse(null, 'user', 1, {})).toThrow(TypeError)
+    expect(() => new HTTPObjectResponse(null, 'user', 1, {})).toThrow(
+      'Schema must be a Joi schema'
+    )
+    expect(() =>
+      new HTTPObjectResponse(undefined, 'user', 1, {})
+    ).toThrow(TypeError)
+    expect(() =>
+      new HTTPObjectResponse(undefined, 'user', 1, {})
+    ).toThrow('Schema must be a Joi schema')
+    expect(() => new HTTPObjectResponse({}, 'user', 1, {})).toThrow(TypeError)
+    expect(() => new HTTPObjectResponse({}, 'user', 1, {})).toThrow(
+      'Schema must be a Joi schema'
+    )
+  })
+
   test('should correctly assign type, id, and data', () => {
     const type = 'card'
     const id = 'abc123'
     const data = { name: 'Pikachu', power: 9001 }
 
-    const response = new HTTPObjectResponse(type, id, data)
+    const response = new HTTPObjectResponse(BaseSchema, type, id, data)
 
     // internal fields (mirrors original style)
     expect(response.type).toBe(type)
@@ -16,7 +39,9 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('toResponse() should return properly structured object and omit empty relationships', () => {
-    const response = new HTTPObjectResponse('user', 42, { username: 'alice' })
+    const response = new HTTPObjectResponse(BaseSchema, 'user', 42, {
+      username: 'alice'
+    })
 
     expect(response.toResponse()).toEqual({
       data: {
@@ -28,7 +53,7 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('should handle null data by omitting attributes (no relationships key)', () => {
-    const response = new HTTPObjectResponse('item', 'xyz', null)
+    const response = new HTTPObjectResponse(BaseSchema, 'item', 'xyz', null)
 
     expect(response.toResponse()).toEqual({
       data: {
@@ -39,7 +64,7 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('should handle undefined id and data', () => {
-    const response = new HTTPObjectResponse('thing', undefined, undefined)
+    const response = new HTTPObjectResponse(BaseSchema, 'thing', undefined, undefined)
 
     expect(response.toResponse()).toEqual({
       data: {
@@ -50,7 +75,9 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('links() sets top-level links and is chainable', () => {
-    const response = new HTTPObjectResponse('user', 42, { username: 'alice' })
+    const response = new HTTPObjectResponse(BaseSchema, 'user', 42, {
+      username: 'alice'
+    })
 
     expect(response.links({ next: '/users?page=2' })).toBe(response)
     expect(response.toResponse()).toEqual({
@@ -64,8 +91,8 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship() requires HTTPObjectResponse and is chainable', () => {
-    const a = new HTTPObjectResponse('a', 1, { name: 'A' })
-    const b = new HTTPObjectResponse('b', 2, { name: 'B' })
+    const a = new HTTPObjectResponse(BaseSchema, 'a', 1, { name: 'A' })
+    const b = new HTTPObjectResponse(BaseSchema, 'b', 2, { name: 'B' })
 
     // chainable
     expect(a.relationship('b', b)).toBe(a)
@@ -78,8 +105,8 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship(): single related item serializes as object (not array) and includes full toResponse wrapper', () => {
-    const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
-    const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
+    const user = new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' })
+    const org = new HTTPObjectResponse(BaseSchema, 'org', 'o1', { name: 'Acme' })
 
     user.relationship('org', org)
 
@@ -91,9 +118,9 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship(): multiple of the same type serialize as an array (in insertion order), each a full wrapper', () => {
-    const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
-    const org1 = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
-    const org2 = new HTTPObjectResponse('org', 'o2', { name: 'Beta' })
+    const user = new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' })
+    const org1 = new HTTPObjectResponse(BaseSchema, 'org', 'o1', { name: 'Acme' })
+    const org2 = new HTTPObjectResponse(BaseSchema, 'org', 'o2', { name: 'Beta' })
 
     user.relationship('org', org1).relationship('org', org2)
 
@@ -106,10 +133,12 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship(): adding same type+id replaces existing (last write wins)', () => {
-    const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
+    const user = new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' })
 
-    const original = new HTTPObjectResponse('org', 'o1', { name: 'OldCo' })
-    const updated = new HTTPObjectResponse('org', 'o1', { name: 'NewCo' })
+    const original = new HTTPObjectResponse(BaseSchema, 'org', 'o1', {
+      name: 'OldCo'
+    })
+    const updated = new HTTPObjectResponse(BaseSchema, 'org', 'o1', { name: 'NewCo' })
 
     user.relationship('org', original).relationship('org', updated)
 
@@ -121,9 +150,9 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship(): supports multiple different relationship types simultaneously', () => {
-    const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
-    const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
-    const role = new HTTPObjectResponse('role', 'r1', { title: 'Admin' })
+    const user = new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' })
+    const org = new HTTPObjectResponse(BaseSchema, 'org', 'o1', { name: 'Acme' })
+    const role = new HTTPObjectResponse(BaseSchema, 'role', 'r1', { title: 'Admin' })
 
     user.relationship('org', org).relationship('role', role)
 
@@ -135,7 +164,7 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('data cannot override type or id (explicit fields win)', () => {
-    const response = new HTTPObjectResponse('realType', 123, {
+    const response = new HTTPObjectResponse(BaseSchema, 'realType', 123, {
       type: 'fakeType',
       id: 'fakeId',
       hello: 'world'
@@ -151,9 +180,9 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('nested relationships are serialized recursively (each as full wrapper)', () => {
-    const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
-    const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
-    const parent = new HTTPObjectResponse('org', 'p1', {
+    const user = new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' })
+    const org = new HTTPObjectResponse(BaseSchema, 'org', 'o1', { name: 'Acme' })
+    const parent = new HTTPObjectResponse(BaseSchema, 'org', 'p1', {
       name: 'Acme Holdings'
     })
 
@@ -189,9 +218,11 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('toResponse() throws when a relationship response includes links', () => {
-    const user = new HTTPObjectResponse('user', 1, { username: 'alice' })
+    const user = new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' })
 
-    const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' }).links({
+    const org = new HTTPObjectResponse(BaseSchema, 'org', 'o1', {
+      name: 'Acme'
+    }).links({
       next: '/orgs?page=2'
     })
 
@@ -201,13 +232,83 @@ describe('HTTPObjectResponse', () => {
       'Links are only supported on top-level responses'
     )
   })
+
+  test('toResponse() uses schema to emit missing relationships as null/[]', () => {
+    const WidgetSchema = Joi.object({
+      type: Joi.string().valid('widgets').required(),
+      id: Joi.string().required(),
+      relationships: Joi.object({
+        owner: Joi.object({
+          data: Joi.object({
+            type: Joi.string().valid('users').required(),
+            id: Joi.string().required()
+          })
+            .allow(null)
+            .required()
+        }).required(),
+        tags: Joi.object({
+          data: Joi.array()
+            .items(
+              Joi.object({
+                type: Joi.string().valid('tags').required(),
+                id: Joi.string().required()
+              })
+            )
+            .required()
+        }).required()
+      }).required()
+    })
+
+    const response = new HTTPObjectResponse(WidgetSchema, 'widgets', 'w1', {})
+
+    expect(response.toResponse()).toEqual({
+      data: {
+        type: 'widgets',
+        id: 'w1',
+        relationships: {
+          owner: { data: null },
+          tags: { data: [] }
+        }
+      }
+    })
+  })
+
+  test('schema plural relationships always serialize as arrays', () => {
+    const WidgetSchema = Joi.object({
+      type: Joi.string().valid('widgets').required(),
+      id: Joi.string().required(),
+      relationships: Joi.object({
+        tags: Joi.object({
+          data: Joi.array()
+            .items(
+              Joi.object({
+                type: Joi.string().valid('tags').required(),
+                id: Joi.string().required()
+              })
+            )
+            .required()
+        }).required()
+      }).required()
+    })
+
+    const response = new HTTPObjectResponse(WidgetSchema, 'widgets', 'w2', {})
+
+    response.relationship(
+      'tags',
+      new HTTPObjectResponse(BaseSchema, 'tags', 't1', {})
+    )
+
+    expect(response.toResponse().data.relationships.tags).toEqual({
+      data: [{ type: 'tags', id: 't1' }]
+    })
+  })
 })
 
 describe('HTTPArrayResponse', () => {
   test('should build an array response from added HTTPObjectResponse items', () => {
     const res = new HTTPArrayResponse()
-      .add(new HTTPObjectResponse('user', 1, { username: 'alice' }))
-      .add(new HTTPObjectResponse('user', 2, { username: 'bob' }))
+      .add(new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' }))
+      .add(new HTTPObjectResponse(BaseSchema, 'user', 2, { username: 'bob' }))
 
     expect(res.toResponse()).toEqual({
       data: [
@@ -230,8 +331,10 @@ describe('HTTPArrayResponse', () => {
 
   test('adding same id should replace the item (last write wins), position unchanged', () => {
     const res = new HTTPArrayResponse()
-      .add(new HTTPObjectResponse('user', 1, { username: 'alice' }))
-      .add(new HTTPObjectResponse('user', 1, { username: 'alice-updated' }))
+      .add(new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' }))
+      .add(
+        new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice-updated' })
+      )
 
     expect(res.toResponse()).toEqual({
       data: [{ type: 'user', id: 1, username: 'alice-updated' }]
@@ -240,8 +343,8 @@ describe('HTTPArrayResponse', () => {
 
   test('should handle null data on items by omitting attributes (no empty relationships key)', () => {
     const res = new HTTPArrayResponse()
-      .add(new HTTPObjectResponse('item', 'a', null))
-      .add(new HTTPObjectResponse('item', 'b', { name: 'Beta' }))
+      .add(new HTTPObjectResponse(BaseSchema, 'item', 'a', null))
+      .add(new HTTPObjectResponse(BaseSchema, 'item', 'b', { name: 'Beta' }))
 
     expect(res.toResponse()).toEqual({
       data: [
@@ -253,8 +356,8 @@ describe('HTTPArrayResponse', () => {
 
   test('remove(id) should delete an item', () => {
     const res = new HTTPArrayResponse()
-      .add(new HTTPObjectResponse('thing', 'x', { value: 1 }))
-      .add(new HTTPObjectResponse('thing', 'y', { value: 2 }))
+      .add(new HTTPObjectResponse(BaseSchema, 'thing', 'x', { value: 1 }))
+      .add(new HTTPObjectResponse(BaseSchema, 'thing', 'y', { value: 2 }))
 
     res.remove('x')
 
@@ -266,7 +369,7 @@ describe('HTTPArrayResponse', () => {
   test('links() sets array-level links and is chainable', () => {
     const res = new HTTPArrayResponse()
       .links({ next: '/users?page=2' })
-      .add(new HTTPObjectResponse('user', 1, { username: 'alice' }))
+      .add(new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' }))
 
     expect(res.toResponse()).toEqual({
       data: [{ type: 'user', id: 1, username: 'alice' }],
@@ -280,9 +383,11 @@ describe('HTTPArrayResponse', () => {
   })
 
   test('items can include their own nested relationships (wrappers preserved inside relationships)', () => {
-    const post = new HTTPObjectResponse('post', 10, { title: 'Hello' })
-    const author = new HTTPObjectResponse('user', 1, { username: 'alice' })
-    const org = new HTTPObjectResponse('org', 'o1', { name: 'Acme' })
+    const post = new HTTPObjectResponse(BaseSchema, 'post', 10, { title: 'Hello' })
+    const author = new HTTPObjectResponse(BaseSchema, 'user', 1, {
+      username: 'alice'
+    })
+    const org = new HTTPObjectResponse(BaseSchema, 'org', 'o1', { name: 'Acme' })
 
     author.relationship('org', org)
     post.relationship('user', author)
@@ -316,8 +421,8 @@ describe('HTTPArrayResponse', () => {
 
   test('add() and remove() are chainable', () => {
     const list = new HTTPArrayResponse()
-    const a = new HTTPObjectResponse('x', 'a', {})
-    const b = new HTTPObjectResponse('x', 'b', {})
+    const a = new HTTPObjectResponse(BaseSchema, 'x', 'a', {})
+    const b = new HTTPObjectResponse(BaseSchema, 'x', 'b', {})
 
     expect(list.add(a)).toBe(list)
     expect(list.add(b).remove('a')).toBe(list)
@@ -328,8 +433,8 @@ describe('HTTPArrayResponse', () => {
 
   test('toResponse() is idempotent (does not mutate internal state)', () => {
     const list = new HTTPArrayResponse()
-      .add(new HTTPObjectResponse('user', 1, { username: 'alice' }))
-      .add(new HTTPObjectResponse('user', 2, { username: 'bob' }))
+      .add(new HTTPObjectResponse(BaseSchema, 'user', 1, { username: 'alice' }))
+      .add(new HTTPObjectResponse(BaseSchema, 'user', 2, { username: 'bob' }))
 
     const first = list.toResponse()
     const second = list.toResponse()

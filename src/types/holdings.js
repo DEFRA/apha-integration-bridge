@@ -1,6 +1,5 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
 import { LocationsReference } from './locations.js'
 import { CustomersReference } from './customers.js'
 
@@ -14,8 +13,7 @@ const HoldingsData = Joi.object({
 })
 
 export const HoldingsReference = Joi.object({
-  data: HoldingsData.required(),
-  links: LinksReference
+  data: HoldingsData.allow(null).required()
 })
 
 export const Holdings = HoldingsData.keys({

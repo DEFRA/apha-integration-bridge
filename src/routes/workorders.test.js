@@ -71,7 +71,12 @@ test('returns the mock workorder', async () => {
           commodity: {
             data: { type: 'commodities', id: 'U000010' }
           },
-          activities: {}
+          facility: {
+            data: null
+          },
+          activities: {
+            data: []
+          }
         }
       }
     ],
@@ -136,7 +141,12 @@ test('returns the mock workorder', async () => {
           facility: {
             data: { type: 'facilities', id: 'U000030' }
           },
-          activities: {}
+          commodity: {
+            data: null
+          },
+          activities: {
+            data: [{ type: 'activities', id: 'test' }]
+          }
         }
       }
     ],
