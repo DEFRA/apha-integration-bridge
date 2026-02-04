@@ -63,7 +63,7 @@ describe('locations/find', () => {
     })
   })
 
-  test('returns holdings in order requested', async () => {
+  test('returns locations in order requested', async () => {
     const queryParams = new URLSearchParams({
       page: '1',
       pageSize: '10'
@@ -87,7 +87,7 @@ describe('locations/find', () => {
     })
   })
 
-  test('returns holdings paginated', async () => {
+  test('returns locations paginated', async () => {
     const queryParams = new URLSearchParams({
       page: '1',
       pageSize: '1'

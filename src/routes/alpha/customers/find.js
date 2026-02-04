@@ -11,10 +11,10 @@ import { all } from './find.mocks.js'
 import { mockFindHandler } from '../helpers/find.js'
 import { PaginationSchema } from '../../../types/alpha/pagination.js'
 import { PaginatedLink } from '../../../types/alpha/links.js'
-import { Customers } from '../../../types/alpha/customers.js'
+import { Customer } from '../../../types/alpha/customers.js'
 
 const PostFindCustomersSchema = Joi.object({
-  data: Joi.array().items(Customers).required(),
+  data: Joi.array().items(Customer).required(),
   links: PaginatedLink
 })
   .description('Customer Details')
