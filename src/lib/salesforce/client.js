@@ -1,5 +1,6 @@
 import { proxyFetch } from '../../common/helpers/proxy/proxy-fetch.js'
 import { config } from '../../config.js'
+import { authenticateWithJWT } from './jwt-bearer.js'
 
 /**
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
@@ -10,18 +11,22 @@ const TOKEN_EXPIRY_BUFFER_MS = 5000
 
 /**
  * Lightweight Salesforce client with in-memory token caching.
+ * Supports both client credentials flow (system-level) and JWT Bearer flow (user-level).
  */
 class SalesforceClient {
   cachedToken = null
   cachedInstanceUrl = null
   expiresAt = 0
   refreshPromise = null
+  userTokenCache = new Map()
 
   /**
    * @returns {object} salesforce config
    */
   get cfg() {
-    return config.get('salesforce')
+    // Cast config to any first to prevent TypeScript from performing deep type instantiation
+    const configAny = /** @type {any} */ (config)
+    return configAny.get('salesforce')
   }
 
   /**
@@ -49,7 +54,61 @@ class SalesforceClient {
   }
 
   /**
-   * Acquire a bearer token using the client credentials grant.
+   * Acquire a bearer token for a specific user using JWT Bearer flow.
+   * Tokens are cached per-user until shortly before expiry.
+   *
+   * @param {string} userEmail
+   * @param {import('pino').Logger} [logger]
+   */
+  async getUserAccessToken(userEmail, logger) {
+    if (!userEmail) {
+      throw new Error('User email is required for JWT Bearer authentication')
+    }
+
+    const now = Date.now()
+    const cached = this.userTokenCache.get(userEmail)
+
+    // Return cached token if still valid
+    if (cached && now < cached.expiresAt - TOKEN_EXPIRY_BUFFER_MS) {
+      logger?.debug('Using cached user token', { userEmail })
+      return cached.token
+    }
+
+    logger?.debug('Acquiring new user token via JWT Bearer flow', { userEmail })
+
+    try {
+      const tokenResponse = await authenticateWithJWT(userEmail, logger)
+
+      const token = tokenResponse.access_token
+      if (!token) {
+        throw new Error('Salesforce JWT token response missing access_token')
+      }
+
+      const instanceUrl = tokenResponse.instance_url || this.cfg.baseUrl || null
+
+      const expiresInMs = 15 * 60 * 1000
+      const expiresAt = Date.now() + expiresInMs
+
+      this.userTokenCache.set(userEmail, {
+        token,
+        instanceUrl,
+        expiresAt
+      })
+
+      logger?.debug('Successfully cached user token', { userEmail })
+
+      return token
+    } catch (error) {
+      logger?.error(
+        { err: error, userEmail },
+        'Failed to acquire user access token'
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Acquire a bearer token using the client credentials grant (system-level).
    * Tokens are cached until shortly before expiry.
    * @param {import('pino').Logger} [logger] Optional logger.
    */
@@ -141,29 +200,40 @@ class SalesforceClient {
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {string} [userEmail] Optional user email for JWT Bearer authentication.
    * @returns {Promise<CompositeResponse>} The Salesforce composite response.
    */
-  async sendComposite(compositeBody, logger) {
-    return this.sendPost('composite', compositeBody, logger)
+  async sendComposite(compositeBody, logger, userEmail = null) {
+    return this.sendPost('composite', compositeBody, logger, userEmail)
   }
 
   /**
    * @param {object} payload The request payload to forward.
    * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {string} [userEmail] Optional user email for JWT Bearer authentication.
    * @returns {Promise<CreateGuestResponse>} The Salesforce composite response.
    */
-  async createCustomer(payload, logger) {
-    return this.sendPost('sobjects/Contact', payload, logger)
+  async createCustomer(payload, logger, userEmail = null) {
+    return this.sendPost('sobjects/Contact', payload, logger, userEmail)
   }
 
   /**
    * @param {string} relativePath
    * @param {object} payload
    * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {string} [userEmail] Optional user email for JWT Bearer authentication.
    * @returns {Promise<any>} The Salesforce response body.
    */
-  async sendPost(relativePath, payload, logger) {
-    const token = await this.getAccessToken(logger)
+  async sendPost(relativePath, payload, logger, userEmail = null) {
+    const token = userEmail
+      ? await this.getUserAccessToken(userEmail, logger)
+      : await this.getAccessToken(logger)
+
+    logger?.debug('Sending POST request', {
+      relativePath,
+      userContext: userEmail ? 'user-level' : 'system-level',
+      userEmail: userEmail || 'N/A'
+    })
 
     const postUrl = this.getBaseUrl() + '/' + relativePath.replace(/^\/+/, '')
 
