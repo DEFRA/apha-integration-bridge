@@ -14,7 +14,7 @@ const WorkordersData = Joi.object({
     .label('Workorder Type')
     .description('The “type” value will be "workorders" for this endpoint.'),
   id: Joi.string().required().label('Workorder ID')
-})
+}).meta({ response: { type: 'workorders' } })
 
 export const WorkordersReference = Joi.object({
   data: WorkordersData.allow(null).required()

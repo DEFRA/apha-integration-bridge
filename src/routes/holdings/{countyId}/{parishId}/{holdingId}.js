@@ -3,9 +3,9 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { CustomersData } from '../../../../types/customers.js'
 import { Holdings } from '../../../../types/holdings.js'
-import { LocationsReference } from '../../../../types/locations.js'
-import { CustomersReference } from '../../../../types/customers.js'
+import { LocationsData } from '../../../../types/locations.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -132,24 +132,19 @@ export async function handler(request, h) {
 
     const { cph, cphtype, locationid } = row
 
-    const response = new HTTPObjectResponse(Holdings, 'holdings', cph, {
+    const response = new HTTPObjectResponse(Holdings, cph, {
       cphType: cphtype
     })
 
     response.relationship(
       'location',
-      new HTTPObjectResponse(LocationsReference, 'locations', locationid, {})
+      new HTTPObjectResponse(LocationsData, locationid, {})
     )
 
     if (row.cphholdercustomerid) {
       response.relationship(
         'cphHolder',
-        new HTTPObjectResponse(
-          CustomersReference,
-          'customers',
-          row.cphholdercustomerid,
-          {}
-        )
+        new HTTPObjectResponse(CustomersData, row.cphholdercustomerid, {})
       )
     }
 

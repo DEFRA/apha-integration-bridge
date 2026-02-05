@@ -7,7 +7,7 @@ export const FacilitiesData = Joi.object({
     .label('Facility Type')
     .description('The “type” value will be "facilities" for this endpoint.'),
   id: Joi.string().required().label('Facility ID')
-})
+}).meta({ response: { type: 'facilities' } })
 
 export const FacilitiesReference = Joi.object({
   data: FacilitiesData.allow(null).required()

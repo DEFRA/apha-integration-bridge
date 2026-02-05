@@ -197,7 +197,7 @@ export async function handler(request, h) {
       prevLink = `/workorders?${prevQueryParams.toString()}`
     }
 
-    const response = new HTTPArrayResponse()
+    const response = new HTTPArrayResponse(Workorders)
 
     const links = {}
 

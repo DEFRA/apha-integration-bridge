@@ -7,7 +7,7 @@ export const CommoditiesData = Joi.object({
     .label('Commodity Type')
     .description('The “type” value will be "commodities" for this endpoint.'),
   id: Joi.string().required().label('Commodity ID')
-})
+}).meta({ response: { type: 'commodities' } })
 
 export const CommoditiesReference = Joi.object({
   data: CommoditiesData.allow(null).required()

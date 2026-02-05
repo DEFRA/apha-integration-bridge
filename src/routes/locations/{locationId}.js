@@ -15,8 +15,8 @@ import {
 } from '../../lib/db/queries/get-location.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { LinksReference } from '../../types/links.js'
-import { CommoditiesReference } from '../../types/commodities.js'
-import { FacilitiesReference } from '../../types/facilities.js'
+import { CommoditiesData } from '../../types/commodities.js'
+import { FacilitiesData } from '../../types/facilities.js'
 import { Locations } from '../../types/locations.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -172,20 +172,15 @@ export async function handler(request, h) {
     }
 
     // Build response using HTTPObjectResponse
-    const response = new HTTPObjectResponse(
-      Locations,
-      'locations',
-      locationId,
-      {
-        address
-      }
-    )
+    const response = new HTTPObjectResponse(Locations, locationId, {
+      address
+    })
 
     // Add commodity relationships (each as a wrapped reference)
     for (const id of commoditiesIds) {
       response.relationship(
         'commodities',
-        new HTTPObjectResponse(CommoditiesReference, 'commodities', id, {})
+        new HTTPObjectResponse(CommoditiesData, id, {})
       )
     }
 
@@ -193,7 +188,7 @@ export async function handler(request, h) {
     for (const id of facilitiesIds) {
       response.relationship(
         'facilities',
-        new HTTPObjectResponse(FacilitiesReference, 'facilities', id, {})
+        new HTTPObjectResponse(FacilitiesData, id, {})
       )
     }
 

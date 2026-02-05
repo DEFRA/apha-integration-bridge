@@ -9,7 +9,7 @@ export const LocationsData = Joi.object({
     .label('Location Type')
     .description('The “type” value will be "locations" for this endpoint.'),
   id: Joi.string().required().label('Location ID')
-})
+}).meta({ response: { type: 'locations' } })
 
 export const LocationsReference = Joi.object({
   data: LocationsData.allow(null).required()

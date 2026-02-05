@@ -9,10 +9,7 @@ import {
   HTTPError
 } from '../../../lib/http/http-exception.js'
 
-import {
-  HTTPArrayResponse,
-  HTTPObjectResponse
-} from '../../../lib/http/http-response.js'
+import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
 import { LinksReference } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
@@ -115,20 +112,13 @@ async function handler(request, h) {
       }
     )
 
-    const response = new HTTPArrayResponse()
+    const response = new HTTPArrayResponse(CaseManagementUser)
 
     if (result.records && result.records.length > 0) {
       const user = result.records?.[0]
       if (!user) return
 
-      response.add(
-        new HTTPObjectResponse(
-          CaseManagementUser,
-          'case-management-user',
-          user.Id,
-          {}
-        )
-      )
+      response.add(user.Id, {})
     }
 
     return h.response(response.toResponse()).code(200)
