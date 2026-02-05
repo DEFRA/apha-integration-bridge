@@ -42,6 +42,14 @@ const GuestCustomerDetailsSchema = Joi.object({
 })
 
 /**
+ * @typedef {Object} CaseDetails
+ * @property {string} Status
+ * @property {string} Priority
+ * @property {string} APHA_Application__c
+ * @property {string} ContactId
+ */
+
+/**
  * @typedef {Object} KeyFacts
  * @property {string} licenceType
  * @property {'origin'|'destination'} requester

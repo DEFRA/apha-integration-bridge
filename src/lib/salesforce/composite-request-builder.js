@@ -7,10 +7,11 @@ import { config } from '../../config.js'
 
 const salesforceConfig = config.get('salesforce')
 const refIdLicenseTypeQuery = 'licenseTypeQuery'
-const refIdApplicationRef = 'applicationRef'
 const refIdFile = 'file'
 const refIdFileQuery = 'fileQuery'
 const refIdLinkFile = 'linkFile'
+
+export const refIdApplicationRef = 'applicationRef'
 
 /**
  * @param {CreateCasePayload} payload
