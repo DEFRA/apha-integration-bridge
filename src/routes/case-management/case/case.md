@@ -145,10 +145,7 @@ Returns the created case details including the Salesforce composite response.
         }
       ]
     }
-  ],
-  "links": {
-    "self": "case-management/case"
-  }
+  ]
 }
 ```
 

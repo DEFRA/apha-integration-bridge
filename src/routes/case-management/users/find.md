@@ -38,10 +38,7 @@ This endpoint allows you to query the case management service (Salesforce) to de
       "id": "<user-id>",
       "type": "case-management-user"
     }
-  ],
-  "links": {
-    "self": "case-management/users/find"
-  }
+  ]
 }
 ```
 
@@ -53,10 +50,7 @@ This endpoint allows you to query the case management service (Salesforce) to de
 
 ```json
 {
-  "data": [],
-  "links": {
-    "self": "case-management/users/find"
-  }
+  "data": []
 }
 ```
 

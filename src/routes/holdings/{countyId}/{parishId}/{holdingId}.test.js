@@ -56,21 +56,18 @@ test('returns the cph and type for a CPH ID that exists', async () => {
           data: {
             type: 'locations',
             id: 'LOC-BETA'
-          },
-          links: {
-            self: `/holdings/45/001/0002/relationships/location`
           }
         },
         cphHolder: {
           data: {
             type: 'customers',
             id: 'CUST-450010002'
-          },
-          links: {
-            self: `/holdings/45/001/0002/relationships/cphHolder`
           }
         }
       }
+    },
+    links: {
+      self: '/45/001/0002'
     }
   })
 

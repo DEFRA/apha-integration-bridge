@@ -62,7 +62,8 @@ function assertSuccessResponse(response, expectedDataLength) {
 
   expect(body.data).toBeInstanceOf(Array)
   expect(body.data.length).toBe(expectedDataLength)
-  expect(body.links).toHaveProperty('self', 'case-management/users/find')
+  expect(body).toHaveProperty('links')
+  expect(body.links).toMatchObject({ self: ENDPOINT_PATH })
 
   return body
 }
