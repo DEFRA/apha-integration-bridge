@@ -46,6 +46,9 @@ test('returns the location, address and related units for a known Location ID', 
     data: {
       type: 'locations',
       id: 'L97339'
+    },
+    links: {
+      self: '/L97339'
     }
   })
 

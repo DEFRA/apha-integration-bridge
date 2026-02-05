@@ -13,13 +13,13 @@ import {
   HTTPArrayResponse,
   HTTPObjectResponse
 } from '../../../lib/http/http-response.js'
-import { LinksReference } from '../../../types/links.js'
+import { TopLevelLinksReference } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 
 const PostFindUsersResponseSchema = Joi.object({
   data: Joi.array().items(CaseManagementUser).required(),
-  links: LinksReference
+  links: TopLevelLinksReference
 })
   .description('Case Management User Details')
   .label('Find User Response')
@@ -123,6 +123,8 @@ async function handler(request, h) {
 
       response.add(new HTTPObjectResponse('case-management-user', user.Id, {}))
     }
+
+    response.links({ self: request.path })
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {

@@ -14,7 +14,7 @@ import {
   GetLocationSchema
 } from '../../lib/db/queries/get-location.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
-import { LinksReference } from '../../types/links.js'
+import { TopLevelLinksReference } from '../../types/links.js'
 import { CommoditiesReference } from '../../types/commodities.js'
 import { FacilitiesReference } from '../../types/facilities.js'
 
@@ -69,7 +69,7 @@ const GetLocationResponseSchema = Joi.object({
       .min(1)
       .optional()
   }).required(),
-  links: LinksReference
+  links: TopLevelLinksReference
 })
   .description(
     'Location details with BS7666 address and associated commodities/facilities'
@@ -213,6 +213,8 @@ export async function handler(request, h) {
     const response = new HTTPObjectResponse('locations', locationId, {
       address
     })
+
+    response.links({ self: request.path })
 
     // Add commodity relationships (each as a wrapped reference)
     for (const id of commoditiesIds) {
