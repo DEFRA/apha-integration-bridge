@@ -10,14 +10,26 @@ import {
 } from '../../../lib/http/http-exception.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import { CreateCasePayloadSchema } from '../../../types/case-management/case.js'
-import { buildCaseCreationCompositeRequest } from '../../../lib/salesforce/composite-request-builder.js'
+import {
+  buildCaseCreationCompositeRequest,
+  refIdApplicationRef
+} from '../../../lib/salesforce/composite-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
+import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-request-builder.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
+ * @import {Request} from '@hapi/hapi'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
+const retriesConfig = {
+  retries: 3,
+  maxRetryTime: 10000,
+  factor: 2,
+  minTimeout: 1000,
+  maxTimeout: 4000
+}
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
@@ -59,33 +71,64 @@ const options = {
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 async function handler(request, h) {
-  await Promise.all([
-    createApplication(request),
-    createCustomerAccount(request)
-  ]).catch((err) => handleCaseCreationError(err, request))
+  await runCaseCreationFlow(request, async () => {
+    const [applicationId, customerId] = await Promise.all([
+      createApplication(request),
+      createCustomerAccount(request)
+    ])
+
+    await createCase(request, applicationId, customerId)
+  })
 
   return h.response().code(201)
 }
 
+/**
+ * @param {Request} request
+ * @param {() => Promise<void>} action
+ */
+async function runCaseCreationFlow(request, action) {
+  try {
+    await action()
+  } catch (error) {
+    handleCaseCreationError(error, request)
+  }
+}
+
+/**
+ * @param {Request} request
+ * @param {string} applicationId
+ * @param {string} customerId
+ * @returns {Promise<void>}
+ */
+async function createCase(request, applicationId, customerId) {
+  const payload = /** @type {CreateCasePayload} */ (request.payload)
+  const applicationReference = payload.applicationReferenceNumber
+  const createCasePayload = buildCaseCreationPayload(applicationId, customerId)
+
+  await retry(async () => {
+    return await salesforceClient.createCase(
+      createCasePayload,
+      applicationReference,
+      request.logger
+    )
+  }, retriesConfig)
+}
+
+/**
+ * @param {Request} request
+ * @returns {Promise<string|null>}
+ */
 async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const compositeRequest = buildCaseCreationCompositeRequest(payload)
 
-  const salesforceResponse = await retry(
-    async () => {
-      return await salesforceClient.sendComposite(
-        compositeRequest,
-        request.logger
-      )
-    },
-    {
-      retries: 3,
-      maxRetryTime: 10000,
-      factor: 2,
-      minTimeout: 1000,
-      maxTimeout: 4000
-    }
-  )
+  const salesforceResponse = await retry(async () => {
+    return await salesforceClient.sendComposite(
+      compositeRequest,
+      request.logger
+    )
+  }, retriesConfig)
 
   const compositeResponse = salesforceResponse?.compositeResponse
   const failedCompositeItems = Array.isArray(compositeResponse)
@@ -103,26 +146,29 @@ async function createApplication(request) {
     compositeError.failedItems = failedCompositeItems
     throw compositeError
   }
+  return (
+    compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
+      ?.body?.id || null
+  )
 }
+/**
+ * @param {Request} request
+ * @returns {Promise<string|null>}
+ */
 
 async function createCustomerAccount(request) {
-  const applicant = /** @type {GuestCustomerDetails} */ (
-    request.payload.applicant
-  )
-  const payload = buildCustomerCreationPayload(applicant)
+  const payload = /** @type {CreateCasePayload} */ (request.payload)
+  const applicant = /** @type {GuestCustomerDetails} */ (payload.applicant)
+  const customerCreationPayload = buildCustomerCreationPayload(applicant)
 
-  return await retry(
-    async () => {
-      return await salesforceClient.createCustomer(payload, request.logger)
-    },
-    {
-      retries: 3,
-      maxRetryTime: 10000,
-      factor: 2,
-      minTimeout: 1000,
-      maxTimeout: 4000
-    }
-  )
+  const salesforceResponse = await retry(async () => {
+    return await salesforceClient.createCustomer(
+      customerCreationPayload,
+      request.logger
+    )
+  }, retriesConfig)
+
+  return salesforceResponse?.id || null
 }
 
 function handleCaseCreationError(error, request) {
