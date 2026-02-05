@@ -19,6 +19,7 @@ export class HTTPObjectResponse {
   /**
    * set links for the top-level response
    * @param {Object} links
+   * @returns {HTTPObjectResponse} this
    */
   links(links) {
     this._links = links
@@ -115,6 +116,7 @@ export class HTTPArrayResponse {
   /**
    * set links for the top-level response
    * @param {Object} links
+   * @return {HTTPArrayResponse} this
    */
   links(links) {
     this._links = links
