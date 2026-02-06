@@ -1,7 +1,7 @@
 import Joi from 'joi'
 
-import { CommoditiesData } from './commodities.js'
-import { FacilitiesData } from './facilities.js'
+import { CommoditiesReference } from './commodities.js'
+import { FacilitiesReference } from './facilities.js'
 export const LocationsData = Joi.object({
   type: Joi.string()
     .valid('locations')
@@ -38,11 +38,13 @@ const Address = Joi.object({
 export const Locations = LocationsData.keys({
   address: Address.required(),
   relationships: Joi.object({
-    commodities: Joi.object({
-      data: Joi.array().items(CommoditiesData).required()
-    }),
-    facilities: Joi.object({
-      data: Joi.array().items(FacilitiesData).required()
-    })
-  })
+    commodities: Joi.alternatives().try(
+      CommoditiesReference,
+      Joi.array().items(CommoditiesReference)
+    ),
+    facilities: Joi.alternatives().try(
+      FacilitiesReference,
+      Joi.array().items(FacilitiesReference)
+    )
+  }).optional()
 })

@@ -14,9 +14,7 @@ import {
   GetLocationSchema
 } from '../../lib/db/queries/get-location.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
-import { LinksReference } from '../../types/links.js'
-import { CommoditiesData } from '../../types/commodities.js'
-import { FacilitiesData } from '../../types/facilities.js'
+import { TopLevelLinksReference } from '../../types/links.js'
 import { Locations } from '../../types/locations.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -31,7 +29,7 @@ export const GetLocationParamsSchema = Joi.object({
 
 const GetLocationResponseSchema = Joi.object({
   data: Locations.required(),
-  links: LinksReference
+  links: TopLevelLinksReference
 })
   .description(
     'Location details with BS7666 address and associated commodities/facilities'
@@ -172,24 +170,20 @@ export async function handler(request, h) {
     }
 
     // Build response using HTTPObjectResponse
-    const response = new HTTPObjectResponse(Locations, locationId, {
+    const response = new HTTPObjectResponse('locations', locationId, {
       address
     })
 
+    response.links({ self: request.path })
+
     // Add commodity relationships (each as a wrapped reference)
     for (const id of commoditiesIds) {
-      response.relationship(
-        'commodities',
-        new HTTPObjectResponse(CommoditiesData, id, {})
-      )
+      response.relationship('commodities', new HTTPObjectResponse('commodities', id, {}))
     }
 
     // Add facility relationships (each as a wrapped reference)
     for (const id of facilitiesIds) {
-      response.relationship(
-        'facilities',
-        new HTTPObjectResponse(FacilitiesData, id, {})
-      )
+      response.relationship('facilities', new HTTPObjectResponse('facilities', id, {}))
     }
 
     return h.response(response.toResponse()).code(200)

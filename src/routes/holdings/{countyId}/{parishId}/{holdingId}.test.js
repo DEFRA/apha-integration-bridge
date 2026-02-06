@@ -65,6 +65,9 @@ test('returns the cph and type for a CPH ID that exists', async () => {
           }
         }
       }
+    },
+    links: {
+      self: '/45/001/0002'
     }
   })
 

@@ -62,7 +62,8 @@ function assertSuccessResponse(response, expectedDataLength) {
 
   expect(body.data).toBeInstanceOf(Array)
   expect(body.data.length).toBe(expectedDataLength)
-  expect(body).not.toHaveProperty('links')
+  expect(body).toHaveProperty('links')
+  expect(body.links).toMatchObject({ self: ENDPOINT_PATH })
 
   return body
 }

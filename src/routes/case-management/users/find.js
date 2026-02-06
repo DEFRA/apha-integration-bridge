@@ -9,14 +9,17 @@ import {
   HTTPError
 } from '../../../lib/http/http-exception.js'
 
-import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
-import { LinksReference } from '../../../types/links.js'
+import {
+  HTTPArrayResponse,
+  HTTPObjectResponse
+} from '../../../lib/http/http-response.js'
+import { TopLevelLinksReference } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 
 const PostFindUsersResponseSchema = Joi.object({
   data: Joi.array().items(CaseManagementUser).required(),
-  links: LinksReference
+  links: TopLevelLinksReference
 })
   .description('Case Management User Details')
   .label('Find User Response')
@@ -112,14 +115,16 @@ async function handler(request, h) {
       }
     )
 
-    const response = new HTTPArrayResponse(CaseManagementUser)
+    const response = new HTTPArrayResponse()
 
     if (result.records && result.records.length > 0) {
       const user = result.records?.[0]
       if (!user) return
 
-      response.add(user.Id, {})
+      response.add(new HTTPObjectResponse('case-management-user', user.Id, {}))
     }
+
+    response.links({ self: request.path })
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {

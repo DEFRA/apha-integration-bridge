@@ -3,6 +3,8 @@ import { config } from '../../config.js'
 
 /**
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
+ * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
+ * @import {Logger} from 'pino'
  */
 
 const TOKEN_EXPIRY_BUFFER_MS = 5000
@@ -50,7 +52,7 @@ class SalesforceClient {
   /**
    * Acquire a bearer token using the client credentials grant.
    * Tokens are cached until shortly before expiry.
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger] Optional logger.
    */
   async getAccessToken(logger) {
     const now = Date.now()
@@ -139,37 +141,78 @@ class SalesforceClient {
    * Send a composite API request to Salesforce.
    *
    * @param {object} compositeBody The request payload to forward.
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger] Optional logger.
    * @returns {Promise<CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger) {
+    return this.sendRequest('POST', 'composite', compositeBody, logger)
+  }
+
+  /**
+   * @param {object} payload The request payload to forward.
+   * @param {Logger} [logger] Optional logger.
+   * @returns {Promise<CreateGuestResponse>} The Salesforce create guest response.
+   */
+  async createCustomer(payload, logger) {
+    return this.sendRequest('POST', 'sobjects/Contact', payload, logger)
+  }
+
+  /**
+   * @param {object} payload The request payload to forward.
+   * @param {Logger} [logger] Optional logger.
+   * @returns {Promise<CreateGuestResponse>} The Salesforce create case response.
+   */
+  async createCase(payload, applicationReference, logger) {
+    return this.sendRequest(
+      'PATCH',
+      `sobjects/Case/APHA_ExternalReferenceNumber__c/${applicationReference}`,
+      payload,
+      logger
+    )
+  }
+
+  /**
+   * @param {string} relativePath
+   * @param {object} payload
+   * @param {Logger} [logger] Optional logger.
+   * @returns {Promise<any>} The Salesforce response body.
+   */
+  /**
+   * @param {'POST'|'PATCH'} method
+   * @param {string} relativePath
+   * @param {object} payload
+   * @param {Logger} [logger] Optional logger.
+   * @returns {Promise<any>} The Salesforce response body.
+   */
+  async sendRequest(method, relativePath, payload, logger) {
     const token = await this.getAccessToken(logger)
 
-    const compositeUrl = this.getBaseUrl() + '/composite'
+    const methodName = String(method || '').toUpperCase()
+    const url = this.getBaseUrl() + '/' + relativePath.replace(/^\/+/, '')
 
     const { response, body } = await this.requestWithTimeout(
-      compositeUrl,
+      url,
       {
-        method: 'POST',
+        method: methodName,
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(compositeBody)
+        body: JSON.stringify(payload)
       },
       {
-        timeoutMessage: 'Salesforce composite request timed out'
+        timeoutMessage: `Salesforce ${methodName} request timed out`
       }
     )
 
     if (!response.ok) {
       logger?.error(
         { status: response.status, body: this.safeMessage(body) },
-        'Salesforce composite request failed'
+        `Salesforce ${methodName} request failed`
       )
 
       throw new Error(
-        `Salesforce composite request failed (${response.status}): ${this.safeMessage(
+        `Salesforce ${methodName} request failed (${response.status}): ${this.safeMessage(
           body
         )}`
       )

@@ -3,9 +3,7 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { CustomersData } from '../../../../types/customers.js'
 import { Holdings } from '../../../../types/holdings.js'
-import { LocationsData } from '../../../../types/locations.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -17,13 +15,13 @@ import {
   FindHoldingSchema
 } from '../../../../lib/db/queries/find-holding.js'
 import { HTTPObjectResponse } from '../../../../lib/http/http-response.js'
-import { LinksReference } from '../../../../types/links.js'
+import { TopLevelLinksReference } from '../../../../types/links.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
 const FindHoldingResponseSchema = Joi.object({
   data: Holdings.label('Basic Holding Data'),
-  links: LinksReference
+  links: TopLevelLinksReference
 })
   .description(
     'A matching CPH number exists in Sam and basic information about the holding has been retrieved.'
@@ -132,19 +130,21 @@ export async function handler(request, h) {
 
     const { cph, cphtype, locationid } = row
 
-    const response = new HTTPObjectResponse(Holdings, cph, {
+    const response = new HTTPObjectResponse('holdings', cph, {
       cphType: cphtype
     })
 
+    response.links({ self: request.path })
+
     response.relationship(
       'location',
-      new HTTPObjectResponse(LocationsData, locationid, {})
+      new HTTPObjectResponse('locations', locationid, {})
     )
 
     if (row.cphholdercustomerid) {
       response.relationship(
         'cphHolder',
-        new HTTPObjectResponse(CustomersData, row.cphholdercustomerid, {})
+        new HTTPObjectResponse('customers', row.cphholdercustomerid, {})
       )
     }
 

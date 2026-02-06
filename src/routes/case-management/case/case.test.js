@@ -9,10 +9,47 @@ const ENDPOINT_METHOD = 'POST'
 const TEST_APP_REF = 'TB-1234-ABCD'
 
 const mockSendComposite = jest.spyOn(salesforceClient, 'sendComposite')
+const mockCreateCustomer = jest.spyOn(salesforceClient, 'createCustomer')
+const mockCreateCase = jest.spyOn(salesforceClient, 'createCase')
+const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
 const mockLoggerError = jest.fn()
 
+const mockSuccessfulCreateCustomerResponse = {
+  id: 'TEST-CUSTOMER-123',
+  errors: [],
+  success: true
+}
+
+const mockSuccessfulCompositeResponse = {
+  compositeResponse: [
+    {
+      body: {
+        id: 'TEST-CASE-789',
+        success: true,
+        errors: []
+      },
+      httpHeaders: {
+        Location: '/test/case/TEST-CASE-789'
+      },
+      httpStatusCode: 201,
+      referenceId: 'createCase'
+    }
+  ]
+}
+
+const mockSuccessfulCreateCaseResponse = {
+  id: 'TEST-CASE-789',
+  errors: [],
+  success: true
+}
+
 beforeEach(() => {
-  jest.clearAllMocks()
+  mockSendComposite.mockReset()
+  mockCreateCustomer.mockReset()
+  mockCreateCase.mockReset()
+  mockSendQuery.mockReset()
+  mockSendQuery.mockResolvedValue({ records: [] })
+  mockLoggerError.mockReset()
 })
 
 async function createTestServer() {
@@ -101,32 +138,28 @@ function createValidPayload() {
 
 describe('POST /case-management/case', () => {
   describe('Successful case creation', () => {
-    test('creates case and returns composite response', async () => {
+    test('creates case and returns 201 Created', async () => {
       const server = await createTestServer()
 
-      const mockCompositeResponse = {
-        compositeResponse: [
-          {
-            body: {
-              id: 'TEST-CASE-123',
-              success: true,
-              errors: []
-            },
-            httpHeaders: {
-              Location: '/test/case/TEST-CASE-123'
-            },
-            httpStatusCode: 201,
-            referenceId: 'createCase'
-          }
-        ]
-      }
-
-      mockSendComposite.mockResolvedValueOnce(mockCompositeResponse)
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockSendComposite.mockResolvedValueOnce(mockSuccessfulCompositeResponse)
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
 
       const payload = createValidPayload()
       const res = await createCase(server, payload)
 
       expect(res.statusCode).toBe(201)
+      expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
+      expect(mockCreateCustomer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Email: 'test@example.com',
+          FirstName: 'John',
+          LastName: 'Doe'
+        }),
+        expect.anything()
+      )
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
       expect(mockSendComposite).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -250,7 +283,7 @@ describe('POST /case-management/case', () => {
     })
   })
 
-  describe('Salesforce error handling', () => {
+  describe('Error handling', () => {
     const genericError = {
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Your request could not be processed',
@@ -262,15 +295,17 @@ describe('POST /case-management/case', () => {
       ]
     }
 
-    test('returns 500 when Salesforce composite fails', async () => {
+    test('returns 500 when createCustomerAccount fails', async () => {
       const server = await createTestServer()
 
-      // Mock Salesforce error - will be retried 4 times (initial + 3 retries)
-      mockSendComposite
-        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
-        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
-        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
-        .mockRejectedValueOnce(new Error('Salesforce connection failed'))
+      mockSendComposite.mockResolvedValueOnce(mockSuccessfulCompositeResponse)
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
+      // Mock createCustomer failure - will be retried 4 times (initial + 3 retries)
+      mockCreateCustomer
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
 
       const payload = createValidPayload()
       const res = await createCase(server, payload)
@@ -280,10 +315,7 @@ describe('POST /case-management/case', () => {
       const body = /** @type {Record<string, any>} */ (res.result)
       expect(body).toMatchObject(genericError)
 
-      // Verify retry logic - should be called 4 times (initial + 3 retries)
-      expect(mockSendComposite).toHaveBeenCalledTimes(4)
-
-      // Verify logger was called with correct details
+      expect(mockCreateCustomer).toHaveBeenCalledTimes(4)
       expect(mockLoggerError).toHaveBeenCalledWith(
         expect.objectContaining({
           err: expect.any(Error),
@@ -293,7 +325,38 @@ describe('POST /case-management/case', () => {
       )
     })
 
-    test('returns 500 when composite operations partially fail', async () => {
+    test('returns 500 when createApplication fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
+      mockSendComposite
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+
+      const payload = createValidPayload()
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockSendComposite).toHaveBeenCalledTimes(4)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          err: expect.any(Error),
+          endpoint: 'case-management/case'
+        }),
+        'Failed to create case in Salesforce'
+      )
+    })
+
+    test('returns 500 when composite operations within createApplication partially fail', async () => {
       const server = await createTestServer()
 
       const mockFailedCompositeResponse = {
@@ -325,6 +388,9 @@ describe('POST /case-management/case', () => {
       }
 
       mockSendComposite.mockResolvedValueOnce(mockFailedCompositeResponse)
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
 
       const payload = createValidPayload()
       const res = await createCase(server, payload)
@@ -357,7 +423,39 @@ describe('POST /case-management/case', () => {
       )
     })
 
-    test('returns 500 when composite response is not an array', async () => {
+    test('returns 500 when createCase fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockSendComposite.mockResolvedValueOnce(mockSuccessfulCompositeResponse)
+      // Mock createCase failure - will be retried 4 times (initial + 3 retries)
+      mockCreateCase
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+
+      const payload = createValidPayload()
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockCreateCase).toHaveBeenCalledTimes(4)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          err: expect.any(Error),
+          endpoint: 'case-management/case'
+        }),
+        'Failed to create case in Salesforce'
+      )
+    })
+
+    test('returns 500 when composite response within createApplication is not an array', async () => {
       const server = await createTestServer()
       const mockInvalidCompositeResponse = {
         compositeResponse: {
@@ -365,9 +463,14 @@ describe('POST /case-management/case', () => {
         }
       }
 
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
       mockSendComposite.mockResolvedValueOnce(
         /** @type {any} */ (mockInvalidCompositeResponse)
       )
+
       const payload = createValidPayload()
       const res = await createCase(server, payload)
 
@@ -382,26 +485,16 @@ describe('POST /case-management/case', () => {
     test('retries on transient errors before failing', async () => {
       const server = await createTestServer()
 
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
+
       // First 2 calls fail, 3rd succeeds
       mockSendComposite
         .mockRejectedValueOnce(new Error('Network timeout'))
         .mockRejectedValueOnce(new Error('Network timeout'))
-        .mockResolvedValueOnce({
-          compositeResponse: [
-            {
-              body: {
-                id: 'TEST-CASE-789',
-                success: true,
-                errors: []
-              },
-              httpHeaders: {
-                Location: '/test/case/TEST-CASE-789'
-              },
-              httpStatusCode: 201,
-              referenceId: 'createCase'
-            }
-          ]
-        })
+        .mockResolvedValueOnce(mockSuccessfulCompositeResponse)
 
       const payload = createValidPayload()
       const res = await createCase(server, payload)
@@ -414,6 +507,13 @@ describe('POST /case-management/case', () => {
   })
 
   describe('Composite response handling', () => {
+    beforeEach(() => {
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
+    })
+
     test('handles multiple composite operations successfully', async () => {
       const server = await createTestServer()
 

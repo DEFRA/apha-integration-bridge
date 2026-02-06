@@ -46,6 +46,9 @@ test('returns the location, address and related units for a known Location ID', 
     data: {
       type: 'locations',
       id: 'L97339'
+    },
+    links: {
+      self: '/L97339'
     }
   })
 
@@ -65,19 +68,19 @@ test('returns the location, address and related units for a known Location ID', 
   // Relationships: two commodities (array) and one facility (array)
   const rel = body.data.relationships
 
-  expect(Array.isArray(rel.commodities.data)).toBe(true)
-  expect(rel.commodities.data).toEqual(
+  expect(Array.isArray(rel.commodities)).toBe(true)
+  expect(rel.commodities).toEqual(
     expect.arrayContaining([
       {
-        type: 'commodities',
-        id: 'U000010'
+        data: { type: 'commodities', id: 'U000010' }
       },
       {
-        type: 'commodities',
-        id: 'U000020'
+        data: { type: 'commodities', id: 'U000020' }
       }
     ])
   )
 
-  expect(rel.facilities.data).toEqual([{ type: 'facilities', id: 'U000030' }])
+  expect(rel.facilities).toMatchObject({
+    data: { type: 'facilities', id: 'U000030' }
+  })
 })

@@ -10,11 +10,19 @@ import {
 import { salesforceClient } from './client.js'
 import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
 
-const mockLogger = {
+const mockLogger = /** @type {any} */ ({
   error: jest.fn()
-}
+})
 
 const mockFetch = jest.fn(() => Promise.resolve(/** @type {Response} */ ({})))
+
+const mockedAccessTokenResponse = {
+  access_token: 'token-123',
+  instance_url: 'https://salesforce.test',
+  expires_in: 3600
+}
+
+const mockApplicationReference = 'TB-1234-5678'
 
 describe('salesforce client', () => {
   const baseCfg = {
@@ -49,13 +57,7 @@ describe('salesforce client', () => {
 
   test('caches access tokens until near expiry', async () => {
     mockFetch.mockResolvedValueOnce(
-      /** @type {any}*/ (
-        mockJsonResponse(200, {
-          access_token: 'token-123',
-          instance_url: 'https://salesforce.test',
-          expires_in: 3600
-        })
-      )
+      /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
     )
 
     const first = await salesforceClient.getAccessToken()
@@ -99,13 +101,7 @@ describe('salesforce client', () => {
   test('sendComposite returns response body on success', async () => {
     mockFetch
       .mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(200, {
-            access_token: 'token-123',
-            instance_url: 'https://salesforce.test',
-            expires_in: 3600
-          })
-        )
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
       )
       .mockResolvedValueOnce(
         /** @type {any}*/ (
@@ -143,7 +139,7 @@ describe('salesforce client', () => {
           }
         ]
       },
-      /** @type {any} */ (mockLogger)
+      mockLogger
     )
 
     expect(result).toEqual({
@@ -176,45 +172,150 @@ describe('salesforce client', () => {
   })
 
   test('sendComposite throws with sanitised logging when Salesforce returns error', async () => {
+    const errorMessage = 'server error'
     mockFetch
       .mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(200, {
-            access_token: 'token-123',
-            instance_url: 'https://salesforce.test',
-            expires_in: 3600
-          })
-        )
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
       )
       .mockResolvedValueOnce(
         /** @type {any}*/ (
-          mockJsonResponse(500, { message: 'server error', secret: 'hide' })
+          mockJsonResponse(500, { message: errorMessage, secret: 'hide' })
         )
       )
 
     await expect(
-      salesforceClient.sendComposite(
-        { compositeRequest: [] },
-        /** @type {any} */ (mockLogger)
-      )
-    ).rejects.toThrow(/Salesforce composite request failed/)
+      salesforceClient.sendComposite({ compositeRequest: [] }, mockLogger)
+    ).rejects.toThrow(/Salesforce POST request failed/)
 
     expect(mockLogger.error).toHaveBeenCalledWith(
-      { status: 500, body: expect.any(String) },
-      'Salesforce composite request failed'
+      { status: 500, body: errorMessage },
+      'Salesforce POST request failed'
+    )
+  })
+
+  test('createCustomer returns response body on success', async () => {
+    const mockedResponse = {
+      id: '001',
+      success: true,
+      errors: []
+    }
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(201, mockedResponse))
+      )
+
+    const result = await salesforceClient.createCustomer(
+      {
+        FirstName: 'Name',
+        LastName: 'Surname',
+        Email: 'test@mail.com'
+      },
+      mockLogger
+    )
+
+    expect(result).toEqual(mockedResponse)
+  })
+
+  test('createCustomer throws with sanitised logging when Salesforce returns error', async () => {
+    const errorMessage = 'Unexpected character...'
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(400, {
+            message: errorMessage,
+            errorCode: 'JSON_PARSER_ERROR'
+          })
+        )
+      )
+
+    await expect(
+      salesforceClient.createCustomer({}, mockLogger)
+    ).rejects.toThrow(/Salesforce POST request failed/)
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      { status: 400, body: errorMessage },
+      'Salesforce POST request failed'
+    )
+  })
+
+  test('createCase returns response body on success', async () => {
+    const mockedResponse = {
+      id: 'CASE-001',
+      success: true,
+      errors: []
+    }
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedResponse))
+      )
+
+    const payload = {
+      Status: 'Preparing',
+      Priority: 'Medium',
+      APHA_Application__c: 'APP-123',
+      ContactId: 'CONTACT-456'
+    }
+
+    const result = await salesforceClient.createCase(
+      payload,
+      mockApplicationReference,
+      mockLogger
+    )
+
+    expect(result).toEqual(mockedResponse)
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining(
+        `/sobjects/Case/APHA_ExternalReferenceNumber__c/${mockApplicationReference}`
+      ),
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Bearer token-123',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+    )
+  })
+
+  test('createCase throws with sanitised logging when Salesforce returns error', async () => {
+    const errorMessage = 'Unexpected character...'
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(400, {
+            message: errorMessage,
+            errorCode: 'JSON_PARSER_ERROR'
+          })
+        )
+      )
+
+    await expect(
+      salesforceClient.createCase({}, mockApplicationReference, mockLogger)
+    ).rejects.toThrow(/Salesforce PATCH request failed/)
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      { status: 400, body: errorMessage },
+      'Salesforce PATCH request failed'
     )
   })
 
   test('sendQuery returns response body on success', async () => {
     mockFetch
       .mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(200, {
-            access_token: 'token-123',
-            instance_url: 'https://salesforce.test',
-            expires_in: 3600
-          })
-        )
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
       )
       .mockResolvedValueOnce(
         /** @type {any}*/ (
@@ -231,7 +332,7 @@ describe('salesforce client', () => {
 
     const result = await salesforceClient.sendQuery(
       'SELECT Id, Name FROM Account',
-      /** @type {any} */ (mockLogger)
+      mockLogger
     )
 
     expect(result).toEqual({
@@ -260,13 +361,7 @@ describe('salesforce client', () => {
   test('sendQuery throws with sanitised logging when Salesforce returns error', async () => {
     mockFetch
       .mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(200, {
-            access_token: 'token-123',
-            instance_url: 'https://salesforce.test',
-            expires_in: 3600
-          })
-        )
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
       )
       .mockResolvedValueOnce(
         /** @type {any}*/ (
@@ -278,10 +373,7 @@ describe('salesforce client', () => {
       )
 
     await expect(
-      salesforceClient.sendQuery(
-        'SELECT * FORM Account',
-        /** @type {any} */ (mockLogger)
-      )
+      salesforceClient.sendQuery('SELECT * FORM Account', mockLogger)
     ).rejects.toThrow(/Salesforce query request failed/)
 
     expect(mockLogger.error).toHaveBeenCalledWith(
