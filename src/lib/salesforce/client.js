@@ -1,5 +1,6 @@
 import { proxyFetch } from '../../common/helpers/proxy/proxy-fetch.js'
 import { config } from '../../config.js'
+import { HTTPMethods } from '../http/http-methods.js'
 
 /**
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
@@ -145,7 +146,12 @@ class SalesforceClient {
    * @returns {Promise<CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger) {
-    return this.sendRequest('POST', 'composite', compositeBody, logger)
+    return this.sendRequest(
+      HTTPMethods.POST,
+      'composite',
+      compositeBody,
+      logger
+    )
   }
 
   /**
@@ -154,7 +160,12 @@ class SalesforceClient {
    * @returns {Promise<CreateGuestResponse>} The Salesforce create guest response.
    */
   async createCustomer(payload, logger) {
-    return this.sendRequest('POST', 'sobjects/Contact', payload, logger)
+    return this.sendRequest(
+      HTTPMethods.POST,
+      'sobjects/Contact',
+      payload,
+      logger
+    )
   }
 
   /**
@@ -164,7 +175,7 @@ class SalesforceClient {
    */
   async createCase(payload, applicationReference, logger) {
     return this.sendRequest(
-      'PATCH',
+      HTTPMethods.PATCH,
       `sobjects/Case/APHA_ExternalReferenceNumber__c/${applicationReference}`,
       payload,
       logger
@@ -178,7 +189,7 @@ class SalesforceClient {
    * @returns {Promise<any>} The Salesforce response body.
    */
   /**
-   * @param {'POST'|'PATCH'} method
+   * @param {(typeof HTTPMethods.PATCH | typeof HTTPMethods.POST)} method
    * @param {string} relativePath
    * @param {object} payload
    * @param {Logger} [logger] Optional logger.

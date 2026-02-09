@@ -8,6 +8,7 @@ convict.addFormats(convictFormatWithValidator)
 
 const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
+const isDevelopment = process.env.NODE_ENV === 'development'
 
 const config = convict({
   oracledb: {
@@ -277,6 +278,43 @@ const config = convict({
       default: 10000,
       env: 'SALESFORCE_TIMEOUT_MS'
     }
+  },
+  aws: {
+    region: {
+      doc: 'AWS region to use',
+      format: String,
+      default: 'eu-west-2',
+      env: 'AWS_REGION'
+    },
+    accessKeyId: {
+      doc: 'AWS access key ID',
+      format: String,
+      default: 'test',
+      env: 'AWS_ACCESS_KEY_ID'
+    },
+    secretAccessKey: {
+      doc: 'AWS secret access key',
+      format: String,
+      default: 'test',
+      env: 'AWS_SECRET'
+    },
+    s3Endpoint: {
+      doc: 'AWS S3 endpoint',
+      format: String,
+      default: 'http://127.0.0.1:4566',
+      env: 'S3_ENDPOINT'
+    },
+    bucket: {
+      format: String,
+      default: null,
+      nullable: true,
+      env: 'S3_BUCKET'
+    }
+  },
+  isDevelopment: {
+    doc: 'If this application running in the development environment',
+    format: Boolean,
+    default: isDevelopment
   }
 })
 
