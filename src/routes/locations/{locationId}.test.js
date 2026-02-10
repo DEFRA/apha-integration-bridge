@@ -68,19 +68,19 @@ test('returns the location, address and related units for a known Location ID', 
   // Relationships: two commodities (array) and one facility (array)
   const rel = body.data.relationships
 
-  expect(Array.isArray(rel.commodities)).toBe(true)
-  expect(rel.commodities).toEqual(
+  expect(Array.isArray(rel.commodities.data)).toBe(true)
+  expect(rel.commodities.data).toEqual(
     expect.arrayContaining([
       {
-        data: { type: 'commodities', id: 'U000010' }
+        type: 'commodities',
+        id: 'U000010'
       },
       {
-        data: { type: 'commodities', id: 'U000020' }
+        type: 'commodities',
+        id: 'U000020'
       }
     ])
   )
 
-  expect(rel.facilities).toMatchObject({
-    data: { type: 'facilities', id: 'U000030' }
-  })
+  expect(rel.facilities.data).toEqual([{ type: 'facilities', id: 'U000030' }])
 })

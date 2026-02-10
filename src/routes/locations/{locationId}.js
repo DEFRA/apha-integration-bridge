@@ -14,6 +14,8 @@ import {
   GetLocationSchema
 } from '../../lib/db/queries/get-location.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
+import { CommoditiesData } from '../../types/commodities.js'
+import { FacilitiesData } from '../../types/facilities.js'
 import { TopLevelLinksReference } from '../../types/links.js'
 import { Locations } from '../../types/locations.js'
 
@@ -170,7 +172,7 @@ export async function handler(request, h) {
     }
 
     // Build response using HTTPObjectResponse
-    const response = new HTTPObjectResponse('locations', locationId, {
+    const response = new HTTPObjectResponse(Locations, locationId, {
       address
     })
 
@@ -178,12 +180,18 @@ export async function handler(request, h) {
 
     // Add commodity relationships (each as a wrapped reference)
     for (const id of commoditiesIds) {
-      response.relationship('commodities', new HTTPObjectResponse('commodities', id, {}))
+      response.relationship(
+        'commodities',
+        new HTTPObjectResponse(CommoditiesData, id, {})
+      )
     }
 
     // Add facility relationships (each as a wrapped reference)
     for (const id of facilitiesIds) {
-      response.relationship('facilities', new HTTPObjectResponse('facilities', id, {}))
+      response.relationship(
+        'facilities',
+        new HTTPObjectResponse(FacilitiesData, id, {})
+      )
     }
 
     return h.response(response.toResponse()).code(200)
