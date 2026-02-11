@@ -1,6 +1,6 @@
 # GET /case-management/case/{caseId}
 
-Retrieves a case by ID from Salesforce with user-context-aware authentication. This endpoint supports both system-level and user-level authentication depending on the headers provided.
+Retrieves a case by ID from Salesforce using user-context authentication. This endpoint **requires** the `X-Forwarded-Authorization` header containing a user's identity token.
 
 ## Endpoint
 
@@ -10,71 +10,38 @@ GET /case-management/case/{caseId}
 
 ## Authentication
 
-This endpoint requires Bearer token authentication via the `Authorization` header. Optionally supports user-level authentication via the `X-Forwarded-Authorization` header.
+This endpoint requires **dual authentication**:
+
+1. Service-level authorization via `Authorization` header (Cognito token)
+2. User identity via `X-Forwarded-Authorization` header (Azure AD JWT with email claim)
+
+The endpoint will return a 400 Bad Request if the `X-Forwarded-Authorization` header is missing or does not contain a valid email claim.
 
 ## Headers
 
 ### Required
 
-- `Authorization`: Bearer token for machine-to-machine authorization (e.g., Cognito M2M token)
+- `Authorization`: Bearer token for service-to-service authorization (Cognito token)
+- `X-Forwarded-Authorization`: User identity token (Azure AD JWT) containing `email` claim
 - `Accept`: `application/vnd.apha.1+json` (default) - API versioning header
-
-### Optional
-
-- `X-Forwarded-Authorization`: User identity token (Azure AD JWT or Customer Identity JWT)
-  - When provided, the API call is made in the authenticated user's context
-  - When omitted, the API call uses system-level credentials
 
 ## Path Parameters
 
 - `caseId` (string, required) - Salesforce Case ID (e.g., "500ABC123456789")
 
-## User Context Awareness
+## User Context Authentication
 
-This endpoint supports dual authentication modes to enable different use cases:
+This endpoint uses **JWT Bearer flow** to make Salesforce API calls in the authenticated user's context.
 
-### System-Level Authentication (Machine-to-Machine)
+**Authentication Flow:**
 
-- Uses OAuth 2.0 client credentials flow
-- API calls are made with system-level Salesforce credentials
-
-**Headers:**
-
-```
-Authorization: Bearer <cognito-m2m-token>
-```
-
-### User-Level Authentication (JWT Bearer)
-
-- Uses JWT Bearer flow with the authenticated user's identity
-- Appropriate for user-initiated requests from UIs (e.g., Case Management UI)
-- API calls are made in the user's Salesforce context
-
-**Headers:**
-
-```
-Authorization: Bearer <cognito-m2m-token>
-X-Forwarded-Authorization: Bearer <azure-ad-jwt>
-```
-
-## Authentication Flow
-
-### For Defra Internal Users (Case Management UI)
-
-1. Client sends Cognito M2M token in `Authorization` header
-2. Client sends Azure AD JWT in `X-Forwarded-Authorization` header
-3. Integration Bridge extracts email from Azure AD JWT
-4. Integration Bridge creates Salesforce JWT token for that user
-5. Salesforce API call is made in the user's context with their permissions
-
-### For Public Users (Future - Licensing Frontend)
-
-1. Client sends Cognito M2M token in `Authorization` header
-2. Client sends Customer Identity JWT in `X-Forwarded-Authorization` header
-3. Integration Bridge makes system-level call to Salesforce
-4. Integration Bridge validates that the Contact on the Case matches the authenticated user
-
-**Note:** Public user authentication is planned for future implementation. Currently, only internal user authentication is supported.
+1. Client sends Cognito token in `Authorization` header (service authorization)
+2. Client sends Azure AD JWT in `X-Forwarded-Authorization` header (user identity)
+3. Integration Bridge extracts `email` claim from Azure AD JWT using jose library
+4. Integration Bridge creates a Salesforce JWT assertion for that email
+5. Integration Bridge exchanges the JWT assertion for a Salesforce access token
+6. Salesforce query is executed with the user's access token (respecting user's permissions)
+7. Token is cached per-user until expiry for performance
 
 ## Response
 
@@ -111,30 +78,52 @@ Returns the case details with the following fields:
 }
 ```
 
-## Example Requests
+## Example Request
 
-### System-Level Request (No User Context)
-
-```bash
-curl -X GET \
-  https://api.example.com/case-management/case/500ABC123456789 \
-  -H 'Authorization: Bearer <cognito-m2m-token>' \
-  -H 'Accept: application/vnd.apha.1+json'
-```
-
-### User-Level Request (With Azure AD JWT)
+**Note:** Both headers are required for this endpoint.
 
 ```bash
 curl -X GET \
   https://api.example.com/case-management/case/500ABC123456789 \
-  -H 'Authorization: Bearer <cognito-m2m-token>' \
+  -H 'Authorization: Bearer <cognito--token>' \
   -H 'X-Forwarded-Authorization: Bearer <azure-ad-jwt>' \
   -H 'Accept: application/vnd.apha.1+json'
 ```
 
+The Azure AD JWT must contain a valid `email` claim. Example decoded payload:
+
+```json
+{
+  "aud": "00000003-0000-0000-c000-000000000000",
+  "iss": "https://sts.windows.net/<tenant-id>/",
+  "email": "user@defra.gov.uk",
+  "exp": 1234567890,
+  "iat": 1234567890
+}
+```
+
 ## Error Responses
 
-### 400 Bad Request
+### 400 Bad Request - Missing User Context
+
+Returned when the `X-Forwarded-Authorization` header is missing or does not contain a valid `email` claim.
+
+```json
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "User authentication required",
+  "code": "BAD_REQUEST",
+  "errors": [
+    {
+      "code": "MISSING_QUERY_PARAMETER",
+      "message": "X-Forwarded-Authorization header with valid email claim is required"
+    }
+  ]
+}
+```
+
+### 400 Bad Request - Validation Error
 
 Returned when the request fails validation (e.g., missing required headers).
 
@@ -142,7 +131,8 @@ Returned when the request fails validation (e.g., missing required headers).
 {
   "statusCode": 400,
   "error": "Bad Request",
-  "message": "Validation error",
+  "message": "Invalid request parameters",
+  "code": "BAD_REQUEST",
   "errors": [
     {
       "code": "VALIDATION_ERROR",

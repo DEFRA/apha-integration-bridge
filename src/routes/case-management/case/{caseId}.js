@@ -71,14 +71,30 @@ async function handler(request, h) {
   const { caseId } = /** @type {{ caseId: string }} */ (request.params)
 
   try {
-    // Extract authenticated user's email for user-level authentication
     const userEmail = getUserEmail(request)
+
+    if (!userEmail) {
+      return new HTTPException('BAD_REQUEST', 'User authentication required', [
+        new HTTPError(
+          'MISSING_QUERY_PARAMETER',
+          'X-Forwarded-Authorization header with valid email claim is required'
+        )
+      ]).boomify()
+    }
+
+    const salesforceToken = await salesforceClient.getUserAccessToken(
+      userEmail,
+      request.logger
+    )
 
     const query = buildCaseQuery(caseId)
 
     const result = await retry(async () => {
-      // Use user-level authentication if user is authenticated, otherwise fall back to system-level
-      return await salesforceClient.sendQuery(query, request.logger, userEmail)
+      return await salesforceClient.sendQuery(
+        query,
+        salesforceToken,
+        request.logger
+      )
     }, retriesConfig)
 
     if (!result.records || result.records.length === 0) {
@@ -106,8 +122,7 @@ async function handler(request, h) {
     request.logger?.info(
       {
         caseId,
-        userEmail: userEmail || 'system',
-        authContext: userEmail ? 'user-level' : 'system-level'
+        authContext: 'user-level'
       },
       'Successfully retrieved case'
     )

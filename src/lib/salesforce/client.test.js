@@ -315,26 +315,23 @@ describe('salesforce client', () => {
     )
   })
 
-  test('sendQuery returns response body on success', async () => {
-    mockFetch
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+  test('sendQuery returns response body on success with provided token', async () => {
+    mockFetch.mockResolvedValueOnce(
+      /** @type {any}*/ (
+        mockJsonResponse(200, {
+          totalSize: 2,
+          done: true,
+          records: [
+            { Id: '001', Name: 'Test Record 1' },
+            { Id: '002', Name: 'Test Record 2' }
+          ]
+        })
       )
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(200, {
-            totalSize: 2,
-            done: true,
-            records: [
-              { Id: '001', Name: 'Test Record 1' },
-              { Id: '002', Name: 'Test Record 2' }
-            ]
-          })
-        )
-      )
+    )
 
     const result = await salesforceClient.sendQuery(
       'SELECT Id, Name FROM Account',
+      'user-token-456',
       mockLogger
     )
 
@@ -347,7 +344,7 @@ describe('salesforce client', () => {
       ]
     })
 
-    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining(
         '/query?q=' + encodeURIComponent('SELECT Id, Name FROM Account')
@@ -355,34 +352,40 @@ describe('salesforce client', () => {
       expect.objectContaining({
         method: 'GET',
         headers: {
-          Authorization: 'Bearer token-123'
+          Authorization: 'Bearer user-token-456'
         }
       })
     )
   })
 
   test('sendQuery throws with sanitised logging when Salesforce returns error', async () => {
-    mockFetch
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+    mockFetch.mockResolvedValueOnce(
+      /** @type {any}*/ (
+        mockJsonResponse(400, {
+          message: 'Invalid SOQL query',
+          errorCode: 'MALFORMED_QUERY'
+        })
       )
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(400, {
-            message: 'Invalid SOQL query',
-            errorCode: 'MALFORMED_QUERY'
-          })
-        )
-      )
+    )
 
     await expect(
-      salesforceClient.sendQuery('SELECT * FORM Account', mockLogger)
+      salesforceClient.sendQuery(
+        'SELECT * FORM Account',
+        'user-token-456',
+        mockLogger
+      )
     ).rejects.toThrow(/Salesforce query request failed/)
 
     expect(mockLogger.error).toHaveBeenCalledWith(
       { status: 400, body: expect.any(String) },
       'Salesforce query request failed'
     )
+  })
+
+  test('sendQuery throws when token is not provided', async () => {
+    await expect(
+      salesforceClient.sendQuery('SELECT Id FROM Account', null, mockLogger)
+    ).rejects.toThrow('Salesforce access token is required for sendQuery')
   })
 
   test('throws a timeout error when fetch aborts', async () => {
@@ -488,63 +491,7 @@ describe('salesforce client', () => {
       )
     })
 
-    test('sendComposite uses user token when userEmail is provided', async () => {
-      mockFetch.mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(200, {
-            compositeResponse: [
-              { body: { id: '001', success: true }, httpStatusCode: 201 }
-            ]
-          })
-        )
-      )
-
-      await salesforceClient.sendComposite(
-        { compositeRequest: [] },
-        mockLogger,
-        userEmail
-      )
-
-      expect(jwtBearer.authenticateWithJWT).toHaveBeenCalledWith(
-        userEmail,
-        mockLogger
-      )
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        expect.stringContaining('/composite'),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Bearer user-token-123'
-          })
-        })
-      )
-    })
-
-    test('createCustomer uses user token when userEmail is provided', async () => {
-      mockFetch.mockResolvedValueOnce(
-        /** @type {any}*/ (mockJsonResponse(201, { id: '001', success: true }))
-      )
-
-      await salesforceClient.createCustomer(
-        { FirstName: 'Test', LastName: 'User' },
-        mockLogger,
-        userEmail
-      )
-
-      expect(jwtBearer.authenticateWithJWT).toHaveBeenCalledWith(
-        userEmail,
-        mockLogger
-      )
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        expect.stringContaining('/sobjects/Contact'),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Bearer user-token-123'
-          })
-        })
-      )
-    })
-
-    test('sendQuery uses user token when userEmail is provided', async () => {
+    test('sendQuery uses user token when provided', async () => {
       mockFetch.mockResolvedValueOnce(
         /** @type {any}*/ (
           mockJsonResponse(200, {
@@ -555,10 +502,15 @@ describe('salesforce client', () => {
         )
       )
 
+      const userToken = await salesforceClient.getUserAccessToken(
+        userEmail,
+        mockLogger
+      )
+
       await salesforceClient.sendQuery(
         'SELECT Id FROM Account',
-        mockLogger,
-        userEmail
+        userToken,
+        mockLogger
       )
 
       expect(jwtBearer.authenticateWithJWT).toHaveBeenCalledWith(
@@ -576,62 +528,42 @@ describe('salesforce client', () => {
       expect(mockLogger.debug).toHaveBeenCalledWith(
         'Sending query request',
         expect.objectContaining({
-          userContext: 'user-level'
+          authContext: 'user-level'
         })
       )
     })
 
-    test('sendQuery uses system token when userEmail is not provided', async () => {
+    test('sendRequest uses system-level M2M authentication only', async () => {
       mockFetch
         .mockResolvedValueOnce(
           /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
         )
         .mockResolvedValueOnce(
           /** @type {any}*/ (
-            mockJsonResponse(200, {
-              totalSize: 0,
-              done: true,
-              records: []
-            })
+            mockJsonResponse(200, { id: '001', success: true })
           )
         )
-
-      await salesforceClient.sendQuery('SELECT Id FROM Account', mockLogger)
-
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        expect.stringContaining('/query'),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Bearer token-123'
-          })
-        })
-      )
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Sending query request',
-        expect.objectContaining({
-          userContext: 'system-level'
-        })
-      )
-    })
-
-    test('sendRequest logs user context correctly', async () => {
-      mockFetch.mockResolvedValueOnce(
-        /** @type {any}*/ (mockJsonResponse(200, { id: '001', success: true }))
-      )
 
       await salesforceClient.sendRequest(
         'POST',
         'test/endpoint',
         { data: 'test' },
-        mockLogger,
-        userEmail
+        mockLogger
       )
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
         'Sending POST request',
         expect.objectContaining({
           relativePath: 'test/endpoint',
-          userContext: 'user-level'
+          authContext: 'system-level'
+        })
+      )
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        expect.stringContaining('/test/endpoint'),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer token-123'
+          })
         })
       )
     })

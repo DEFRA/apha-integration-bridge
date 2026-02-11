@@ -99,18 +99,28 @@ async function handler(request, h) {
   try {
     const userEmail = getUserEmail(request)
 
+    if (!userEmail) {
+      return new HTTPException('BAD_REQUEST', 'User authentication required', [
+        new HTTPError(
+          'MISSING_QUERY_PARAMETER',
+          'X-Forwarded-Authorization header with valid email claim is required'
+        )
+      ]).boomify()
+    }
+
+    const salesforceToken = await salesforceClient.getUserAccessToken(
+      userEmail,
+      request.logger
+    )
+
     const result = await retry(
       async (bail) => {
         const query = `SELECT Id FROM User WHERE Username = '${emailAddress.replace(/'/g, "\\'")}' AND IsActive = true LIMIT 1`
 
-        request.logger?.debug(
-          `Executing Salesforce query: ${JSON.stringify(query)}`
-        )
-
         return await salesforceClient.sendQuery(
           query,
-          request.logger,
-          userEmail
+          salesforceToken,
+          request.logger
         )
       },
       {
