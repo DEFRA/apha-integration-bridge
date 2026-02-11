@@ -1,11 +1,38 @@
+import Joi from 'joi'
+
+const ResponseMetaSchema = Joi.object({
+  response: Joi.object({
+    type: Joi.string().required()
+  }).required()
+}).unknown(true)
+
+const extractResponseType = (schema) => {
+  if (!schema || typeof schema.describe !== 'function') {
+    throw new TypeError('Schema must be a Joi schema')
+  }
+
+  const metas = schema.describe().metas || []
+
+  for (const meta of metas) {
+    const { error, value } = ResponseMetaSchema.validate(meta)
+
+    if (!error) {
+      return value.response.type
+    }
+  }
+
+  throw new TypeError('Schema meta must include response.type')
+}
+
 export class HTTPObjectResponse {
   /**
-   * @param {string} type The type of the resource
+   * @param {import('joi').Schema} schema The Joi schema for this resource
    * @param {*} id The unique identifier for the resource
    * @param {Object | undefined | null} data The data of the resource
    */
-  constructor(type, id, data) {
-    this.type = type
+  constructor(schema, id, data) {
+    this.schema = schema
+    this.type = extractResponseType(schema)
     this.id = id
     this.data = data || {}
     this.relationships = new Map()
@@ -19,7 +46,6 @@ export class HTTPObjectResponse {
   /**
    * set links for the top-level response
    * @param {Object} links
-   * @returns {HTTPObjectResponse} this
    */
   links(links) {
     this._links = links
@@ -53,22 +79,45 @@ export class HTTPObjectResponse {
     return this
   }
 
+  _getRelationshipCardinality() {
+    const description = this.schema.describe()
+    const relationships = description?.keys?.relationships?.keys
+
+    const map = {}
+
+    if (relationships) {
+      for (const [name, relDesc] of Object.entries(relationships)) {
+        const dataDesc = relDesc?.keys?.data
+
+        if (!dataDesc) {
+          continue
+        }
+
+        map[name] = dataDesc.type === 'array' ? 'many' : 'one'
+      }
+    }
+
+    return map
+  }
+
   toResponse(isRoot = true) {
     const { type, id } = this
 
     if (!isRoot && this._links !== undefined) {
-    throw new TypeError(
-   `Links are only supported on top-level responses (resource type: ${type}, id: ${id})`
-  )
+      throw new TypeError('Links are only supported on top-level responses')
     }
 
-    /**
-     * @type {Object | undefined}
-     */
-    let relationships
+    const relationshipMap = this._getRelationshipCardinality()
 
-    if (this.relationships.size > 0) {
-      relationships = {}
+    /**
+     * @type {Record<string, unknown | Array<unknown>>}
+     */
+    const relationships = {}
+
+    for (const [name, kind] of Object.entries(relationshipMap)) {
+      relationships[name] = {
+        data: kind === 'many' ? [] : null
+      }
     }
 
     /**
@@ -78,14 +127,24 @@ export class HTTPObjectResponse {
      * in the relationship.
      */
     for (const [type, items] of this.relationships.entries()) {
-      if (items.size === 1) {
-        relationships[type] = items.values().next().value.toResponse(false)
-      } else {
-        relationships[type] = []
+      const relationshipKind = relationshipMap?.[type]
+
+      if (!relationshipKind) {
+        throw new TypeError(`Relationship type "${type}" not defined in schema`)
+      }
+
+      if (relationshipKind === 'many') {
+        const data = []
 
         for (const item of items.values()) {
-          relationships[type].push(item.toResponse(false))
+          data.push(item.toResponse(false).data)
         }
+
+        relationships[type] = { data }
+      } else {
+        const first = items.values().next().value
+
+        relationships[type] = { data: first.toResponse(false).data }
       }
     }
 
@@ -95,7 +154,7 @@ export class HTTPObjectResponse {
       id
     }
 
-    if (relationships) {
+    if (Object.keys(relationships).length > 0) {
       data.relationships = relationships
     }
 
@@ -110,7 +169,12 @@ export class HTTPObjectResponse {
 }
 
 export class HTTPArrayResponse {
-  constructor() {
+  /**
+   * @param {import('joi').Schema} schema The Joi schema for items in this array
+   */
+  constructor(schema) {
+    this.schema = schema
+    this.type = extractResponseType(schema)
     this.items = new Map()
     this._links = undefined
   }
@@ -118,7 +182,6 @@ export class HTTPArrayResponse {
   /**
    * set links for the top-level response
    * @param {Object} links
-   * @return {HTTPArrayResponse} this
    */
   links(links) {
     this._links = links
@@ -127,12 +190,14 @@ export class HTTPArrayResponse {
 
   /**
    * Add or replace an item in the response
-   * @param {HTTPObjectResponse} response The HTTP Response object to add
+   * @param {HTTPObjectResponse | *} id The HTTPObjectResponse or item id to add
+   * @param {Object | undefined | null} data The data to add when passing an id
    */
-  add(response) {
-    if (!(response instanceof HTTPObjectResponse)) {
-      throw new TypeError('Response must be an instance of HTTPObjectResponse')
-    }
+  add(id, data) {
+    const response =
+      id instanceof HTTPObjectResponse
+        ? id
+        : new HTTPObjectResponse(this.schema, id, data)
 
     this.items.set(response.id, response)
 

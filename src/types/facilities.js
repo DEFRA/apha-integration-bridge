@@ -1,7 +1,5 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
-
 export const FacilitiesData = Joi.object({
   type: Joi.string()
     .valid('facilities')
@@ -9,9 +7,8 @@ export const FacilitiesData = Joi.object({
     .label('Facility Type')
     .description('The “type” value will be "facilities" for this endpoint.'),
   id: Joi.string().required().label('Facility ID')
-})
+}).meta({ response: { type: 'facilities' } })
 
 export const FacilitiesReference = Joi.object({
-  data: FacilitiesData.required(),
-  links: LinksReference
+  data: FacilitiesData.allow(null).required()
 })
