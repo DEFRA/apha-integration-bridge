@@ -98,7 +98,10 @@ async function handler(request, h) {
       )
     }, retriesConfig)
 
-    if (!salesforceResponse.records || salesforceResponse.records.length === 0) {
+    if (
+      !salesforceResponse.records ||
+      salesforceResponse.records.length === 0
+    ) {
       return new HTTPException('NOT_FOUND', 'Case not found', [
         new HTTPError('CASE_NOT_FOUND', `Case with ID ${caseId} was not found`)
       ]).boomify()
