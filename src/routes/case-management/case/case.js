@@ -16,6 +16,7 @@ import {
 } from '../../../lib/salesforce/composite-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-request-builder.js'
+import { getUserEmail } from '../../../common/helpers/user-context.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
@@ -36,7 +37,7 @@ const retriesConfig = {
  */
 const options = {
   auth: false,
-  tags: ['api', 'case-management', 'case'],
+  tags: ['api', 'case-management'],
   description: 'Create a case in APHA CRM (Salesforce)',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'case.md'),
@@ -122,11 +123,13 @@ async function createCase(request, applicationId, customerId) {
 async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const compositeRequest = buildCaseCreationCompositeRequest(payload)
+  const userEmail = getUserEmail(request)
 
   const salesforceResponse = await retry(async () => {
     return await salesforceClient.sendComposite(
       compositeRequest,
-      request.logger
+      request.logger,
+      userEmail
     )
   }, retriesConfig)
 
@@ -160,11 +163,13 @@ async function createCustomerAccount(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const applicant = /** @type {GuestCustomerDetails} */ (payload.applicant)
   const customerCreationPayload = buildCustomerCreationPayload(applicant)
+  const userEmail = getUserEmail(request)
 
   const salesforceResponse = await retry(async () => {
     return await salesforceClient.createCustomer(
       customerCreationPayload,
-      request.logger
+      request.logger,
+      userEmail
     )
   }, retriesConfig)
 

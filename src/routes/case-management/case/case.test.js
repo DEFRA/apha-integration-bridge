@@ -3,6 +3,7 @@ import { test, expect, describe, jest, beforeEach } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 import * as route from './case.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
+import * as userContext from '../../../common/helpers/user-context.js'
 
 const ENDPOINT_PATH = '/case-management/case'
 const ENDPOINT_METHOD = 'POST'
@@ -12,6 +13,7 @@ const mockSendComposite = jest.spyOn(salesforceClient, 'sendComposite')
 const mockCreateCustomer = jest.spyOn(salesforceClient, 'createCustomer')
 const mockCreateCase = jest.spyOn(salesforceClient, 'createCase')
 const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
+const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 const mockLoggerError = jest.fn()
 
 const mockSuccessfulCreateCustomerResponse = {
@@ -49,6 +51,7 @@ beforeEach(() => {
   mockCreateCase.mockReset()
   mockSendQuery.mockReset()
   mockSendQuery.mockResolvedValue({ records: [] })
+  mockGetUserEmail.mockReturnValue(null)
   mockLoggerError.mockReset()
 })
 
@@ -158,7 +161,8 @@ describe('POST /case-management/case', () => {
           FirstName: 'John',
           LastName: 'Doe'
         }),
-        expect.anything()
+        expect.anything(),
+        null // userEmail - null because request is not authenticated
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
       expect(mockSendComposite).toHaveBeenCalledWith(
@@ -166,7 +170,8 @@ describe('POST /case-management/case', () => {
           allOrNone: true,
           compositeRequest: expect.any(Array)
         }),
-        expect.anything()
+        expect.anything(),
+        null // userEmail
       )
     })
   })

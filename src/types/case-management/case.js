@@ -152,3 +152,14 @@ export const CreateCasePayloadSchema = Joi.object({
 })
   .description('Case creation API request payload')
   .label('Create Case Request')
+
+export const GetCaseParamsSchema = Joi.object({
+  caseId: Joi.string().required().label('Case ID')
+})
+
+export const GetCaseResponseSchema = Joi.object({
+  data: Joi.object().required(),
+  links: Joi.object()
+})
+  .description('Case Details')
+  .label('Get Case Response')

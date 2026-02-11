@@ -16,6 +16,7 @@ import {
 import { TopLevelLinksReference } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
+import { getUserEmail } from '../../../common/helpers/user-context.js'
 
 const PostFindUsersResponseSchema = Joi.object({
   data: Joi.array().items(CaseManagementUser).required(),
@@ -41,7 +42,7 @@ const __dirname = new URL('.', import.meta.url).pathname
  */
 const options = {
   auth: false,
-  tags: ['api', 'case-management', 'users'],
+  tags: ['api', 'case-management'],
   description: 'Find if a user exists in Salesforce',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'find.md'),
@@ -96,6 +97,8 @@ async function handler(request, h) {
   )
 
   try {
+    const userEmail = getUserEmail(request)
+
     const result = await retry(
       async (bail) => {
         const query = `SELECT Id FROM User WHERE Username = '${emailAddress.replace(/'/g, "\\'")}' AND IsActive = true LIMIT 1`
@@ -104,7 +107,11 @@ async function handler(request, h) {
           `Executing Salesforce query: ${JSON.stringify(query)}`
         )
 
-        return await salesforceClient.sendQuery(query, request.logger)
+        return await salesforceClient.sendQuery(
+          query,
+          request.logger,
+          userEmail
+        )
       },
       {
         retries: 3,

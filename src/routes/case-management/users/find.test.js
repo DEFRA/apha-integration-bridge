@@ -95,11 +95,13 @@ describe('POST /case-management/users/find', () => {
       expect(mockSendQuery).toHaveBeenCalledTimes(1)
       expect(mockSendQuery).toHaveBeenCalledWith(
         expect.stringContaining('SELECT Id FROM User WHERE Username'),
-        expect.anything()
+        expect.anything(),
+        null // userEmail - null because request is not authenticated
       )
       expect(mockSendQuery).toHaveBeenCalledWith(
         expect.stringContaining(TEST_USER_EMAIL),
-        expect.anything()
+        expect.anything(),
+        null // userEmail
       )
     })
 
@@ -226,7 +228,8 @@ describe('POST /case-management/users/find', () => {
       expect(res.statusCode).toBe(200)
       expect(mockSendQuery).toHaveBeenCalledWith(
         expect.stringContaining("\\'"),
-        expect.anything()
+        expect.anything(),
+        null
       )
 
       const calledQuery = mockSendQuery.mock.calls[0][0]

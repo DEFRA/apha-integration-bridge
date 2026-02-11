@@ -57,9 +57,9 @@ export class HTTPObjectResponse {
     const { type, id } = this
 
     if (!isRoot && this._links !== undefined) {
-    throw new TypeError(
-   `Links are only supported on top-level responses (resource type: ${type}, id: ${id})`
-  )
+      throw new TypeError(
+        `Links are only supported on top-level responses (resource type: ${type}, id: ${id})`
+      )
     }
 
     /**
