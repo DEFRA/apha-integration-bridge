@@ -226,8 +226,7 @@ describe('POST /case-management/case', () => {
           FirstName: mockApplicantDetaisls.firstName,
           LastName: mockApplicantDetaisls.lastName
         }),
-        expect.anything(),
-        null // userEmail - null because request is not authenticated
+        expect.anything()
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
     })
@@ -263,8 +262,7 @@ describe('POST /case-management/case', () => {
           FirstName: mockApplicantDetaisls.firstName,
           LastName: mockApplicantDetaisls.lastName
         }),
-        expect.anything(),
-        null // userEmail
+        expect.anything() // logger
       )
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledTimes(1)
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(

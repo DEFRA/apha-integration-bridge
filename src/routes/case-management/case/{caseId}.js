@@ -13,7 +13,8 @@ import { salesforceClient } from '../../../lib/salesforce/client.js'
 import { getUserEmail } from '../../../common/helpers/user-context.js'
 import {
   GetCaseParamsSchema,
-  GetCaseResponseSchema
+  GetCaseResponseSchema,
+  Case
 } from '../../../types/case-management/case.js'
 
 /**
@@ -33,7 +34,7 @@ const retriesConfig = {
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: 'simple',
+  auth: false,
   tags: ['api', 'case-management'],
   description: 'Get a case by ID from APHA CRM (Salesforce)',
   notes: fs.readFileSync(
@@ -89,7 +90,7 @@ async function handler(request, h) {
 
     const query = buildCaseQuery(caseId)
 
-    const result = await retry(async () => {
+    const salesforceResponse = await retry(async () => {
       return await salesforceClient.sendQuery(
         query,
         salesforceToken,
@@ -97,16 +98,15 @@ async function handler(request, h) {
       )
     }, retriesConfig)
 
-    if (!result.records || result.records.length === 0) {
+    if (!salesforceResponse.records || salesforceResponse.records.length === 0) {
       return new HTTPException('NOT_FOUND', 'Case not found', [
         new HTTPError('CASE_NOT_FOUND', `Case with ID ${caseId} was not found`)
       ]).boomify()
     }
 
-    const caseRecord = result.records[0]
+    const caseRecord = salesforceResponse.records[0]
 
-    // Build response - HTTPObjectResponse spreads data along with type and id
-    const response = new HTTPObjectResponse('case', caseRecord.Id, {
+    const response = new HTTPObjectResponse(Case, caseRecord.Id, {
       attributes: {
         caseNumber: caseRecord.CaseNumber,
         status: caseRecord.Status,
