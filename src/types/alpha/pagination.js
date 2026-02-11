@@ -4,7 +4,7 @@ export const PaginationSchema = Joi.object({
   page: Joi.number()
     .integer()
     .min(1)
-    .required()
+    .default(10)
     .description('The page number to retrieve'),
   pageSize: Joi.number()
     .integer()

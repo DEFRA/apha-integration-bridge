@@ -1,6 +1,5 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
 import { LocationsReference } from './locations.js'
 import { CustomersReference } from './customers.js'
 
@@ -11,11 +10,10 @@ const HoldingsData = Joi.object({
     .label('Holding Type')
     .description('The “type” value will be "holdings" for this endpoint.'),
   id: Joi.string().required().label('CPH ID')
-})
+}).meta({ response: { type: 'holdings' } })
 
 export const HoldingsReference = Joi.object({
-  data: HoldingsData.required(),
-  links: LinksReference
+  data: HoldingsData.allow(null).required()
 })
 
 export const Holdings = HoldingsData.keys({

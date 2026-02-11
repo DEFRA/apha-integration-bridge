@@ -1,7 +1,5 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
-
 export const CustomersData = Joi.object({
   type: Joi.string()
     .valid('customers')
@@ -9,9 +7,8 @@ export const CustomersData = Joi.object({
     .label('Customer Type')
     .description('The “type” value will be "customers" for this endpoint.'),
   id: Joi.string().required().label('Customer ID')
-})
+}).meta({ response: { type: 'customers' } })
 
 export const CustomersReference = Joi.object({
-  data: CustomersData.required(),
-  links: LinksReference
+  data: CustomersData.allow(null).required()
 })
