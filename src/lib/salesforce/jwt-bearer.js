@@ -2,12 +2,16 @@ import { SignJWT, importPKCS8 } from 'jose'
 import { config } from '../../config.js'
 
 /**
+ * @import {Logger} from 'pino'
+ */
+
+/**
  * Builds a JWT assertion for Salesforce OAuth 2.0 JWT Bearer flow.
  *
  * @see https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_jwt_flow.htm
  *
  * @param {string} userEmail
- * @param {Object} [logger]
+ * @param {Logger} [logger]
  */
 export async function buildJWTAssertion(userEmail, logger) {
   // Cast config to any first to prevent TypeScript from performing deep type instantiation
@@ -34,12 +38,10 @@ export async function buildJWTAssertion(userEmail, logger) {
   }
 
   try {
-    // Decode the base64-encoded private key
     const privateKeyPEM = Buffer.from(privateKeyBase64, 'base64').toString(
       'utf8'
     )
 
-    // Import the private key
     const privateKey = await importPKCS8(privateKeyPEM, 'RS256')
 
     const jwt = await new SignJWT({})
@@ -50,12 +52,6 @@ export async function buildJWTAssertion(userEmail, logger) {
       .setExpirationTime('3m') // 3 minutes expiry
       .setIssuedAt()
       .sign(privateKey)
-
-    logger?.debug('JWT assertion created successfully', {
-      subject: userEmail,
-      audience,
-      issuer: consumerKey
-    })
 
     return jwt
   } catch (error) {
@@ -68,11 +64,10 @@ export async function buildJWTAssertion(userEmail, logger) {
  * Exchanges a JWT assertion for a Salesforce access token.
  *
  * @param {string} jwtAssertion - The signed JWT assertion
- * @param {Object} [logger] - Optional logger instance
+ * @param {Logger} [logger] - Optional logger instance
  * @returns {Promise<Object>} The Salesforce token response
  */
 export async function exchangeJWTForToken(jwtAssertion, logger) {
-  // Cast config to any first to prevent TypeScript from performing deep type instantiation
   const configAny = /** @type {any} */ (config)
   const salesforceConfig = configAny.get('salesforce')
   const authUrl = salesforceConfig.authUrl
@@ -85,10 +80,6 @@ export async function exchangeJWTForToken(jwtAssertion, logger) {
     const params = new URLSearchParams({
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       assertion: jwtAssertion
-    })
-
-    logger?.debug('Exchanging JWT assertion for access token', {
-      authUrl
     })
 
     const response = await fetch(authUrl, {
@@ -133,7 +124,7 @@ export async function exchangeJWTForToken(jwtAssertion, logger) {
  * This is the main entry point for JWT-based authentication.
  *
  * @param {string} userEmail - The Salesforce username (email) to authenticate as
- * @param {Object} [logger] - Optional logger instance
+ * @param {Logger} [logger] - Optional logger instance
  * @returns {Promise<Object>} The Salesforce token response containing access_token
  */
 export async function authenticateWithJWT(userEmail, logger) {

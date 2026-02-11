@@ -77,7 +77,7 @@ class SalesforceClient {
    * Acquire a bearer token for a specific user using JWT Bearer flow.
    * Tokens are cached per-user until shortly before expiry.
    * @param {string} userEmail
-   * @param {import('pino').Logger} [logger]
+   * @param {Logger} [logger]
    * @returns {Promise<string>} The access token
    */
   async getUserAccessToken(userEmail, logger) {
@@ -122,7 +122,7 @@ class SalesforceClient {
   /**
    * Acquire a bearer token using the client credentials grant (system-level).
    * Tokens are cached until shortly before expiry.
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger] Optional logger.
    */
   async getAccessToken(logger) {
     if (this.cachedToken && this.isTokenValid(this.expiresAt)) {
@@ -199,7 +199,7 @@ class SalesforceClient {
    * Uses system-level M2M authentication only.
    *
    * @param {object} compositeBody The request payload to forward.
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger] Optional logger.
    * @returns {Promise<import('../../types/salesforce/composite-response.js').CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger) {
@@ -216,7 +216,7 @@ class SalesforceClient {
    * Uses system-level M2M authentication only.
    *
    * @param {object} payload The request payload to forward.
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger] Optional logger.
    * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create guest response.
    */
   async createCustomer(payload, logger) {
@@ -230,7 +230,7 @@ class SalesforceClient {
 
   /**
    * @param {object} payload The request payload to forward.
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger]
    * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create case response.
    */
   async createCase(payload, applicationReference, logger) {
@@ -243,16 +243,10 @@ class SalesforceClient {
   }
 
   /**
-   * @param {string} relativePath
-   * @param {object} payload
-   * @param {import('pino').Logger} [logger] Optional logger.
-   * @returns {Promise<any>} The Salesforce response body.
-   */
-  /**
    * @param {(typeof HTTPMethods.PATCH | typeof HTTPMethods.POST)} method
    * @param {string} relativePath
    * @param {object} payload
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger] Optional logger.
    * @returns {Promise<any>} The Salesforce response body.
    */
   async sendRequest(method, relativePath, payload, logger) {
@@ -302,7 +296,7 @@ class SalesforceClient {
    * Execute a SOQL query against Salesforce.
    * @param {string} query The SOQL query string.
    * @param {string} token Salesforce access token (required).
-   * @param {import('pino').Logger} [logger] Optional logger.
+   * @param {Logger} [logger] Optional logger.
    * @returns {Promise<any>} The Salesforce query response.
    */
   async sendQuery(query, token, logger) {
