@@ -10,12 +10,11 @@ import {
 } from '../../../lib/http/http-exception.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import { CreateCasePayloadSchema } from '../../../types/case-management/case.js'
-import {
-  buildCaseCreationCompositeRequest,
-  refIdApplicationRef
-} from '../../../lib/salesforce/composite-request-builder.js'
+import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/application-creation-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-request-builder.js'
+import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/supporting-materials-request-builder.js'
+import { refIdApplicationRef } from '../../../lib/salesforce/file-upload-request-builder.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
@@ -77,7 +76,8 @@ async function handler(request, h) {
       createCustomerAccount(request)
     ])
 
-    await createCase(request, applicationId, customerId)
+    const caseId = await createCase(request, applicationId, customerId)
+    await uploadSupportingMaterials(request, caseId)
   })
 
   return h.response().code(201)
@@ -99,20 +99,22 @@ async function runCaseCreationFlow(request, action) {
  * @param {Request} request
  * @param {string} applicationId
  * @param {string} customerId
- * @returns {Promise<void>}
+ * @returns {Promise<string|null>}
  */
 async function createCase(request, applicationId, customerId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const applicationReference = payload.applicationReferenceNumber
   const createCasePayload = buildCaseCreationPayload(applicationId, customerId)
 
-  await retry(async () => {
+  const salesforceResponse = await retry(async () => {
     return await salesforceClient.createCase(
       createCasePayload,
       applicationReference,
       request.logger
     )
   }, retriesConfig)
+
+  return salesforceResponse.id || null
 }
 
 /**
@@ -121,7 +123,7 @@ async function createCase(request, applicationId, customerId) {
  */
 async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
-  const compositeRequest = buildCaseCreationCompositeRequest(payload)
+  const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
   const salesforceResponse = await retry(async () => {
     return await salesforceClient.sendComposite(
@@ -155,7 +157,6 @@ async function createApplication(request) {
  * @param {Request} request
  * @returns {Promise<string|null>}
  */
-
 async function createCustomerAccount(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const applicant = /** @type {GuestCustomerDetails} */ (payload.applicant)
@@ -169,6 +170,38 @@ async function createCustomerAccount(request) {
   }, retriesConfig)
 
   return salesforceResponse?.id || null
+}
+
+/**
+ * @param {Request} request
+ * @param {string} caseId
+ * @returns {Promise<void>}
+ */
+async function uploadSupportingMaterials(request, caseId) {
+  const payload = /** @type {CreateCasePayload} */ (request.payload)
+  // using for...of for sequential uploads
+  for (const section of payload.sections) {
+    for (const questionAnswer of section.questionAnswers) {
+      if (
+        questionAnswer.answer.type === 'file' &&
+        questionAnswer.answer.value.path
+      ) {
+        const compositeRequest = await buildSupportingMaterialsCompositeRequest(
+          caseId,
+          section.sectionKey,
+          questionAnswer.questionKey,
+          questionAnswer.answer.value.path
+        )
+
+        await retry(async () => {
+          return await salesforceClient.sendComposite(
+            compositeRequest,
+            request.logger
+          )
+        }, retriesConfig)
+      }
+    }
+  }
 }
 
 function handleCaseCreationError(error, request) {

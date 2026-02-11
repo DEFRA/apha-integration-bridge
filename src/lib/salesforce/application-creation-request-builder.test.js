@@ -1,27 +1,14 @@
-import { describe, test, expect, beforeEach } from '@jest/globals'
+import { describe, test, expect } from '@jest/globals'
 
-import { buildCaseCreationCompositeRequest } from './composite-request-builder.js'
-import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
+import { buildApplicationCreationCompositeRequest } from './application-creation-request-builder.js'
 
-describe('buildCaseCreationCompositeRequest', () => {
+describe('buildApplicationCreationCompositeRequest', () => {
   const apiVersion = 'v62.0'
-  const salesforceConfig = {
-    baseUrl: 'https://salesforce.test',
-    authUrl: undefined,
-    clientId: 'client-id',
-    clientSecret: 'client-secret',
-    apiVersion,
-    requestTimeoutMs: 1000
-  }
-
-  beforeEach(() => {
-    spyOnConfig('salesforce', salesforceConfig)
-  })
 
   test('should return a composite request with allOrNone set to true and five sub-requests', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     expect(result.allOrNone).toBe(true)
     expect(result.compositeRequest).toHaveLength(5)
@@ -30,7 +17,7 @@ describe('buildCaseCreationCompositeRequest', () => {
   test('should include license type query as first sub-request', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const licenseTypeRequest = result.compositeRequest[0]
     expect(licenseTypeRequest.method).toBe('GET')
@@ -43,7 +30,7 @@ describe('buildCaseCreationCompositeRequest', () => {
   test('should include application reference update as second sub-request', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const applicationRequest = result.compositeRequest[1]
     expect(applicationRequest.method).toBe('PATCH')
@@ -60,7 +47,7 @@ describe('buildCaseCreationCompositeRequest', () => {
   test('should include file upload as third sub-request with base64 encoded payload', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const fileRequest = result.compositeRequest[2]
     expect(fileRequest.method).toBe('POST')
@@ -82,7 +69,7 @@ describe('buildCaseCreationCompositeRequest', () => {
   test('should include file ID query as fourth sub-request', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const fileQueryRequest = result.compositeRequest[3]
     expect(fileQueryRequest.method).toBe('GET')
@@ -95,7 +82,7 @@ describe('buildCaseCreationCompositeRequest', () => {
   test('should include file link creation as fifth sub-request', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const linkRequest = result.compositeRequest[4]
     expect(linkRequest.method).toBe('POST')
@@ -114,7 +101,7 @@ describe('buildCaseCreationCompositeRequest', () => {
   test('should use API version from config in all URLs', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const requestsWithApiVersion = result.compositeRequest.filter((request) =>
       request.url.includes('/services/data/')
@@ -163,7 +150,7 @@ describe('buildCaseCreationCompositeRequest', () => {
       }
     ]
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const fileRequest = result.compositeRequest[2]
     const encodedPayload = JSON.parse(
@@ -180,7 +167,7 @@ describe('buildCaseCreationCompositeRequest', () => {
   test('should correctly chain references between sub-requests', () => {
     const payload = createPayload()
 
-    const result = buildCaseCreationCompositeRequest(payload)
+    const result = buildApplicationCreationCompositeRequest(payload)
 
     const applicationRequest = result.compositeRequest[1]
     expect(applicationRequest.body.LicenseTypeId).toBe(
