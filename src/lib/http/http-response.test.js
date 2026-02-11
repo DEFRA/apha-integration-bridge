@@ -9,11 +9,33 @@ import { FacilitiesData } from '../../types/facilities.js'
 import { Holdings } from '../../types/holdings.js'
 import { Locations, LocationsData } from '../../types/locations.js'
 
-const schemaFor = (type) =>
+const relationshipDataFor = (type) =>
   Joi.object({
     type: Joi.string().valid(type).required(),
     id: Joi.any().required()
-  }).meta({ response: { type } })
+  })
+
+const relationshipFor = (type, kind = 'one') => {
+  const data =
+    kind === 'many'
+      ? Joi.array().items(relationshipDataFor(type)).required()
+      : relationshipDataFor(type).allow(null).required()
+
+  return Joi.object({ data }).required()
+}
+
+const schemaFor = (type, relationships) => {
+  const base = {
+    type: Joi.string().valid(type).required(),
+    id: Joi.any().required()
+  }
+
+  if (relationships) {
+    base.relationships = Joi.object(relationships).required()
+  }
+
+  return Joi.object(base).meta({ response: { type } })
+}
 
 const MissingMetaSchema = Joi.object({
   type: Joi.string().required(),
@@ -157,9 +179,13 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship(): single related item serializes as object (not array) and includes full toResponse wrapper', () => {
-    const user = new HTTPObjectResponse(schemaFor('user'), 1, {
-      username: 'alice'
-    })
+    const user = new HTTPObjectResponse(
+      schemaFor('user', { org: relationshipFor('org', 'one') }),
+      1,
+      {
+        username: 'alice'
+      }
+    )
     const org = new HTTPObjectResponse(schemaFor('org'), 'o1', { name: 'Acme' })
 
     user.relationship('org', org)
@@ -172,9 +198,13 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship(): multiple of the same type serialize as an array (in insertion order), each a full wrapper', () => {
-    const user = new HTTPObjectResponse(schemaFor('user'), 1, {
-      username: 'alice'
-    })
+    const user = new HTTPObjectResponse(
+      schemaFor('user', { org: relationshipFor('org', 'many') }),
+      1,
+      {
+        username: 'alice'
+      }
+    )
     const org1 = new HTTPObjectResponse(schemaFor('org'), 'o1', {
       name: 'Acme'
     })
@@ -185,17 +215,23 @@ describe('HTTPObjectResponse', () => {
     user.relationship('org', org1).relationship('org', org2)
 
     const out = user.toResponse()
-    expect(Array.isArray(out.data.relationships.org)).toBe(true)
-    expect(out.data.relationships.org).toEqual([
-      { data: { type: 'org', id: 'o1', name: 'Acme' } },
-      { data: { type: 'org', id: 'o2', name: 'Beta' } }
-    ])
+    expect(Array.isArray(out.data.relationships.org.data)).toBe(true)
+    expect(out.data.relationships.org).toEqual({
+      data: [
+        { type: 'org', id: 'o1', name: 'Acme' },
+        { type: 'org', id: 'o2', name: 'Beta' }
+      ]
+    })
   })
 
   test('relationship(): adding same type+id replaces existing (last write wins)', () => {
-    const user = new HTTPObjectResponse(schemaFor('user'), 1, {
-      username: 'alice'
-    })
+    const user = new HTTPObjectResponse(
+      schemaFor('user', { org: relationshipFor('org', 'one') }),
+      1,
+      {
+        username: 'alice'
+      }
+    )
 
     const original = new HTTPObjectResponse(schemaFor('org'), 'o1', {
       name: 'OldCo'
@@ -214,9 +250,16 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('relationship(): supports multiple different relationship types simultaneously', () => {
-    const user = new HTTPObjectResponse(schemaFor('user'), 1, {
-      username: 'alice'
-    })
+    const user = new HTTPObjectResponse(
+      schemaFor('user', {
+        org: relationshipFor('org', 'one'),
+        role: relationshipFor('role', 'one')
+      }),
+      1,
+      {
+        username: 'alice'
+      }
+    )
     const org = new HTTPObjectResponse(schemaFor('org'), 'o1', { name: 'Acme' })
     const role = new HTTPObjectResponse(schemaFor('role'), 'r1', {
       title: 'Admin'
@@ -248,10 +291,15 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('nested relationships are serialized recursively (each as full wrapper)', () => {
-    const user = new HTTPObjectResponse(schemaFor('user'), 1, {
-      username: 'alice'
-    })
-    const org = new HTTPObjectResponse(schemaFor('org'), 'o1', { name: 'Acme' })
+    const user = new HTTPObjectResponse(
+      schemaFor('user', { org: relationshipFor('org', 'one') }),
+      1,
+      {
+        username: 'alice'
+      }
+    )
+    const orgSchema = schemaFor('org', { org: relationshipFor('org', 'one') })
+    const org = new HTTPObjectResponse(orgSchema, 'o1', { name: 'Acme' })
     const parent = new HTTPObjectResponse(schemaFor('org'), 'p1', {
       name: 'Acme Holdings'
     })
@@ -288,9 +336,13 @@ describe('HTTPObjectResponse', () => {
   })
 
   test('toResponse() throws when a relationship response includes links', () => {
-    const user = new HTTPObjectResponse(schemaFor('user'), 1, {
-      username: 'alice'
-    })
+    const user = new HTTPObjectResponse(
+      schemaFor('user', { org: relationshipFor('org', 'one') }),
+      1,
+      {
+        username: 'alice'
+      }
+    )
 
     const org = new HTTPObjectResponse(schemaFor('org'), 'o1', {
       name: 'Acme'
@@ -479,12 +531,20 @@ describe('HTTPArrayResponse', () => {
   })
 
   test('items can include their own nested relationships (wrappers preserved inside relationships)', () => {
-    const post = new HTTPObjectResponse(schemaFor('post'), 10, {
-      title: 'Hello'
-    })
-    const author = new HTTPObjectResponse(schemaFor('user'), 1, {
-      username: 'alice'
-    })
+    const post = new HTTPObjectResponse(
+      schemaFor('post', { user: relationshipFor('user', 'one') }),
+      10,
+      {
+        title: 'Hello'
+      }
+    )
+    const author = new HTTPObjectResponse(
+      schemaFor('user', { org: relationshipFor('org', 'one') }),
+      1,
+      {
+        username: 'alice'
+      }
+    )
     const org = new HTTPObjectResponse(schemaFor('org'), 'o1', { name: 'Acme' })
 
     author.relationship('org', org)

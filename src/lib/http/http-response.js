@@ -83,23 +83,21 @@ export class HTTPObjectResponse {
     const description = this.schema.describe()
     const relationships = description?.keys?.relationships?.keys
 
-    if (!relationships) {
-      return null
-    }
-
     const map = {}
 
-    for (const [name, relDesc] of Object.entries(relationships)) {
-      const dataDesc = relDesc?.keys?.data
+    if (relationships) {
+      for (const [name, relDesc] of Object.entries(relationships)) {
+        const dataDesc = relDesc?.keys?.data
 
-      if (!dataDesc) {
-        continue
+        if (!dataDesc) {
+          continue
+        }
+
+        map[name] = dataDesc.type === 'array' ? 'many' : 'one'
       }
-
-      map[name] = dataDesc.type === 'array' ? 'many' : 'one'
     }
 
-    return Object.keys(map).length > 0 ? map : null
+    return map
   }
 
   toResponse(isRoot = true) {
@@ -112,20 +110,14 @@ export class HTTPObjectResponse {
     const relationshipMap = this._getRelationshipCardinality()
 
     /**
-     * @type {Object | undefined}
+     * @type {Record<string, unknown | Array<unknown>>}
      */
-    let relationships
+    const relationships = {}
 
-    if (relationshipMap) {
-      relationships = {}
-
-      for (const [name, kind] of Object.entries(relationshipMap)) {
-        relationships[name] = {
-          data: kind === 'many' ? [] : null
-        }
+    for (const [name, kind] of Object.entries(relationshipMap)) {
+      relationships[name] = {
+        data: kind === 'many' ? [] : null
       }
-    } else if (this.relationships.size > 0) {
-      relationships = {}
     }
 
     /**
@@ -137,6 +129,10 @@ export class HTTPObjectResponse {
     for (const [type, items] of this.relationships.entries()) {
       const relationshipKind = relationshipMap?.[type]
 
+      if (!relationshipKind) {
+        throw new TypeError(`Relationship type "${type}" not defined in schema`)
+      }
+
       if (relationshipKind === 'many') {
         const data = []
 
@@ -145,26 +141,10 @@ export class HTTPObjectResponse {
         }
 
         relationships[type] = { data }
-
-        continue
-      }
-
-      if (relationshipKind === 'one') {
+      } else {
         const first = items.values().next().value
 
         relationships[type] = { data: first.toResponse(false).data }
-
-        continue
-      }
-
-      if (items.size === 1) {
-        relationships[type] = items.values().next().value.toResponse(false)
-      } else {
-        relationships[type] = []
-
-        for (const item of items.values()) {
-          relationships[type].push(item.toResponse(false))
-        }
       }
     }
 
@@ -174,7 +154,7 @@ export class HTTPObjectResponse {
       id
     }
 
-    if (relationships) {
+    if (Object.keys(relationships).length > 0) {
       data.relationships = relationships
     }
 
