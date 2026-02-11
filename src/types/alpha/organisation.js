@@ -10,8 +10,8 @@ const ContactDetails = Joi.object({
 }).required()
 
 const OrganisationContactDetails = Joi.object({
-  primaryContact: ContactDetails,
-  secondaryContact: ContactDetails
+  primaryContact: ContactDetails.label('Primary contact'),
+  secondaryContact: ContactDetails.label('Secondary contact')
 })
 
 export const OrganisationData = baseData({
