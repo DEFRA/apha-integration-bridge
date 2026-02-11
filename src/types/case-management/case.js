@@ -103,7 +103,7 @@ const VersionSchema = Joi.object({
 const AnswerSchema = Joi.object({
   type: Joi.string().required(),
   value: Joi.any().required(),
-  displayText: Joi.string().required()
+  displayText: Joi.string().required().allow('')
 })
 
 /**

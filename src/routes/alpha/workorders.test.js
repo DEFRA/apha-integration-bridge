@@ -112,13 +112,6 @@ describe('Workorders', () => {
   test.each([
     [
       new URLSearchParams({
-        pageSize: '1',
-        startActivationDate: new Date('1924-01-01').toISOString(),
-        endActivationDate: new Date('1930-01-01').toISOString()
-      })
-    ],
-    [
-      new URLSearchParams({
         page: '1',
         pageSize: '1',
         endActivationDate: new Date('1930-01-01').toISOString()

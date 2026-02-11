@@ -1,9 +1,45 @@
 import Hapi from '@hapi/hapi'
-import { test, expect, describe, jest, beforeEach } from '@jest/globals'
+import {
+  test,
+  expect,
+  describe,
+  jest,
+  beforeEach,
+  beforeAll,
+  afterAll
+} from '@jest/globals'
 import hapiPino from 'hapi-pino'
 import * as route from './case.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
+import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/application-creation-request-builder.js'
+import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/supporting-materials-request-builder.js'
+import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
+import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-request-builder.js'
+
+/** @import { CreateCasePayload } from '../../../types/case-management/case.js' */
+
+jest.mock(
+  '../../../lib/salesforce/application-creation-request-builder.js',
+  () => ({
+    buildApplicationCreationCompositeRequest: jest.fn()
+  })
+)
+jest.mock(
+  '../../../lib/salesforce/supporting-materials-request-builder.js',
+  () => ({
+    buildSupportingMaterialsCompositeRequest: jest.fn()
+  })
+)
+jest.mock(
+  '../../../lib/salesforce/customer-creation-request-builder.js',
+  () => ({
+    buildCustomerCreationPayload: jest.fn()
+  })
+)
+jest.mock('../../../lib/salesforce/case-creation-request-builder.js', () => ({
+  buildCaseCreationPayload: jest.fn()
+}))
 
 const ENDPOINT_PATH = '/case-management/case'
 const ENDPOINT_METHOD = 'POST'
@@ -45,6 +81,12 @@ const mockSuccessfulCreateCaseResponse = {
   success: true
 }
 
+const mockApplicantDetaisls = {
+  email: 'test@example.com',
+  firstName: 'John',
+  lastName: 'Doe'
+}
+
 beforeEach(() => {
   mockSendComposite.mockReset()
   mockCreateCustomer.mockReset()
@@ -53,6 +95,25 @@ beforeEach(() => {
   mockSendQuery.mockResolvedValue({ records: [] })
   mockGetUserEmail.mockReturnValue(null)
   mockLoggerError.mockReset()
+  jest.mocked(buildApplicationCreationCompositeRequest).mockReturnValue({
+    allOrNone: true,
+    compositeRequest: []
+  })
+  jest.mocked(buildSupportingMaterialsCompositeRequest).mockResolvedValue({
+    allOrNone: true,
+    compositeRequest: []
+  })
+  jest.mocked(buildCustomerCreationPayload).mockReturnValue({
+    FirstName: mockApplicantDetaisls.firstName,
+    LastName: mockApplicantDetaisls.lastName,
+    Email: mockApplicantDetaisls.email
+  })
+  jest.mocked(buildCaseCreationPayload).mockReturnValue({
+    Status: '',
+    Priority: '',
+    APHA_Application__c: '',
+    ContactId: ''
+  })
 })
 
 async function createTestServer() {
@@ -102,8 +163,12 @@ async function createCase(server, payload, headers = {}) {
   })
 }
 
-function createValidPayload() {
-  return {
+/**
+ * @param {boolean} includeFiles
+ * @returns {CreateCasePayload}
+ */
+function createValidPayload(includeFiles = false) {
+  return /** @type {CreateCasePayload} */ ({
     journeyId: 'JOURNEY_ID',
     journeyVersion: { major: 1, minor: 0 },
     applicationReferenceNumber: TEST_APP_REF,
@@ -117,8 +182,8 @@ function createValidPayload() {
             questionKey: 'email',
             answer: {
               type: 'text',
-              value: 'test@example.com',
-              displayText: 'test@example.com'
+              value: mockApplicantDetaisls.email,
+              displayText: mockApplicantDetaisls.email
             }
           }
         ]
@@ -130,13 +195,13 @@ function createValidPayload() {
     },
     applicant: {
       type: 'guest',
-      emailAddress: 'test@example.com',
+      emailAddress: mockApplicantDetaisls.email,
       name: {
-        firstName: 'John',
-        lastName: 'Doe'
+        firstName: mockApplicantDetaisls.firstName,
+        lastName: mockApplicantDetaisls.lastName
       }
     }
-  }
+  })
 }
 
 describe('POST /case-management/case', () => {
@@ -157,22 +222,119 @@ describe('POST /case-management/case', () => {
       expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
       expect(mockCreateCustomer).toHaveBeenCalledWith(
         expect.objectContaining({
-          Email: 'test@example.com',
-          FirstName: 'John',
-          LastName: 'Doe'
+          Email: mockApplicantDetaisls.email,
+          FirstName: mockApplicantDetaisls.firstName,
+          LastName: mockApplicantDetaisls.lastName
         }),
         expect.anything(),
         null // userEmail - null because request is not authenticated
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
-      expect(mockSendComposite).toHaveBeenCalledWith(
+    })
+
+    test('creates case and returns 201 Created when a file is attached', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
+
+      const payload = createValidPayload()
+      payload.sections[0].questionAnswers.push({
+        question: 'Upload your document',
+        questionKey: 'upload',
+        answer: {
+          type: 'file',
+          value: {
+            path: 's3/path/file.pdf'
+          },
+          displayText: 'file.pdf'
+        }
+      })
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(201)
+      expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
+      expect(mockCreateCustomer).toHaveBeenCalledWith(
         expect.objectContaining({
-          allOrNone: true,
-          compositeRequest: expect.any(Array)
+          Email: mockApplicantDetaisls.email,
+          FirstName: mockApplicantDetaisls.firstName,
+          LastName: mockApplicantDetaisls.lastName
         }),
         expect.anything(),
         null // userEmail
       )
+      expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledTimes(1)
+      expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        'section-key',
+        'upload',
+        's3/path/file.pdf'
+      )
+      expect(mockSendComposite).toHaveBeenCalledTimes(2)
+    })
+
+    test('creates a case, returns 201 Created and uploads multiple files when present in payload', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
+
+      const payload = createValidPayload()
+      payload.sections[0].questionAnswers.push({
+        question: 'Upload your document',
+        questionKey: 'upload-one',
+        answer: {
+          type: 'file',
+          value: {
+            path: 's3/path/file-one.pdf'
+          },
+          displayText: 'file-one.pdf'
+        }
+      })
+      payload.sections[0].questionAnswers.push({
+        question: 'Upload your document',
+        questionKey: 'upload-two',
+        answer: {
+          type: 'file',
+          value: {
+            path: 's3/path/file-two.pdf'
+          },
+          displayText: 'file-two.pdf'
+        }
+      })
+
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(201)
+      expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
+      expect(mockCreateCustomer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Email: mockApplicantDetaisls.email,
+          FirstName: mockApplicantDetaisls.firstName,
+          LastName: mockApplicantDetaisls.lastName
+        }),
+        expect.anything()
+      )
+      expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledTimes(2)
+      expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        'section-key',
+        'upload-one',
+        's3/path/file-one.pdf'
+      )
+      expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(
+        expect.any(String),
+        'section-key',
+        'upload-two',
+        's3/path/file-two.pdf'
+      )
+      expect(mockSendComposite).toHaveBeenCalledTimes(3)
     })
   })
 
@@ -300,6 +462,22 @@ describe('POST /case-management/case', () => {
       ]
     }
 
+    const errorLogCallArguments = [
+      expect.objectContaining({
+        err: expect.any(Error),
+        endpoint: 'case-management/case'
+      }),
+      'Failed to create case in Salesforce'
+    ]
+
+    beforeAll(() => {
+      jest.useFakeTimers()
+    })
+
+    afterAll(() => {
+      jest.useRealTimers()
+    })
+
     test('returns 500 when createCustomerAccount fails', async () => {
       const server = await createTestServer()
 
@@ -313,7 +491,10 @@ describe('POST /case-management/case', () => {
         .mockRejectedValueOnce(new Error('Service unavailable'))
 
       const payload = createValidPayload()
-      const res = await createCase(server, payload)
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
 
       expect(res.statusCode).toBe(500)
 
@@ -321,13 +502,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateCustomer).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          err: expect.any(Error),
-          endpoint: 'case-management/case'
-        }),
-        'Failed to create case in Salesforce'
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
     test('returns 500 when createApplication fails', async () => {
@@ -344,7 +519,10 @@ describe('POST /case-management/case', () => {
         .mockRejectedValueOnce(new Error('Connection failed'))
 
       const payload = createValidPayload()
-      const res = await createCase(server, payload)
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
 
       expect(res.statusCode).toBe(500)
 
@@ -352,13 +530,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          err: expect.any(Error),
-          endpoint: 'case-management/case'
-        }),
-        'Failed to create case in Salesforce'
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
     test('returns 500 when composite operations within createApplication partially fail', async () => {
@@ -398,7 +570,10 @@ describe('POST /case-management/case', () => {
       )
 
       const payload = createValidPayload()
-      const res = await createCase(server, payload)
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
 
       expect(res.statusCode).toBe(500)
 
@@ -428,38 +603,6 @@ describe('POST /case-management/case', () => {
       )
     })
 
-    test('returns 500 when createCase fails', async () => {
-      const server = await createTestServer()
-
-      mockCreateCustomer.mockResolvedValueOnce(
-        mockSuccessfulCreateCustomerResponse
-      )
-      mockSendComposite.mockResolvedValueOnce(mockSuccessfulCompositeResponse)
-      // Mock createCase failure - will be retried 4 times (initial + 3 retries)
-      mockCreateCase
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-
-      const payload = createValidPayload()
-      const res = await createCase(server, payload)
-
-      expect(res.statusCode).toBe(500)
-
-      const body = /** @type {Record<string, any>} */ (res.result)
-      expect(body).toMatchObject(genericError)
-
-      expect(mockCreateCase).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          err: expect.any(Error),
-          endpoint: 'case-management/case'
-        }),
-        'Failed to create case in Salesforce'
-      )
-    })
-
     test('returns 500 when composite response within createApplication is not an array', async () => {
       const server = await createTestServer()
       const mockInvalidCompositeResponse = {
@@ -477,7 +620,10 @@ describe('POST /case-management/case', () => {
       )
 
       const payload = createValidPayload()
-      const res = await createCase(server, payload)
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
 
       expect(res.statusCode).toBe(500)
 
@@ -485,6 +631,75 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
+    })
+
+    test('returns 500 when createCase fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockSendComposite.mockResolvedValueOnce(mockSuccessfulCompositeResponse)
+      // Mock createCase failure - will be retried 4 times (initial + 3 retries)
+      mockCreateCase
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockCreateCase).toHaveBeenCalledTimes(4)
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+    })
+
+    test('returns 500 when uploading supporting materials fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValueOnce(
+        mockSuccessfulCreateCustomerResponse
+      )
+      mockCreateCase.mockResolvedValueOnce(mockSuccessfulCreateCaseResponse)
+      mockSendComposite
+        .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application creation
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+
+      const payload = createValidPayload()
+      payload.sections[0].questionAnswers.push({
+        question: 'Upload your document',
+        questionKey: 'upload',
+        answer: {
+          type: 'file',
+          value: {
+            path: 's3/path/file.pdf'
+          },
+          displayText: 'file.pdf'
+        }
+      })
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockSendComposite).toHaveBeenCalledTimes(5) // 1 for case creation + 4 for supporting materials retries
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
     test('retries on transient errors before failing', async () => {
@@ -502,7 +717,10 @@ describe('POST /case-management/case', () => {
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse)
 
       const payload = createValidPayload()
-      const res = await createCase(server, payload)
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
 
       expect(res.statusCode).toBe(201)
 

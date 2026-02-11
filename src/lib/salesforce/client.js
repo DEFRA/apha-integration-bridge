@@ -1,5 +1,6 @@
 import { proxyFetch } from '../../common/helpers/proxy/proxy-fetch.js'
 import { config } from '../../config.js'
+import { HTTPMethods } from '../http/http-methods.js'
 import { authenticateWithJWT } from './jwt-bearer.js'
 
 /**
@@ -121,7 +122,7 @@ class SalesforceClient {
   /**
    * Acquire a bearer token using the client credentials grant (system-level).
    * Tokens are cached until shortly before expiry.
-   * @param {Logger} [logger] Optional logger.
+   * @param {import('pino').Logger} [logger] Optional logger.
    */
   async getAccessToken(logger) {
     if (this.cachedToken && this.isTokenValid(this.expiresAt)) {
@@ -198,11 +199,16 @@ class SalesforceClient {
    * Uses system-level M2M authentication only.
    *
    * @param {object} compositeBody The request payload to forward.
-   * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<CompositeResponse>} The Salesforce composite response.
+   * @param {import('pino').Logger} [logger] Optional logger.
+   * @returns {Promise<import('../../types/salesforce/composite-response.js').CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger) {
-    return this.sendRequest('POST', 'composite', compositeBody, logger)
+    return this.sendRequest(
+      HTTPMethods.POST,
+      'composite',
+      compositeBody,
+      logger
+    )
   }
 
   /**
@@ -210,21 +216,26 @@ class SalesforceClient {
    * Uses system-level M2M authentication only.
    *
    * @param {object} payload The request payload to forward.
-   * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<CreateGuestResponse>} The Salesforce create guest response.
+   * @param {import('pino').Logger} [logger] Optional logger.
+   * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create guest response.
    */
   async createCustomer(payload, logger) {
-    return this.sendRequest('POST', 'sobjects/Contact', payload, logger)
+    return this.sendRequest(
+      HTTPMethods.POST,
+      'sobjects/Contact',
+      payload,
+      logger
+    )
   }
 
   /**
    * @param {object} payload The request payload to forward.
-   * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<CreateGuestResponse>} The Salesforce create case response.
+   * @param {import('pino').Logger} [logger] Optional logger.
+   * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create case response.
    */
   async createCase(payload, applicationReference, logger) {
     return this.sendRequest(
-      'PATCH',
+      HTTPMethods.PATCH,
       `sobjects/Case/APHA_ExternalReferenceNumber__c/${applicationReference}`,
       payload,
       logger
@@ -232,13 +243,16 @@ class SalesforceClient {
   }
 
   /**
-   * Send a request to Salesforce (POST/PATCH).
-   * Uses system-level M2M authentication only.
-   *
-   * @param {'POST'|'PATCH'} method
    * @param {string} relativePath
    * @param {object} payload
-   * @param {Logger} [logger] Optional logger.
+   * @param {import('pino').Logger} [logger] Optional logger.
+   * @returns {Promise<any>} The Salesforce response body.
+   */
+  /**
+   * @param {(typeof HTTPMethods.PATCH | typeof HTTPMethods.POST)} method
+   * @param {string} relativePath
+   * @param {object} payload
+   * @param {import('pino').Logger} [logger] Optional logger.
    * @returns {Promise<any>} The Salesforce response body.
    */
   async sendRequest(method, relativePath, payload, logger) {
@@ -288,7 +302,7 @@ class SalesforceClient {
    * Execute a SOQL query against Salesforce.
    * @param {string} query The SOQL query string.
    * @param {string} token Salesforce access token (required).
-   * @param {Logger} [logger] Optional logger.
+   * @param {import('pino').Logger} [logger] Optional logger.
    * @returns {Promise<any>} The Salesforce query response.
    */
   async sendQuery(query, token, logger) {

@@ -10,6 +10,7 @@ import {
 import { salesforceClient } from './client.js'
 import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
 import * as jwtBearer from './jwt-bearer.js'
+import { HTTPMethods } from '../http/http-methods.js'
 
 const mockLogger = /** @type {any} */ ({
   debug: jest.fn(),
@@ -129,13 +130,13 @@ describe('salesforce client', () => {
       {
         compositeRequest: [
           {
-            method: 'POST',
+            method: HTTPMethods.POST,
             url: '/services/data/v62.0/sobjects/Account',
             referenceId: 'ref1',
             body: { Name: 'Test Account 1' }
           },
           {
-            method: 'POST',
+            method: HTTPMethods.POST,
             url: '/services/data/v62.0/sobjects/Account',
             referenceId: 'ref2',
             body: { Name: 'Test Account 2' }
@@ -164,7 +165,7 @@ describe('salesforce client', () => {
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining('/composite'),
       expect.objectContaining({
-        method: 'POST',
+        method: HTTPMethods.POST,
         headers: {
           Authorization: 'Bearer token-123',
           'Content-Type': 'application/json'
@@ -280,7 +281,7 @@ describe('salesforce client', () => {
         `/sobjects/Case/APHA_ExternalReferenceNumber__c/${mockApplicationReference}`
       ),
       expect.objectContaining({
-        method: 'PATCH',
+        method: HTTPMethods.PATCH,
         headers: {
           Authorization: 'Bearer token-123',
           'Content-Type': 'application/json'
@@ -350,7 +351,7 @@ describe('salesforce client', () => {
         '/query?q=' + encodeURIComponent('SELECT Id, Name FROM Account')
       ),
       expect.objectContaining({
-        method: 'GET',
+        method: HTTPMethods.GET,
         headers: {
           Authorization: 'Bearer user-token-456'
         }
