@@ -77,9 +77,9 @@ export const Address = Joi.object({
   // > commented because not strictly necessary for WFM first use case
   // > unless this is what is meant by local authority
   // administrativeAreaCounty: Joi.string().allow(null, ''), // maps ADMINISTRATIVE_AREA
-  postcode: Joi.string().allow(null).required(),
+  postcode: Joi.string().allow(null).required()
   // ukInternalCode: Joi.string().allow(null).required(), // not sure what this is?
-  countryCode: Joi.string().allow(null).required()
+  // countryCode: Joi.string().allow(null).required()
 })
 
 export const Locations = baseData({

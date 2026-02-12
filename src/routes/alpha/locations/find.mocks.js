@@ -16,8 +16,7 @@ const address1 = {
   street: 'Street',
   locality: null,
   town: 'Town',
-  postcode: '1AA A11',
-  countryCode: 'GB'
+  postcode: '1AA A11'
 }
 
 const commodity1 = {
