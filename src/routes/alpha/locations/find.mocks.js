@@ -41,6 +41,7 @@ export const location1 = {
   type: 'locations',
   id: 'L123456',
   osMapReference: 'SO1234567890',
+  name: null,
   address: address1,
   livestockUnits: [commodity1],
   relationships: {}
@@ -50,6 +51,7 @@ export const location2 = {
   type: 'locations',
   id: 'L234567',
   osMapReference: 'SO1234567890',
+  name: 'Big Barn Farm',
   address: address1,
   livestockUnits: [commodity2, commodity3],
   relationships: {}

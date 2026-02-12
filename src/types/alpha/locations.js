@@ -86,6 +86,7 @@ export const Locations = baseData({
   singular: 'location',
   plural: 'locations'
 }).keys({
+  name: Joi.string().required().allow(null).label('Location name'),
   address: Address.required()
     .label('Address')
     .description('Address of the location'),
