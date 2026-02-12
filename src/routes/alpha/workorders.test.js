@@ -2,7 +2,7 @@ import Hapi from '@hapi/hapi'
 import { test, expect, describe } from '@jest/globals'
 
 import * as route from './workorders.js'
-import { first, second } from './workorders.mocks.js'
+import { workorder1, workorder2 } from './workorders.mocks.js'
 
 const path = '/workorders'
 
@@ -33,7 +33,7 @@ describe('Workorders', () => {
     expectedNextParams.set('page', '2')
 
     expect(firstPage.result).toMatchObject({
-      data: [first],
+      data: [workorder1],
       links: {
         self: `/workorders?${queryParams.toString()}`,
         next: `/workorders?${expectedNextParams.toString()}`
@@ -54,7 +54,7 @@ describe('Workorders', () => {
     })
 
     expect(secondPage.result).toMatchObject({
-      data: [second],
+      data: [workorder2],
       links: {
         self: firstPageResponse.links.next,
         prev: firstPageResponse.links.self

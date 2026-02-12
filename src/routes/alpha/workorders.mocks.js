@@ -1,4 +1,4 @@
-export const first = {
+export const workorder1 = {
   type: 'workorders',
   id: 'WS-76512',
   // status: 'Open',
@@ -43,7 +43,7 @@ export const first = {
   }
 }
 
-export const second = {
+export const workorder2 = {
   type: 'workorders',
   id: 'WS-76513',
   // status: 'Open',
@@ -97,4 +97,4 @@ export const second = {
   }
 }
 
-export const all = [first, second]
+export const workorders = [workorder1, workorder2]
