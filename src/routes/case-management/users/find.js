@@ -13,7 +13,6 @@ import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
 import { TopLevelLinksReference } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
-import { getUserEmail } from '../../../common/helpers/user-context.js'
 
 const PostFindUsersResponseSchema = Joi.object({
   data: Joi.array().items(CaseManagementUser).required(),
@@ -94,19 +93,7 @@ async function handler(request, h) {
   )
 
   try {
-    const userEmail = getUserEmail(request)
-
-    if (!userEmail) {
-      return new HTTPException('BAD_REQUEST', 'User authentication required', [
-        new HTTPError(
-          'MISSING_QUERY_PARAMETER',
-          'X-Forwarded-Authorization header with valid email claim is required'
-        )
-      ]).boomify()
-    }
-
-    const salesforceToken = await salesforceClient.getUserAccessToken(
-      userEmail,
+    const salesforceToken = await salesforceClient.getAccessToken(
       request.logger
     )
 
