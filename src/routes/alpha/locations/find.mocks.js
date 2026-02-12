@@ -16,8 +16,7 @@ const address1 = {
   street: 'Street',
   locality: null,
   town: 'Town',
-  postcode: '1AA A11',
-  countryCode: 'GB'
+  postcode: '1AA A11'
 }
 
 const commodity1 = {
@@ -42,6 +41,7 @@ export const location1 = {
   type: 'locations',
   id: 'L123456',
   osMapReference: 'SO1234567890',
+  name: null,
   address: address1,
   livestockUnits: [commodity1],
   relationships: {}
@@ -51,6 +51,7 @@ export const location2 = {
   type: 'locations',
   id: 'L234567',
   osMapReference: 'SO1234567890',
+  name: 'Big Barn Farm',
   address: address1,
   livestockUnits: [commodity2, commodity3],
   relationships: {}

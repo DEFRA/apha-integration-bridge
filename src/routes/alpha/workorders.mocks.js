@@ -1,4 +1,4 @@
-export const first = {
+export const workorder1 = {
   type: 'workorders',
   id: 'WS-76512',
   // status: 'Open',
@@ -43,7 +43,7 @@ export const first = {
   }
 }
 
-export const second = {
+export const workorder2 = {
   type: 'workorders',
   id: 'WS-76513',
   // status: 'Open',
@@ -61,8 +61,16 @@ export const second = {
     {
       type: 'activities',
       id: 'activity-1',
-      activityName: 'WS1',
+      activityName: 'Arrange Visit',
+      sequenceNumber: 1,
       default: true
+    },
+    {
+      type: 'activities',
+      id: 'activity-2',
+      activityName: 'Perform TB Skin Test',
+      sequenceNumber: 2,
+      default: false
     }
   ],
   relationships: {
@@ -97,4 +105,4 @@ export const second = {
   }
 }
 
-export const all = [first, second]
+export const workorders = [workorder1, workorder2]
