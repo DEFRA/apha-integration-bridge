@@ -11,6 +11,7 @@ import {
 import hapiPino from 'hapi-pino'
 import * as route from './case.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
+import * as userContext from '../../../common/helpers/user-context.js'
 import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/application-creation-request-builder.js'
 import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/supporting-materials-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
@@ -48,6 +49,7 @@ const mockSendComposite = jest.spyOn(salesforceClient, 'sendComposite')
 const mockCreateCustomer = jest.spyOn(salesforceClient, 'createCustomer')
 const mockCreateCase = jest.spyOn(salesforceClient, 'createCase')
 const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
+const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 const mockLoggerError = jest.fn()
 
 const mockSuccessfulCreateCustomerResponse = {
@@ -91,6 +93,7 @@ beforeEach(() => {
   mockCreateCase.mockReset()
   mockSendQuery.mockReset()
   mockSendQuery.mockResolvedValue({ records: [] })
+  mockGetUserEmail.mockReturnValue(null)
   mockLoggerError.mockReset()
   jest.mocked(buildApplicationCreationCompositeRequest).mockReturnValue({
     allOrNone: true,
@@ -259,7 +262,7 @@ describe('POST /case-management/case', () => {
           FirstName: mockApplicantDetaisls.firstName,
           LastName: mockApplicantDetaisls.lastName
         }),
-        expect.anything()
+        expect.anything() // logger
       )
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledTimes(1)
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(

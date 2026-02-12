@@ -6,13 +6,15 @@ import { salesforceClient } from '../../../lib/salesforce/client.js'
 
 const ENDPOINT_PATH = '/case-management/users/find'
 const ENDPOINT_METHOD = 'POST'
-const TEST_USER_EMAIL = 'test.user@example.com'
 const TEST_USER_ID = '005ABC123456789'
+const MOCK_SALESFORCE_TOKEN = 'mock-salesforce-m2m-token-12345'
 
 const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
+const mockGetAccessToken = jest.spyOn(salesforceClient, 'getAccessToken')
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockGetAccessToken.mockResolvedValue(MOCK_SALESFORCE_TOKEN)
 })
 
 async function createTestServer() {
@@ -86,19 +88,23 @@ describe('POST /case-management/users/find', () => {
         done: true
       })
 
-      const res = await findUser(server, TEST_USER_EMAIL)
+      const testEmail = 'test.user@example.com'
+      const res = await findUser(server, testEmail)
 
       const body = assertSuccessResponse(res, 1)
       assertUserData(body.data[0])
       expect(body.data[0].id).toBe(TEST_USER_ID)
 
+      expect(mockGetAccessToken).toHaveBeenCalledTimes(1)
       expect(mockSendQuery).toHaveBeenCalledTimes(1)
       expect(mockSendQuery).toHaveBeenCalledWith(
         expect.stringContaining('SELECT Id FROM User WHERE Username'),
+        MOCK_SALESFORCE_TOKEN,
         expect.anything()
       )
       expect(mockSendQuery).toHaveBeenCalledWith(
-        expect.stringContaining(TEST_USER_EMAIL),
+        expect.stringContaining(testEmail),
+        MOCK_SALESFORCE_TOKEN,
         expect.anything()
       )
     })
@@ -190,7 +196,7 @@ describe('POST /case-management/users/find', () => {
         .mockRejectedValueOnce(new Error('Salesforce connection failed'))
         .mockRejectedValueOnce(new Error('Salesforce connection failed'))
 
-      const res = await findUser(server, TEST_USER_EMAIL)
+      const res = await findUser(server, 'test.user@example.com')
 
       expect(res.statusCode).toBe(500)
 
@@ -209,6 +215,8 @@ describe('POST /case-management/users/find', () => {
 
       // Verify retry logic - should be called 4 times (initial + 3 retries)
       expect(mockSendQuery).toHaveBeenCalledTimes(4)
+      // Token is fetched once before retry, not on each attempt
+      expect(mockGetAccessToken).toHaveBeenCalledTimes(1)
     })
 
     test('escapes single quotes to prevent SOQL injection', async () => {
@@ -226,6 +234,7 @@ describe('POST /case-management/users/find', () => {
       expect(res.statusCode).toBe(200)
       expect(mockSendQuery).toHaveBeenCalledWith(
         expect.stringContaining("\\'"),
+        MOCK_SALESFORCE_TOKEN,
         expect.anything()
       )
 

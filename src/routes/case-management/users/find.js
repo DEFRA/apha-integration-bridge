@@ -38,7 +38,7 @@ const __dirname = new URL('.', import.meta.url).pathname
  */
 const options = {
   auth: false,
-  tags: ['api', 'case-management', 'users'],
+  tags: ['api', 'case-management'],
   description: 'Find if a user exists in Salesforce',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'find.md'),
@@ -93,15 +93,19 @@ async function handler(request, h) {
   )
 
   try {
+    const salesforceToken = await salesforceClient.getAccessToken(
+      request.logger
+    )
+
     const result = await retry(
       async (bail) => {
         const query = `SELECT Id FROM User WHERE Username = '${emailAddress.replace(/'/g, "\\'")}' AND IsActive = true LIMIT 1`
 
-        request.logger?.debug(
-          `Executing Salesforce query: ${JSON.stringify(query)}`
+        return await salesforceClient.sendQuery(
+          query,
+          salesforceToken,
+          request.logger
         )
-
-        return await salesforceClient.sendQuery(query, request.logger)
       },
       {
         retries: 3,

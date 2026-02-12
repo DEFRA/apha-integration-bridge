@@ -1,6 +1,7 @@
 import { proxyFetch } from '../../common/helpers/proxy/proxy-fetch.js'
 import { config } from '../../config.js'
 import { HTTPMethods } from '../http/http-methods.js'
+import { authenticateWithJWT } from './jwt-bearer.js'
 
 /**
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
@@ -12,12 +13,14 @@ const TOKEN_EXPIRY_BUFFER_MS = 5000
 
 /**
  * Lightweight Salesforce client with in-memory token caching.
+ * Supports both client credentials flow (system-level) and JWT Bearer flow (user-level).
  */
 class SalesforceClient {
   cachedToken = null
   cachedInstanceUrl = null
   expiresAt = 0
   refreshPromise = null
+  userTokenCache = new Map()
 
   /**
    * @returns {object} salesforce config
@@ -51,14 +54,78 @@ class SalesforceClient {
   }
 
   /**
-   * Acquire a bearer token using the client credentials grant.
+   * @param {object} tokenResponse Salesforce token response with expires_in
+   * @param {number} [defaultExpirySeconds=900] Default expiry in seconds (15 minutes)
+   */
+  calculateTokenExpiry(tokenResponse, defaultExpirySeconds = 900) {
+    const expiresIn = Number.parseInt(tokenResponse.expires_in, 10)
+    const expiresInMs = Number.isFinite(expiresIn)
+      ? expiresIn * 1000
+      : defaultExpirySeconds * 1000
+
+    return Date.now() + expiresInMs
+  }
+
+  /**
+   * @param {number} expiresAt Token expiry timestamp in milliseconds
+   */
+  isTokenValid(expiresAt) {
+    return Date.now() < expiresAt - TOKEN_EXPIRY_BUFFER_MS
+  }
+
+  /**
+   * Acquire a bearer token for a specific user using JWT Bearer flow.
+   * Tokens are cached per-user until shortly before expiry.
+   * @param {string} userEmail
+   * @param {Logger} [logger]
+   * @returns {Promise<string>} The access token
+   */
+  async getUserAccessToken(userEmail, logger) {
+    if (!userEmail) {
+      throw new Error('User email is required for JWT Bearer authentication')
+    }
+
+    const cached = this.userTokenCache.get(userEmail)
+
+    // Return cached token if still valid
+    if (cached && this.isTokenValid(cached.expiresAt)) {
+      return cached.token
+    }
+
+    try {
+      const tokenResponse = await authenticateWithJWT(userEmail, logger)
+
+      const token = tokenResponse.access_token
+      if (!token) {
+        throw new Error('Salesforce JWT token response missing access_token')
+      }
+
+      const instanceUrl = tokenResponse.instance_url || this.cfg.baseUrl || null
+      const expiresAt = this.calculateTokenExpiry(tokenResponse)
+
+      this.userTokenCache.set(userEmail, {
+        token,
+        instanceUrl,
+        expiresAt
+      })
+
+      return token
+    } catch (error) {
+      logger?.error(
+        { err: error, userEmail },
+        'Failed to acquire user access token'
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Acquire a bearer token using the client credentials grant (system-level).
    * Tokens are cached until shortly before expiry.
    * @param {Logger} [logger] Optional logger.
    */
   async getAccessToken(logger) {
-    const now = Date.now()
-
-    if (this.cachedToken && now < this.expiresAt - TOKEN_EXPIRY_BUFFER_MS) {
+    if (this.cachedToken && this.isTokenValid(this.expiresAt)) {
       return this.cachedToken
     }
 
@@ -67,12 +134,7 @@ class SalesforceClient {
     }
 
     this.refreshPromise = (async () => {
-      const refreshCheck = Date.now()
-
-      if (
-        this.cachedToken &&
-        refreshCheck < this.expiresAt - TOKEN_EXPIRY_BUFFER_MS
-      ) {
+      if (this.cachedToken && this.isTokenValid(this.expiresAt)) {
         return this.cachedToken
       }
 
@@ -120,13 +182,7 @@ class SalesforceClient {
 
       this.cachedToken = token
       this.cachedInstanceUrl = body.instance_url || this.cfg.baseUrl || null
-
-      const expiresIn = Number.parseInt(body.expires_in, 10)
-      const expiresInMs = Number.isFinite(expiresIn)
-        ? expiresIn * 1000
-        : 15 * 60 * 1000
-
-      this.expiresAt = Date.now() + expiresInMs
+      this.expiresAt = this.calculateTokenExpiry(body)
 
       return this.cachedToken
     })()
@@ -140,10 +196,11 @@ class SalesforceClient {
 
   /**
    * Send a composite API request to Salesforce.
+   * Uses system-level M2M authentication only.
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<CompositeResponse>} The Salesforce composite response.
+   * @returns {Promise<import('../../types/salesforce/composite-response.js').CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger) {
     return this.sendRequest(
@@ -155,9 +212,12 @@ class SalesforceClient {
   }
 
   /**
+   * Create a customer (Contact) in Salesforce.
+   * Uses system-level M2M authentication only.
+   *
    * @param {object} payload The request payload to forward.
    * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<CreateGuestResponse>} The Salesforce create guest response.
+   * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create guest response.
    */
   async createCustomer(payload, logger) {
     return this.sendRequest(
@@ -170,8 +230,8 @@ class SalesforceClient {
 
   /**
    * @param {object} payload The request payload to forward.
-   * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<CreateGuestResponse>} The Salesforce create case response.
+   * @param {Logger} [logger]
+   * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create case response.
    */
   async createCase(payload, applicationReference, logger) {
     return this.sendRequest(
@@ -183,12 +243,6 @@ class SalesforceClient {
   }
 
   /**
-   * @param {string} relativePath
-   * @param {object} payload
-   * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<any>} The Salesforce response body.
-   */
-  /**
    * @param {(typeof HTTPMethods.PATCH | typeof HTTPMethods.POST)} method
    * @param {string} relativePath
    * @param {object} payload
@@ -199,6 +253,12 @@ class SalesforceClient {
     const token = await this.getAccessToken(logger)
 
     const methodName = String(method || '').toUpperCase()
+
+    logger?.debug(`Sending ${methodName} request`, {
+      relativePath,
+      authContext: 'system-level'
+    })
+
     const url = this.getBaseUrl() + '/' + relativePath.replace(/^\/+/, '')
 
     const { response, body } = await this.requestWithTimeout(
@@ -232,8 +292,21 @@ class SalesforceClient {
     return body
   }
 
-  async sendQuery(query, logger) {
-    const token = await this.getAccessToken(logger)
+  /**
+   * Execute a SOQL query against Salesforce.
+   * @param {string} query The SOQL query string.
+   * @param {string} token Salesforce access token (required).
+   * @param {Logger} [logger] Optional logger.
+   * @returns {Promise<any>} The Salesforce query response.
+   */
+  async sendQuery(query, token, logger) {
+    if (!token) {
+      throw new Error('Salesforce access token is required for sendQuery')
+    }
+
+    logger?.debug('Sending query request', {
+      authContext: 'user-level'
+    })
 
     const queryUrl = this.getBaseUrl() + '/query?q=' + encodeURIComponent(query)
 

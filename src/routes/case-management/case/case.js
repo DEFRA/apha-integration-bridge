@@ -35,7 +35,7 @@ const retriesConfig = {
  */
 const options = {
   auth: false,
-  tags: ['api', 'case-management', 'case'],
+  tags: ['api', 'case-management'],
   description: 'Create a case in APHA CRM (Salesforce)',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'case.md'),
@@ -179,7 +179,6 @@ async function createCustomerAccount(request) {
  */
 async function uploadSupportingMaterials(request, caseId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
-  // using for...of for sequential uploads
   for (const section of payload.sections) {
     for (const questionAnswer of section.questionAnswers) {
       if (

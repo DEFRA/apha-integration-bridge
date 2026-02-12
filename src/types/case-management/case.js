@@ -152,3 +152,34 @@ export const CreateCasePayloadSchema = Joi.object({
 })
   .description('Case creation API request payload')
   .label('Create Case Request')
+
+export const GetCaseParamsSchema = Joi.object({
+  caseId: Joi.string().required().label('Case ID')
+})
+
+export const CaseData = Joi.object({
+  type: Joi.string()
+    .valid('case')
+    .required()
+    .label('Case Type')
+    .description('The "type" value will be "case" for this endpoint.'),
+  id: Joi.string().required().label('Case ID')
+}).meta({ response: { type: 'case' } })
+
+export const Case = CaseData.keys({
+  attributes: Joi.object({
+    caseNumber: Joi.string().allow(null),
+    status: Joi.string().allow(null),
+    priority: Joi.string().allow(null),
+    contactId: Joi.string().allow(null),
+    createdDate: Joi.string().allow(null),
+    lastModifiedDate: Joi.string().allow(null)
+  }).required()
+})
+
+export const GetCaseResponseSchema = Joi.object({
+  data: Case.required(),
+  links: Joi.object()
+})
+  .description('Case Details')
+  .label('Get Case Response')

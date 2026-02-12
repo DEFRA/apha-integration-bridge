@@ -277,6 +277,23 @@ const config = convict({
       format: Number,
       default: 10000,
       env: 'SALESFORCE_TIMEOUT_MS'
+    },
+    jwt: {
+      privateKey: {
+        doc: 'Base64-encoded private key for JWT Bearer flow',
+        format: String,
+        nullable: true,
+        default: null,
+        sensitive: true,
+        env: 'SALESFORCE_JWT_PRIVATE_KEY'
+      },
+      consumerKey: {
+        doc: 'Salesforce Connected App consumer key (client_id) for JWT Bearer flow',
+        format: String,
+        nullable: true,
+        default: null,
+        env: 'SALESFORCE_JWT_CONSUMER_KEY'
+      }
     }
   },
   aws: {
