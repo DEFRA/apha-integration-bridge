@@ -61,8 +61,16 @@ export const workorder2 = {
     {
       type: 'activities',
       id: 'activity-1',
-      activityName: 'WS1',
+      activityName: 'Arrange Visit',
+      sequenceNumber: 1,
       default: true
+    },
+    {
+      type: 'activities',
+      id: 'activity-2',
+      activityName: 'Perform TB Skin Test',
+      sequenceNumber: 2,
+      default: false
     }
   ],
   relationships: {
