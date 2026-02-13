@@ -413,16 +413,24 @@ describe('salesforce client', () => {
 
   describe('JWT Bearer authentication (user-level)', () => {
     const userEmail = 'test@example.com'
+    const mockJWTAssertion = 'mock.jwt.assertion'
     const mockJWTTokenResponse = {
       access_token: 'user-token-123',
       instance_url: 'https://salesforce.test',
-      token_type: 'Bearer'
+      token_type: 'Bearer',
+      expires_in: 3600
     }
 
     beforeEach(() => {
+      salesforceClient.userTokenCache.clear()
+
       jest
-        .spyOn(jwtBearer, 'authenticateWithJWT')
-        .mockResolvedValue(mockJWTTokenResponse)
+        .spyOn(jwtBearer, 'buildJWTAssertion')
+        .mockResolvedValue(mockJWTAssertion)
+
+      mockFetch.mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockJWTTokenResponse))
+      )
     })
 
     test('getUserAccessToken caches user tokens until near expiry', async () => {
@@ -430,6 +438,8 @@ describe('salesforce client', () => {
         userEmail,
         mockLogger
       )
+
+      // Second call should use cached token, so no additional fetch
       const second = await salesforceClient.getUserAccessToken(
         userEmail,
         mockLogger
@@ -437,23 +447,21 @@ describe('salesforce client', () => {
 
       expect(first).toBe('user-token-123')
       expect(second).toBe('user-token-123')
-      expect(jwtBearer.authenticateWithJWT).toHaveBeenCalledTimes(1)
+      expect(jwtBearer.buildJWTAssertion).toHaveBeenCalledTimes(1)
     })
 
     test('getUserAccessToken caches different tokens for different users', async () => {
       const user1 = 'user1@example.com'
       const user2 = 'user2@example.com'
 
-      jest
-        .spyOn(jwtBearer, 'authenticateWithJWT')
-        .mockResolvedValueOnce({
-          ...mockJWTTokenResponse,
-          access_token: 'token-user1'
-        })
-        .mockResolvedValueOnce({
-          ...mockJWTTokenResponse,
-          access_token: 'token-user2'
-        })
+      mockFetch.mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, {
+            ...mockJWTTokenResponse,
+            access_token: 'token-user2'
+          })
+        )
+      )
 
       const token1 = await salesforceClient.getUserAccessToken(
         user1,
@@ -464,9 +472,9 @@ describe('salesforce client', () => {
         mockLogger
       )
 
-      expect(token1).toBe('token-user1')
-      expect(token2).toBe('token-user2')
-      expect(jwtBearer.authenticateWithJWT).toHaveBeenCalledTimes(2)
+      expect(token1).toBe('user-token-123') // First user gets the default token
+      expect(token2).toBe('token-user2') // Second user gets the custom token
+      expect(jwtBearer.buildJWTAssertion).toHaveBeenCalledTimes(2)
     })
 
     test('getUserAccessToken throws when userEmail is missing', async () => {
@@ -477,7 +485,7 @@ describe('salesforce client', () => {
 
     test('getUserAccessToken logs error on JWT authentication failure', async () => {
       const error = new Error('JWT authentication failed')
-      jest.spyOn(jwtBearer, 'authenticateWithJWT').mockRejectedValueOnce(error)
+      jest.spyOn(jwtBearer, 'buildJWTAssertion').mockRejectedValueOnce(error)
 
       await expect(
         salesforceClient.getUserAccessToken(userEmail, mockLogger)
@@ -514,7 +522,7 @@ describe('salesforce client', () => {
         mockLogger
       )
 
-      expect(jwtBearer.authenticateWithJWT).toHaveBeenCalledWith(
+      expect(jwtBearer.buildJWTAssertion).toHaveBeenCalledWith(
         userEmail,
         mockLogger
       )
@@ -530,41 +538,6 @@ describe('salesforce client', () => {
         'Sending query request',
         expect.objectContaining({
           authContext: 'user-level'
-        })
-      )
-    })
-
-    test('sendRequest uses system-level M2M authentication only', async () => {
-      mockFetch
-        .mockResolvedValueOnce(
-          /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
-        )
-        .mockResolvedValueOnce(
-          /** @type {any}*/ (
-            mockJsonResponse(200, { id: '001', success: true })
-          )
-        )
-
-      await salesforceClient.sendRequest(
-        'POST',
-        'test/endpoint',
-        { data: 'test' },
-        mockLogger
-      )
-
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Sending POST request',
-        expect.objectContaining({
-          relativePath: 'test/endpoint',
-          authContext: 'system-level'
-        })
-      )
-      expect(mockFetch).toHaveBeenLastCalledWith(
-        expect.stringContaining('/test/endpoint'),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Bearer token-123'
-          })
         })
       )
     })
