@@ -16,8 +16,12 @@ const HoldingsData = baseData({
 })
 
 export const Holdings = HoldingsData.keys({
-  cphType: Joi.string().required().label('CPH Type'),
+  cphType: Joi.string()
+    .valid('permanent', 'temporary', 'emergency')
+    .required()
+    .label('CPH Type'),
   localAuthority: Joi.string().required().label('Local Authority'),
+  status: Joi.string().required().valid('active', 'inactive'),
   relationships: Joi.object({
     location: LocationsRelationship,
     cphHolder: CustomerRelationship.description('The owner of the holding')

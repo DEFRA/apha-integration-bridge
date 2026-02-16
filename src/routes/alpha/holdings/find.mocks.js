@@ -1,7 +1,8 @@
 export const holding1 = {
   type: 'holdings',
   id: '08/139/0167',
-  cphType: 'PERMANENT',
+  status: 'active',
+  cphType: 'permanent',
   localAuthority: 'Lanarkshire',
   relationships: {
     cphHolder: {
@@ -16,7 +17,8 @@ export const holding1 = {
 export const holding2 = {
   type: 'holdings',
   id: '12/123/1234',
-  cphType: 'PERMANENT',
+  status: 'inactive',
+  cphType: 'permanent',
   localAuthority: 'Berkshire',
   relationships: {
     cphHolder: {
