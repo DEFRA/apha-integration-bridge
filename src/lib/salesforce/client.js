@@ -1,7 +1,7 @@
 import { proxyFetch } from '../../common/helpers/proxy/proxy-fetch.js'
 import { config } from '../../config.js'
 import { HTTPMethods } from '../http/http-methods.js'
-import { authenticateWithJWT } from './jwt-bearer.js'
+import { buildJWTAssertion } from './jwt-bearer.js'
 
 /**
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
@@ -74,6 +74,58 @@ class SalesforceClient {
   }
 
   /**
+   * Exchanges a JWT assertion for a Salesforce access token.
+   * @param {string} jwtAssertion - The signed JWT assertion
+   * @param {Logger} [logger] - Optional logger instance
+   */
+  async exchangeJWTForToken(jwtAssertion, logger) {
+    try {
+      const authUrl = this.resolveAuthUrl()
+      const params = new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwtAssertion
+      })
+
+      const { response, body } = await this.requestWithTimeout(
+        authUrl,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: params
+        },
+        {
+          timeoutMessage: 'Salesforce JWT token exchange timed out'
+        }
+      )
+
+      if (!response.ok) {
+        logger?.error(
+          {
+            status: response.status,
+            body: this.safeMessage(body)
+          },
+          'Failed to exchange JWT for access token'
+        )
+        throw new Error(
+          `Failed to exchange JWT (${response.status}): ${this.safeMessage(body)}`
+        )
+      }
+
+      logger?.debug('Successfully exchanged JWT for access token', {
+        tokenType: body.token_type,
+        expiresIn: body.expires_in
+      })
+
+      return body
+    } catch (error) {
+      logger?.error({ err: error }, 'Error during JWT token exchange')
+      throw error
+    }
+  }
+
+  /**
    * Acquire a bearer token for a specific user using JWT Bearer flow.
    * Tokens are cached per-user until shortly before expiry.
    * @param {string} userEmail
@@ -93,7 +145,8 @@ class SalesforceClient {
     }
 
     try {
-      const tokenResponse = await authenticateWithJWT(userEmail, logger)
+      const jwtAssertion = await buildJWTAssertion(userEmail, logger)
+      const tokenResponse = await this.exchangeJWTForToken(jwtAssertion, logger)
 
       const token = tokenResponse.access_token
       if (!token) {
