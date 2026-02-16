@@ -1,18 +1,9 @@
 import { fetchFile } from '../../common/helpers/file/file-utils.js'
-import { config } from '../../config.js'
-import {
-  buildFileUploadRequest,
-  refIdApplicationRef,
-  refIdFile,
-  refIdFileQuery,
-  refIdLinkFile
-} from './file-upload-request-builder.js'
+import { buildFileUploadAndLinkCompositeRequest } from './file-upload-and-link-request-builder.js'
 
 /**
- * @import {CompositeRequest, CompositeRequestItem} from '../../types/salesforce/composite-request.js'
+ * @import {CompositeRequest} from '../../types/salesforce/composite-request.js'
  */
-
-const salesforceConfig = config.get('salesforce')
 
 /**
  * @param {string} caseId
@@ -28,45 +19,10 @@ export async function buildSupportingMaterialsCompositeRequest(
   filePath
 ) {
   const fileData = await fetchFile(filePath)
-  const fileUploadRequest = buildFileUploadRequest(
+  return buildFileUploadAndLinkCompositeRequest(
     fileData.file.toString('base64'),
-    questionKey,
-    `${sectionKey}.${questionKey}.${fileData.extension}`
+    filePath,
+    `${sectionKey}.${questionKey}.${fileData.extension}`,
+    caseId
   )
-  const fileIdRequest = buildFileIdRequest()
-  const linkFileRequest = buildLinkFileRequest(caseId)
-
-  return {
-    allOrNone: true,
-    compositeRequest: [fileUploadRequest, fileIdRequest, linkFileRequest]
-  }
-}
-
-/**
- * @returns {CompositeRequestItem}
- */
-function buildFileIdRequest() {
-  return {
-    method: 'GET',
-    url: `/services/data/${salesforceConfig.apiVersion}/sobjects/ContentVersion/@{${refIdFile}.id}?fields=ContentDocumentId`,
-    referenceId: refIdFileQuery
-  }
-}
-
-/**
- * @parasm {string} linkedEntityId
- * @returns {CompositeRequestItem}
- */
-function buildLinkFileRequest(linkedEntityId = `@{${refIdApplicationRef}.id}`) {
-  return {
-    method: 'POST',
-    url: `/services/data/${salesforceConfig.apiVersion}/sobjects/ContentDocumentLink`,
-    referenceId: refIdLinkFile,
-    body: {
-      LinkedEntityId: linkedEntityId,
-      ContentDocumentId: `@{${refIdFileQuery}.ContentDocumentId}`,
-      ShareType: 'V',
-      Visibility: 'AllUsers'
-    }
-  }
 }

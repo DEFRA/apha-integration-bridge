@@ -11,7 +11,7 @@ describe('buildApplicationCreationCompositeRequest', () => {
     const result = buildApplicationCreationCompositeRequest(payload)
 
     expect(result.allOrNone).toBe(true)
-    expect(result.compositeRequest).toHaveLength(5)
+    expect(result.compositeRequest).toHaveLength(2)
   })
 
   test('should include license type query as first sub-request', () => {
@@ -44,60 +44,6 @@ describe('buildApplicationCreationCompositeRequest', () => {
     })
   })
 
-  test('should include file upload as third sub-request with base64 encoded payload', () => {
-    const payload = createPayload()
-
-    const result = buildApplicationCreationCompositeRequest(payload)
-
-    const fileRequest = result.compositeRequest[2]
-    expect(fileRequest.method).toBe('POST')
-    expect(fileRequest.url).toBe(
-      `/services/data/${apiVersion}/sobjects/ContentVersion`
-    )
-    expect(fileRequest.referenceId).toBe('file')
-
-    const expectedBase64 = Buffer.from(JSON.stringify(payload)).toString(
-      'base64'
-    )
-    expect(fileRequest.body).toEqual({
-      Title: `${payload.applicationReferenceNumber}-v2.0`,
-      PathOnClient: `${payload.applicationReferenceNumber}-v2.0.json`,
-      VersionData: expectedBase64
-    })
-  })
-
-  test('should include file ID query as fourth sub-request', () => {
-    const payload = createPayload()
-
-    const result = buildApplicationCreationCompositeRequest(payload)
-
-    const fileQueryRequest = result.compositeRequest[3]
-    expect(fileQueryRequest.method).toBe('GET')
-    expect(fileQueryRequest.url).toBe(
-      `/services/data/${apiVersion}/sobjects/ContentVersion/@{file.id}?fields=ContentDocumentId`
-    )
-    expect(fileQueryRequest.referenceId).toBe('fileQuery')
-  })
-
-  test('should include file link creation as fifth sub-request', () => {
-    const payload = createPayload()
-
-    const result = buildApplicationCreationCompositeRequest(payload)
-
-    const linkRequest = result.compositeRequest[4]
-    expect(linkRequest.method).toBe('POST')
-    expect(linkRequest.url).toBe(
-      `/services/data/${apiVersion}/sobjects/ContentDocumentLink`
-    )
-    expect(linkRequest.referenceId).toBe('linkFile')
-    expect(linkRequest.body).toEqual({
-      LinkedEntityId: '@{applicationRef.id}',
-      ContentDocumentId: '@{fileQuery.ContentDocumentId}',
-      ShareType: 'V',
-      Visibility: 'AllUsers'
-    })
-  })
-
   test('should use API version from config in all URLs', () => {
     const payload = createPayload()
 
@@ -114,56 +60,6 @@ describe('buildApplicationCreationCompositeRequest', () => {
     }
   })
 
-  test('should preserve key facts and all sections and question answers in encoded payload', () => {
-    const payload = createPayload()
-
-    payload.sections = [
-      {
-        sectionKey: 'section-1',
-        title: 'Section 1',
-        questionAnswers: [
-          {
-            question: 'Question 1',
-            questionKey: 'q1',
-            answer: {
-              type: 'text',
-              value: 'Answer 1',
-              displayText: 'Answer 1'
-            }
-          }
-        ]
-      },
-      {
-        sectionKey: 'section-2',
-        title: 'Section 2',
-        questionAnswers: [
-          {
-            question: 'Question 2',
-            questionKey: 'q2',
-            answer: {
-              type: 'number',
-              value: 42,
-              displayText: '42'
-            }
-          }
-        ]
-      }
-    ]
-
-    const result = buildApplicationCreationCompositeRequest(payload)
-
-    const fileRequest = result.compositeRequest[2]
-    const encodedPayload = JSON.parse(
-      Buffer.from(fileRequest.body.VersionData, 'base64').toString('utf8')
-    )
-
-    expect(encodedPayload.keyFacts.licenceType).toBe('TB Movement License')
-    expect(encodedPayload.keyFacts.requester).toBe('origin')
-    expect(encodedPayload.sections).toHaveLength(2)
-    expect(encodedPayload.sections[0].questionAnswers).toHaveLength(1)
-    expect(encodedPayload.sections[1].questionAnswers).toHaveLength(1)
-  })
-
   test('should correctly chain references between sub-requests', () => {
     const payload = createPayload()
 
@@ -172,15 +68,6 @@ describe('buildApplicationCreationCompositeRequest', () => {
     const applicationRequest = result.compositeRequest[1]
     expect(applicationRequest.body.LicenseTypeId).toBe(
       '@{licenseTypeQuery.records[0].Id}'
-    )
-
-    const fileQueryRequest = result.compositeRequest[3]
-    expect(fileQueryRequest.url).toContain('@{file.id}')
-
-    const linkRequest = result.compositeRequest[4]
-    expect(linkRequest.body.LinkedEntityId).toBe('@{applicationRef.id}')
-    expect(linkRequest.body.ContentDocumentId).toBe(
-      '@{fileQuery.ContentDocumentId}'
     )
   })
 })

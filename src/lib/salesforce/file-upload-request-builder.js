@@ -44,13 +44,15 @@ export function buildFileIdRequest() {
 /**
  * @returns {CompositeRequestItem}
  */
-export function buildLinkFileRequest() {
+export function buildLinkFileRequest(
+  linkedEntityId = `@{${refIdApplicationRef}.id}`
+) {
   return {
     method: 'POST',
     url: `/services/data/${salesforceConfig.apiVersion}/sobjects/ContentDocumentLink`,
     referenceId: refIdLinkFile,
     body: {
-      LinkedEntityId: `@{${refIdApplicationRef}.id}`,
+      LinkedEntityId: linkedEntityId,
       ContentDocumentId: `@{${refIdFileQuery}.ContentDocumentId}`,
       ShareType: 'V',
       Visibility: 'AllUsers'

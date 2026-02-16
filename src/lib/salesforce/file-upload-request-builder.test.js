@@ -41,7 +41,7 @@ describe('file upload request builder', () => {
     })
   })
 
-  test('buildLinkFileRequest should link file to application reference', () => {
+  test('buildLinkFileRequest should link file to application reference if no linked entity id provided', () => {
     const result = buildLinkFileRequest()
 
     expect(result).toEqual({
@@ -50,6 +50,22 @@ describe('file upload request builder', () => {
       referenceId: refIdLinkFile,
       body: {
         LinkedEntityId: `@{${refIdApplicationRef}.id}`,
+        ContentDocumentId: `@{${refIdFileQuery}.ContentDocumentId}`,
+        ShareType: 'V',
+        Visibility: 'AllUsers'
+      }
+    })
+  })
+
+  test('buildLinkFileRequest should link file to provided linked entity id', () => {
+    const linkedEntityId = 'test_id'
+    const result = buildLinkFileRequest(linkedEntityId)
+    expect(result).toEqual({
+      method: 'POST',
+      url: `/services/data/${apiVersion}/sobjects/ContentDocumentLink`,
+      referenceId: refIdLinkFile,
+      body: {
+        LinkedEntityId: linkedEntityId,
         ContentDocumentId: `@{${refIdFileQuery}.ContentDocumentId}`,
         ShareType: 'V',
         Visibility: 'AllUsers'
