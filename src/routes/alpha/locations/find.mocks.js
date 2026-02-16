@@ -41,7 +41,7 @@ const facility1 = {
   type: 'facilities',
   id: 'F12345',
   name: 'Birchwood Kennels',
-  typeCode: 'ABP',
+  facilityType: 'ABP Establishment, Plant or Operator',
   businessActivityCode: 'ABP-CC'
 }
 

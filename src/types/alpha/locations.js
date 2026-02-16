@@ -37,12 +37,12 @@ const Facilities = baseData({
 })
   .keys({
     name: Joi.string().required().allow(null).label('Facility name'),
-    typeCode: Joi.string()
+    facilityType: Joi.string()
       .required()
       .allow(null)
-      .label('Type code for facility')
+      .label('Facility type')
       .description(
-        'A non-human readable classification of facilities by their type or purpose'
+        `The category of facility - e.g. an 'Animal Breeding' or 'ABP Establishment, Plant or Operator'`
       ),
     businessActivityCode: Joi.string()
       .required()
