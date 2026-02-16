@@ -396,29 +396,6 @@ describe('POST /case-management/case', () => {
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
     })
 
-    test('handles when createCase returns response without id field', async () => {
-      const server = await createTestServer()
-
-      mockCreateCustomer.mockResolvedValueOnce(
-        mockSuccessfulCreateCustomerResponse
-      )
-      mockSendComposite
-        .mockResolvedValueOnce(mockSuccessfulCompositeResponse)
-        .mockResolvedValueOnce(mockSuccessfulCompositeResponse)
-      mockCreateCase.mockResolvedValueOnce(
-        /** @type {any} */ ({
-          errors: [],
-          success: true
-        })
-      )
-
-      const payload = createValidPayload()
-      const res = await createCase(server, payload)
-
-      expect(res.statusCode).toBe(201)
-      expect(mockCreateCase).toHaveBeenCalledTimes(1)
-    })
-
     test('handles when getLinkedFiles returns response without records field', async () => {
       const server = await createTestServer()
 

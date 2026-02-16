@@ -269,6 +269,7 @@ async function createCustomerAccount(request) {
  */
 async function uploadSupportingMaterials(request, caseId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
+  const caseFiles = await getLinkedFiles(request, caseId)
   for (const section of payload.sections) {
     for (const questionAnswer of section.questionAnswers) {
       if (
@@ -276,7 +277,6 @@ async function uploadSupportingMaterials(request, caseId) {
         questionAnswer.answer.value.path
       ) {
         const filePath = questionAnswer.answer.value.path
-        const caseFiles = await getLinkedFiles(request, caseId)
         const isFileAlreadyUploaded = caseFiles.some(
           (file) => file.ContentDocument.Title === filePath
         )
