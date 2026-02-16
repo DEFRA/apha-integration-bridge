@@ -26,13 +26,11 @@ export const workorder1 = {
         id: '08/139/0167'
       }
     },
-    locations: {
-      data: [
-        {
-          type: 'locations',
-          id: 'L123456'
-        }
-      ]
+    location: {
+      data: {
+        type: 'locations',
+        id: 'L123456'
+      }
     },
     commodities: {
       data: []
@@ -86,13 +84,11 @@ export const workorder2 = {
         id: '08/139/0168'
       }
     },
-    locations: {
-      data: [
-        {
-          type: 'locations',
-          id: 'L123457'
-        }
-      ]
+    location: {
+      data: {
+        type: 'locations',
+        id: 'L123457'
+      }
     },
     facilities: {
       data: [
