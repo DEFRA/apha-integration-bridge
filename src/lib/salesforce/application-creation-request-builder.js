@@ -1,10 +1,5 @@
 import { config } from '../../config.js'
-import {
-  buildFileIdRequest,
-  buildFileUploadRequest,
-  buildLinkFileRequest,
-  refIdApplicationRef
-} from './file-upload-request-builder.js'
+import { refIdApplicationRef } from './file-upload-request-builder.js'
 
 /**
  * @import {CompositeRequest, CompositeRequestItem} from '../../types/salesforce/composite-request.js'
@@ -22,23 +17,10 @@ export function buildApplicationCreationCompositeRequest(payload) {
   const licenceTypeRequest = buildLicenceTypeRequest(payload)
   const createIndividualApplicationRequest =
     buildCreateApplicationRequest(payload)
-  const fileUploadRequest = buildFileUploadRequest(
-    Buffer.from(JSON.stringify(payload)).toString('base64'),
-    `${payload.applicationReferenceNumber}-v2.0`,
-    `${payload.applicationReferenceNumber}-v2.0.json`
-  )
-  const fileIdRequest = buildFileIdRequest()
-  const linkFileRequest = buildLinkFileRequest()
 
   return {
     allOrNone: true,
-    compositeRequest: [
-      licenceTypeRequest,
-      createIndividualApplicationRequest,
-      fileUploadRequest,
-      fileIdRequest,
-      linkFileRequest
-    ]
+    compositeRequest: [licenceTypeRequest, createIndividualApplicationRequest]
   }
 }
 

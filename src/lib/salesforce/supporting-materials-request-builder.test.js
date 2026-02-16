@@ -1,95 +1,57 @@
-import { beforeEach, describe, expect, test, jest } from '@jest/globals'
+import { describe, test, expect, jest, beforeEach } from '@jest/globals'
 
 import { buildSupportingMaterialsCompositeRequest } from './supporting-materials-request-builder.js'
-import {
-  refIdFile,
-  refIdFileQuery,
-  refIdLinkFile
-} from './file-upload-request-builder.js'
-import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
-import { fetchFile } from '../../common/helpers/file/file-utils.js'
+import * as fileUploadAndLinkRequestBuilder from './file-upload-and-link-request-builder.js'
+import * as fileUtils from '../../common/helpers/file/file-utils.js'
 
-jest.mock('../../common/helpers/file/file-utils.js', () => ({
-  fetchFile: jest.fn()
-}))
+const mockCompositeRequest = /** @type {any} */ ({
+  allOrNone: true,
+  compositeRequest: [
+    { referenceId: 'file' },
+    { referenceId: 'fileQuery' },
+    { referenceId: 'linkFile' }
+  ]
+})
+
+const mockFileData = {
+  file: Buffer.from('mock file content'),
+  extension: 'pdf'
+}
+
+jest.spyOn(fileUtils, 'fetchFile').mockResolvedValue(mockFileData)
+
+jest
+  .spyOn(
+    fileUploadAndLinkRequestBuilder,
+    'buildFileUploadAndLinkCompositeRequest'
+  )
+  .mockReturnValue(mockCompositeRequest)
 
 describe('buildSupportingMaterialsCompositeRequest', () => {
-  const apiVersion = 'v62.0'
-
   beforeEach(() => {
-    spyOnConfig('salesforce', {
-      baseUrl: 'https://salesforce.test',
-      authUrl: undefined,
-      clientId: 'client-id',
-      clientSecret: 'client-secret',
-      apiVersion,
-      requestTimeoutMs: 1000
-    })
+    jest.clearAllMocks()
   })
 
-  test('should return composite request with upload, id query, and link', async () => {
-    const fileBuffer = Buffer.from('file-content')
-    jest.mocked(fetchFile).mockResolvedValue({
-      file: fileBuffer,
-      extension: 'pdf'
-    })
+  test('should fetch file and then call buildFileUploadAndLinkCompositeRequest with correct parameters and return the result', async () => {
+    const caseId = 'case-456'
+    const sectionKey = 'section-2'
+    const questionKey = 'question-2'
+    const filePath = '/path/to/document.pdf'
 
     const result = await buildSupportingMaterialsCompositeRequest(
-      'CASE-001',
-      'section-1',
-      'question-1',
-      's3/path/file.pdf'
+      caseId,
+      sectionKey,
+      questionKey,
+      filePath
     )
 
-    expect(fetchFile).toHaveBeenCalledWith('s3/path/file.pdf')
-    expect(result.allOrNone).toBe(true)
-    expect(result.compositeRequest).toHaveLength(3)
+    const expectedBase64 = mockFileData.file.toString('base64')
+    const expectedPath = `${sectionKey}.${questionKey}.${mockFileData.extension}`
 
-    expect(result.compositeRequest[0]).toEqual({
-      method: 'POST',
-      url: `/services/data/${apiVersion}/sobjects/ContentVersion`,
-      referenceId: refIdFile,
-      body: {
-        Title: 'question-1',
-        PathOnClient: 'section-1.question-1.pdf',
-        VersionData: fileBuffer.toString('base64')
-      }
-    })
-
-    expect(result.compositeRequest[1]).toEqual({
-      method: 'GET',
-      url: `/services/data/${apiVersion}/sobjects/ContentVersion/@{${refIdFile}.id}?fields=ContentDocumentId`,
-      referenceId: refIdFileQuery
-    })
-
-    expect(result.compositeRequest[2]).toEqual({
-      method: 'POST',
-      url: `/services/data/${apiVersion}/sobjects/ContentDocumentLink`,
-      referenceId: refIdLinkFile,
-      body: {
-        LinkedEntityId: 'CASE-001',
-        ContentDocumentId: `@{${refIdFileQuery}.ContentDocumentId}`,
-        ShareType: 'V',
-        Visibility: 'AllUsers'
-      }
-    })
-  })
-
-  test('should use API version from config in each sub-request URL', async () => {
-    jest.mocked(fetchFile).mockResolvedValue({
-      file: Buffer.from('file-content'),
-      extension: 'png'
-    })
-
-    const result = await buildSupportingMaterialsCompositeRequest(
-      'CASE-002',
-      'section-2',
-      'question-2',
-      's3/path/file.png'
-    )
-
-    for (const request of result.compositeRequest) {
-      expect(request.url).toContain(`/services/data/${apiVersion}/`)
-    }
+    expect(fileUtils.fetchFile).toHaveBeenCalledWith(filePath)
+    expect(
+      fileUploadAndLinkRequestBuilder.buildFileUploadAndLinkCompositeRequest
+    ).toHaveBeenCalledWith(expectedBase64, filePath, expectedPath, caseId)
+    expect(result).toBe(mockCompositeRequest)
   })
 })

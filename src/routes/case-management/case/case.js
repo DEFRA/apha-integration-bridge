@@ -15,10 +15,12 @@ import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-c
 import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-request-builder.js'
 import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/supporting-materials-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/file-upload-request-builder.js'
+import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/application-file-request-builder.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
  * @import {Request} from '@hapi/hapi'
+ * @import {Logger} from 'pino'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -72,7 +74,7 @@ const options = {
 async function handler(request, h) {
   await runCaseCreationFlow(request, async () => {
     const [applicationId, customerId] = await Promise.all([
-      createApplication(request),
+      createApplicationAndFile(request),
       createCustomerAccount(request)
     ])
 
@@ -121,6 +123,23 @@ async function createCase(request, applicationId, customerId) {
  * @param {Request} request
  * @returns {Promise<string|null>}
  */
+async function createApplicationAndFile(request) {
+  const applicationId = await createApplication(request)
+
+  if (applicationId) {
+    const files = await getLinkedFiles(request, applicationId)
+    if (files.length === 0) {
+      await uploadApplicationFile(request, applicationId)
+    }
+  }
+
+  return applicationId
+}
+
+/**
+ * @param {Request} request
+ * @returns {Promise<string|null>}
+ */
 async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const compositeRequest = buildApplicationCreationCompositeRequest(payload)
@@ -132,6 +151,80 @@ async function createApplication(request) {
     )
   }, retriesConfig)
 
+  const compositeResponse = handleCompositeResponse(salesforceResponse)
+  return (
+    compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
+      ?.body?.id || null
+  )
+}
+
+/**
+ * @param {Request} request
+ * @param {string} applicationId
+ * @returns {Promise<any[]>}
+ */
+async function getLinkedFiles(request, applicationId) {
+  const salesforceResponse = await retry(async () => {
+    return await salesforceClient.getLinkedFiles(applicationId, request.logger)
+  }, retriesConfig)
+  return salesforceResponse?.records || []
+}
+
+/**
+ * @param {Request} request
+ * @param {string} applicationId
+ */
+async function uploadApplicationFile(request, applicationId) {
+  const payload = /** @type {CreateCasePayload} */ (request.payload)
+  const compositeRequest = buildApplicationFileCompositeRequest(
+    payload,
+    applicationId
+  )
+
+  const salesforceResponse = await retry(async () => {
+    return await salesforceClient.sendComposite(
+      compositeRequest,
+      request.logger
+    )
+  }, retriesConfig)
+
+  handleCompositeResponse(salesforceResponse)
+}
+
+/**
+ * @param {string} caseId
+ * @param {string} sectionKey
+ * @param {string} questionKey
+ * @param {string} filePath
+ * @param {Logger} logger
+ */
+async function uploadCaseFile(
+  caseId,
+  sectionKey,
+  questionKey,
+  filePath,
+  logger
+) {
+  const compositeRequest = await buildSupportingMaterialsCompositeRequest(
+    caseId,
+    sectionKey,
+    questionKey,
+    filePath
+  )
+
+  const salesforceResponse = await retry(async () => {
+    return await salesforceClient.sendComposite(compositeRequest, logger)
+  }, retriesConfig)
+
+  handleCompositeResponse(salesforceResponse)
+}
+
+/**
+ * @param {object} salesforceResponse
+ * @returns {object[]}
+ * @throws {Error} Throws an error if any composite operation failed
+ */
+function handleCompositeResponse(salesforceResponse) {
   const compositeResponse = salesforceResponse?.compositeResponse
   const failedCompositeItems = Array.isArray(compositeResponse)
     ? compositeResponse.filter(
@@ -148,10 +241,7 @@ async function createApplication(request) {
     compositeError.failedItems = failedCompositeItems
     throw compositeError
   }
-  return (
-    compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
-      ?.body?.id || null
-  )
+  return compositeResponse
 }
 /**
  * @param {Request} request
@@ -185,19 +275,20 @@ async function uploadSupportingMaterials(request, caseId) {
         questionAnswer.answer.type === 'file' &&
         questionAnswer.answer.value.path
       ) {
-        const compositeRequest = await buildSupportingMaterialsCompositeRequest(
-          caseId,
-          section.sectionKey,
-          questionAnswer.questionKey,
-          questionAnswer.answer.value.path
+        const filePath = questionAnswer.answer.value.path
+        const caseFiles = await getLinkedFiles(request, caseId)
+        const isFileAlreadyUploaded = caseFiles.some(
+          (file) => file.ContentDocument.Title === filePath
         )
-
-        await retry(async () => {
-          return await salesforceClient.sendComposite(
-            compositeRequest,
+        if (!isFileAlreadyUploaded) {
+          await uploadCaseFile(
+            caseId,
+            section.sectionKey,
+            questionAnswer.questionKey,
+            filePath,
             request.logger
           )
-        }, retriesConfig)
+        }
       }
     }
   }

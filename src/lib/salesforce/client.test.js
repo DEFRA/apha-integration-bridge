@@ -389,6 +389,47 @@ describe('salesforce client', () => {
     ).rejects.toThrow('Salesforce access token is required for sendQuery')
   })
 
+  test('getLinkedFiles returns linked file data for given entity', async () => {
+    const entityId = 'entity-123'
+    const mockLinkedFilesResponse = {
+      totalSize: 2,
+      done: true,
+      records: [
+        {
+          ContentDocumentId: 'doc-001',
+          ContentDocument: { Title: 'file1.pdf' }
+        },
+        {
+          ContentDocumentId: 'doc-002',
+          ContentDocument: { Title: 'file2.json' }
+        }
+      ]
+    }
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockLinkedFilesResponse))
+      )
+
+    const result = await salesforceClient.getLinkedFiles(entityId)
+
+    expect(result).toEqual(mockLinkedFilesResponse)
+
+    const expectedQuery = `SELECT ContentDocumentId, ContentDocument.Title FROM ContentDocumentLink WHERE LinkedEntityId = '${entityId}'`
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/query?q=' + encodeURIComponent(expectedQuery)),
+      expect.objectContaining({
+        method: HTTPMethods.GET,
+        headers: {
+          Authorization: 'Bearer token-123'
+        }
+      })
+    )
+  })
+
   test('throws a timeout error when fetch aborts', async () => {
     const abortError = new Error('Aborted')
     abortError.name = 'AbortError'

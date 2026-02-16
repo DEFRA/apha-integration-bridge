@@ -296,6 +296,16 @@ class SalesforceClient {
   }
 
   /**
+   * @param {string} entityId
+   * @returns {Promise<any>}
+   */
+  async getLinkedFiles(entityId, logger) {
+    const token = await this.getAccessToken(logger)
+    const query = `SELECT ContentDocumentId, ContentDocument.Title FROM ContentDocumentLink WHERE LinkedEntityId = '${entityId}'`
+    return this.sendQuery(query, token, logger)
+  }
+
+  /**
    * @param {(typeof HTTPMethods.PATCH | typeof HTTPMethods.POST)} method
    * @param {string} relativePath
    * @param {object} payload
