@@ -27,7 +27,12 @@ const LiveStockUnits = baseData({
       .min(0)
       .integer()
       .required()
-      .description('Number of animals within the livestock unit')
+      .description('Number of animals within the livestock unit'),
+    species: Joi.string()
+      .required()
+      .allow(null)
+      .label('Species')
+      .description('Species of animals within the livestock unit')
   })
   .label('Livestock unit')
 
@@ -44,11 +49,13 @@ const Facilities = baseData({
       .description(
         `The category of facility - e.g. an 'Animal Breeding' or 'ABP Establishment, Plant or Operator'`
       ),
-    businessActivityCode: Joi.string()
+    businessActivity: Joi.string()
       .required()
       .allow(null)
-      .label('Business activity code')
-      .description('Code for the class of activity that occurs on the premises')
+      .label('Business activity')
+      .description(
+        'A description of the type of business undertaken on the premises'
+      )
   })
   .label('Facility')
 
