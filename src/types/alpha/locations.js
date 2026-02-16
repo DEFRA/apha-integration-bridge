@@ -31,6 +31,27 @@ const LiveStockUnits = baseData({
   })
   .label('Livestock unit')
 
+const Facilities = baseData({
+  plural: 'facilities',
+  singular: 'facility'
+})
+  .keys({
+    name: Joi.string().required().allow(null).label('Facility name'),
+    typeCode: Joi.string()
+      .required()
+      .allow(null)
+      .label('Type code for facility')
+      .description(
+        'A non-human readable classification of facilities by their type or purpose'
+      ),
+    businessActivityCode: Joi.string()
+      .required()
+      .allow(null)
+      .label('Business activity code')
+      .description('Code for the class of activity that occurs on the premises')
+  })
+  .label('Facility')
+
 const AddressableObjectData = Joi.object({
   startNumber: Joi.number()
     .allow(null)
@@ -77,15 +98,16 @@ export const Address = Joi.object({
   // > commented because not strictly necessary for WFM first use case
   // > unless this is what is meant by local authority
   // administrativeAreaCounty: Joi.string().allow(null, ''), // maps ADMINISTRATIVE_AREA
-  postcode: Joi.string().allow(null).required(),
+  postcode: Joi.string().allow(null).required()
   // ukInternalCode: Joi.string().allow(null).required(), // not sure what this is?
-  countryCode: Joi.string().allow(null).required()
+  // countryCode: Joi.string().allow(null).required()
 })
 
 export const Locations = baseData({
   singular: 'location',
   plural: 'locations'
 }).keys({
+  name: Joi.string().required().allow(null).label('Location name'),
   address: Address.required()
     .label('Address')
     .description('Address of the location'),
@@ -94,5 +116,6 @@ export const Locations = baseData({
     .items(LiveStockUnits)
     .required()
     .label('Livestock units'),
+  facilities: Joi.array().items(Facilities).required().label('Facilities'),
   relationships: Joi.object({}).required()
 })

@@ -73,7 +73,7 @@ export const Workorders = WorkordersData.keys({
         singular: 'facility'
       })
     ).description('Facilities involved in the workorder'),
-    locations: relationshipToMany(
+    location: relationshipToOne(
       baseData({
         plural: 'locations',
         singular: 'location'

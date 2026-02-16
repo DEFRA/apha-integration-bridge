@@ -9,7 +9,7 @@ import {
   HTTPError
 } from '../../lib/http/http-exception.js'
 
-import { all } from './workorders.mocks.js'
+import { workorders } from './workorders.mocks.js'
 import { PaginatedLink } from '../../types/alpha/links.js'
 import { PaginationSchema } from '../../types/alpha/pagination.js'
 
@@ -147,7 +147,7 @@ export async function handler(request, h) {
       selfQueryParams.set('endActivationDate', request.query.endActivationDate)
     }
 
-    const filteredAll = all.filter((workOrder) => {
+    const filteredAll = workorders.filter((workOrder) => {
       const activationDate = new Date(workOrder.activationDate)
       const start = new Date(request.query.startActivationDate)
       const end = new Date(request.query.endActivationDate)
