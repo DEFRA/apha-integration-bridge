@@ -31,6 +31,27 @@ const LiveStockUnits = baseData({
   })
   .label('Livestock unit')
 
+const Facilities = baseData({
+  plural: 'facilities',
+  singular: 'facility'
+})
+  .keys({
+    name: Joi.string().required().allow(null).label('Facility name'),
+    typeCode: Joi.string()
+      .required()
+      .allow(null)
+      .label('Type code for facility')
+      .description(
+        'A non-human readable classification of facilities by their type or purpose'
+      ),
+    businessActivityCode: Joi.string()
+      .required()
+      .allow(null)
+      .label('Business activity code')
+      .description('Code for the class of activity that occurs on the premises')
+  })
+  .label('Facility')
+
 const AddressableObjectData = Joi.object({
   startNumber: Joi.number()
     .allow(null)
@@ -95,5 +116,6 @@ export const Locations = baseData({
     .items(LiveStockUnits)
     .required()
     .label('Livestock units'),
+  facilities: Joi.array().items(Facilities).required().label('Facilities'),
   relationships: Joi.object({}).required()
 })

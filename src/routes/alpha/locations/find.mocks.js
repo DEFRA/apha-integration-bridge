@@ -37,6 +37,14 @@ export const commodity3 = {
   animalQuantities: 20
 }
 
+const facility1 = {
+  type: 'facilities',
+  id: 'F12345',
+  name: 'Birchwood Kennels',
+  typeCode: 'ABP',
+  businessActivityCode: 'ABP-CC'
+}
+
 export const location1 = {
   type: 'locations',
   id: 'L123456',
@@ -44,6 +52,7 @@ export const location1 = {
   name: null,
   address: address1,
   livestockUnits: [commodity1],
+  facilities: [],
   relationships: {}
 }
 
@@ -54,6 +63,7 @@ export const location2 = {
   name: 'Big Barn Farm',
   address: address1,
   livestockUnits: [commodity2, commodity3],
+  facilities: [facility1],
   relationships: {}
 }
 
