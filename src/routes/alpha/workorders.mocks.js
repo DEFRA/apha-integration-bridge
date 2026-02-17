@@ -32,8 +32,13 @@ export const workorder1 = {
         id: 'L123456'
       }
     },
-    commodities: {
-      data: []
+    livestockUnits: {
+      data: [
+        {
+          type: 'animal-commodities',
+          id: 'U000012'
+        }
+      ]
     },
     facilities: {
       data: []
@@ -89,6 +94,9 @@ export const workorder2 = {
         type: 'locations',
         id: 'L123457'
       }
+    },
+    livestockUnits: {
+      data: []
     },
     facilities: {
       data: [

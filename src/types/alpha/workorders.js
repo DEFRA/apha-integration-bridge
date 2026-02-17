@@ -79,11 +79,11 @@ export const Workorders = WorkordersData.keys({
         singular: 'location'
       })
     ).description('Locations involved during the workorder'),
-    commodities: relationshipToMany(
+    livestockUnits: relationshipToMany(
       baseData({
-        plural: 'commodities',
-        singular: 'comodities'
+        plural: 'animal-commodities',
+        singular: 'animal-commodity'
       })
-    ).description('Commodities to be inspected during the workorder')
+    ).description('Livestock units to be inspected during the workorder')
   }).required()
 })
