@@ -69,9 +69,17 @@ export const routingPlugin = {
           server.logger.warn(
             `Route in ${filePath} does not export a default route or handler`
           )
-
           continue
         }
+      }
+
+      /**
+       * Skip routes that are explicitly disabled (null)
+       * This allows conditional route registration based on feature flags
+       */
+      if (routes === null) {
+        server.logger.debug(`Route in ${filePath} is disabled, skipping`)
+        continue
       }
 
       if (!Array.isArray(routes)) {

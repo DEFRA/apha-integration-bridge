@@ -332,6 +332,23 @@ const config = convict({
     doc: 'If this application running in the development environment',
     format: Boolean,
     default: isDevelopment
+  },
+  cognito: {
+    tokenUrl: {
+      doc: 'Cognito OAuth2 token endpoint URL. Only used in lower environments for /oauth2/token endpoint.',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'COGNITO_TOKEN_URL'
+    }
+  },
+  featureFlags: {
+    isTokenEndpointEnabled: {
+      doc: 'Enable /oauth2/token endpoint (lower environments only)',
+      format: Boolean,
+      default: !isProduction,
+      env: 'COGNITO_TOKEN_ENDPOINT_ENABLED'
+    }
   }
 })
 

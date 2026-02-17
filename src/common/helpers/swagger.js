@@ -22,6 +22,11 @@ export const openApi = {
     },
     tags: [
       {
+        name: 'auth',
+        description:
+          'Authentication endpoints for obtaining access tokens. Available in lower environments only.'
+      },
+      {
         name: 'holdings',
         description:
           'Check if a county parish holding (CPH) number exists in Sam and get basic information about the holding.'
