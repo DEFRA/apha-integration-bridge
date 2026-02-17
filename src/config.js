@@ -347,7 +347,7 @@ const config = convict({
       doc: 'Enable /oauth2/token endpoint (lower environments only)',
       format: Boolean,
       default: !isProduction,
-      env: 'ENABLE_COGNITO_TOKEN_ENDPOINT'
+      env: 'COGNITO_TOKEN_ENDPOINT_ENABLED'
     }
   }
 })
