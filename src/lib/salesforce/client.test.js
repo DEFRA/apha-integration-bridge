@@ -11,6 +11,7 @@ import { salesforceClient } from './client.js'
 import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
 import * as jwtBearer from './jwt-bearer.js'
 import { HTTPMethods } from '../http/http-methods.js'
+import { CaseStatus } from '../../types/salesforce/case-status.js'
 
 const mockLogger = /** @type {any} */ ({
   debug: jest.fn(),
@@ -248,7 +249,7 @@ describe('salesforce client', () => {
     )
   })
 
-  test('createCase returns response body on success', async () => {
+  test('createOrUpdateCase returns response body on success', async () => {
     const mockedResponse = {
       id: 'CASE-001',
       success: true,
@@ -263,13 +264,13 @@ describe('salesforce client', () => {
       )
 
     const payload = {
-      Status: 'Preparing',
+      Status: CaseStatus.PREPARING,
       Priority: 'Medium',
       APHA_Application__c: 'APP-123',
       ContactId: 'CONTACT-456'
     }
 
-    const result = await salesforceClient.createCase(
+    const result = await salesforceClient.createOrUpdateCase(
       payload,
       mockApplicationReference,
       mockLogger
@@ -291,7 +292,7 @@ describe('salesforce client', () => {
     )
   })
 
-  test('createCase throws with sanitised logging when Salesforce returns error', async () => {
+  test('createOrUpdateCase throws with sanitised logging when Salesforce returns error', async () => {
     const errorMessage = 'Unexpected character...'
     mockFetch
       .mockResolvedValueOnce(
@@ -307,7 +308,11 @@ describe('salesforce client', () => {
       )
 
     await expect(
-      salesforceClient.createCase({}, mockApplicationReference, mockLogger)
+      salesforceClient.createOrUpdateCase(
+        {},
+        mockApplicationReference,
+        mockLogger
+      )
     ).rejects.toThrow(/Salesforce PATCH request failed/)
 
     expect(mockLogger.error).toHaveBeenCalledWith(

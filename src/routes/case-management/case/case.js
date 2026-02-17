@@ -16,9 +16,10 @@ import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-
 import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/supporting-materials-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/file-upload-request-builder.js'
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/application-file-request-builder.js'
+import { CaseStatus } from '../../../types/salesforce/case-status.js'
 
 /**
- * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
+ * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
  * @import {Request} from '@hapi/hapi'
  * @import {Logger} from 'pino'
  */
@@ -80,6 +81,8 @@ async function handler(request, h) {
 
     const caseId = await createCase(request, applicationId, customerId)
     await uploadSupportingMaterials(request, caseId)
+    await addKeyFacts(request, caseId)
+    await updateCaseStatus(request, CaseStatus.NEW)
   })
 
   return h.response().code(201)
@@ -109,7 +112,7 @@ async function createCase(request, applicationId, customerId) {
   const createCasePayload = buildCaseCreationPayload(applicationId, customerId)
 
   const salesforceResponse = await retry(async () => {
-    return await salesforceClient.createCase(
+    return await salesforceClient.createOrUpdateCase(
       createCasePayload,
       applicationReference,
       request.logger
@@ -118,6 +121,32 @@ async function createCase(request, applicationId, customerId) {
 
   return salesforceResponse.id || null
 }
+
+/**
+ * @param {Request} request
+ * @param {string} status
+ */
+async function updateCaseStatus(request, status) {
+  const payload = /** @type {CreateCasePayload} */ (request.payload)
+  const applicationReference = payload.applicationReferenceNumber
+  const updateCasePayload = /** @type {UpdateCaseDetailsPayload} */ ({
+    Status: status
+  })
+
+  await retry(async () => {
+    return await salesforceClient.createOrUpdateCase(
+      updateCasePayload,
+      applicationReference,
+      request.logger
+    )
+  }, retriesConfig)
+}
+
+/**
+ * @param {Request} request
+ * @param {string} caseId
+ */
+async function addKeyFacts(request, caseId) {}
 
 /**
  * @param {Request} request
@@ -269,6 +298,7 @@ async function createCustomerAccount(request) {
  */
 async function uploadSupportingMaterials(request, caseId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
+  const caseFiles = await getLinkedFiles(request, caseId)
   for (const section of payload.sections) {
     for (const questionAnswer of section.questionAnswers) {
       if (
@@ -276,7 +306,6 @@ async function uploadSupportingMaterials(request, caseId) {
         questionAnswer.answer.value.path
       ) {
         const filePath = questionAnswer.answer.value.path
-        const caseFiles = await getLinkedFiles(request, caseId)
         const isFileAlreadyUploaded = caseFiles.some(
           (file) => file.ContentDocument.Title === filePath
         )
