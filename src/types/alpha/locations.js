@@ -27,7 +27,12 @@ const LiveStockUnits = baseData({
       .min(0)
       .integer()
       .required()
-      .description('Number of animals within the livestock unit')
+      .description('Number of animals within the livestock unit'),
+    species: Joi.string()
+      .required()
+      .allow(null)
+      .label('Species')
+      .description('Species of animals within the livestock unit')
   })
   .label('Livestock unit')
 
@@ -37,18 +42,20 @@ const Facilities = baseData({
 })
   .keys({
     name: Joi.string().required().allow(null).label('Facility name'),
-    typeCode: Joi.string()
+    facilityType: Joi.string()
       .required()
       .allow(null)
-      .label('Type code for facility')
+      .label('Facility type')
       .description(
-        'A non-human readable classification of facilities by their type or purpose'
+        `The category of facility - e.g. an 'Animal Breeding' or 'ABP Establishment, Plant or Operator'`
       ),
-    businessActivityCode: Joi.string()
+    businessActivity: Joi.string()
       .required()
       .allow(null)
-      .label('Business activity code')
-      .description('Code for the class of activity that occurs on the premises')
+      .label('Business activity')
+      .description(
+        'A description of the type of business undertaken on the premises'
+      )
   })
   .label('Facility')
 
@@ -98,9 +105,9 @@ export const Address = Joi.object({
   // > commented because not strictly necessary for WFM first use case
   // > unless this is what is meant by local authority
   // administrativeAreaCounty: Joi.string().allow(null, ''), // maps ADMINISTRATIVE_AREA
-  postcode: Joi.string().allow(null).required()
+  postcode: Joi.string().allow(null).required(),
   // ukInternalCode: Joi.string().allow(null).required(), // not sure what this is?
-  // countryCode: Joi.string().allow(null).required()
+  countryCode: Joi.string().allow(null).required()
 })
 
 export const Locations = baseData({

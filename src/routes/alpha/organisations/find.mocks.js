@@ -16,7 +16,8 @@ const address1 = {
   street: 'Street',
   locality: null,
   town: 'Town',
-  postcode: '1AA A11'
+  postcode: '1AA A11',
+  countryCode: 'GB'
 }
 
 export const organisation1 = {

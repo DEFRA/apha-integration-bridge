@@ -16,7 +16,8 @@ const address1 = {
   street: 'Street',
   locality: null,
   town: 'Town',
-  postcode: '1AA A11'
+  postcode: '1AA A11',
+  countryCode: null
 }
 
 export const customer1 = {
