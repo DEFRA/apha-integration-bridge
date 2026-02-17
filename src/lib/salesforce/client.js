@@ -4,8 +4,7 @@ import { HTTPMethods } from '../http/http-methods.js'
 import { buildJWTAssertion } from './jwt-bearer.js'
 
 /**
- * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
- * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
+ * @import {CaseDetailsPayload, UpdateCaseDetailsPayload} from '../../types/case-management/case.js'
  * @import {Logger} from 'pino'
  */
 
@@ -282,11 +281,12 @@ class SalesforceClient {
   }
 
   /**
-   * @param {object} payload The request payload to forward.
+   * @param {CaseDetailsPayload | UpdateCaseDetailsPayload} payload
+   * @param {string} applicationReference
    * @param {Logger} [logger]
    * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create case response.
    */
-  async createCase(payload, applicationReference, logger) {
+  async createOrUpdateCase(payload, applicationReference, logger) {
     return this.sendRequest(
       HTTPMethods.PATCH,
       `sobjects/Case/APHA_ExternalReferenceNumber__c/${applicationReference}`,

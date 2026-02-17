@@ -4,6 +4,7 @@ import hapiPino from 'hapi-pino'
 import * as route from './{caseId}.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
+import { CaseStatus } from '../../../types/salesforce/case-status.js'
 
 const ENDPOINT_PATH_TEMPLATE = '/case-management/case/{caseId}'
 const ENDPOINT_METHOD = 'GET'
@@ -28,7 +29,7 @@ beforeEach(() => {
 const mockCaseRecord = {
   Id: TEST_CASE_ID,
   CaseNumber: '00001234',
-  Status: 'Preparing',
+  Status: CaseStatus.PREPARING,
   Priority: 'Medium',
   ContactId: '003XYZ987654321',
   CreatedDate: '2026-02-09T10:30:00.000Z',
@@ -108,7 +109,7 @@ describe('GET /case-management/case/{caseId}', () => {
       expect(body.data).toHaveProperty('id', TEST_CASE_ID)
       expect(body.data.attributes).toMatchObject({
         caseNumber: '00001234',
-        status: 'Preparing',
+        status: CaseStatus.PREPARING,
         priority: 'Medium',
         contactId: '003XYZ987654321'
       })

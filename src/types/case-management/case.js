@@ -42,11 +42,19 @@ const GuestCustomerDetailsSchema = Joi.object({
 })
 
 /**
- * @typedef {Object} CaseDetails
+ * @typedef {Object} CaseDetailsPayload
  * @property {string} Status
  * @property {string} Priority
  * @property {string} APHA_Application__c
  * @property {string} ContactId
+ */
+
+/**
+ * @typedef {Object} UpdateCaseDetailsPayload
+ * @property {string} [Status]
+ * @property {string} [Priority]
+ * @property {string} [APHA_Application__c]
+ * @property {string} [ContactId]
  */
 
 /**
@@ -103,7 +111,7 @@ const VersionSchema = Joi.object({
 const AnswerSchema = Joi.object({
   type: Joi.string().required(),
   value: Joi.any().required(),
-  displayText: Joi.string().required()
+  displayText: Joi.string().required().allow('')
 })
 
 /**
