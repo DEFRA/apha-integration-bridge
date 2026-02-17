@@ -1,11 +1,15 @@
 import Joi from 'joi'
 import { Buffer } from 'buffer'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import {
   HTTPExceptionSchema,
   HTTPException
 } from '../../lib/http/http-exception.js'
 import { config } from '../../config.js'
+
+const __dirname = new URL('.', import.meta.url).pathname
 
 /**
  * @typedef {import('@hapi/hapi').Request} Request
@@ -102,19 +106,10 @@ const options = {
   tags: ['api', 'auth'],
   description:
     'Obtain Cognito access token using client credentials (Lower environments only)',
-  notes: `
-This endpoint is a convenience proxy to Cognito's OAuth2 token endpoint.
-It is **only available in local and dev environments** to help developers
-easily obtain access tokens for testing.
-
-**Usage:**
-1. Provide your \`client_id\` and \`client_secret\`
-2. Set \`grant_type\` to \`client_credentials\`
-3. The endpoint will return a Cognito access token
-4. Use the \`access_token\` from the response in the "Authorize" button above
-
-**Note:** This endpoint is disabled in production environments.
-`,
+  notes: fs.readFileSync(
+    path.join(decodeURIComponent(__dirname), 'token.md'),
+    'utf8'
+  ),
   plugins: {
     'hapi-swagger': {
       id: 'oauth2-token',
@@ -140,6 +135,6 @@ easily obtain access tokens for testing.
   }
 }
 
-const isEnabled = config.get('cognito.isTokenEndpointEnabled')
+const isEnabled = config.get('featureFlags.isTokenEndpointEnabled')
 
 export default isEnabled ? { method: 'POST', handler, options } : null

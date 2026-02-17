@@ -340,11 +340,13 @@ const config = convict({
       nullable: true,
       default: null,
       env: 'COGNITO_TOKEN_URL'
-    },
+    }
+  },
+  featureFlags: {
     isTokenEndpointEnabled: {
       doc: 'Enable /oauth2/token endpoint (lower environments only)',
       format: Boolean,
-      default: false,
+      default: !isProduction,
       env: 'ENABLE_COGNITO_TOKEN_ENDPOINT'
     }
   }
