@@ -45,6 +45,8 @@ export const openApi = {
       }
     },
     grouping: 'tags',
-    sortEndpoints: 'ordered'
+    sortEndpoints: 'ordered',
+    documentationPage: false,
+    swaggerUI: false
   }
 }
