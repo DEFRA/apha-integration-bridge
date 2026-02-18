@@ -178,7 +178,7 @@ export async function handler(request, h) {
      */
     let nextLink
 
-    if (page * pageSize > filteredAll.length) {
+    if (page * pageSize < filteredAll.length) {
       const nextQueryParams = new URLSearchParams(selfQueryParams.toString())
 
       nextQueryParams.set('page', String(page + 1))
