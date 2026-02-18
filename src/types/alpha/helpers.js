@@ -40,4 +40,4 @@ export const relationshipToOne = (entityDataSchema) =>
 export const relationshipToMany = (entityDataSchema) =>
   Joi.object({
     data: Joi.array().items(entityDataSchema).required()
-  })
+  }).required()
