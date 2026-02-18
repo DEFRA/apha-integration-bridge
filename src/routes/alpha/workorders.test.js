@@ -109,6 +109,32 @@ describe('Workorders', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  test('returns filtered by country if the query parameter is provided', async () => {
+    const queryParams = new URLSearchParams({
+      startActivationDate: new Date('2024-01-01').toISOString(),
+      page: '1',
+      pageSize: '1',
+      endActivationDate: new Date('2030-01-01').toISOString(),
+      country: 'Scotland'
+    })
+
+    const firstPage = await server.inject({
+      method: 'GET',
+      url: `/workorders?${queryParams.toString()}`
+    })
+
+    expect(firstPage.result).toMatchObject({
+      data: [workorder2],
+      links: {
+        self: `/workorders?${queryParams.toString()}`,
+        next: null,
+        prev: null
+      }
+    })
+
+    expect(firstPage.statusCode).toBe(200)
+  })
+
   test.each([
     [
       new URLSearchParams({
