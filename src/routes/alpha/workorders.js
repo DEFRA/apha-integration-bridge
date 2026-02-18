@@ -54,7 +54,8 @@ export const options = {
         .required()
         .description(
           'Paginate workorders before or on this end activation date'
-        )
+        ),
+      country: Joi.string().description('Country to filter results by')
     }),
     headers: Joi.object({
       accept: Joi.string()
@@ -135,24 +136,31 @@ export async function handler(request, h) {
   }
 
   try {
-    const { page, pageSize } = request.query
+    const { page, pageSize, country, startActivationDate, endActivationDate } =
+      request.query
 
     const selfQueryParams = new URLSearchParams([
-      ['startActivationDate', request.query.startActivationDate],
+      ['startActivationDate', startActivationDate],
       ['page', String(page)],
       ['pageSize', String(pageSize)]
     ])
 
     if (endActivationDate) {
-      selfQueryParams.set('endActivationDate', request.query.endActivationDate)
+      selfQueryParams.set('endActivationDate', endActivationDate)
+    }
+
+    if (country) {
+      selfQueryParams.set('country', country)
     }
 
     const filteredAll = workorders.filter((workOrder) => {
       const activationDate = new Date(workOrder.activationDate)
-      const start = new Date(request.query.startActivationDate)
-      const end = new Date(request.query.endActivationDate)
+      const start = new Date(startActivationDate)
+      const end = new Date(endActivationDate)
 
-      return activationDate >= start && activationDate < end
+      const matchesCountry = country ? workOrder.country === country : true
+
+      return activationDate >= start && activationDate < end && matchesCountry
     })
 
     /**
@@ -170,7 +178,7 @@ export async function handler(request, h) {
      */
     let nextLink
 
-    if (data.length === pageSize) {
+    if (page * pageSize > filteredAll.length) {
       const nextQueryParams = new URLSearchParams(selfQueryParams.toString())
 
       nextQueryParams.set('page', String(page + 1))
