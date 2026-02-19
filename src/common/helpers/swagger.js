@@ -46,7 +46,7 @@ export const openApi = {
     },
     grouping: 'tags',
     sortEndpoints: 'ordered',
-    documentationPage: false,
-    swaggerUI: false
+    documentationPage: true,
+    swaggerUI: true
   }
 }

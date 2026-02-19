@@ -3,9 +3,9 @@ import { describe, test, expect } from '@jest/globals'
 import { openApi } from './swagger.js'
 
 describe('openApi swagger plugin config', () => {
-  test('disables hapi-swagger documentation routes', () => {
-    expect(openApi.options.documentationPage).toBe(false)
-    expect(openApi.options.swaggerUI).toBe(false)
+  test('enables hapi-swagger documentation routes', () => {
+    expect(openApi.options.documentationPage).toBe(true)
+    expect(openApi.options.swaggerUI).toBe(true)
   })
 
   test('keeps OpenAPI JSON route', () => {
