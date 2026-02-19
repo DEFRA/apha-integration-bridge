@@ -435,6 +435,93 @@ describe('salesforce client', () => {
     )
   })
 
+  test('getKeyFacts returns key facts for given application', async () => {
+    const applicationId = 'application-123'
+    const mockKeyFactsResponse = {
+      totalSize: 2,
+      done: true,
+      records: [
+        {
+          Id: 'keyfact-001',
+          APHA_Key__c: 'CaseCategory',
+          APHA_Value__c: 'Import'
+        },
+        {
+          Id: 'keyfact-002',
+          APHA_Key__c: 'InspectionType',
+          APHA_Value__c: 'Documentary'
+        }
+      ]
+    }
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockKeyFactsResponse))
+      )
+
+    const result = await salesforceClient.getKeyFacts(applicationId)
+
+    expect(result).toEqual(mockKeyFactsResponse)
+
+    const expectedQuery = `SELECT ID, APHA_Key__c, APHA_Value__c, APHA_Entity_Type__c, APHA_Status__c, APHA_Object_API_Name__c, APHA_Record_Id__c FROM APHA_KeyFact__c WHERE APHA_Application__c='${applicationId}'`
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/query?q=' + encodeURIComponent(expectedQuery)),
+      expect.objectContaining({
+        method: HTTPMethods.GET,
+        headers: {
+          Authorization: 'Bearer token-123'
+        }
+      })
+    )
+  })
+
+  test('addKeyFacts posts composite sobjects payload and returns response body', async () => {
+    const keyFactsRequest = {
+      allOrNone: false,
+      records: [
+        {
+          attributes: { type: 'APHA_KeyFact__c' },
+          APHA_Key__c: 'CaseCategory',
+          APHA_Value__c: 'Import'
+        }
+      ]
+    }
+
+    const mockAddKeyFactsResponse = [
+      {
+        id: 'a01xx0000001ABC',
+        success: true,
+        errors: []
+      }
+    ]
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockAddKeyFactsResponse))
+      )
+
+    const result = await salesforceClient.addKeyFacts(keyFactsRequest)
+
+    expect(result).toEqual(mockAddKeyFactsResponse)
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/composite/sobjects'),
+      expect.objectContaining({
+        method: HTTPMethods.POST,
+        headers: {
+          Authorization: 'Bearer token-123',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(keyFactsRequest)
+      })
+    )
+  })
+
   test('throws a timeout error when fetch aborts', async () => {
     const abortError = new Error('Aborted')
     abortError.name = 'AbortError'

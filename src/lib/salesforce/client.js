@@ -297,12 +297,38 @@ class SalesforceClient {
 
   /**
    * @param {string} entityId
+   * @param {Logger} [logger]
    * @returns {Promise<any>}
    */
   async getLinkedFiles(entityId, logger) {
     const token = await this.getAccessToken(logger)
     const query = `SELECT ContentDocumentId, ContentDocument.Title FROM ContentDocumentLink WHERE LinkedEntityId = '${entityId}'`
     return this.sendQuery(query, token, logger)
+  }
+
+  /**
+   * @param {string} applicationId
+   * @param {Logger} [logger]
+   * @returns {Promise<any>}
+   */
+  async getKeyFacts(applicationId, logger) {
+    const token = await this.getAccessToken(logger)
+    const query = `SELECT ID, APHA_Key__c, APHA_Value__c, APHA_Entity_Type__c, APHA_Status__c, APHA_Object_API_Name__c, APHA_Record_Id__c FROM APHA_KeyFact__c WHERE APHA_Application__c='${applicationId}'`
+    return this.sendQuery(query, token, logger)
+  }
+
+  /**
+   * @param {object} keyFactsRequest
+   * @param {Logger} [logger]
+   * @returns {Promise<any>}
+   */
+  async addKeyFacts(keyFactsRequest, logger) {
+    return this.sendRequest(
+      HTTPMethods.POST,
+      'composite/sobjects',
+      keyFactsRequest,
+      logger
+    )
   }
 
   /**

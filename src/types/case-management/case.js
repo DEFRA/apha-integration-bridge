@@ -58,36 +58,157 @@ const GuestCustomerDetailsSchema = Joi.object({
  */
 
 /**
+ * @typedef { 'text'|'number'|'address'|'file'|'checkbox'|'date'|'email'|'name'} KeyFactType
+ */
+
+/**
+ * @typedef {Object} KeyFactItem
+ * @property {KeyFactType} type
+ * @property {string|number|string[]|Address|Name} value
+ */
+
+const KeyFactItemSchema = Joi.object({
+  type: Joi.string()
+    .valid(
+      'text',
+      'number',
+      'address',
+      'file',
+      'checkbox',
+      'date',
+      'email',
+      'name'
+    )
+    .required(),
+  value: Joi.alternatives()
+    .try(
+      Joi.string(),
+      Joi.number(),
+      Joi.array().items(Joi.string()),
+      AddressSchema,
+      NameSchema
+    )
+    .required()
+})
+
+/**
+ * @typedef {Object} TextKeyFactItem
+ * @property {'text'} type
+ * @property {string} value
+ */
+
+const TextKeyFactItemSchema = KeyFactItemSchema.keys({
+  type: Joi.string().valid('text').required(),
+  value: Joi.string().required()
+})
+
+const AllowEmptyTextKeyFactItemSchema = TextKeyFactItemSchema.keys({
+  value: Joi.string().required().allow('')
+})
+
+/**
+ * @typedef {Object} NumberKeyFactItem
+ * @property {'number'} type
+ * @property {number} value
+ */
+
+const NumberKeyFactItemSchema = KeyFactItemSchema.keys({
+  type: Joi.string().valid('number').required(),
+  value: Joi.number().required()
+})
+
+/**
+ * @typedef {Object} AddressKeyFactItem
+ * @property {'address'} type
+ * @property {Address} value
+ */
+
+const AddressKeyFactItemSchema = KeyFactItemSchema.keys({
+  type: Joi.string().valid('address').required(),
+  value: AddressSchema.required()
+})
+
+/**
+ * @typedef {Object} NameKeyFactItem
+ * @property {'name'} type
+ * @property {Name} value
+ */
+
+const NameKeyFactItemSchema = KeyFactItemSchema.keys({
+  type: Joi.string().valid('name').required(),
+  value: NameSchema.required()
+})
+
+/**
+ * @typedef {Object} RequesterKeyFactItem
+ * @property {'text'} type
+ * @property {'origin'|'destination'} value
+ */
+
+const RequesterKeyFactItemSchema = TextKeyFactItemSchema.keys({
+  type: Joi.string().valid('text').required(),
+  value: Joi.string().valid('origin', 'destination').required()
+})
+
+/**
+ * @typedef {Object} MovementDirectionKeyFactItem
+ * @property {'text'} type
+ * @property {'on'|'off'} value
+ */
+
+const MovementDirectionKeyFactItemSchema = TextKeyFactItemSchema.keys({
+  type: Joi.string().valid('text').required(),
+  value: Joi.string().valid('on', 'off').required()
+})
+
+/**
+ * @typedef {Object} FileKeyFactItem
+ * @property {'file'} type
+ * @property {string} value
+ */
+
+/**
+ * @typedef {Object} FileArrayKeyFactItem
+ * @property {'file'} type
+ * @property {string[]} value
+ */
+
+const FileArrayKeyFactItemSchema = KeyFactItemSchema.keys({
+  type: Joi.string().valid('file').required(),
+  value: Joi.array().items(Joi.string()).required()
+})
+
+/**
  * @typedef {Object} KeyFacts
- * @property {string} licenceType
- * @property {'origin'|'destination'} requester
- * @property {'on'|'off'} [movementDirection]
- * @property {string} [additionalInformation]
- * @property {number} [numberOfCattle]
- * @property {string} [originCph]
- * @property {Address} [originAddress]
- * @property {Name} [originKeeperName]
- * @property {string} [destinationCph]
- * @property {Address} [destinationAddress]
- * @property {Name} [destinationKeeperName]
- * @property {string} [requesterCph]
- * @property {string[]} [biosecurityMaps]
+ * @property {KeyFactItem} licenceType
+ * @property {RequesterKeyFactItem} requester
+ * @property {MovementDirectionKeyFactItem} [movementDirection]
+ * @property {TextKeyFactItem} [additionalInformation]
+ * @property {NumberKeyFactItem} [numberOfCattle]
+ * @property {TextKeyFactItem} [originCph]
+ * @property {AddressKeyFactItem} [originAddress]
+ * @property {NameKeyFactItem} [originKeeperName]
+ * @property {TextKeyFactItem} [destinationCph]
+ * @property {AddressKeyFactItem} [destinationAddress]
+ * @property {NameKeyFactItem} [destinationKeeperName]
+ * @property {TextKeyFactItem} [requesterCph]
+ * @property {FileArrayKeyFactItem} [biosecurityMaps]
  */
 
 const KeyFactsSchema = Joi.object({
-  licenceType: Joi.string().required(),
-  requester: Joi.string().valid('origin', 'destination').required(),
-  movementDirection: Joi.string().valid('on', 'off').optional(),
-  additionalInformation: Joi.string().allow('').optional(),
-  numberOfCattle: Joi.number().integer().optional(),
-  originCph: Joi.string().optional(),
-  originAddress: AddressSchema.optional(),
-  originKeeperName: NameSchema.optional(),
-  destinationCph: Joi.string().optional(),
-  destinationAddress: AddressSchema.optional(),
-  destinationKeeperName: NameSchema.optional(),
-  requesterCph: Joi.string().optional(),
-  biosecurityMaps: Joi.array().items(Joi.string()).optional()
+  licenceType: TextKeyFactItemSchema.required(),
+  requester: RequesterKeyFactItemSchema.required(),
+  movementDirection: MovementDirectionKeyFactItemSchema.optional(),
+  additionalInformation: AllowEmptyTextKeyFactItemSchema.optional(),
+  numberOfCattle: NumberKeyFactItemSchema.optional(),
+  originCph: TextKeyFactItemSchema.optional(),
+  originAddress: AddressKeyFactItemSchema.optional(),
+  originKeeperName: NameKeyFactItemSchema.optional(),
+  destinationCph: TextKeyFactItemSchema.optional(),
+  destinationAddress: AddressKeyFactItemSchema.optional(),
+  destinationKeeperName: NameKeyFactItemSchema.optional(),
+  requesterCph: TextKeyFactItemSchema.optional(),
+  biosecurityMaps: FileArrayKeyFactItemSchema.optional()
 })
 
 /**
@@ -191,3 +312,21 @@ export const GetCaseResponseSchema = Joi.object({
 })
   .description('Case Details')
   .label('Get Case Response')
+
+/**
+ * @typedef {Object} KeyFactRecordItem
+ * @property {Object} attributes
+ * @property {string} attributes.type
+ * @property {string} [attributes.referenceId]
+ * @property {string} APHA_Key__c
+ * @property {string} APHA_Value__c
+ * @property {string} APHA_Entity_Type__c
+ * @property {string} APHA_Status__c
+ * @property {string} APHA_Application__c
+ */
+
+/**
+ * @typedef {Object} KeyFactRequest
+ * @property {boolean} allOrNone
+ * @property {KeyFactRecordItem[]} records
+ */

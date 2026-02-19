@@ -1,8 +1,8 @@
-import { fetchFile } from '../../common/helpers/file/file-utils.js'
+import { fetchFile } from '../../../common/helpers/file/file-utils.js'
 import { buildFileUploadAndLinkCompositeRequest } from './file-upload-and-link-request-builder.js'
 
 /**
- * @import {CompositeRequest} from '../../types/salesforce/composite-request.js'
+ * @import {CompositeRequest} from '../../../types/salesforce/composite-request.js'
  */
 
 /**

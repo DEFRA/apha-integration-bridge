@@ -12,35 +12,46 @@ import hapiPino from 'hapi-pino'
 import * as route from './case.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
-import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/application-creation-request-builder.js'
-import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/supporting-materials-request-builder.js'
-import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
-import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-request-builder.js'
-import { refIdApplicationRef } from '../../../lib/salesforce/file-upload-request-builder.js'
+import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
+import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
+import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
+import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
+import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
+import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 
 /** @import { CreateCasePayload } from '../../../types/case-management/case.js' */
 
 jest.mock(
-  '../../../lib/salesforce/application-creation-request-builder.js',
+  '../../../lib/salesforce/request-builders/application-creation-request-builder.js',
   () => ({
     buildApplicationCreationCompositeRequest: jest.fn()
   })
 )
 jest.mock(
-  '../../../lib/salesforce/supporting-materials-request-builder.js',
+  '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js',
   () => ({
     buildSupportingMaterialsCompositeRequest: jest.fn()
   })
 )
 jest.mock(
-  '../../../lib/salesforce/customer-creation-request-builder.js',
+  '../../../lib/salesforce/request-builders/customer-creation-request-builder.js',
   () => ({
     buildCustomerCreationPayload: jest.fn()
   })
 )
-jest.mock('../../../lib/salesforce/case-creation-request-builder.js', () => ({
-  buildCaseCreationPayload: jest.fn()
-}))
+jest.mock(
+  '../../../lib/salesforce/request-builders/case-creation-request-builder.js',
+  () => ({
+    buildCaseCreationPayload: jest.fn()
+  })
+)
+
+jest.mock(
+  '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js',
+  () => ({
+    buildKeyFactsRequest: jest.fn()
+  })
+)
 
 const ENDPOINT_PATH = '/case-management/case'
 const ENDPOINT_METHOD = 'POST'
@@ -55,6 +66,8 @@ const mockCreateOrUpdateCase = jest.spyOn(
 const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
 const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 const mockGetLinkedFiles = jest.spyOn(salesforceClient, 'getLinkedFiles')
+const mockAddKeyFacts = jest.spyOn(salesforceClient, 'addKeyFacts')
+const mockGetKeyFacts = jest.spyOn(salesforceClient, 'getKeyFacts')
 const mockLoggerError = jest.fn()
 
 const mockSuccessfulCreateCustomerResponse = {
@@ -101,6 +114,9 @@ beforeEach(() => {
   mockGetUserEmail.mockReturnValue(null)
   mockGetLinkedFiles.mockReset()
   mockGetLinkedFiles.mockResolvedValue({ records: [] })
+  mockAddKeyFacts.mockReset()
+  mockGetKeyFacts.mockReset()
+  mockGetKeyFacts.mockResolvedValue({ records: [] })
   mockLoggerError.mockReset()
   jest.mocked(buildApplicationCreationCompositeRequest).mockReturnValue({
     allOrNone: true,
@@ -120,6 +136,10 @@ beforeEach(() => {
     Priority: '',
     APHA_Application__c: '',
     ContactId: ''
+  })
+  jest.mocked(buildKeyFactsRequest).mockReturnValue({
+    allOrNone: true,
+    records: []
   })
 })
 
@@ -196,8 +216,14 @@ function createValidPayload() {
       }
     ],
     keyFacts: {
-      licenceType: 'TB15',
-      requester: 'origin'
+      licenceType: {
+        type: 'text',
+        value: 'TB15'
+      },
+      requester: {
+        type: 'text',
+        value: 'destination'
+      }
     },
     applicant: {
       type: 'guest',
@@ -324,7 +350,7 @@ describe('POST /case-management/case', () => {
   })
 
   describe('Successful case creation', () => {
-    test('creates case, returns 201 Created and uploads application file', async () => {
+    test('creates case, returns 201 Created, uploads application file and adds key facts', async () => {
       const server = await createTestServer()
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -346,6 +372,37 @@ describe('POST /case-management/case', () => {
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(2)
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
+      expect(mockAddKeyFacts).toHaveBeenCalledTimes(1)
+    })
+
+    test('creates case, returns 201 Created and skips adding key facts if already present', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockGetKeyFacts.mockResolvedValue({
+        records: [{ Id: 'existing-key-fact-id' }]
+      })
+
+      const payload = createValidPayload()
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(201)
+      expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
+      expect(mockCreateCustomer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Email: mockApplicantDetaisls.email,
+          FirstName: mockApplicantDetaisls.firstName,
+          LastName: mockApplicantDetaisls.lastName
+        }),
+        expect.anything()
+      )
+      expect(mockSendComposite).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
+      expect(mockAddKeyFacts).not.toHaveBeenCalled()
     })
 
     test('creates case, returns 201 Created and skips uploading application file if already present', async () => {
@@ -712,6 +769,54 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(4)
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+    })
+
+    test('returns 500 when getKeyFacts fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockGetKeyFacts.mockRejectedValue(new Error('Connection failed'))
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockGetKeyFacts).toHaveBeenCalledTimes(4)
+      expect(mockAddKeyFacts).not.toHaveBeenCalled()
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+    })
+
+    test('returns 500 when addKeyFacts fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockAddKeyFacts.mockRejectedValue(new Error('Connection failed'))
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
+      expect(mockAddKeyFacts).toHaveBeenCalledTimes(4)
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 

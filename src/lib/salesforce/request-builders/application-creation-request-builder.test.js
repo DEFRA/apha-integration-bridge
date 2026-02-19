@@ -22,7 +22,7 @@ describe('buildApplicationCreationCompositeRequest', () => {
     const licenseTypeRequest = result.compositeRequest[0]
     expect(licenseTypeRequest.method).toBe('GET')
     expect(licenseTypeRequest.url).toBe(
-      `/services/data/${apiVersion}/query?q=SELECT+Id+FROM+RegulatoryAuthorizationType+WHERE+Name='${payload.keyFacts.licenceType}'+LIMIT+1`
+      `/services/data/${apiVersion}/query?q=SELECT+Id+FROM+RegulatoryAuthorizationType+WHERE+Name='${payload.keyFacts.licenceType.value}'+LIMIT+1`
     )
     expect(licenseTypeRequest.referenceId).toBe('licenseTypeQuery')
   })
@@ -74,7 +74,7 @@ describe('buildApplicationCreationCompositeRequest', () => {
 
 /**
  * Creates a minimal valid payload for testing
- * @returns {import('../../types/case-management/case.js').CreateCasePayload}
+ * @returns {import('../../../types/case-management/case.js').CreateCasePayload}
  */
 function createPayload() {
   return {
@@ -102,8 +102,14 @@ function createPayload() {
       }
     ],
     keyFacts: {
-      licenceType: 'TB Movement License',
-      requester: 'origin'
+      licenceType: {
+        type: 'text',
+        value: 'TB15'
+      },
+      requester: {
+        type: 'text',
+        value: 'origin'
+      }
     },
     applicant: {
       type: 'guest',

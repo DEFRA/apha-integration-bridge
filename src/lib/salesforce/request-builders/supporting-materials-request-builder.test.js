@@ -2,7 +2,7 @@ import { describe, test, expect, jest, beforeEach } from '@jest/globals'
 
 import { buildSupportingMaterialsCompositeRequest } from './supporting-materials-request-builder.js'
 import * as fileUploadAndLinkRequestBuilder from './file-upload-and-link-request-builder.js'
-import * as fileUtils from '../../common/helpers/file/file-utils.js'
+import * as fileUtils from '../../../common/helpers/file/file-utils.js'
 
 const mockCompositeRequest = /** @type {any} */ ({
   allOrNone: true,
