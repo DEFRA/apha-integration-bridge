@@ -22,7 +22,8 @@ describe('GET /public/{path*}', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.headers['content-type']).toContain('text/javascript')
-    expect(res.result).toContain('initCognitoAuth')
+    expect(res.result).toContain('waitForSwaggerUI')
+    expect(res.result).toContain('installFetchInterceptor')
   })
 
   test('returns 404 for non-existent files', async () => {

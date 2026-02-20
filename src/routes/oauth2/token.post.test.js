@@ -22,6 +22,8 @@ describe('POST /oauth2/token', () => {
   let server
   /** @type {typeof fetch} */
   let originalFetch
+  /** @type {jest.Mock<typeof fetch>} */
+  const mockFetch = jest.fn(() => Promise.resolve(/** @type {Response} */ ({})))
 
   /**
    * Helper to create a mock Response object
@@ -38,20 +40,6 @@ describe('POST /oauth2/token', () => {
     json: async () => data,
     text: async () => (typeof data === 'string' ? data : JSON.stringify(data))
   })
-
-  /**
-   * @param {any} mockImplementation - The mock
-   */
-  const mockFetch = (mockImplementation) => {
-    const mock = jest.fn()
-    if (mockImplementation instanceof Error) {
-      mock.mockRejectedValue(mockImplementation)
-    } else {
-      mock.mockResolvedValue(mockImplementation)
-    }
-    global.fetch = mock
-    return mock
-  }
 
   /**
    * Helper to create a mock token request payload
@@ -85,17 +73,7 @@ describe('POST /oauth2/token', () => {
   }
 
   beforeAll(async () => {
-    jest.unstable_mockModule('../../config.js', () => ({
-      config: {
-        get: jest.fn((/** @type {string} */ key) => {
-          if (key === 'featureFlags.isTokenEndpointEnabled') return true
-          if (key === 'cognito.tokenUrl') {
-            return 'https://example.com/oauth2/token'
-          }
-          return null
-        })
-      }
-    }))
+    originalFetch = globalThis.fetch
 
     server = Hapi.server({ port: 0 })
 
@@ -119,12 +97,12 @@ describe('POST /oauth2/token', () => {
   })
 
   beforeEach(() => {
-    originalFetch = global.fetch
     jest.clearAllMocks()
+    globalThis.fetch = mockFetch
   })
 
   afterEach(() => {
-    global.fetch = originalFetch
+    globalThis.fetch = originalFetch
   })
 
   afterAll(async () => {
@@ -138,14 +116,16 @@ describe('POST /oauth2/token', () => {
       expires_in: 3600
     }
 
-    const mock = mockFetch(createMockResponse(true, 200, mockTokenResponse))
+    mockFetch.mockResolvedValueOnce(
+      /** @type {any} */ (createMockResponse(true, 200, mockTokenResponse))
+    )
 
     const res = await injectTokenRequest()
 
     expect(res.statusCode).toBe(200)
     expect(res.result).toEqual(mockTokenResponse)
-    expect(mock).toHaveBeenCalledTimes(1)
-    expect(mock).toHaveBeenCalledWith(
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         method: 'POST',
@@ -157,8 +137,10 @@ describe('POST /oauth2/token', () => {
   })
 
   test('returns error when Cognito returns error', async () => {
-    const mock = mockFetch(
-      createMockResponse(false, 401, 'Invalid client credentials')
+    mockFetch.mockResolvedValueOnce(
+      /** @type {any} */ (
+        createMockResponse(false, 401, 'Invalid client credentials')
+      )
     )
 
     const res = await injectTokenRequest({
@@ -168,16 +150,16 @@ describe('POST /oauth2/token', () => {
 
     // Error handling may return either 400 or 500 depending on error type
     expect([400, 500]).toContain(res.statusCode)
-    expect(mock).toHaveBeenCalledTimes(1)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 
   test('returns 500 error when network error occurs', async () => {
-    const mock = mockFetch(new Error('Network error'))
+    mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
     const res = await injectTokenRequest()
 
     expect(res.statusCode).toBe(500)
-    expect(mock).toHaveBeenCalledTimes(1)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 
   test('validates required fields - missing client_id and client_secret', async () => {
