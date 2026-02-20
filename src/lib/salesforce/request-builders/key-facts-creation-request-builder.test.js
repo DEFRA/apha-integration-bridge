@@ -29,7 +29,7 @@ describe('buildKeyFactsRequest', () => {
     )
   })
 
-  test('should keep string values unchanged and set required metadata', () => {
+  test('should JSON stringify key fact values', () => {
     const payload = createPayload()
 
     const result = buildKeyFactsRequest(payload)
@@ -37,27 +37,23 @@ describe('buildKeyFactsRequest', () => {
     const requesterRecord = result.records.find(
       (record) => record.APHA_Key__c === 'requester'
     )
-
-    expect(requesterRecord).toBeDefined()
-    expect(requesterRecord.APHA_Value__c).toBe('origin')
-    expect(requesterRecord.APHA_Entity_Type__c).toBe('text')
-    expect(requesterRecord.APHA_Status__c).toBe(KeyFactStatus.UNVALIDATED)
-  })
-
-  test('should JSON stringify non-string key fact values', () => {
-    const payload = createPayload()
-
-    const result = buildKeyFactsRequest(payload)
-
     const originAddressRecord = result.records.find(
       (record) => record.APHA_Key__c === 'originAddress'
     )
+
+    expect(requesterRecord).toBeDefined()
+    expect(requesterRecord.APHA_Value__c).toBe(
+      JSON.stringify(payload.keyFacts.requester.value)
+    )
+    expect(requesterRecord.APHA_Entity_Type__c).toBe('text')
+    expect(requesterRecord.APHA_Status__c).toBe(KeyFactStatus.UNVALIDATED)
 
     expect(originAddressRecord).toBeDefined()
     expect(originAddressRecord.APHA_Value__c).toBe(
       JSON.stringify(payload.keyFacts.originAddress.value)
     )
     expect(originAddressRecord.APHA_Entity_Type__c).toBe('address')
+    expect(requesterRecord.APHA_Status__c).toBe(KeyFactStatus.UNVALIDATED)
   })
 })
 

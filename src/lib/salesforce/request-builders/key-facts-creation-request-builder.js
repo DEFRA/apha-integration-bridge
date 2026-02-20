@@ -33,14 +33,13 @@ export function buildKeyFactsRequest(payload) {
  * @returns {KeyFactRecordItem}
  */
 function buildSingleKeyFactRequest(applicationId, keyFactKey, keyFactItem) {
-  const value = keyFactItem.value
   return {
     attributes: {
       type: keyFactTypeName,
       referenceId: keyFactKey
     },
     APHA_Key__c: keyFactKey,
-    APHA_Value__c: typeof value === 'string' ? value : JSON.stringify(value),
+    APHA_Value__c: JSON.stringify(keyFactItem.value),
     APHA_Entity_Type__c: keyFactItem.type,
     APHA_Status__c: KeyFactStatus.UNVALIDATED,
     APHA_Application__c: applicationId
