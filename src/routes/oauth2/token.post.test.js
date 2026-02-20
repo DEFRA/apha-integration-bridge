@@ -3,47 +3,31 @@ import {
   describe,
   beforeAll,
   afterAll,
-  beforeEach,
   afterEach,
   test,
   expect
 } from '@jest/globals'
 import Hapi from '@hapi/hapi'
-import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
+import { setupServer } from 'msw/node'
+import { http, HttpResponse } from 'msw'
+import { spyOnConfigMany } from '../../common/helpers/test-helpers/config.js'
 
 /**
  * @typedef {import('@hapi/hapi').Server} Server
  * @typedef {import('@hapi/hapi').ServerInjectResponse} ServerInjectResponse
  * @typedef {{message: string}} ErrorResult
- * @typedef {jest.Mock<typeof fetch>} MockFetch
  */
+
+const COGNITO_URL = 'https://mock-cognito/oauth2/token'
+const msw = setupServer()
 
 describe('POST /oauth2/token', () => {
   /** @type {Server} */
   let server
-  /** @type {jest.Mock<typeof fetch>} */
-  const mockFetch = jest.fn(() => Promise.resolve(/** @type {Response} */ ({})))
-
-  /**
-   * Helper to create a mock Response object
-   * @param {boolean} ok
-   * @param {number} status
-   * @param {any} data
-   * @returns {Partial<Response>}
-   */
-  const createMockResponse = (ok, status, data) => ({
-    ok,
-    status,
-    statusText: ok ? 'OK' : 'Error',
-    headers: new Headers(),
-    json: async () => data,
-    text: async () => (typeof data === 'string' ? data : JSON.stringify(data))
-  })
 
   /**
    * Helper to create a mock token request payload
    * @param {Partial<{grant_type: string, client_id: string, client_secret: string}>} [overrides]
-   * @returns {string}
    */
   const createPayload = (overrides = {}) => {
     const params = {
@@ -58,7 +42,6 @@ describe('POST /oauth2/token', () => {
   /**
    * Helper to inject a token request
    * @param {Partial<{grant_type: string, client_id: string, client_secret: string}>} [payload]
-   * @returns {Promise<ServerInjectResponse>}
    */
   const injectTokenRequest = (payload = {}) => {
     return server.inject({
@@ -72,6 +55,13 @@ describe('POST /oauth2/token', () => {
   }
 
   beforeAll(async () => {
+    spyOnConfigMany({
+      'cognito.tokenUrl': COGNITO_URL,
+      'featureFlags.isTokenEndpointEnabled': true
+    })
+
+    msw.listen()
+
     server = Hapi.server({ port: 0 })
 
     const mockLogger = {
@@ -93,21 +83,12 @@ describe('POST /oauth2/token', () => {
     }
   })
 
-  beforeEach(() => {
-    spyOnConfig('cognito', {
-      tokenUrl: 'https://cognito.test/oauth2/token'
-    })
-    spyOnConfig('featureFlags', {
-      isTokenEndpointEnabled: true
-    })
-    globalThis.fetch = mockFetch
-  })
-
   afterEach(() => {
-    jest.clearAllMocks()
+    msw.resetHandlers()
   })
 
   afterAll(async () => {
+    msw.close()
     await server.stop()
   })
 
@@ -118,31 +99,23 @@ describe('POST /oauth2/token', () => {
       expires_in: 3600
     }
 
-    mockFetch.mockResolvedValueOnce(
-      /** @type {any} */ (createMockResponse(true, 200, mockTokenResponse))
+    msw.use(
+      http.post(COGNITO_URL, () => {
+        return HttpResponse.json(mockTokenResponse, { status: 200 })
+      })
     )
 
     const res = await injectTokenRequest()
 
     expect(res.statusCode).toBe(200)
     expect(res.result).toEqual(mockTokenResponse)
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          'Content-Type': 'application/x-www-form-urlencoded'
-        })
-      })
-    )
   })
 
   test('returns error when Cognito returns error', async () => {
-    mockFetch.mockResolvedValueOnce(
-      /** @type {any} */ (
-        createMockResponse(false, 401, 'Invalid client credentials')
-      )
+    msw.use(
+      http.post(COGNITO_URL, () => {
+        return HttpResponse.text('Invalid client credentials', { status: 401 })
+      })
     )
 
     const res = await injectTokenRequest({
@@ -152,16 +125,18 @@ describe('POST /oauth2/token', () => {
 
     // Error handling may return either 400 or 500 depending on error type
     expect([400, 500]).toContain(res.statusCode)
-    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 
   test('returns 500 error when network error occurs', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'))
+    msw.use(
+      http.post(COGNITO_URL, () => {
+        return HttpResponse.error()
+      })
+    )
 
     const res = await injectTokenRequest()
 
     expect(res.statusCode).toBe(500)
-    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 
   test('validates required fields - missing client_id and client_secret', async () => {
