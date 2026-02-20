@@ -1,4 +1,5 @@
 import swagger from 'hapi-swagger'
+import { config } from '../../config.js'
 
 const description = `
 Welcome to the APH Integration Bridge API documentation. This API provides secure and modern access to various APH systems.
@@ -10,6 +11,20 @@ Welcome to the APH Integration Bridge API documentation. This API provides secur
 
 const OPENAPI_JSON_PATH = '/.well-known/openapi/v1/openapi.json'
 
+const authDescription = config.get('featureFlags.isTokenEndpointEnabled')
+  ? `Authentication endpoints for obtaining access tokens.
+
+**How to use:**
+1. Click "Try it out" on the \`/oauth2/token\` endpoint below
+2. Enter your Cognito \`client_id\` and \`client_secret\`
+3. Click "Execute"
+4. **You'll be automatically authorized!** The access token will be applied to Swagger UI automatically.
+
+You can now use any other API endpoint without manually copying/pasting the token.
+
+**Note:** This endpoint is only available in lower environments (dev/test).`
+  : 'Authentication endpoints for obtaining access tokens. Available in lower environments only.'
+
 export const openApi = {
   plugin: swagger,
   options: {
@@ -20,20 +35,18 @@ export const openApi = {
       version: '1.0.0',
       description
     },
+    uiCompleteScript: config.get('featureFlags.isTokenEndpointEnabled')
+      ? { src: '/public/cognito-auth.js' }
+      : null,
     tags: [
       {
         name: 'auth',
-        description:
-          'Authentication endpoints for obtaining access tokens. Available in lower environments only.'
+        description: authDescription
       },
       {
         name: 'holdings',
         description:
           'Check if a county parish holding (CPH) number exists in Sam and get basic information about the holding.'
-        // externalDocs: {
-        //   description: 'Find out more about this endpoint',
-        //   url: 'https://example.com/holdings'
-        // }
       }
     ],
     securityDefinitions: {
