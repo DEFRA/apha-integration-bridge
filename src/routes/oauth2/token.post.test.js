@@ -4,6 +4,7 @@ import {
   beforeAll,
   afterAll,
   beforeEach,
+  afterEach,
   test,
   expect
 } from '@jest/globals'
@@ -20,8 +21,6 @@ import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
 describe('POST /oauth2/token', () => {
   /** @type {Server} */
   let server
-  /** @type {typeof fetch} */
-  let originalFetch
   /** @type {jest.Mock<typeof fetch>} */
   const mockFetch = jest.fn(() => Promise.resolve(/** @type {Response} */ ({})))
 
@@ -73,16 +72,6 @@ describe('POST /oauth2/token', () => {
   }
 
   beforeAll(async () => {
-    originalFetch = globalThis.fetch
-    globalThis.fetch = mockFetch
-
-    spyOnConfig('cognito', {
-      tokenUrl: 'https://cognito.test/oauth2/token'
-    })
-    spyOnConfig('featureFlags', {
-      isTokenEndpointEnabled: true
-    })
-
     server = Hapi.server({ port: 0 })
 
     const mockLogger = {
@@ -105,18 +94,20 @@ describe('POST /oauth2/token', () => {
   })
 
   beforeEach(() => {
-    mockFetch.mockClear()
-    globalThis.fetch = mockFetch
     spyOnConfig('cognito', {
       tokenUrl: 'https://cognito.test/oauth2/token'
     })
     spyOnConfig('featureFlags', {
       isTokenEndpointEnabled: true
     })
+    globalThis.fetch = mockFetch
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
   })
 
   afterAll(async () => {
-    globalThis.fetch = originalFetch
     await server.stop()
   })
 
