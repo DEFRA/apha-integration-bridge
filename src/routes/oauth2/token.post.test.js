@@ -4,11 +4,11 @@ import {
   beforeAll,
   afterAll,
   beforeEach,
-  afterEach,
   test,
   expect
 } from '@jest/globals'
 import Hapi from '@hapi/hapi'
+import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
 
 /**
  * @typedef {import('@hapi/hapi').Server} Server
@@ -74,6 +74,14 @@ describe('POST /oauth2/token', () => {
 
   beforeAll(async () => {
     originalFetch = globalThis.fetch
+    globalThis.fetch = mockFetch
+
+    spyOnConfig('cognito', {
+      tokenUrl: 'https://cognito.test/oauth2/token'
+    })
+    spyOnConfig('featureFlags', {
+      isTokenEndpointEnabled: true
+    })
 
     server = Hapi.server({ port: 0 })
 
@@ -97,15 +105,18 @@ describe('POST /oauth2/token', () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    mockFetch.mockClear()
     globalThis.fetch = mockFetch
-  })
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch
+    spyOnConfig('cognito', {
+      tokenUrl: 'https://cognito.test/oauth2/token'
+    })
+    spyOnConfig('featureFlags', {
+      isTokenEndpointEnabled: true
+    })
   })
 
   afterAll(async () => {
+    globalThis.fetch = originalFetch
     await server.stop()
   })
 
