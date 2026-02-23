@@ -1,7 +1,7 @@
-import { createServer } from '../../server.js'
+import { createServer } from '../../../server.js'
 import { test, expect, describe, beforeAll, afterAll } from '@jest/globals'
 
-describe('GET /public/{path*}', () => {
+describe('GET /documentation/auth/cognito-auth', () => {
   /** @type {import('@hapi/hapi').Server} */
   let server
 
@@ -14,31 +14,23 @@ describe('GET /public/{path*}', () => {
     await server.stop()
   })
 
-  test('serves cognito-auth.js file', async () => {
+  test('serves cognito-auth script with injected config', async () => {
     const res = await server.inject({
       method: 'GET',
-      url: '/public/cognito-auth.js'
+      url: '/documentation/auth/cognito-auth'
     })
 
     expect(res.statusCode).toBe(200)
-    expect(res.headers['content-type']).toContain('text/javascript')
-    expect(res.result).toContain('Cognito directly from the browser')
+    expect(res.headers['content-type']).toContain('application/javascript')
+    expect(res.result).toContain('window.COGNITO_TOKEN_URL')
     expect(res.result).toContain('installFetchInterceptor')
-  })
-
-  test('returns 404 for non-existent files', async () => {
-    const res = await server.inject({
-      method: 'GET',
-      url: '/public/non-existent-file.js'
-    })
-
-    expect(res.statusCode).toBe(404)
+    expect(res.result).toContain('preauthorizeApiKey')
   })
 
   test('does not require authentication', async () => {
     const res = await server.inject({
       method: 'GET',
-      url: '/public/cognito-auth.js',
+      url: '/documentation/auth/cognito-auth',
       headers: {}
     })
 

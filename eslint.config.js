@@ -17,15 +17,5 @@ export default [
         requireConfigFile: true
       }
     }
-  },
-  {
-    files: ['public/**/*.js'],
-    languageOptions: {
-      globals: {
-        window: 'readonly',
-        alert: 'readonly',
-        console: 'readonly'
-      }
-    }
   }
 ]

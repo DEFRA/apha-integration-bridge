@@ -37,7 +37,7 @@ export const openApi = {
       description
     },
     uiCompleteScript: config.get('featureFlags.isTokenEndpointEnabled')
-      ? { src: '/public/cognito-auth.js' }
+      ? { src: '/documentation/auth/cognito-auth' }
       : null,
     tags: [
       {

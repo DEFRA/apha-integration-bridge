@@ -46,7 +46,8 @@ export const routingPlugin = {
      * Import and register each route file
      */
     for (const file of routeFiles) {
-      if (file.includes('.test')) {
+      // Skip test files and browser-side scripts (not route handlers)
+      if (file.includes('.test') || file.endsWith('-script.js')) {
         continue
       }
 
