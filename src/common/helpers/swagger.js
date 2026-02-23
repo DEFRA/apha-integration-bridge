@@ -20,9 +20,10 @@ const authDescription = config.get('featureFlags.isTokenEndpointEnabled')
 3. Click "Execute"
 4. **You'll be automatically authorized!** The access token will be applied to Swagger UI automatically.
 
-You can now use any other API endpoint without manually copying/pasting the token.
+**How it works:**
+- Your browser calls Cognito **directly** (not through the API)
 
-**Note:** This endpoint is only available in lower environments (dev/test).`
+**Note:** This endpoint is disabled in production environments.`
   : 'Authentication endpoints for obtaining access tokens. Available in lower environments only.'
 
 export const openApi = {

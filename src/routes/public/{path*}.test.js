@@ -22,7 +22,7 @@ describe('GET /public/{path*}', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.headers['content-type']).toContain('text/javascript')
-    expect(res.result).toContain('waitForSwaggerUI')
+    expect(res.result).toContain('Cognito directly from the browser')
     expect(res.result).toContain('installFetchInterceptor')
   })
 
