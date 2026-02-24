@@ -1,14 +1,20 @@
-This endpoint is a convenience proxy to Cognito's OAuth2 token endpoint.
-It is **only available in local and dev environments** to help developers
-easily obtain access tokens for testing.
+This endpoint provides a convenient way to obtain Cognito access tokens directly from Swagger UI.
 
-**Use this endpoint to get the token to use with other APIs.**
+**How it works:**
+
+- When you execute this endpoint, your browser calls Cognito **directly** (not through the API)
+
+**Auto-Authorization:** When you execute this endpoint, Swagger UI will be
+**automatically authorized** with the returned token - no manual copy/paste needed!
 
 **Usage:**
 
-1. Provide your `client_id` and `client_secret`
-2. Set `grant_type` to `client_credentials`
-3. The endpoint will return a Cognito access token
-4. Use the `access_token` from the response in the "Authorize" button above
+1. Click "Try it out" below
+2. Provide your `client_id` and `client_secret`
+3. Set `grant_type` to `client_credentials`
+4. Click "Execute"
+5. The browser will call Cognito directly
+6. You'll see a confirmation message and Swagger UI will be automatically authorized
+7. All authenticated API endpoints are now ready to use
 
 **Note:** This endpoint is disabled in production environments.
