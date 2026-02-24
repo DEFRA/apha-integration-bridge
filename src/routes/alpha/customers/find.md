@@ -25,6 +25,6 @@ Example payload (all mock IDs):
 
 ##### Behaviour
 
-- Response order follows the order of IDs in your request, if none are missing.
+- Response order follows the order of IDs in your request.
 - Unknown IDs are ignored.
 - If no IDs match, the endpoint returns an empty `data` array.
