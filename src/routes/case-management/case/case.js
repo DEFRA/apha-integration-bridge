@@ -10,13 +10,14 @@ import {
 } from '../../../lib/http/http-exception.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import { CreateCasePayloadSchema } from '../../../types/case-management/case.js'
-import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/application-creation-request-builder.js'
-import { buildCustomerCreationPayload } from '../../../lib/salesforce/customer-creation-request-builder.js'
-import { buildCaseCreationPayload } from '../../../lib/salesforce/case-creation-request-builder.js'
-import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/supporting-materials-request-builder.js'
-import { refIdApplicationRef } from '../../../lib/salesforce/file-upload-request-builder.js'
-import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/application-file-request-builder.js'
+import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
+import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
+import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
+import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
+import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
+import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
+import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
@@ -80,8 +81,10 @@ async function handler(request, h) {
     ])
 
     const caseId = await createCase(request, applicationId, customerId)
-    await uploadSupportingMaterials(request, caseId)
-    await addKeyFacts(request, caseId)
+    await Promise.all([
+      uploadSupportingMaterials(request, caseId),
+      addKeyFacts(request, applicationId)
+    ])
     await updateCaseStatus(request, CaseStatus.NEW)
   })
 
@@ -144,9 +147,31 @@ async function updateCaseStatus(request, status) {
 
 /**
  * @param {Request} request
- * @param {string} caseId
+ * @param {string} applicationId
  */
-async function addKeyFacts(request, caseId) {}
+async function addKeyFacts(request, applicationId) {
+  const existingKeyFacts = await getKeyFacts(request, applicationId)
+  if (existingKeyFacts.length === 0) {
+    const keyFactsRequest = buildKeyFactsRequest(
+      /** @type {CreateCasePayload} */ (request.payload)
+    )
+    await retry(async () => {
+      return await salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
+    }, retriesConfig)
+  }
+}
+
+/**
+ * @param {Request} request
+ * @param {string} applicationId
+ * @returns {Promise<any[]>}
+ */
+async function getKeyFacts(request, applicationId) {
+  const salesforceResponse = await retry(async () => {
+    return await salesforceClient.getKeyFacts(applicationId, request.logger)
+  }, retriesConfig)
+  return salesforceResponse?.records || []
+}
 
 /**
  * @param {Request} request

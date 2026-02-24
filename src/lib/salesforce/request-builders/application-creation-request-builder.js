@@ -1,9 +1,9 @@
-import { config } from '../../config.js'
+import { config } from '../../../config.js'
 import { refIdApplicationRef } from './file-upload-request-builder.js'
 
 /**
- * @import {CompositeRequest, CompositeRequestItem} from '../../types/salesforce/composite-request.js'
- * @import {CreateCasePayload} from '../../types/case-management/case.js'
+ * @import {CompositeRequest, CompositeRequestItem} from '../../../types/salesforce/composite-request.js'
+ * @import {CreateCasePayload} from '../../../types/case-management/case.js'
  */
 
 const salesforceConfig = config.get('salesforce')
@@ -32,7 +32,7 @@ export function buildApplicationCreationCompositeRequest(payload) {
 function buildLicenceTypeRequest(payload) {
   return {
     method: 'GET',
-    url: `/services/data/${salesforceConfig.apiVersion}/query?q=SELECT+Id+FROM+RegulatoryAuthorizationType+WHERE+Name='${payload.keyFacts.licenceType}'+LIMIT+1`,
+    url: `/services/data/${salesforceConfig.apiVersion}/query?q=SELECT+Id+FROM+RegulatoryAuthorizationType+WHERE+Name='${payload.keyFacts.licenceType.value}'+LIMIT+1`,
     referenceId: refIdLicenseTypeQuery
   }
 }

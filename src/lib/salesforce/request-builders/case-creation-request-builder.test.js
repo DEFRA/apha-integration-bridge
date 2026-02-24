@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals'
 
 import { buildCaseCreationPayload } from './case-creation-request-builder.js'
-import { CaseStatus } from '../../types/salesforce/case-status.js'
+import { CaseStatus } from '../../../types/salesforce/case-status.js'
 
 describe('buildCaseCreationPayload', () => {
   test('should map application and customer identifiers to Salesforce fields', () => {

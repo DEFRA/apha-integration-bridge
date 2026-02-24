@@ -1,4 +1,4 @@
-/** @import {GuestCustomerDetails} from '../../types/case-management/case.js' */
+/** @import {GuestCustomerDetails} from '../../../types/case-management/case.js' */
 
 /**
  * @param {GuestCustomerDetails} applicant

@@ -1,6 +1,6 @@
-import { CaseStatus } from '../../types/salesforce/case-status.js'
+import { CaseStatus } from '../../../types/salesforce/case-status.js'
 
-/** @import {CaseDetailsPayload} from '../../types/case-management/case.js' */
+/** @import {CaseDetailsPayload} from '../../../types/case-management/case.js' */
 
 /**
  * @param {string} applicationId

@@ -1,7 +1,7 @@
-import { config } from '../../config.js'
+import { config } from '../../../config.js'
 
 /**
- * @import {CompositeRequestItem} from '../../types/salesforce/composite-request.js'
+ * @import {CompositeRequestItem} from '../../../types/salesforce/composite-request.js'
  */
 
 export const refIdFile = 'file'

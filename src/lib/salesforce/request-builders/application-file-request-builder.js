@@ -1,8 +1,8 @@
 import { buildFileUploadAndLinkCompositeRequest } from './file-upload-and-link-request-builder.js'
 
 /**
- * @import {CompositeRequest} from '../../types/salesforce/composite-request.js'
- * @import {CreateCasePayload} from '../../types/case-management/case.js'
+ * @import {CompositeRequest} from '../../../types/salesforce/composite-request.js'
+ * @import {CreateCasePayload} from '../../../types/case-management/case.js'
  */
 
 /**
