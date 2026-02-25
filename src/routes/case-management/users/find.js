@@ -10,13 +10,13 @@ import {
 } from '../../../lib/http/http-exception.js'
 
 import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
-import { TopLevelLinksReference } from '../../../types/links.js'
+import { TopLevelLinksReferenceSchema } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 
 const PostFindUsersResponseSchema = Joi.object({
   data: Joi.array().items(CaseManagementUser).required(),
-  links: TopLevelLinksReference
+  links: TopLevelLinksReferenceSchema
 })
   .description('Case Management User Details')
   .label('Find User Response')

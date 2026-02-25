@@ -16,7 +16,7 @@ import {
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { CommoditiesData } from '../../types/commodities.js'
 import { FacilitiesData } from '../../types/facilities.js'
-import { TopLevelLinksReference } from '../../types/links.js'
+import { TopLevelLinksReferenceSchema } from '../../types/links.js'
 import { Locations } from '../../types/locations.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -31,7 +31,7 @@ export const GetLocationParamsSchema = Joi.object({
 
 const GetLocationResponseSchema = Joi.object({
   data: Locations.required(),
-  links: TopLevelLinksReference
+  links: TopLevelLinksReferenceSchema
 })
   .description(
     'Location details with BS7666 address and associated commodities/facilities'
