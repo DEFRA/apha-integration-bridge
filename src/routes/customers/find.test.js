@@ -3,10 +3,21 @@ import { describe, test, expect } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
 import * as route from './find.js'
+import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 
 const path = '/customers/find'
 const organisationId = 'O123456'
+const authToken = [
+  Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString(
+    'base64url'
+  ),
+  Buffer.from(JSON.stringify({ iss: 'https://mock-cognito' })).toString(
+    'base64url'
+  ),
+  'sig'
+].join('.')
+const authHeaders = { authorization: `Bearer ${authToken}` }
 
 const customer1 = {
   type: 'customers',
@@ -90,6 +101,9 @@ async function createServer() {
         enabled: false
       }
     },
+    {
+      plugin: bearerTokenPlugin
+    },
     oracleDb
   ])
 
@@ -103,6 +117,20 @@ async function createServer() {
 }
 
 describe('POST /customers/find', () => {
+  test('returns UNAUTHORIZED when Authorization header is missing', async () => {
+    const server = await createServer()
+
+    const response = await server.inject({
+      method: 'POST',
+      payload: {
+        ids: [customer1.id]
+      },
+      url: `${path}?page=1&pageSize=10`
+    })
+
+    expect(response.statusCode).toBe(401)
+  })
+
   test('returns all matching ids', async () => {
     const server = await createServer()
 
@@ -118,6 +146,7 @@ describe('POST /customers/find', () => {
       payload: {
         ids: [customer1.id, customer2.id]
       },
+      headers: authHeaders,
       url
     })
 
@@ -147,6 +176,7 @@ describe('POST /customers/find', () => {
       payload: {
         ids: ['missing', 'id']
       },
+      headers: authHeaders,
       url
     })
 
@@ -176,6 +206,7 @@ describe('POST /customers/find', () => {
       payload: {
         ids: [customer2.id, customer1.id]
       },
+      headers: authHeaders,
       url
     })
 
@@ -205,6 +236,7 @@ describe('POST /customers/find', () => {
       payload: {
         ids: [customer1.id, organisationId, customer2.id]
       },
+      headers: authHeaders,
       url
     })
 
@@ -234,6 +266,7 @@ describe('POST /customers/find', () => {
       payload: {
         ids: [customer2.id, customer1.id]
       },
+      headers: authHeaders,
       url: firstUrl
     })
 
@@ -256,6 +289,7 @@ describe('POST /customers/find', () => {
       payload: {
         ids: [customer2.id, customer1.id]
       },
+      headers: authHeaders,
       // @ts-expect-error - test response typing is not strict enough
       url: firstResponse.result.links.next
     })
@@ -286,6 +320,7 @@ describe('POST /customers/find', () => {
         payload: {
           ids: [customer1.id]
         },
+        headers: authHeaders,
         url: `${path}?${queryParams.toString()}`
       })
 
@@ -306,6 +341,7 @@ describe('POST /customers/find', () => {
       payload: {
         ids: [customer1.id]
       },
+      headers: authHeaders,
       url: `${path}?${queryParams.toString()}`
     })
 
