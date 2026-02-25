@@ -12,14 +12,11 @@ import {
   HTTPException,
   HTTPError
 } from '../../lib/http/http-exception.js'
-import {
-  HTTPArrayResponse,
-  HTTPObjectResponse
-} from '../../lib/http/http-response.js'
+import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLink } from '../../types/alpha/links.js'
 import { Customer } from '../../types/alpha/customers.js'
 import { PaginationSchema } from '../../types/alpha/pagination.js'
-import { HTTPPaginationLinks } from '../../lib/http/http-pagination-links.js'
+import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
 
 const PostFindCustomersSchema = Joi.object({
   data: Joi.array().items(Customer).required(),
@@ -95,27 +92,13 @@ export const handler = async (request, h) => {
      */
     await using oracledb = await request.server['oracledb.sam']()
 
-    const { page, pageSize } = request.query
+    const findRequest = new HTTPFindRequest(request, Customer)
 
-    const nextOffset = pageSize * (page - 1) + pageSize
-
-    const payload = /** @type {{ ids: string[] }} */ (request.payload)
-
-    const distinctIds = [...new Set(payload.ids)]
-
-    const ids = distinctIds.slice(pageSize * (page - 1), nextOffset)
-
-    const response = new HTTPArrayResponse(Customer)
-
-    const links = new HTTPPaginationLinks(request)
-
-    response.links(links)
-
-    if (ids.length > 0) {
-      const customers = await findCustomers(oracledb.connection, ids, 'PERSON')
-
-      links.setHasMore(
-        nextOffset < distinctIds.length && customers.length === pageSize
+    if (findRequest.ids.length > 0) {
+      const customers = await findCustomers(
+        oracledb.connection,
+        findRequest.ids,
+        'PERSON'
       )
 
       request.logger?.debug(`customers: ${JSON.stringify(customers)}`)
@@ -127,11 +110,11 @@ export const handler = async (request, h) => {
           customer
         )
 
-        response.add(customerResponse)
+        findRequest.add(customerResponse)
       }
     }
 
-    return h.response(response.toResponse()).code(200)
+    return h.response(findRequest.toResponse()).code(200)
   } catch (error) {
     request.logger?.error(error)
 
