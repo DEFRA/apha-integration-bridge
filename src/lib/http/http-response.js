@@ -1,4 +1,5 @@
 import Joi from 'joi'
+import { HTTPPaginationLinks } from './http-pagination-links.js'
 
 const ResponseMetaSchema = Joi.object({
   response: Joi.object({
@@ -45,7 +46,7 @@ export class HTTPObjectResponse {
 
   /**
    * set links for the top-level response
-   * @param {Object} links
+   * @param {Object | HTTPPaginationLinks} links
    */
   links(links) {
     this._links = links
@@ -162,6 +163,10 @@ export class HTTPObjectResponse {
 
     if (isRoot && this._links !== undefined) {
       response.links = this._links
+
+      if (response.links instanceof HTTPPaginationLinks) {
+        response.links = response.links.links()
+      }
     }
 
     return response
@@ -181,7 +186,7 @@ export class HTTPArrayResponse {
 
   /**
    * set links for the top-level response
-   * @param {Object} links
+   * @param {Object | HTTPPaginationLinks} links
    */
   links(links) {
     this._links = links
@@ -226,6 +231,10 @@ export class HTTPArrayResponse {
 
     if (this._links !== undefined) {
       response.links = this._links
+
+      if (response.links instanceof HTTPPaginationLinks) {
+        response.links = response.links.links()
+      }
     }
 
     return response

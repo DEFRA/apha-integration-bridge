@@ -1,21 +1,8 @@
-Find customers, given specific ids.
-
-You can test this endpoint by supplying one or all of the following mock IDs:
-
-- `C123456`
-- `C234567`
+Find customers, given specific IDs.
 
 You can send one ID or multiple IDs in the `ids` array.
 
-Example payload (single ID):
-
-```json
-{
-  "ids": ["C123456"]
-}
-```
-
-Example payload (all mock IDs):
+Example payload:
 
 ```json
 {
@@ -23,8 +10,9 @@ Example payload (all mock IDs):
 }
 ```
 
-##### Behaviour
+Behaviour:
 
 - Response order follows the order of IDs in your request.
 - Unknown IDs are ignored.
 - If no IDs match, the endpoint returns an empty `data` array.
+- Results are paginated by `page` and `pageSize`.
