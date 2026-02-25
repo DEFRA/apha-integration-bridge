@@ -14,7 +14,10 @@ import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import { findHoldingsQuery } from '../../lib/db/queries/find-holdings.js'
 import { execute } from '../../lib/db/operations/execute.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
-import { buildPaginatedLinks, getDataSubset } from '../helpers/find.js'
+import {
+  buildPaginatedLinks,
+  getDataSubset
+} from '../../common/helpers/pagination/pagination.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 
 /**

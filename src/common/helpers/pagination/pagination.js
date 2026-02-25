@@ -1,6 +1,6 @@
 /**
  * @import {Request} from '@hapi/hapi'
- * @import {TopLevelLinksReference} from '../../types/links.js'
+ * @import {TopLevelLinksReference} from '../../../types/links.js'
  */
 
 /**
