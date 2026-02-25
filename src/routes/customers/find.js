@@ -44,7 +44,6 @@ const __dirname = new URL('.', import.meta.url).pathname
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 export const options = {
-  auth: false,
   tags: ['api', 'customers'],
   description: 'Retrieve customers by ids',
   notes: fs.readFileSync(
