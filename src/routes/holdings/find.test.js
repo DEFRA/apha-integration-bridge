@@ -1,14 +1,6 @@
 import Hapi from '@hapi/hapi'
 import hapiPino from 'hapi-pino'
-import {
-  test,
-  expect,
-  describe,
-  beforeAll,
-  afterAll,
-  afterEach,
-  jest
-} from '@jest/globals'
+import { test, expect, describe, afterEach, jest } from '@jest/globals'
 import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
@@ -21,36 +13,31 @@ import * as executeOperation from '../../lib/db/operations/execute.js'
 
 const path = '/holdings/find'
 
+async function createServer() {
+  const server = Hapi.server({ port: 0 })
+
+  await server.register([
+    {
+      plugin: hapiPino,
+      options: {
+        enabled: false
+      }
+    },
+    oracleDb
+  ])
+
+  registerSimpleAuthStrategy(server)
+
+  server.route({
+    ...route,
+    path,
+    method: 'POST'
+  })
+
+  return server
+}
+
 describe('holdings/find', () => {
-  /** @type {import('@hapi/hapi').Server} */
-  let server
-
-  beforeAll(async () => {
-    server = Hapi.server({ port: 0 })
-
-    await server.register([
-      {
-        plugin: hapiPino,
-        options: {
-          enabled: false
-        }
-      },
-      oracleDb
-    ])
-
-    registerSimpleAuthStrategy(server)
-
-    server.route({
-      ...route,
-      path,
-      method: 'POST'
-    })
-  })
-
-  afterAll(async () => {
-    await server.stop()
-  })
-
   afterEach(() => {
     jest.restoreAllMocks()
   })
@@ -63,6 +50,7 @@ describe('holdings/find', () => {
     const url = `${path}?${queryParams.toString()}`
 
     test('passes validation for valid holding ids payload', async () => {
+      const server = await createServer()
       const response = await server.inject({
         method: 'POST',
         payload: {
@@ -79,6 +67,7 @@ describe('holdings/find', () => {
     })
 
     test('fails validation for invalid holding ids payload', async () => {
+      const server = await createServer()
       const response = await server.inject({
         method: 'POST',
         payload: {
@@ -98,6 +87,7 @@ describe('holdings/find', () => {
     })
 
     test('fails validation for missing ids payload', async () => {
+      const server = await createServer()
       const response = await server.inject({
         method: 'POST',
         payload: {},
@@ -115,6 +105,7 @@ describe('holdings/find', () => {
     })
 
     test('fails validation for non-array ids payload', async () => {
+      const server = await createServer()
       const response = await server.inject({
         method: 'POST',
         payload: {
@@ -182,6 +173,7 @@ describe('holdings/find', () => {
     }
 
     test('returns all matching ids', async () => {
+      const server = await createServer()
       const queryParams = new URLSearchParams({
         page: '1',
         pageSize: '10'
@@ -206,6 +198,7 @@ describe('holdings/find', () => {
     })
 
     test('returns an empty array for no matches', async () => {
+      const server = await createServer()
       const queryParams = new URLSearchParams({
         page: '1',
         pageSize: '10'
@@ -230,6 +223,7 @@ describe('holdings/find', () => {
     })
 
     test('returns holdings paginated', async () => {
+      const server = await createServer()
       const requestIds = [
         testHoldings.holding1,
         testHoldings.holding2,
@@ -325,6 +319,7 @@ describe('holdings/find', () => {
     const url = `${path}?${queryParams.toString()}`
 
     test('wraps non HTTPException errors into INTERNAL_SERVER_ERROR', async () => {
+      const server = await createServer()
       jest
         .spyOn(executeOperation, 'execute')
         .mockRejectedValueOnce(new Error('Simulated database failure'))
@@ -350,6 +345,7 @@ describe('holdings/find', () => {
     })
 
     test('returns thrown HTTPException without wrapping', async () => {
+      const server = await createServer()
       jest
         .spyOn(executeOperation, 'execute')
         .mockRejectedValueOnce(
