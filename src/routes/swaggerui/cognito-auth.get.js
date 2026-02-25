@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { config } from '../../../config.js'
+import { config } from '../../config.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -36,7 +36,8 @@ const options = {
     'This endpoint is not part of the public API and should not be called directly',
   plugins: {
     'hapi-swagger': {
-      'x-hidden': true
+      'x-hidden': true,
+      security: []
     }
   }
 }

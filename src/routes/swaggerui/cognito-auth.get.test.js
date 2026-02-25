@@ -1,7 +1,7 @@
-import { createServer } from '../../../server.js'
+import { createServer } from '../../server.js'
 import { test, expect, describe, beforeAll, afterAll } from '@jest/globals'
 
-describe('GET /documentation/auth/cognito-auth', () => {
+describe('GET /swaggerui/cognito-auth', () => {
   /** @type {import('@hapi/hapi').Server} */
   let server
 
@@ -17,7 +17,7 @@ describe('GET /documentation/auth/cognito-auth', () => {
   test('serves cognito-auth script with injected config', async () => {
     const res = await server.inject({
       method: 'GET',
-      url: '/documentation/auth/cognito-auth'
+      url: '/swaggerui/cognito-auth'
     })
 
     expect(res.statusCode).toBe(200)
@@ -30,7 +30,7 @@ describe('GET /documentation/auth/cognito-auth', () => {
   test('does not require authentication', async () => {
     const res = await server.inject({
       method: 'GET',
-      url: '/documentation/auth/cognito-auth',
+      url: '/swaggerui/cognito-auth',
       headers: {}
     })
 
