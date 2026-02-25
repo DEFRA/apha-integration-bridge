@@ -80,43 +80,8 @@ BEGIN
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
-
 -- Local authority mapping for 33/333
-BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (13333, 'LA33333', DATE '9999-12-31');
-EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
-END;
-/
-BEGIN
-  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)
-  VALUES (13333, 'Local Authority 33/333');
-EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
-END;
-/
-BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (23333, '33/333', DATE '9999-12-31');
-EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
-END;
-/
-BEGIN
-  INSERT INTO ref_data_code_map (
-    ref_data_code_map_pk,
-    ref_data_set_map_pk,
-    from_ref_data_code_pk,
-    to_ref_data_code_pk,
-    effective_to_date
-  ) VALUES (
-    33333,
-    1,
-    13333,
-    23333,
-    DATE '9999-12-31'
-  );
-EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
-END;
-/
+-- Skipping it for testing purposes when the local authority is not found in the mapping table
 
 DECLARE
   first_party_primary_key NUMBER := 50111;

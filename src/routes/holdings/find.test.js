@@ -162,7 +162,7 @@ describe('holdings/find', () => {
       holding3: {
         type: 'holdings',
         id: '33/333/3333',
-        localAuthority: 'Local Authority 33/333',
+        localAuthority: null,
         relationships: {
           cphHolder: {
             data: null
@@ -220,6 +220,26 @@ describe('holdings/find', () => {
           prev: null
         }
       })
+    })
+
+    test('returns null local authority when not present in the data', async () => {
+      const server = await createServer()
+      const queryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '10'
+      })
+      const url = `${path}?${queryParams.toString()}`
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: [testHoldings.holding3]
+        },
+        url
+      })
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+
+      expect(responseBody.data[0].localAuthority).toBeNull()
     })
 
     test('returns holdings paginated', async () => {

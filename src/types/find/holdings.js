@@ -18,7 +18,7 @@ const HoldingsData = baseData({
 export const Holdings = HoldingsData.keys({
   type: Joi.string().valid('holdings').required().label('Type'),
   id: Joi.string().required().label('CPH'),
-  localAuthority: Joi.string().required().label('Local Authority'),
+  localAuthority: Joi.string().required().allow(null).label('Local Authority'),
   relationships: Joi.object({
     location: LocationsRelationship,
     cphHolder: CustomerRelationship.description('The owner of the holding')

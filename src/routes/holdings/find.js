@@ -132,7 +132,7 @@ export async function handler(request, h) {
       return new HTTPObjectResponse(Holdings, cphId, {
         type: 'holdings',
         id: cphId,
-        localAuthority: localAuthorityName
+        localAuthority: localAuthorityName ?? null
       }).toResponse(false).data
     })
 
