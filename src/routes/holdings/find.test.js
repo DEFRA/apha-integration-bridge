@@ -9,6 +9,7 @@ import * as executeOperation from '../../lib/db/operations/execute.js'
 
 /**
  * @import {PostFindHoldingsResponse} from './find.js'
+ * @import {Holdings} from '../../types/find/holdings.js'
  */
 
 const path = '/holdings/find'
@@ -237,9 +238,12 @@ describe('holdings/find', () => {
         url
       })
 
-      const responseBody = /** @type {Record<string, any>} */ (response.result)
+      const responseResult = /** @type {PostFindHoldingsResponse} */ (
+        response.result
+      )
+      const record = /** @type {Holdings} */ (responseResult.data[0])
 
-      expect(responseBody.data[0].localAuthority).toBeNull()
+      expect(record.localAuthority).toBeNull()
     })
 
     test('returns holdings paginated', async () => {

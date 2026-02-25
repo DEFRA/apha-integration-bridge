@@ -8,7 +8,7 @@ import {
   HTTPError
 } from '../../lib/http/http-exception.js'
 
-import { Holdings } from '../../types/find/holdings.js'
+import { HoldingsSchema } from '../../types/find/holdings.js'
 import { PaginationSchema } from '../../types/find/pagination.js'
 import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import { findHoldingsQuery } from '../../lib/db/queries/find-holdings.js'
@@ -22,6 +22,7 @@ import { PaginatedLinkSchema } from '../../types/find/links.js'
 
 /**
  * @import {PaginatedLink} from '../../types/find/links.js'
+ * @import {Holdings} from '../../types/find/holdings.js'
  */
 
 /**
@@ -32,7 +33,7 @@ import { PaginatedLinkSchema } from '../../types/find/links.js'
  */
 
 const PostFindHoldingsResponseSchema = Joi.object({
-  data: Joi.array().items(Holdings).required(),
+  data: Joi.array().items(HoldingsSchema).required(),
   links: PaginatedLinkSchema
 })
   .description('Holdings Find Result')
@@ -129,7 +130,7 @@ export async function handler(request, h) {
 
     const data = rows.map((row) => {
       const { cph_id: cphId, la_name: localAuthorityName } = row
-      return new HTTPObjectResponse(Holdings, cphId, {
+      return new HTTPObjectResponse(HoldingsSchema, cphId, {
         type: 'holdings',
         id: cphId,
         localAuthority: localAuthorityName ?? null
