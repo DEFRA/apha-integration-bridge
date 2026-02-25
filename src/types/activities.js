@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
+import { LinksReferenceSchema } from './links.js'
 
 export const ActivitiesData = Joi.object({
   type: Joi.string()
@@ -16,5 +16,5 @@ export const ActivitiesData = Joi.object({
 
 export const ActivitiesReference = Joi.object({
   data: ActivitiesData.required(),
-  links: LinksReference
+  links: LinksReferenceSchema
 })
