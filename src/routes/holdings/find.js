@@ -35,8 +35,8 @@ const PostFindHoldingsResponseSchema = Joi.object({
   data: Joi.array().items(Holdings).required(),
   links: PaginatedLinkSchema
 })
-  .description('Location Details')
-  .label('Find Location Response')
+  .description('Holdings Find Result')
+  .label('Find Holdings Response')
 
 const PostFindPayloadSchema = Joi.object({
   ids: Joi.array()
@@ -63,9 +63,7 @@ const __dirname = new URL('.', import.meta.url).pathname
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: {
-    mode: 'required'
-  },
+  auth: false,
   tags: ['api', 'holdings'],
   description: 'Retrieve holdings by ids',
   notes: fs.readFileSync(
@@ -126,8 +124,8 @@ export async function handler(request, h) {
     )
     const rows = await execute(oracledb.connection, query)
 
-    request.logger?.debug(`query: ${JSON.stringify(query)}`)
-    request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
+    request.logger?.debug({ query }, 'Executing holdings query')
+    request.logger?.debug({ rowCount: rows.length }, 'Holdings query result')
 
     const data = rows.map((row) => {
       const { cph_id: cphId, la_name: localAuthorityName } = row
