@@ -43,7 +43,7 @@ const __dirname = new URL('.', import.meta.url).pathname
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
-export const options = {
+const options = {
   tags: ['api', 'customers'],
   description: 'Retrieve customers by ids',
   notes: fs.readFileSync(
@@ -77,12 +77,10 @@ export const options = {
 
 const metrics = createMetricsLogger()
 
-export const method = 'POST'
-
 /**
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
-export const handler = async (request, h) => {
+const handler = async (request, h) => {
   try {
     metrics.putMetric('customersFindRequest', 1, Unit.Count)
 
@@ -129,4 +127,10 @@ export const handler = async (request, h) => {
 
     return httpException.boomify()
   }
+}
+
+export default {
+  method: 'POST',
+  options,
+  handler
 }
