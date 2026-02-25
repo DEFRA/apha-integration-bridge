@@ -153,7 +153,7 @@ describe('Workorders', () => {
     [
       new URLSearchParams({
         page: '1',
-        pageSize: '11',
+        pageSize: '51',
         startActivationDate: new Date('1924-01-01').toISOString()
       })
     ]

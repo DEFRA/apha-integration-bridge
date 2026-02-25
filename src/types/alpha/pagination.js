@@ -9,7 +9,7 @@ export const PaginationSchema = Joi.object({
   pageSize: Joi.number()
     .integer()
     .min(1)
-    .max(10)
+    .max(50)
     .default(10)
     .description('The number of items per page')
 })
