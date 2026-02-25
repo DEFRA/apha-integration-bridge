@@ -63,7 +63,9 @@ const __dirname = new URL('.', import.meta.url).pathname
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: false,
+  auth: {
+    mode: 'required'
+  },
   tags: ['api', 'holdings'],
   description: 'Retrieve holdings by ids',
   notes: fs.readFileSync(
@@ -111,7 +113,7 @@ export async function handler(request, h) {
   try {
     const requestPayload = /** @type {PostFindPayload} */ (request.payload)
 
-    metrics.putMetric('holdingRequest', 1, Unit.Count)
+    metrics.putMetric('holdingFindRequest', 1, Unit.Count)
 
     await using oracledb = await request.server['oracledb.sam']()
 
