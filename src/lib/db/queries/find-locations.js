@@ -1,0 +1,16 @@
+import { loadSQL } from '../utils/load-sql.js'
+
+const sql = loadSQL(import.meta.filename)
+
+/**
+ * @param {Array<string>} ids
+ * @returns {{ sql: string; }} The query and its bindings
+ */
+export function findLocationsQuery(ids) {
+  const quotedLocationIds = ids.map((locationId) => `'${locationId}'`)
+  const query = sql.replaceAll(':locationIds', quotedLocationIds.join(', '))
+
+  return {
+    sql: query
+  }
+}
