@@ -2,7 +2,7 @@ import Hapi from '@hapi/hapi'
 import { describe, test, expect } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
-import * as route from './find.js'
+import route from './find.js'
 import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 
