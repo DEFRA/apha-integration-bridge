@@ -1,4 +1,5 @@
 import Joi from 'joi'
+import { HTTPPaginationLinks } from './http-pagination-links.js'
 
 const ResponseMetaSchema = Joi.object({
   response: Joi.object({
@@ -35,7 +36,7 @@ export class HTTPObjectResponse {
     this.type = extractResponseType(schema)
     this.id = id
     this.data = data || {}
-    this.relationships = new Map()
+    this.relationships = this.data.relationships || new Map()
 
     /**
      * define private links property
@@ -45,7 +46,7 @@ export class HTTPObjectResponse {
 
   /**
    * set links for the top-level response
-   * @param {Object} links
+   * @param {Object | HTTPPaginationLinks} links
    */
   links(links) {
     this._links = links
@@ -100,6 +101,20 @@ export class HTTPObjectResponse {
     return map
   }
 
+  _getRelationshipEntries() {
+    if (this.relationships instanceof Map) {
+      return this.relationships.entries()
+    }
+
+    if (this.relationships && typeof this.relationships === 'object') {
+      return Object.entries(this.relationships)
+    }
+
+    throw new TypeError(
+      'Relationships must be a Map or a plain object keyed by relationship type'
+    )
+  }
+
   toResponse(isRoot = true) {
     const { type, id } = this
 
@@ -126,11 +141,25 @@ export class HTTPObjectResponse {
      * a single object or an array of objects depending on the number of items
      * in the relationship.
      */
-    for (const [type, items] of this.relationships.entries()) {
+    for (const [type, items] of this._getRelationshipEntries()) {
       const relationshipKind = relationshipMap?.[type]
 
       if (!relationshipKind) {
         throw new TypeError(`Relationship type "${type}" not defined in schema`)
+      }
+
+      if (!(items instanceof Map)) {
+        const serializedRelationship =
+          items && typeof items === 'object' && 'data' in items
+
+        if (serializedRelationship) {
+          relationships[type] = items
+          continue
+        }
+
+        throw new TypeError(
+          `Relationship "${type}" must be a Map of HTTPObjectResponse items or an object with a data property`
+        )
       }
 
       if (relationshipKind === 'many') {
@@ -162,6 +191,10 @@ export class HTTPObjectResponse {
 
     if (isRoot && this._links !== undefined) {
       response.links = this._links
+
+      if (response.links instanceof HTTPPaginationLinks) {
+        response.links = response.links.links()
+      }
     }
 
     return response
@@ -181,7 +214,7 @@ export class HTTPArrayResponse {
 
   /**
    * set links for the top-level response
-   * @param {Object} links
+   * @param {Object | HTTPPaginationLinks} links
    */
   links(links) {
     this._links = links
@@ -226,6 +259,10 @@ export class HTTPArrayResponse {
 
     if (this._links !== undefined) {
       response.links = this._links
+
+      if (response.links instanceof HTTPPaginationLinks) {
+        response.links = response.links.links()
+      }
     }
 
     return response

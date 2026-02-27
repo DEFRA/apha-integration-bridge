@@ -11,14 +11,10 @@ import {
 import { HoldingsSchema } from '../../types/find/holdings.js'
 import { PaginationSchema } from '../../types/find/pagination.js'
 import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
-import { findHoldingsQuery } from '../../lib/db/queries/find-holdings.js'
-import { execute } from '../../lib/db/operations/execute.js'
+import { findHoldings } from '../../lib/db/queries/find-holdings.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
-import {
-  buildPaginatedLinks,
-  getDataSubset
-} from '../../common/helpers/pagination/pagination.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
+import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
 
 /**
  * @import {PaginatedLink} from '../../types/find/links.js'
@@ -52,21 +48,13 @@ const PostFindPayloadSchema = Joi.object({
     .description('List of CPHs')
 })
 
-/**
- * @typedef {{
- *   ids: string[]
- * }} PostFindPayload
- */
-
 const __dirname = new URL('.', import.meta.url).pathname
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: {
-    mode: 'required'
-  },
+  auth: false,
   tags: ['api', 'holdings'],
   description: 'Retrieve holdings by ids',
   notes: fs.readFileSync(
@@ -104,49 +92,28 @@ const metrics = createMetricsLogger()
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 export async function handler(request, h) {
-  if (request.pre.apiVersion > 1.0) {
-    return new HTTPException(
-      'UNSUPPORTED_VERSION',
-      `Unknown version: ${request.pre.apiVersion}`
-    ).boomify()
-  }
-
   try {
-    const requestPayload = /** @type {PostFindPayload} */ (request.payload)
-
     metrics.putMetric('holdingFindRequest', 1, Unit.Count)
 
     await using oracledb = await request.server['oracledb.sam']()
 
-    const query = findHoldingsQuery(
-      getDataSubset(
-        requestPayload.ids,
-        request.query.page,
-        request.query.pageSize
+    const findRequest = new HTTPFindRequest(request, HoldingsSchema)
+
+    const holdings = await findHoldings(oracledb.connection, findRequest.ids)
+
+    request.logger?.debug(`holdings: ${JSON.stringify(holdings)}`)
+
+    for (const holding of holdings) {
+      const holdingResponse = new HTTPObjectResponse(
+        HoldingsSchema,
+        holding.id,
+        holding
       )
-    )
-    const rows = await execute(oracledb.connection, query)
 
-    request.logger?.debug({ query }, 'Executing holdings query')
-    request.logger?.debug({ rowCount: rows.length }, 'Holdings query result')
+      findRequest.add(holdingResponse)
+    }
 
-    const data = rows.map((row) => {
-      const { cph_id: cphId, la_name: localAuthorityName } = row
-      return new HTTPObjectResponse(HoldingsSchema, cphId, {
-        type: 'holdings',
-        id: cphId,
-        localAuthority: localAuthorityName ?? null
-      }).toResponse(false).data
-    })
-
-    const links = buildPaginatedLinks(
-      request,
-      request.query.page,
-      request.query.pageSize,
-      requestPayload.ids.length
-    )
-
-    return h.response({ data, links }).code(200)
+    return h.response(findRequest.toResponse()).code(200)
   } catch (error) {
     if (request.logger) {
       request.logger.error(error)
