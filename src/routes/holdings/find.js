@@ -54,7 +54,9 @@ const __dirname = new URL('.', import.meta.url).pathname
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: false,
+  auth: {
+    mode: 'required'
+  },
   tags: ['api', 'holdings'],
   description: 'Retrieve holdings by ids',
   notes: fs.readFileSync(
