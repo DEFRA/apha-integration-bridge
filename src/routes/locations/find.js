@@ -1,42 +1,26 @@
+import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { findLocationsQuery } from '../../lib/db/queries/find-locations.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
   HTTPError
 } from '../../lib/http/http-exception.js'
-
 import { Locations } from '../../types/find/locations.js'
 import { PaginationSchema } from '../../types/find/pagination.js'
-import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
-import { findLocationsQuery } from '../../lib/db/queries/find-locations.js'
-import { execute } from '../../lib/db/operations/execute.js'
-import {
-  buildPaginatedLinks,
-  getDataSubset
-} from '../../common/helpers/pagination/pagination.js'
+import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
-
-/**
- * @import {PaginatedLink} from '../../types/find/links.js'
- * @import {Locations as LocationsType} from '../../types/find/locations.js'
- */
-
-/**
- * @typedef {{
- *   data: LocationsType[],
- *   links: PaginatedLink
- * }} PostFindLocationsResponse
- */
+import { execute } from '../../lib/db/operations/execute.js'
 
 const PostFindLocationsResponseSchema = Joi.object({
   data: Joi.array().items(Locations).required(),
   links: PaginatedLinkSchema
 })
-  .description('Locations Find Result')
-  .label('Find Locations Response')
+  .description('Location Details')
+  .label('Find Location Response')
 
 const PostFindPayloadSchema = Joi.object({
   ids: Joi.array()
@@ -48,7 +32,7 @@ const PostFindPayloadSchema = Joi.object({
     )
     .min(1)
     .required()
-    .description('List of Location IDs')
+    .label('Location ids')
 })
 
 /**
@@ -209,42 +193,27 @@ export async function handler(request, h) {
   }
 
   try {
-    const requestPayload = /** @type {PostFindPayload} */ (request.payload)
-
     metrics.putMetric('locationsFindRequest', 1, Unit.Count)
 
-    await using oracledb = await request.server['oracledb.sam']()
+    const findRequest = new HTTPFindRequest(request, Locations)
 
-    const query = findLocationsQuery(
-      getDataSubset(
-        requestPayload.ids,
-        request.query.page,
-        request.query.pageSize
-      )
-    )
-    const rows = await execute(oracledb.connection, query)
+    if (findRequest.ids.length > 0) {
+      await using oracledb = await request.server['oracledb.sam']()
 
-    request.logger?.debug({ query }, 'Executing locations query')
-    request.logger?.debug({ rowCount: rows.length }, 'Locations query result')
+      const query = findLocationsQuery(findRequest.ids)
+      const rows = await execute(oracledb.connection, query)
 
-    const data = buildLocationsFromRows(
-      rows,
-      getDataSubset(
-        requestPayload.ids,
-        request.query.page,
-        request.query.pageSize
-      )
-    )
+      request.logger?.debug({ query }, 'Executing locations query')
+      request.logger?.debug({ rowCount: rows.length }, 'Locations query result')
 
-    // Build pagination links
-    const links = buildPaginatedLinks(
-      request,
-      request.query.page,
-      request.query.pageSize,
-      requestPayload.ids.length
-    )
+      const locations = buildLocationsFromRows(rows, findRequest.ids)
 
-    return h.response({ data, links }).code(200)
+      for (const location of locations) {
+        findRequest.add(location.id, location)
+      }
+    }
+
+    return h.response(findRequest.toResponse()).code(200)
   } catch (error) {
     if (request.logger) {
       request.logger.error(error)
