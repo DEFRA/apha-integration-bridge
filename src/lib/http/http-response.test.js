@@ -1,6 +1,7 @@
 import { describe, test, expect } from '@jest/globals'
 import Joi from 'joi'
 import { HTTPObjectResponse, HTTPArrayResponse } from './http-response.js'
+import { HTTPPaginationLinks } from './http-pagination-links.js'
 import { ActivitiesData } from '../../types/activities.js'
 import { CaseManagementUser } from '../../types/case-management-users.js'
 import { CommoditiesData } from '../../types/commodities.js'
@@ -152,15 +153,24 @@ describe('HTTPObjectResponse', () => {
     const response = new HTTPObjectResponse(schemaFor('user'), 42, {
       username: 'alice'
     })
+    const links = new HTTPPaginationLinks({
+      url: 'http://localhost/users?page=1&pageSize=10'
+    })
 
-    expect(response.links({ next: '/users?page=2' })).toBe(response)
+    links.setHasMore(true)
+
+    expect(response.links(links)).toBe(response)
     expect(response.toResponse()).toEqual({
       data: {
         type: 'user',
         id: 42,
         username: 'alice'
       },
-      links: { next: '/users?page=2' }
+      links: {
+        self: '/users?page=1&pageSize=10',
+        prev: null,
+        next: '/users?page=2&pageSize=10'
+      }
     })
   })
 
@@ -515,13 +525,23 @@ describe('HTTPArrayResponse', () => {
   })
 
   test('links() sets array-level links and is chainable', () => {
+    const links = new HTTPPaginationLinks({
+      url: 'http://localhost/users?page=1&pageSize=10'
+    })
+
+    links.setHasMore(true)
+
     const res = new HTTPArrayResponse(schemaFor('user'))
-      .links({ next: '/users?page=2' })
+      .links(links)
       .add(1, { username: 'alice' })
 
     expect(res.toResponse()).toEqual({
       data: [{ type: 'user', id: 1, username: 'alice' }],
-      links: { next: '/users?page=2' }
+      links: {
+        self: '/users?page=1&pageSize=10',
+        prev: null,
+        next: '/users?page=2&pageSize=10'
+      }
     })
   })
 
