@@ -66,7 +66,7 @@ const AddressableObjectData = Joi.object({
     .description(
       'The first number of an address range (if endNumber is defined) or the address number (if endNumber is not defined)'
     ),
-  startNumberSuffix: Joi.number()
+  startNumberSuffix: Joi.string()
     .allow(null)
     .required()
     .description(
@@ -76,7 +76,7 @@ const AddressableObjectData = Joi.object({
     .allow(null)
     .required()
     .description('The second number in an address range'),
-  endNumberSuffix: Joi.number()
+  endNumberSuffix: Joi.string()
     .allow(null)
     .required()
     .description('A suffix to the second number of an address range'),
@@ -118,7 +118,7 @@ export const Locations = baseData({
   address: Address.required()
     .label('Address')
     .description('Address of the location'),
-  osMapReference: Joi.string().required().label('OS map reference'),
+  osMapReference: Joi.string().allow(null).required().label('OS map reference'),
   livestockUnits: Joi.array()
     .items(LiveStockUnits)
     .required()
