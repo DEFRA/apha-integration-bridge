@@ -13,11 +13,11 @@ const schemaFor = (type) =>
 describe('HTTPFindRequest', () => {
   test('exposes deduplicated paged ids from payload', () => {
     const req = new HTTPFindRequest(
-      {
+      /** @type {any} */ ({
         url: 'http://localhost/customers/find?page=1&pageSize=2',
         query: { page: 1, pageSize: 2 },
         payload: { ids: ['a', 'b', 'a', 'c'] }
-      },
+      }),
       schemaFor('customers')
     )
 
@@ -30,11 +30,11 @@ describe('HTTPFindRequest', () => {
 
   test('toResponse() infers next link from added item count and remaining ids', () => {
     const req = new HTTPFindRequest(
-      {
+      /** @type {any} */ ({
         url: 'http://localhost/customers/find?page=1&pageSize=1',
         query: { page: 1, pageSize: 1 },
         payload: { ids: ['a', 'b'] }
-      },
+      }),
       schemaFor('customers')
     )
 
@@ -52,11 +52,11 @@ describe('HTTPFindRequest', () => {
 
   test('toResponse() keeps next null when fewer than pageSize items were added', () => {
     const req = new HTTPFindRequest(
-      {
+      /** @type {any} */ ({
         url: 'http://localhost/customers/find?page=1&pageSize=2',
         query: { page: 1, pageSize: 2 },
         payload: { ids: ['a', 'b', 'c'] }
-      },
+      }),
       schemaFor('customers')
     )
 
@@ -74,11 +74,11 @@ describe('HTTPFindRequest', () => {
 
   test('builds prev link for page greater than one', () => {
     const req = new HTTPFindRequest(
-      {
+      /** @type {any} */ ({
         url: 'http://localhost/customers/find?page=2&pageSize=2',
         query: { page: 2, pageSize: 2 },
         payload: { ids: ['a', 'b', 'c'] }
-      },
+      }),
       schemaFor('customers')
     )
 
