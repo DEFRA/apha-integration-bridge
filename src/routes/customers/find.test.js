@@ -117,6 +117,10 @@ async function createServer() {
 }
 
 describe('POST /customers/find', () => {
+  test('requires authentication explicitly', () => {
+    expect(route.options.auth).toEqual({ mode: 'required' })
+  })
+
   test('returns UNAUTHORIZED when Authorization header is missing', async () => {
     const server = await createServer()
 

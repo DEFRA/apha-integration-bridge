@@ -13,14 +13,14 @@ import {
   HTTPError
 } from '../../lib/http/http-exception.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
-import { PaginatedLink } from '../../types/alpha/links.js'
-import { Customer } from '../../types/alpha/customers.js'
-import { PaginationSchema } from '../../types/alpha/pagination.js'
+import { Customer } from '../../types/find/customers.js'
+import { PaginatedLinkSchema } from '../../types/find/links.js'
+import { PaginationSchema } from '../../types/find/pagination.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
 
 const PostFindCustomersSchema = Joi.object({
   data: Joi.array().items(Customer).required(),
-  links: PaginatedLink
+  links: PaginatedLinkSchema
 })
   .description('Customer Details')
   .label('Find Customer Response')
@@ -29,21 +29,15 @@ const PostFindPayloadSchema = Joi.object({
   ids: FindCustomersSchema.extract('ids').label('Customer ids')
 })
 
-const FindCustomersPaginationSchema = PaginationSchema.keys({
-  pageSize: Joi.number()
-    .integer()
-    .min(1)
-    .max(50)
-    .default(10)
-    .description('The number of items per page')
-})
-
 const __dirname = new URL('.', import.meta.url).pathname
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
+  auth: {
+    mode: 'required'
+  },
   tags: ['api', 'customers'],
   description: 'Retrieve customers by ids',
   notes: fs.readFileSync(
@@ -64,7 +58,7 @@ const options = {
         .description('Accept header for API versioning'),
       'Content-Type': Joi.string().allow('application/json')
     }).options({ allowUnknown: true }),
-    query: FindCustomersPaginationSchema,
+    query: PaginationSchema,
     failAction: HTTPException.failValidation
   },
   response: {
