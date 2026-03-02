@@ -5,7 +5,7 @@ import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
-import * as findLocationsQuery from '../../lib/db/queries/find-locations.js'
+import * as executeOperation from '../../lib/db/operations/execute.js'
 
 /**
  * @import {PostFindLocationsResponse} from './find.js'
@@ -382,7 +382,7 @@ describe('locations/find', () => {
     test('wraps non HTTPException errors into INTERNAL_SERVER_ERROR', async () => {
       const server = await createServer()
       jest
-        .spyOn(findLocationsQuery, 'findLocations')
+        .spyOn(executeOperation, 'execute')
         .mockRejectedValueOnce(new Error('Simulated database failure'))
 
       const response = await server.inject({
@@ -408,11 +408,11 @@ describe('locations/find', () => {
     test('returns thrown HTTPException without wrapping', async () => {
       const server = await createServer()
       jest
-        .spyOn(findLocationsQuery, 'findLocations')
+        .spyOn(executeOperation, 'execute')
         .mockRejectedValueOnce(
           new HTTPException(
             'BAD_REQUEST',
-            'Deliberate HTTP exception from mocked findLocations'
+            'Deliberate HTTP exception from mocked execute'
           )
         )
 
@@ -429,7 +429,7 @@ describe('locations/find', () => {
       expect(response.statusCode).toBe(400)
       expect(responseBody.code).toBe('BAD_REQUEST')
       expect(responseBody.message).toBe(
-        'Deliberate HTTP exception from mocked findLocations'
+        'Deliberate HTTP exception from mocked execute'
       )
       expect(responseBody.errors).toEqual([])
     })
