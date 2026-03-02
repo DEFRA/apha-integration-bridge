@@ -27,9 +27,6 @@ export const FindCustomersSchema = Joi.object({
 })
 
 /**
- * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
- * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
- *
  * @param {string[]} ids
  * @param {'PERSON' | 'ORGANISATION'} customerType
  * @returns {{ sql: string; }} The query and its bindings
