@@ -6,7 +6,6 @@ import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/si
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
 import * as executeOperation from '../../lib/db/operations/execute.js'
-
 /**
  * @import {PostFindLocationsResponse} from './find.js'
  * @import {Locations} from '../../types/find/locations.js'
@@ -238,14 +237,11 @@ describe('locations/find', () => {
 
     test('returns all matching ids', async () => {
       const server = await createServer()
-
       const queryParams = new URLSearchParams({
         page: '1',
         pageSize: '10'
       })
-
       const url = `${path}?${queryParams.toString()}`
-
       const response = await server.inject({
         method: 'POST',
         payload: {
@@ -259,34 +255,6 @@ describe('locations/find', () => {
           expectedLocationsData.location1,
           expectedLocationsData.location2
         ],
-        links: {
-          self: url,
-          next: null,
-          prev: null
-        }
-      })
-    })
-
-    test('returns an empty array for no matches', async () => {
-      const server = await createServer()
-
-      const queryParams = new URLSearchParams({
-        page: '1',
-        pageSize: '10'
-      })
-
-      const url = `${path}?${queryParams.toString()}`
-
-      const response = await server.inject({
-        method: 'POST',
-        payload: {
-          ids: ['L99999']
-        },
-        url
-      })
-
-      expect(response.result).toEqual({
-        data: [],
         links: {
           self: url,
           next: null,
@@ -319,6 +287,31 @@ describe('locations/find', () => {
 
       expect(responseResult.data[0].id).toBe(testLocations.location2)
       expect(responseResult.data[1].id).toBe(testLocations.location1)
+    })
+
+    test('returns an empty array for no matches', async () => {
+      const server = await createServer()
+      const queryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '10'
+      })
+      const url = `${path}?${queryParams.toString()}`
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: ['L99999']
+        },
+        url
+      })
+
+      expect(response.result).toEqual({
+        data: [],
+        links: {
+          self: url,
+          next: null,
+          prev: null
+        }
+      })
     })
 
     test('returns locations paginated', async () => {
