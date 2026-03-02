@@ -1,7 +1,6 @@
 import { asNullableString } from './as-nullable-string.js'
 
 /**
- * Creates an address object from a database row
  * @param {Record<string, unknown>} row
  */
 const createAddress = (row) => ({

@@ -18,8 +18,6 @@ export function findLocationsQuery(ids) {
 }
 
 /**
- * Executes the find locations query and maps database rows to API location objects.
- *
  * @param {import('oracledb').Connection} connection
  * @param {string[]} ids
  */

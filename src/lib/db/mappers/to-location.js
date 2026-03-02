@@ -2,9 +2,8 @@ import { asNullableString } from './as-nullable-string.js'
 import { createLocation } from './create-location.js'
 
 /**
- * Maps a single database row to a location object, including livestock units and facilities
  * @param {Record<string, unknown>} row
- * @param {Map<string, any>} locationMap - Map to accumulate location data
+ * @param {Map<string, any>} locationMap
  */
 export const toLocation = (row, locationMap) => {
   const locationId = asNullableString(row.location_id)
