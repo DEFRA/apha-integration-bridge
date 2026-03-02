@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-import { LinksReference } from './links.js'
+import { LinksReferenceSchema } from './links.js'
 
 const CaseManagementUserData = Joi.object({
   type: Joi.string()
@@ -15,7 +15,7 @@ const CaseManagementUserData = Joi.object({
 
 export const CaseManagementUserReference = Joi.object({
   data: CaseManagementUserData.required(),
-  links: LinksReference
+  links: LinksReferenceSchema
 })
 
 export const CaseManagementUser = CaseManagementUserData
