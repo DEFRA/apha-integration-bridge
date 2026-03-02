@@ -153,9 +153,11 @@ describe('HTTPObjectResponse', () => {
     const response = new HTTPObjectResponse(schemaFor('user'), 42, {
       username: 'alice'
     })
-    const links = new HTTPPaginationLinks({
-      url: 'http://localhost/users?page=1&pageSize=10'
-    })
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/users?page=1&pageSize=10'
+      })
+    )
 
     links.setHasMore(true)
 
@@ -407,6 +409,54 @@ describe('HTTPObjectResponse', () => {
     })
   })
 
+  test('toResponse() supports pre-serialized object relationships', () => {
+    const response = new HTTPObjectResponse(
+      schemaFor('holding', {
+        location: relationshipFor('locations', 'one'),
+        cphHolder: relationshipFor('customers', 'one')
+      }),
+      '11/111/1111',
+      { localAuthority: 'Local Authority 11/111' }
+    )
+
+    response.relationships = {
+      location: {
+        data: {
+          type: 'locations',
+          id: 'LOC-1111111111'
+        }
+      },
+      cphHolder: {
+        data: {
+          type: 'customers',
+          id: 'CUST-111111111'
+        }
+      }
+    }
+
+    expect(response.toResponse()).toEqual({
+      data: {
+        type: 'holding',
+        id: '11/111/1111',
+        localAuthority: 'Local Authority 11/111',
+        relationships: {
+          location: {
+            data: {
+              type: 'locations',
+              id: 'LOC-1111111111'
+            }
+          },
+          cphHolder: {
+            data: {
+              type: 'customers',
+              id: 'CUST-111111111'
+            }
+          }
+        }
+      }
+    })
+  })
+
   test('schema plural relationships always serialize as arrays', () => {
     const WidgetSchema = Joi.object({
       type: Joi.string().valid('widgets').required(),
@@ -525,9 +575,11 @@ describe('HTTPArrayResponse', () => {
   })
 
   test('links() sets array-level links and is chainable', () => {
-    const links = new HTTPPaginationLinks({
-      url: 'http://localhost/users?page=1&pageSize=10'
-    })
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/users?page=1&pageSize=10'
+      })
+    )
 
     links.setHasMore(true)
 

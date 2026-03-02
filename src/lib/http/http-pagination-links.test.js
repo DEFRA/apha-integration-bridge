@@ -4,9 +4,11 @@ import { HTTPPaginationLinks } from './http-pagination-links.js'
 
 describe('HTTPPaginationLinks', () => {
   test('builds self link and defaults prev/next to null on first page', () => {
-    const links = new HTTPPaginationLinks({
-      url: 'http://localhost/customers/find?page=1&pageSize=10'
-    })
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/customers/find?page=1&pageSize=10'
+      })
+    )
 
     expect(links.links()).toEqual({
       self: '/customers/find?page=1&pageSize=10',
@@ -16,9 +18,11 @@ describe('HTTPPaginationLinks', () => {
   })
 
   test('builds prev link when page is greater than one', () => {
-    const links = new HTTPPaginationLinks({
-      url: 'http://localhost/customers/find?page=3&pageSize=10&filter=active'
-    })
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/customers/find?page=3&pageSize=10&filter=active'
+      })
+    )
 
     expect(links.links()).toEqual({
       self: '/customers/find?page=3&pageSize=10&filter=active',
@@ -28,12 +32,16 @@ describe('HTTPPaginationLinks', () => {
   })
 
   test('defaults page to 1 when page is missing or invalid', () => {
-    const withInvalidPage = new HTTPPaginationLinks({
-      url: 'http://localhost/customers/find?page=abc&pageSize=10'
-    })
-    const withoutPage = new HTTPPaginationLinks({
-      url: 'http://localhost/customers/find?pageSize=10'
-    })
+    const withInvalidPage = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/customers/find?page=abc&pageSize=10'
+      })
+    )
+    const withoutPage = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/customers/find?pageSize=10'
+      })
+    )
 
     expect(withInvalidPage.page).toBe(1)
     expect(withInvalidPage.links()).toEqual({
@@ -51,9 +59,11 @@ describe('HTTPPaginationLinks', () => {
   })
 
   test('setHasMore(true) creates next link preserving existing query params', () => {
-    const links = new HTTPPaginationLinks({
-      url: 'http://localhost/customers/find?page=2&pageSize=25&filter=active'
-    })
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/customers/find?page=2&pageSize=25&filter=active'
+      })
+    )
 
     links.setHasMore(true)
 
@@ -65,9 +75,11 @@ describe('HTTPPaginationLinks', () => {
   })
 
   test('setHasMore(false) leaves next link unset', () => {
-    const links = new HTTPPaginationLinks({
-      url: 'http://localhost/customers/find?page=2&pageSize=25'
-    })
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/customers/find?page=2&pageSize=25'
+      })
+    )
 
     links.setHasMore(false)
 
