@@ -1,13 +1,6 @@
 import Hapi from '@hapi/hapi'
 import hapiPino from 'hapi-pino'
-import {
-  test,
-  expect,
-  describe,
-  afterEach,
-  jest,
-  beforeEach
-} from '@jest/globals'
+import { test, expect, describe, afterEach, jest } from '@jest/globals'
 import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
@@ -44,15 +37,6 @@ async function createServer() {
 
   return server
 }
-
-jest.mock('aws-embedded-metrics', () => ({
-  createMetricsLogger: () => ({
-    putMetric: jest.fn(),
-    setProperty: jest.fn(),
-    flush: jest.fn()
-  }),
-  Unit: { Count: 'Count' }
-}))
 
 describe('locations/find', () => {
   afterEach(() => {
@@ -181,12 +165,31 @@ describe('locations/find', () => {
             id: 'LU97339001',
             animalQuantities: 0,
             species: null
+          },
+          {
+            type: 'animal-commodities',
+            id: 'U000010',
+            animalQuantities: 0,
+            species: null
+          },
+          {
+            type: 'animal-commodities',
+            id: 'U000020',
+            animalQuantities: 0,
+            species: null
           }
         ],
         facilities: [
           {
             type: 'facilities',
             id: 'F97339001',
+            name: null,
+            facilityType: null,
+            businessActivity: null
+          },
+          {
+            type: 'facilities',
+            id: 'U000030',
             name: null,
             facilityType: null,
             businessActivity: null
@@ -232,21 +235,6 @@ describe('locations/find', () => {
         relationships: {}
       }
     }
-
-    beforeEach(() => {
-      jest
-        .spyOn(findLocationsQuery, 'findLocations')
-        .mockImplementation(async (_, ids) => {
-          const allLocations = [
-            expectedLocationsData.location1,
-            expectedLocationsData.location2
-          ]
-
-          return ids
-            .map((id) => allLocations.find((location) => location.id === id))
-            .filter(Boolean)
-        })
-    })
 
     test('returns all matching ids', async () => {
       const server = await createServer()
