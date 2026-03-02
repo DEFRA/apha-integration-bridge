@@ -1,6 +1,13 @@
 import Hapi from '@hapi/hapi'
 import hapiPino from 'hapi-pino'
-import { test, expect, describe, afterEach, jest } from '@jest/globals'
+import {
+  test,
+  expect,
+  describe,
+  afterEach,
+  jest,
+  beforeEach
+} from '@jest/globals'
 import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
@@ -127,25 +134,243 @@ describe('locations/find', () => {
   })
 
   describe('Handler logic', () => {
-    test('returns locations for valid request', async () => {
+    const testLocations = {
+      location1: 'L97339',
+      location2: 'L97340'
+    }
+
+    const expectedLocationsData = {
+      location1: {
+        type: 'locations',
+        id: 'L97339',
+        name: null,
+        address: {
+          primaryAddressableObject: {
+            startNumber: 123,
+            startNumberSuffix: null,
+            endNumber: null,
+            endNumberSuffix: null,
+            description: 'Test Building'
+          },
+          secondaryAddressableObject: {
+            startNumber: null,
+            startNumberSuffix: null,
+            endNumber: null,
+            endNumberSuffix: null,
+            description: 'Unit 1'
+          },
+          street: 'Test Street',
+          locality: 'Test Locality',
+          town: 'Test Town',
+          postcode: 'TE1 1ST',
+          countryCode: 'GB'
+        },
+        osMapReference: 'SK123456',
+        livestockUnits: [
+          {
+            type: 'animal-commodities',
+            id: 'LU97339001',
+            animalQuantities: 0,
+            species: null
+          }
+        ],
+        facilities: [
+          {
+            type: 'facilities',
+            id: 'F97339001',
+            name: null,
+            facilityType: null,
+            businessActivity: null
+          }
+        ],
+        relationships: {}
+      },
+      location2: {
+        type: 'locations',
+        id: 'L97340',
+        name: null,
+        address: {
+          primaryAddressableObject: {
+            startNumber: 456,
+            startNumberSuffix: 'A',
+            endNumber: null,
+            endNumberSuffix: null,
+            description: 'Farm House'
+          },
+          secondaryAddressableObject: {
+            startNumber: null,
+            startNumberSuffix: null,
+            endNumber: null,
+            endNumberSuffix: null,
+            description: null
+          },
+          street: 'Farm Road',
+          locality: 'Little Village',
+          town: 'Bigtown',
+          postcode: 'TE2 2ST',
+          countryCode: 'GB'
+        },
+        osMapReference: 'SK789012',
+        livestockUnits: [
+          {
+            type: 'animal-commodities',
+            id: 'LU97340001',
+            animalQuantities: 0,
+            species: null
+          }
+        ],
+        facilities: [],
+        relationships: {}
+      }
+    }
+
+    beforeEach(() => {
+      jest
+        .spyOn(findLocationsQuery, 'findLocations')
+        .mockImplementation(async (_, ids) => {
+          const allLocations = [
+            expectedLocationsData.location1,
+            expectedLocationsData.location2
+          ]
+
+          return ids
+            .map((id) => allLocations.find((location) => location.id === id))
+            .filter(Boolean)
+        })
+    })
+
+    test('returns all matching ids', async () => {
       const server = await createServer()
+
+      const queryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '10'
+      })
+
+      const url = `${path}?${queryParams.toString()}`
+
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: ['L97339']
+          ids: [testLocations.location1, testLocations.location2]
         },
-        url: `${path}?page=1&pageSize=10`
+        url
       })
 
-      expect(response.statusCode).toBe(200)
+      expect(response.result).toEqual({
+        data: [
+          expectedLocationsData.location1,
+          expectedLocationsData.location2
+        ],
+        links: {
+          self: url,
+          next: null,
+          prev: null
+        }
+      })
+    })
 
-      const responseBody = /** @type {PostFindLocationsResponse} */ (
+    test('returns an empty array for no matches', async () => {
+      const server = await createServer()
+
+      const queryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '10'
+      })
+
+      const url = `${path}?${queryParams.toString()}`
+
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: ['L99999']
+        },
+        url
+      })
+
+      expect(response.result).toEqual({
+        data: [],
+        links: {
+          self: url,
+          next: null,
+          prev: null
+        }
+      })
+    })
+
+    test('returns locations in order requested', async () => {
+      const server = await createServer()
+
+      const queryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '10'
+      })
+
+      const url = `${path}?${queryParams.toString()}`
+
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: [testLocations.location2, testLocations.location1]
+        },
+        url
+      })
+
+      const responseResult = /** @type {PostFindLocationsResponse} */ (
         response.result
       )
 
-      expect(responseBody.data).toBeDefined()
-      expect(Array.isArray(responseBody.data)).toBe(true)
-      expect(responseBody.links).toBeDefined()
+      expect(responseResult.data[0].id).toBe(testLocations.location2)
+      expect(responseResult.data[1].id).toBe(testLocations.location1)
+    })
+
+    test('returns locations paginated', async () => {
+      const server = await createServer()
+
+      const requestIds = [testLocations.location1, testLocations.location2]
+
+      const queryParamsPage1 = new URLSearchParams({
+        page: '1',
+        pageSize: '1'
+      })
+
+      const queryParamsPage2 = new URLSearchParams({
+        page: '2',
+        pageSize: '1'
+      })
+
+      const urlPage1 = `${path}?${queryParamsPage1.toString()}`
+      const urlPage2 = `${path}?${queryParamsPage2.toString()}`
+
+      const firstResponse = await server.inject({
+        method: 'POST',
+        payload: { ids: requestIds },
+        url: urlPage1
+      })
+
+      expect(firstResponse.result).toEqual({
+        data: [expectedLocationsData.location1],
+        links: {
+          self: urlPage1,
+          next: urlPage2,
+          prev: null
+        }
+      })
+
+      const secondResponse = await server.inject({
+        method: 'POST',
+        payload: { ids: requestIds },
+        url: urlPage2
+      })
+
+      expect(secondResponse.result).toEqual({
+        data: [expectedLocationsData.location2],
+        links: {
+          self: urlPage2,
+          next: null,
+          prev: urlPage1
+        }
+      })
     })
   })
 
