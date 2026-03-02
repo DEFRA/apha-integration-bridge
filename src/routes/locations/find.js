@@ -1,22 +1,35 @@
-import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { findLocationsQuery } from '../../lib/db/queries/find-locations.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
   HTTPError
 } from '../../lib/http/http-exception.js'
-import { Locations } from '../../types/find/locations.js'
+
+import { LocationsSchema } from '../../types/find/locations.js'
 import { PaginationSchema } from '../../types/find/pagination.js'
-import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
+import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
+import { findLocations } from '../../lib/db/queries/find-locations.js'
+import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
-import { execute } from '../../lib/db/operations/execute.js'
+import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
+
+/**
+ * @import {PaginatedLink} from '../../types/find/links.js'
+ * @import {Locations} from '../../types/find/locations.js'
+ */
+
+/**
+ * @typedef {{
+ *   data: Locations[],
+ *   links: PaginatedLink
+ * }} PostFindLocationsResponse
+ */
 
 const PostFindLocationsResponseSchema = Joi.object({
-  data: Joi.array().items(Locations).required(),
+  data: Joi.array().items(LocationsSchema).required(),
   links: PaginatedLinkSchema
 })
   .description('Location Details')
@@ -34,12 +47,6 @@ const PostFindPayloadSchema = Joi.object({
     .required()
     .label('Location ids')
 })
-
-/**
- * @typedef {{
- *   ids: string[]
- * }} PostFindPayload
- */
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -84,133 +91,28 @@ const options = {
 const metrics = createMetricsLogger()
 
 /**
- * @param {Record<string, any>} row
- */
-function toAddress(row) {
-  if (row) {
-    return {
-      primaryAddressableObject: {
-        startNumber: row.paonstartnumber ?? null,
-        startNumberSuffix: row.paonstartnumbersuffix ?? null,
-        endNumber: row.paonendnumber ?? null,
-        endNumberSuffix: row.paonendnumbersuffix ?? null,
-        description: row.paondescription ?? null
-      },
-      secondaryAddressableObject: {
-        startNumber: row.saonstartnumber ?? null,
-        startNumberSuffix: row.saonstartnumbersuffix ?? null,
-        endNumber: row.saonendnumber ?? null,
-        endNumberSuffix: row.saonendnumbersuffix ?? null,
-        description: row.saondescription ?? null
-      },
-      street: row.street ?? null,
-      locality: row.locality ?? null,
-      town: row.town ?? null,
-      postcode: row.postcode ?? null,
-      countryCode: row.countrycode ?? null
-    }
-  }
-}
-
-/**
- * @param {Array<Record<string, any>>} rows
- * @param {string[]} requestedIds - The IDs in the order they were requested
- * @returns {Array<Object>}
- */
-function buildLocationsFromRows(rows, requestedIds) {
-  const locationMap = new Map()
-
-  for (const row of rows) {
-    const locationId = row.location_id
-
-    if (!locationMap.has(locationId)) {
-      locationMap.set(locationId, {
-        type: 'locations',
-        id: locationId,
-        name: null,
-        address: toAddress(row),
-        osMapReference: row.osmapref ?? null,
-        livestockUnits: [],
-        facilities: [],
-        relationships: {}
-      })
-    }
-
-    const location = locationMap.get(locationId)
-    const unitId = row.unitid
-    const unitType = row.unittype
-
-    if (unitId && unitType === 'LU') {
-      const existingLU = location.livestockUnits.find(
-        (lu) => lu.id === String(unitId)
-      )
-      if (!existingLU) {
-        location.livestockUnits.push({
-          type: 'animal-commodities',
-          id: String(unitId),
-          animalQuantities: row.usualquantity ?? 0,
-          species: null
-        })
-      }
-    }
-
-    if (unitId && unitType === 'F') {
-      const existingFacility = location.facilities.find(
-        (f) => f.id === String(unitId)
-      )
-      if (!existingFacility) {
-        location.facilities.push({
-          type: 'facilities',
-          id: String(unitId),
-          name: null,
-          facilityType: null,
-          businessActivity: null
-        })
-      }
-    }
-  }
-
-  // Return locations in the order they were requested
-  const orderedLocations = []
-  for (const id of requestedIds) {
-    if (locationMap.has(id)) {
-      orderedLocations.push(locationMap.get(id))
-    }
-  }
-
-  return orderedLocations
-}
-
-/**
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 export async function handler(request, h) {
-  if (request.pre.apiVersion > 1.0) {
-    return new HTTPException(
-      'UNSUPPORTED_VERSION',
-      `Unknown version: ${request.pre.apiVersion}`
-    ).boomify()
-  }
-
   try {
     metrics.putMetric('locationsFindRequest', 1, Unit.Count)
 
-    const findRequest = new HTTPFindRequest(request, Locations)
+    await using oracledb = await request.server['oracledb.sam']()
 
-    if (findRequest.ids.length > 0) {
-      await using oracledb = await request.server['oracledb.sam']()
+    const findRequest = new HTTPFindRequest(request, LocationsSchema)
 
-      const query = findLocationsQuery(findRequest.ids)
-      const rows = await execute(oracledb.connection, query)
+    const locations = await findLocations(oracledb.connection, findRequest.ids)
 
-      request.logger?.debug({ query }, 'Executing locations query')
-      request.logger?.debug({ rowCount: rows.length }, 'Locations query result')
+    request.logger?.debug(`locations: ${JSON.stringify(locations)}`)
 
-      const locations = buildLocationsFromRows(rows, findRequest.ids)
+    for (const location of locations) {
+      const locationResponse = new HTTPObjectResponse(
+        LocationsSchema,
+        location.id,
+        location
+      )
 
-      for (const location of locations) {
-        findRequest.add(location.id, location)
-      }
+      findRequest.add(locationResponse)
     }
 
     return h.response(findRequest.toResponse()).code(200)
