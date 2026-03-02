@@ -140,10 +140,16 @@ describe('holdings/find', () => {
         localAuthority: 'Local Authority 11/111',
         relationships: {
           cphHolder: {
-            data: null
+            data: {
+              id: 'CUST-111111111',
+              type: 'customers'
+            }
           },
           location: {
-            data: null
+            data: {
+              id: 'LOC-1111111111',
+              type: 'locations'
+            }
           }
         }
       },
@@ -153,10 +159,16 @@ describe('holdings/find', () => {
         localAuthority: 'Local Authority 22/222',
         relationships: {
           cphHolder: {
-            data: null
+            data: {
+              id: 'CUST-222222222',
+              type: 'customers'
+            }
           },
           location: {
-            data: null
+            data: {
+              id: 'LOC-2222222222',
+              type: 'locations'
+            }
           }
         }
       },
@@ -166,9 +178,17 @@ describe('holdings/find', () => {
         localAuthority: null,
         relationships: {
           cphHolder: {
-            data: null
+            data: {
+              id: 'CUST-333333333',
+              type: 'customers'
+            }
           },
-          location: { data: null }
+          location: {
+            data: {
+              id: 'LOC-3333333333',
+              type: 'locations'
+            }
+          }
         }
       }
     }

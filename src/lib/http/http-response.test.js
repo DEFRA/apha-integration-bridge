@@ -1,6 +1,7 @@
 import { describe, test, expect } from '@jest/globals'
 import Joi from 'joi'
 import { HTTPObjectResponse, HTTPArrayResponse } from './http-response.js'
+import { HTTPPaginationLinks } from './http-pagination-links.js'
 import { ActivitiesData } from '../../types/activities.js'
 import { CaseManagementUser } from '../../types/case-management-users.js'
 import { CommoditiesData } from '../../types/commodities.js'
@@ -152,15 +153,26 @@ describe('HTTPObjectResponse', () => {
     const response = new HTTPObjectResponse(schemaFor('user'), 42, {
       username: 'alice'
     })
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/users?page=1&pageSize=10'
+      })
+    )
 
-    expect(response.links({ next: '/users?page=2' })).toBe(response)
+    links.setHasMore(true)
+
+    expect(response.links(links)).toBe(response)
     expect(response.toResponse()).toEqual({
       data: {
         type: 'user',
         id: 42,
         username: 'alice'
       },
-      links: { next: '/users?page=2' }
+      links: {
+        self: '/users?page=1&pageSize=10',
+        prev: null,
+        next: '/users?page=2&pageSize=10'
+      }
     })
   })
 
@@ -397,6 +409,54 @@ describe('HTTPObjectResponse', () => {
     })
   })
 
+  test('toResponse() supports pre-serialized object relationships', () => {
+    const response = new HTTPObjectResponse(
+      schemaFor('holding', {
+        location: relationshipFor('locations', 'one'),
+        cphHolder: relationshipFor('customers', 'one')
+      }),
+      '11/111/1111',
+      { localAuthority: 'Local Authority 11/111' }
+    )
+
+    response.relationships = {
+      location: {
+        data: {
+          type: 'locations',
+          id: 'LOC-1111111111'
+        }
+      },
+      cphHolder: {
+        data: {
+          type: 'customers',
+          id: 'CUST-111111111'
+        }
+      }
+    }
+
+    expect(response.toResponse()).toEqual({
+      data: {
+        type: 'holding',
+        id: '11/111/1111',
+        localAuthority: 'Local Authority 11/111',
+        relationships: {
+          location: {
+            data: {
+              type: 'locations',
+              id: 'LOC-1111111111'
+            }
+          },
+          cphHolder: {
+            data: {
+              type: 'customers',
+              id: 'CUST-111111111'
+            }
+          }
+        }
+      }
+    })
+  })
+
   test('schema plural relationships always serialize as arrays', () => {
     const WidgetSchema = Joi.object({
       type: Joi.string().valid('widgets').required(),
@@ -515,13 +575,25 @@ describe('HTTPArrayResponse', () => {
   })
 
   test('links() sets array-level links and is chainable', () => {
+    const links = new HTTPPaginationLinks(
+      /** @type {any} */ ({
+        url: 'http://localhost/users?page=1&pageSize=10'
+      })
+    )
+
+    links.setHasMore(true)
+
     const res = new HTTPArrayResponse(schemaFor('user'))
-      .links({ next: '/users?page=2' })
+      .links(links)
       .add(1, { username: 'alice' })
 
     expect(res.toResponse()).toEqual({
       data: [{ type: 'user', id: 1, username: 'alice' }],
-      links: { next: '/users?page=2' }
+      links: {
+        self: '/users?page=1&pageSize=10',
+        prev: null,
+        next: '/users?page=2&pageSize=10'
+      }
     })
   })
 
