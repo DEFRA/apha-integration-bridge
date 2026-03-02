@@ -45,6 +45,15 @@ async function createServer() {
   return server
 }
 
+jest.mock('aws-embedded-metrics', () => ({
+  createMetricsLogger: () => ({
+    putMetric: jest.fn(),
+    setProperty: jest.fn(),
+    flush: jest.fn()
+  }),
+  Unit: { Count: 'Count' }
+}))
+
 describe('locations/find', () => {
   afterEach(() => {
     jest.restoreAllMocks()
