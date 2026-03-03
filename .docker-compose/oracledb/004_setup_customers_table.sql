@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- 003_setup_customers_table.sql
+-- 004_setup_customers_table.sql
 -- Minimal AHBRP customer schema + fake seed data for /customers/find tests.
 -- Works alongside 001/002 holding setup scripts.
 -- ─────────────────────────────────────────────────────────────────────────────

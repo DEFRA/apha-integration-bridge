@@ -1,7 +1,7 @@
 import Joi from 'joi'
 
 import { baseData, relationshipToMany, relationshipToOne } from './helpers.js'
-import { Address } from './locations.js'
+import { Address } from '../address.js'
 
 export const CustomerRelationship = relationshipToOne(
   baseData({

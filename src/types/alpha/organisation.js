@@ -1,7 +1,7 @@
 import Joi from 'joi'
 
 import { baseData, relationshipToMany } from './helpers.js'
-import { Address } from './locations.js'
+import { Address } from '../address.js'
 
 const ContactDetails = Joi.object({
   fullName: Joi.string().allow(null).label('Full name'),
