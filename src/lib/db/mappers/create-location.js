@@ -1,41 +1,24 @@
 import { asNullableString } from './as-nullable-string.js'
-
-/**
- * @param {Record<string, unknown>} row
- */
-const createAddress = (row) => ({
-  primaryAddressableObject: {
-    startNumber: row.paonstartnumber ?? null,
-    startNumberSuffix: asNullableString(row.paonstartnumbersuffix),
-    endNumber: row.paonendnumber ?? null,
-    endNumberSuffix: asNullableString(row.paonendnumbersuffix),
-    description: asNullableString(row.paondescription)
-  },
-  secondaryAddressableObject: {
-    startNumber: row.saonstartnumber ?? null,
-    startNumberSuffix: asNullableString(row.saonstartnumbersuffix),
-    endNumber: row.saonendnumber ?? null,
-    endNumberSuffix: asNullableString(row.saonendnumbersuffix),
-    description: asNullableString(row.saondescription)
-  },
-  street: asNullableString(row.street),
-  locality: asNullableString(row.locality),
-  town: asNullableString(row.town),
-  postcode: asNullableString(row.postcode),
-  countryCode: asNullableString(row.countrycode)
-})
+import { toAddress } from './to-address.js'
 
 /**
  * @param {Record<string, unknown>} row
  * @param {string} id
  */
 export const createLocation = (row, id) => {
+  const address = toAddress(row)
+
+  // Remove isPreferred field as it's not part of the locations address schema
+  if (address) {
+    delete address.isPreferred
+  }
+
   const location = {
     type: 'locations',
     id,
     name: null,
-    address: createAddress(row),
-    osMapReference: asNullableString(row.osmapref),
+    address,
+    osMapReference: asNullableString(row.os_map_reference),
     livestockUnits: [],
     facilities: [],
     relationships: {}

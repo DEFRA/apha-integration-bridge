@@ -6,19 +6,19 @@ test('toLocations returns locations ordered by requested ids', () => {
   const rows = [
     {
       location_id: 'L97340',
-      osmapref: 'TQ987654',
+      os_map_reference: 'TQ987654',
       street: 'Second Street',
       town: 'Manchester',
       postcode: 'M1 1AA',
-      countrycode: 'GB'
+      country_code: 'GB'
     },
     {
       location_id: 'L97339',
-      osmapref: 'TQ123456',
+      os_map_reference: 'TQ123456',
       street: 'Main Street',
       town: 'London',
       postcode: 'SW1A 1AA',
-      countrycode: 'GB'
+      country_code: 'GB'
     }
   ]
 
@@ -33,35 +33,35 @@ test('toLocations accumulates livestock units and facilities for a location', ()
   const rows = [
     {
       location_id: 'L97339',
-      osmapref: 'TQ123456',
+      os_map_reference: 'TQ123456',
       street: 'Main Street',
       town: 'London',
       postcode: 'SW1A 1AA',
-      countrycode: 'GB',
-      unitid: '1001',
-      unittype: 'LU',
-      usualquantity: 50
+      country_code: 'GB',
+      unit_id: '1001',
+      unit_type: 'LU',
+      usual_quantity_of_animals: 50
     },
     {
       location_id: 'L97339',
-      osmapref: 'TQ123456',
+      os_map_reference: 'TQ123456',
       street: 'Main Street',
       town: 'London',
       postcode: 'SW1A 1AA',
-      countrycode: 'GB',
-      unitid: '2001',
-      unittype: 'F'
+      country_code: 'GB',
+      unit_id: '2001',
+      unit_type: 'F'
     },
     {
       location_id: 'L97339',
-      osmapref: 'TQ123456',
+      os_map_reference: 'TQ123456',
       street: 'Main Street',
       town: 'London',
       postcode: 'SW1A 1AA',
-      countrycode: 'GB',
-      unitid: '1002',
-      unittype: 'LU',
-      usualquantity: 25
+      country_code: 'GB',
+      unit_id: '1002',
+      unit_type: 'LU',
+      usual_quantity_of_animals: 25
     }
   ]
 
@@ -95,19 +95,19 @@ test('toLocations ignores rows with invalid location ids', () => {
   const rows = [
     {
       location_id: 'L97339',
-      osmapref: 'TQ123456',
+      os_map_reference: 'TQ123456',
       street: 'Main Street',
       town: 'London'
     },
     {
       location_id: '   ',
-      osmapref: 'Invalid',
+      os_map_reference: 'Invalid',
       street: 'Invalid Street',
       town: 'Invalid'
     },
     {
       location_id: null,
-      osmapref: 'Null',
+      os_map_reference: 'Null',
       street: 'Null Street',
       town: 'Null'
     }

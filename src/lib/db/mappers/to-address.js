@@ -35,16 +35,16 @@ export const toAddress = (row) => {
   return {
     primaryAddressableObject: {
       startNumber: asNullableNumber(row.paon_start_number),
-      startNumberSuffix: asNullableNumber(row.paon_start_number_suffix),
+      startNumberSuffix: asNullableString(row.paon_start_number_suffix),
       endNumber: asNullableNumber(row.paon_end_number),
-      endNumberSuffix: asNullableNumber(row.paon_end_number_suffix),
+      endNumberSuffix: asNullableString(row.paon_end_number_suffix),
       description: asNullableString(row.paon_description)
     },
     secondaryAddressableObject: {
       startNumber: asNullableNumber(row.saon_start_number),
-      startNumberSuffix: asNullableNumber(row.saon_start_number_suffix),
+      startNumberSuffix: asNullableString(row.saon_start_number_suffix),
       endNumber: asNullableNumber(row.saon_end_number),
-      endNumberSuffix: asNullableNumber(row.saon_end_number_suffix),
+      endNumberSuffix: asNullableString(row.saon_end_number_suffix),
       description: asNullableString(row.saon_description)
     },
     street: asNullableString(row.street),

@@ -82,23 +82,23 @@ const metrics = createMetricsLogger()
 function toAddress(row) {
   if (row) {
     return {
-      paonStartNumber: row.paonstartnumber ?? null,
-      paonStartNumberSuffix: row.paonstartnumbersuffix ?? null,
-      paonEndNumber: row.paonendnumber ?? null,
-      paonEndNumberSuffix: row.paonendnumbersuffix ?? null,
-      paonDescription: row.paondescription ?? null,
-      saonDescription: row.saondescription ?? null,
-      saonStartNumber: row.saonstartnumber ?? null,
-      saonStartNumberSuffix: row.saonstartnumbersuffix ?? null,
-      saonEndNumber: row.saonendnumber ?? null,
-      saonEndNumberSuffix: row.saonendnumbersuffix ?? null,
+      paonStartNumber: row.paon_start_number ?? null,
+      paonStartNumberSuffix: row.paon_start_number_suffix ?? null,
+      paonEndNumber: row.paon_end_number ?? null,
+      paonEndNumberSuffix: row.paon_end_number_suffix ?? null,
+      paonDescription: row.paon_description ?? null,
+      saonDescription: row.saon_description ?? null,
+      saonStartNumber: row.saon_start_number ?? null,
+      saonStartNumberSuffix: row.saon_start_number_suffix ?? null,
+      saonEndNumber: row.saon_end_number ?? null,
+      saonEndNumberSuffix: row.saon_end_number_suffix ?? null,
       street: row.street ?? null,
       locality: row.locality ?? null,
       town: row.town ?? null,
       administrativeAreaCounty: row.county ?? null,
       postcode: row.postcode ?? null,
-      ukInternalCode: row.ukinternalcode ?? null,
-      countryCode: row.countrycode ?? null
+      ukInternalCode: row.uk_internal_code ?? null,
+      countryCode: row.country_code ?? null
     }
   }
 }
@@ -155,8 +155,8 @@ export async function handler(request, h) {
     const facilitiesIds = new Set()
 
     for (const row of rows) {
-      const unitId = row.unitid
-      const unitType = row.unittype
+      const unitId = row.unit_id
+      const unitType = row.unit_type
 
       if (!unitId) {
         continue

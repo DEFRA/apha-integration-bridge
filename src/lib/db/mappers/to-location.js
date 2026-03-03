@@ -19,8 +19,8 @@ export const toLocation = (row, locationMap) => {
   }
 
   const location = locationMap.get(locationId)
-  const unitId = asNullableString(row.unitid)
-  const unitType = asNullableString(row.unittype)
+  const unitId = asNullableString(row.unit_id)
+  const unitType = asNullableString(row.unit_type)
 
   // Add livestock unit
   if (unitId && unitType === 'LU') {
@@ -29,7 +29,7 @@ export const toLocation = (row, locationMap) => {
       location.livestockUnits.push({
         type: 'animal-commodities',
         id: unitId,
-        animalQuantities: row.usualquantity ?? 0,
+        animalQuantities: row.usual_quantity_of_animals ?? 0,
         species: null
       })
     }

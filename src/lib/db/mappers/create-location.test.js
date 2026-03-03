@@ -5,13 +5,13 @@ import { createLocation } from './create-location.js'
 test('createLocation maps a location row into the location response skeleton', () => {
   const location = createLocation(
     {
-      paonstartnumber: 123,
-      paonstartnumbersuffix: 'A',
+      paon_start_number: 123,
+      paon_start_number_suffix: 'A',
       street: 'Main Street',
       town: 'London',
       postcode: 'SW1A 1AA',
-      countrycode: 'GB',
-      osmapref: 'TQ123456'
+      country_code: 'GB',
+      os_map_reference: 'TQ123456'
     },
     'L97339'
   )
