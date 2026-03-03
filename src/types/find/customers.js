@@ -13,7 +13,7 @@ export const CustomerRelationship = relationshipToOne(
 export const CustomersData = baseData({
   plural: 'customers',
   singular: 'customer'
-})
+}).meta({ response: { type: 'customers' } })
 
 export const CustomersRelationships = Joi.object({
   srabpiPlants: relationshipToMany(
