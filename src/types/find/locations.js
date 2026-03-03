@@ -1,5 +1,6 @@
 import Joi from 'joi'
 import { baseData, relationshipToOne } from './helpers.js'
+import { Address } from '../address.js'
 
 /**
  * @typedef {{
@@ -66,28 +67,6 @@ const Facilities = baseData({
       )
   })
   .label('Facility')
-
-const AddressableObjectData = Joi.object({
-  startNumber: Joi.number().allow(null).required(),
-  startNumberSuffix: Joi.string().allow(null).required(),
-  endNumber: Joi.number().allow(null).required(),
-  endNumberSuffix: Joi.string().allow(null).required(),
-  description: Joi.string().allow(null).required()
-}).required()
-
-export const Address = Joi.object({
-  primaryAddressableObject: AddressableObjectData.label(
-    'Primary addressable object'
-  ),
-  secondaryAddressableObject: AddressableObjectData.label(
-    'Secondary addressable object'
-  ),
-  street: Joi.string().allow(null).required(),
-  locality: Joi.string().allow(null).required(),
-  town: Joi.string().allow(null).required(),
-  postcode: Joi.string().allow(null).required(),
-  countryCode: Joi.string().allow(null).required()
-})
 
 export const LocationsSchema = LocationsData.keys({
   type: Joi.string().valid('locations').required().label('Type'),
