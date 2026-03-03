@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
---  004_add_locations_test_data.sql
+--  005_add_locations_test_data.sql
 --  Seeds test location data for L97339 and L97340 for the locations/find endpoint
 -- ─────────────────────────────────────────────────────────────────────────────
 
