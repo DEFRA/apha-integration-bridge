@@ -54,7 +54,7 @@ describe('locations/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: ['L97339']
+          ids: ['L98001']
         },
         url
       })
@@ -127,14 +127,14 @@ describe('locations/find', () => {
 
   describe('Handler logic', () => {
     const testLocations = {
-      location1: 'L97339',
-      location2: 'L97340'
+      location1: 'L98001',
+      location2: 'L98002'
     }
 
     const expectedLocationsData = {
       location1: {
         type: 'locations',
-        id: 'L97339',
+        id: 'L98001',
         name: null,
         address: {
           primaryAddressableObject: {
@@ -161,34 +161,15 @@ describe('locations/find', () => {
         livestockUnits: [
           {
             type: 'animal-commodities',
-            id: 'LU97339001',
-            animalQuantities: 0,
-            species: null
-          },
-          {
-            type: 'animal-commodities',
-            id: 'U000010',
-            animalQuantities: 0,
-            species: null
-          },
-          {
-            type: 'animal-commodities',
-            id: 'U000020',
-            animalQuantities: 0,
+            id: 'LU98001001',
+            animalQuantities: 50,
             species: null
           }
         ],
         facilities: [
           {
             type: 'facilities',
-            id: 'F97339001',
-            name: null,
-            facilityType: null,
-            businessActivity: null
-          },
-          {
-            type: 'facilities',
-            id: 'U000030',
+            id: 'F98001001',
             name: null,
             facilityType: null,
             businessActivity: null
@@ -198,7 +179,7 @@ describe('locations/find', () => {
       },
       location2: {
         type: 'locations',
-        id: 'L97340',
+        id: 'L98002',
         name: null,
         address: {
           primaryAddressableObject: {
@@ -225,8 +206,8 @@ describe('locations/find', () => {
         livestockUnits: [
           {
             type: 'animal-commodities',
-            id: 'LU97340001',
-            animalQuantities: 0,
+            id: 'LU98002001',
+            animalQuantities: 100,
             species: null
           }
         ],
@@ -381,7 +362,7 @@ describe('locations/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: ['L97339']
+          ids: ['L98001']
         },
         url
       })
@@ -412,7 +393,7 @@ describe('locations/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: ['L97339']
+          ids: ['L98001']
         },
         url
       })

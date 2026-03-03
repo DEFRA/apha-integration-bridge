@@ -6,6 +6,36 @@
 ALTER SESSION SET CONTAINER = FREEPDB1;
 CONNECT ahbrp/password@FREEPDB1;
 
+-- Create missing tables needed for locations query (if they don't exist)
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE coll_regstrd_animal_group PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_point PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+
+-- ASSET table (links livestock_unit/facility to animal groups)
+CREATE TABLE asset (
+  asset_pk    NUMBER PRIMARY KEY,
+  animal_pk   NUMBER
+);
+
+-- COLL_REGSTRD_ANIMAL_GROUP table (stores animal quantities)
+CREATE TABLE coll_regstrd_animal_group (
+  animal_pk                   NUMBER PRIMARY KEY,
+  usual_quantity_of_animals   NUMBER
+);
+
+-- FEATURE_POINT table (stores OS map references)
+CREATE TABLE feature_point (
+  feature_pk                  NUMBER NOT NULL,
+  primary_feature_point_ind   VARCHAR2(1),
+  feature_point_to_date       DATE,
+  os_map_reference            VARCHAR2(50)
+);
+
+COMMIT;
+
 DECLARE
   first_location_feature_pk NUMBER := 91001;
   second_location_feature_pk NUMBER := 91002;
@@ -14,8 +44,10 @@ DECLARE
   second_address_pk NUMBER := 92002;
 
   first_livestock_asset_pk NUMBER := 93001;
+  first_livestock_animal_pk NUMBER := 93001001;
   first_facility_asset_pk NUMBER := 93002;
   second_livestock_asset_pk NUMBER := 93003;
+  second_livestock_animal_pk NUMBER := 93003001;
 
 BEGIN
   -- ─────────────────────────────────────────────────────────────────────────────
@@ -25,7 +57,7 @@ BEGIN
   -- Create location
   BEGIN
     INSERT INTO location (feature_pk, location_id)
-    VALUES (first_location_feature_pk, 'L97339');
+    VALUES (first_location_feature_pk, 'L98001');
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
   -- Create feature state for location (ACTIVE)
@@ -121,7 +153,7 @@ BEGIN
       animal_pk
     ) VALUES (
       first_livestock_asset_pk,
-      NULL
+      first_livestock_animal_pk
     );
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
@@ -131,7 +163,7 @@ BEGIN
       unit_id
     ) VALUES (
       first_livestock_asset_pk,
-      'LU97339001'
+      'LU98001001'
     );
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
@@ -171,7 +203,7 @@ BEGIN
       animal_pk,
       usual_quantity_of_animals
     ) VALUES (
-      NULL,
+      first_livestock_animal_pk,
       50
     );
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
@@ -193,7 +225,7 @@ BEGIN
       unit_id
     ) VALUES (
       first_facility_asset_pk,
-      'F97339001'
+      'F98001001'
     );
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
@@ -234,7 +266,7 @@ BEGIN
   -- Create location
   BEGIN
     INSERT INTO location (feature_pk, location_id)
-    VALUES (second_location_feature_pk, 'L97340');
+    VALUES (second_location_feature_pk, 'L98002');
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
   -- Create feature state for location (ACTIVE)
@@ -330,7 +362,7 @@ BEGIN
       animal_pk
     ) VALUES (
       second_livestock_asset_pk,
-      NULL
+      second_livestock_animal_pk
     );
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
@@ -340,7 +372,7 @@ BEGIN
       unit_id
     ) VALUES (
       second_livestock_asset_pk,
-      'LU97340001'
+      'LU98002001'
     );
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
@@ -380,7 +412,7 @@ BEGIN
       animal_pk,
       usual_quantity_of_animals
     ) VALUES (
-      NULL,
+      second_livestock_animal_pk,
       100
     );
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
