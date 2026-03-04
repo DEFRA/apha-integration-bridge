@@ -4,6 +4,10 @@ import { Activities } from './activities.js'
 import { HoldingsRelationship } from './holdings.js'
 
 /**
+ * @import { RelationshipToMany, RelationshipToOne } from './helpers.js'
+ */
+
+/**
  * @typedef {{
  *  type: 'workorders'
  *  id: string
@@ -18,11 +22,11 @@ import { HoldingsRelationship } from './holdings.js'
  *  activities: object[]
  *  phase: string
  *  relationships: {
- *    customerOrOrganisation: object
- *    holding: object
- *    facilities: object[]
- *    location: object
- *    livestockUnits: object[]
+ *    customerOrOrganisation: RelationshipToOne
+ *    holding: RelationshipToOne
+ *    facilities: RelationshipToMany
+ *    location: RelationshipToOne
+ *    livestockUnits: RelationshipToMany
  *    }
  * }} Workorders
  */
@@ -33,16 +37,10 @@ const WorkordersData = baseData({
 })
 
 const CustomerOrOrganisationRelationship = relationshipToOne(
-  Joi.alternatives(
-    baseData({
-      plural: 'customers',
-      singular: 'customer'
-    }),
-    baseData({
-      plural: 'organisations',
-      singular: 'organisation'
-    })
-  )
+  baseData({
+    plural: 'customersOrOrganisations',
+    singular: 'customerOrOrganisation'
+  })
 )
 
 export const Workorders = WorkordersData.keys({
