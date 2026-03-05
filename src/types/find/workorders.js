@@ -43,7 +43,7 @@ const CustomerOrOrganisationRelationship = relationshipToOne(
   })
 )
 
-export const Workorders = WorkordersData.keys({
+export const WorkordersSchema = WorkordersData.keys({
   type: Joi.string().valid('workorders').required().label('Type'),
   id: Joi.string().required().label('workorder'),
   activationDate: Joi.string().required().allow(null).label('Activation Date'),
