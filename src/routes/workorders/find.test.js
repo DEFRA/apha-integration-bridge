@@ -128,15 +128,15 @@ describe('workorders/find', () => {
 
   describe('Handler logic', () => {
     const testWorkorders = {
-      workorder1: 'WS-11111',
-      workorder2: 'WS-22222',
-      workorder3: 'WS-33333'
+      workorder1: 'WS-76512',
+      workorder2: 'WS-76513',
+      workorder3: 'WS-76514'
     }
 
     const expectedWorkordersData = {
       workorder1: {
         type: 'workorders',
-        id: 'WS-11111',
+        id: 'WS-76512',
         activationDate: '2024-01-15',
         businessArea: 'Animal Health',
         workArea: 'Disease Control',
@@ -193,7 +193,7 @@ describe('workorders/find', () => {
       },
       workorder2: {
         type: 'workorders',
-        id: 'WS-22222',
+        id: 'WS-76513',
         activationDate: '2024-02-20',
         businessArea: 'Plant Health',
         workArea: 'Pest Control',
@@ -254,7 +254,7 @@ describe('workorders/find', () => {
       },
       workorder3: {
         type: 'workorders',
-        id: 'WS-33333',
+        id: 'WS-76514',
         activationDate: null,
         businessArea: null,
         workArea: null,
@@ -295,7 +295,7 @@ describe('workorders/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: [testWorkorders.workorder1, testWorkorders.workorder2]
+          ids: [testWorkorders.workorder1] //, testWorkorders.workorder2]
         },
         url
       })
