@@ -74,22 +74,22 @@ pega_Data.index_ac_workschedule ws,
 ) ws_f,
 (
   SELECT
-  SUBSTR(pxcoverinskey, 7) ws_id,
+  SUBSTR(wsa.pxcoverinskey, 7) ws_id,
   wsa.pyid wsa_id,
-  actname activity_name,
-  pystatuswork wsa_status,
-  activitysequencenumber
+  aca.actname activity_name,
+  wsa.pystatuswork wsa_status,
+  aca.activitysequencenumber
 
   FROM
   pega_Data.ahwork_ac wsa,
-  pega_data.index_ac_activity ac
+  pega_data.index_ac_activity aca
 
   WHERE
-  wsa.pxinsname = ac.pyid
+  wsa.pxinsname = aca.pyid
   AND
-  pydescription IS NULL
+  aca.pydescription IS NULL
   AND
-  SUBSTR(pxcoverinskey, 6) IS NOT NULL
+  SUBSTR(wsa.pxcoverinskey, 6) IS NOT NULL
 ) wsa
 
 WHERE
@@ -109,6 +109,4 @@ ac.pxobjclass = 'AH-AC-WS'
 AND
 ac.pystatuswork IN ('Open')
 AND
-ws.purposecountry = 'SCOTLAND'
-AND
-ws.pyid IN ('WS-44', 'WS-302')
+ws.pyid IN (:workorder_ids)

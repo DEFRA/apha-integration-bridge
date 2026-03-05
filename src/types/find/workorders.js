@@ -34,7 +34,7 @@ import { HoldingsRelationship } from './holdings.js'
 const WorkordersData = baseData({
   plural: 'workorders',
   singular: 'workorder'
-})
+}).meta({ response: { type: 'workorders' } })
 
 const CustomerOrOrganisationRelationship = relationshipToOne(
   baseData({
