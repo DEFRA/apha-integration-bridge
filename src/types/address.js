@@ -7,20 +7,22 @@ export const AddressableObjectData = Joi.object({
     .description(
       'The first number of an address range (if endNumber is defined) or the address number (if endNumber is not defined)'
     ),
-  startNumberSuffix: Joi.number()
+  startNumberSuffix: Joi.string()
     .allow(null)
     .required()
     .description(
-      'A suffix to the first number of an address range (if endNumber is defined) or to the address number (if endNumber is not defined)'
+      'A suffix to the first number of an address range (if endNumber is defined) or to the address number (if endNumber is not defined). Examples: "A", "B", etc.'
     ),
   endNumber: Joi.number()
     .allow(null)
     .required()
     .description('The second number in an address range'),
-  endNumberSuffix: Joi.number()
+  endNumberSuffix: Joi.string()
     .allow(null)
     .required()
-    .description('A suffix to the second number of an address range'),
+    .description(
+      'A suffix to the second number of an address range. Examples: "A", "B", etc.'
+    ),
   description: Joi.string()
     .allow(null)
     .required()
