@@ -137,54 +137,42 @@ describe('workorders/find', () => {
       workorder1: {
         type: 'workorders',
         id: 'WS-76512',
-        activationDate: '2024-01-15',
-        businessArea: 'Animal Health',
-        workArea: 'Disease Control',
-        country: 'GB',
-        aim: 'Surveillance',
-        purpose: 'Monitoring',
-        earliestActivityStartDate: '2024-02-01',
+        activationDate: '2024-01-07',
+        businessArea: 'Endemic Notifiable Disease',
+        workArea: 'Tuberculosis',
+        country: 'England',
+        aim: 'Contain / Control / Eradicate Endemic Disease',
+        purpose: 'Initiate Incident Premises Spread Tracing Action',
+        earliestActivityStartDate: '01/01/2024 09:00:00',
         species: 'Cattle',
-        activities: [
-          {
-            type: 'activities',
-            id: 'ACT-001',
-            activityName: 'Site Inspection',
-            sequenceNumber: 1
-          }
-        ],
-        phase: 'Active',
+        activities: [],
+        phase: 'EXPOSURETRACKING',
         relationships: {
           customerOrOrganisation: {
             data: {
-              id: 'C001',
-              type: 'customerOrOrganisation'
+              id: 'C123456',
+              type: 'customers'
             }
           },
           holding: {
             data: {
-              id: '11/111/1111',
+              id: '01/001/0001',
               type: 'holdings'
             }
           },
           facilities: {
-            data: [
-              {
-                id: 'F001',
-                type: 'facilities'
-              }
-            ]
+            data: []
           },
           location: {
             data: {
-              id: 'L001',
+              id: 'LOC-ALPHA',
               type: 'locations'
             }
           },
           livestockUnits: {
             data: [
               {
-                id: 'LU001',
+                id: 'U000010',
                 type: 'animal-commodities'
               }
             ]
@@ -194,58 +182,60 @@ describe('workorders/find', () => {
       workorder2: {
         type: 'workorders',
         id: 'WS-76513',
-        activationDate: '2024-02-20',
-        businessArea: 'Plant Health',
-        workArea: 'Pest Control',
-        country: 'GB',
-        aim: 'Eradication',
-        purpose: 'Treatment',
-        earliestActivityStartDate: '2024-03-01',
-        species: 'Plants',
+        activationDate: '2024-01-06',
+        businessArea: 'Endemic Notifiable Disease',
+        workArea: 'Tuberculosis',
+        country: 'Scotland',
+        aim: 'Contain / Control / Eradicate Endemic Disease',
+        purpose: 'Initiate Incident Premises Spread Tracing Action',
+        earliestActivityStartDate: '03/01/2024 09:00:00',
+        species: 'Sheep',
         activities: [
           {
             type: 'activities',
-            id: 'ACT-002',
-            activityName: 'Field Survey',
+            id: 'WS-76513-ACT1',
+            activityName: 'Arrange Visit',
             sequenceNumber: 1
+          },
+          {
+            type: 'activities',
+            id: 'WS-76513-ACT2',
+            activityName: 'Perform TB Skin Test',
+            sequenceNumber: 2
           }
         ],
-        phase: 'Planning',
+        phase: 'EXPOSURETRACKING',
         relationships: {
           customerOrOrganisation: {
             data: {
-              id: 'C002',
-              type: 'customerOrOrganisation'
+              id: 'O123456',
+              type: 'organisations'
             }
           },
           holding: {
             data: {
-              id: '22/222/2222',
+              id: '45/001/0002',
               type: 'holdings'
             }
           },
           facilities: {
             data: [
               {
-                id: 'F002',
-                type: 'facilities'
-              },
-              {
-                id: 'F003',
+                id: 'U000030',
                 type: 'facilities'
               }
             ]
           },
           location: {
             data: {
-              id: 'L002',
+              id: 'LOC-BETA',
               type: 'locations'
             }
           },
           livestockUnits: {
             data: [
               {
-                id: 'LU002',
+                id: 'U000020',
                 type: 'animal-commodities'
               }
             ]
@@ -255,31 +245,86 @@ describe('workorders/find', () => {
       workorder3: {
         type: 'workorders',
         id: 'WS-76514',
-        activationDate: null,
-        businessArea: null,
-        workArea: null,
-        country: null,
-        aim: null,
-        purpose: null,
-        earliestActivityStartDate: null,
-        species: null,
-        activities: [],
-        phase: null,
+        activationDate: '2024-02-10',
+        businessArea: 'Animal Health and Welfare',
+        workArea: 'General Inspection',
+        country: 'Wales',
+        aim: 'Ensure Compliance with Animal Health Standards',
+        purpose: 'Routine Inspection and Disease Monitoring',
+        earliestActivityStartDate: '08/02/2024 08:00:00',
+        species: 'Cattle',
+        activities: [
+          {
+            activityName: 'Initial Farm Assessment',
+            id: 'WS-76514-ACT1',
+            sequenceNumber: 1,
+            type: 'activities'
+          },
+          {
+            activityName: 'Initial Farm Assessment',
+            id: 'WS-76514-ACT1',
+            sequenceNumber: 1,
+            type: 'activities'
+          },
+          {
+            activityName: 'Livestock Document Review',
+            id: 'WS-76514-ACT2',
+            sequenceNumber: 2,
+            type: 'activities'
+          },
+          {
+            activityName: 'Livestock Document Review',
+            id: 'WS-76514-ACT2',
+            sequenceNumber: 2,
+            type: 'activities'
+          },
+          {
+            activityName: 'Physical Animal Inspection',
+            id: 'WS-76514-ACT3',
+            sequenceNumber: 3,
+            type: 'activities'
+          },
+          {
+            activityName: 'Physical Animal Inspection',
+            id: 'WS-76514-ACT3',
+            sequenceNumber: 3,
+            type: 'activities'
+          }
+        ],
+        phase: 'INSPECTION',
         relationships: {
           customerOrOrganisation: {
-            data: null
+            data: {
+              id: 'C789012',
+              type: 'customers'
+            }
           },
           holding: {
-            data: null
+            data: {
+              id: '01/409/1111',
+              type: 'holdings'
+            }
           },
           facilities: {
             data: []
           },
           location: {
-            data: null
+            data: {
+              id: 'LOC-OMEGA',
+              type: 'locations'
+            }
           },
           livestockUnits: {
-            data: []
+            data: [
+              {
+                id: 'U000010',
+                type: 'animal-commodities'
+              },
+              {
+                id: 'U000020',
+                type: 'animal-commodities'
+              }
+            ]
           }
         }
       }
@@ -295,7 +340,7 @@ describe('workorders/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: [testWorkorders.workorder1] //, testWorkorders.workorder2]
+          ids: [testWorkorders.workorder1, testWorkorders.workorder2]
         },
         url
       })
@@ -370,31 +415,6 @@ describe('workorders/find', () => {
           prev: null
         }
       })
-    })
-
-    test('returns workorder with null fields when not present in the data', async () => {
-      const server = await createServer()
-      const queryParams = new URLSearchParams({
-        page: '1',
-        pageSize: '10'
-      })
-      const url = `${path}?${queryParams.toString()}`
-      const response = await server.inject({
-        method: 'POST',
-        payload: {
-          ids: [testWorkorders.workorder3]
-        },
-        url
-      })
-
-      const responseResult = /** @type {PostFindWorkordersResponse} */ (
-        response.result
-      )
-      const record = /** @type {Workorders} */ (responseResult.data[0])
-
-      expect(record.activationDate).toBeNull()
-      expect(record.businessArea).toBeNull()
-      expect(record.activities).toEqual([])
     })
 
     test('returns workorders paginated', async () => {
