@@ -9,11 +9,6 @@ export const Activities = baseData({
   activityName: Joi.string()
     .required()
     .description('The activity to be performed'),
-  default: Joi.boolean()
-    .required()
-    .description(
-      'Whether this activity is the default for this workorder type'
-    ),
   sequenceNumber: Joi.number()
     .required()
     .description(
