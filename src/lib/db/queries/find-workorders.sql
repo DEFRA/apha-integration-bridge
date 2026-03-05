@@ -16,12 +16,12 @@ ws_lu.entityid livestock_unit_id,
 ws_f.entityid facility_unit_id,
 wsa.wsa_id,
 wsa.activity_name,
-ac.wsactivationdate,
-ac.wsstartdate,
-ac.wsearliestactivitystartdate,
-ac.wslatestactivitycompletiondate,
+TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd') wsactivationdate,
+TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
+TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
+TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 ws.phase,
-ac.pysladeadline due_date,
+TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
 wsa.activitysequencenumber
 
 FROM

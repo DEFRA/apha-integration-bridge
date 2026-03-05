@@ -45,13 +45,13 @@ CREATE TABLE ahwork_ac (
   pzinskey                          VARCHAR2(200) NOT NULL,     -- Instance key
   pxinsname                         VARCHAR2(200),              -- Instance name
   pxobjclass                        VARCHAR2(100) NOT NULL,     -- Object class (e.g., 'AH-AC-WS')
-  pxupdatedatetime                  TIMESTAMP,                  -- Last updated
+  pxupdatedatetime                  DATE,                       -- Last updated
   pystatuswork                      VARCHAR2(50),               -- Status (e.g., 'Open', 'Closed')
-  wsactivationdate                  TIMESTAMP,                  -- Activation date
-  wsstartdate                       TIMESTAMP,                  -- Start date
+  wsactivationdate                  DATE,                       -- Activation date
+  wsstartdate                       DATE,                       -- Start date
   wsearliestactivitystartdate       TIMESTAMP,                  -- Earliest activity start
-  wslatestactivitycompletiondate    TIMESTAMP,                  -- Latest activity completion
-  pysladeadline                     TIMESTAMP,                  -- SLA deadline
+  wslatestactivitycompletiondate    DATE,                       -- Latest activity completion
+  pysladeadline                     DATE,                       -- SLA deadline
   pxcoverinskey                     VARCHAR2(200),              -- Cover instance key (for activities)
   pydescription                     VARCHAR2(500)               -- Description
 );
@@ -113,10 +113,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76512', 'AH-AC-WS WS-76512', 'AH-AC-WS',
-  TIMESTAMP '2024-01-05 08:30:00', 'Open',
-  TIMESTAMP '2024-01-05 08:30:00', TIMESTAMP '2024-01-05 08:30:00',
+  DATE '2024-01-06', 'Open',
+  DATE '2024-01-07', DATE '2024-01-08',
   TIMESTAMP '2024-01-01 09:00:00', NULL,
-  TIMESTAMP '2024-01-15 17:00:00'
+  DATE '2024-01-15'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -146,10 +146,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76513', 'AH-AC-WS WS-76513', 'AH-AC-WS',
-  TIMESTAMP '2024-01-06 08:30:00', 'Open',
-  TIMESTAMP '2024-01-06 08:30:00', TIMESTAMP '2024-01-06 08:30:00',
+  DATE '2024-01-06', 'Open',
+  DATE '2024-01-06', DATE '2024-01-06',
   TIMESTAMP '2024-01-03 09:00:00', NULL,
-  TIMESTAMP '2024-01-16 17:00:00'
+  DATE '2024-01-16'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -203,10 +203,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76514', 'AH-AC-WS WS-76514', 'AH-AC-WS',
-  TIMESTAMP '2024-02-10 10:00:00', 'Open',
-  TIMESTAMP '2024-02-10 10:00:00', TIMESTAMP '2024-02-10 10:00:00',
+  DATE '2024-02-10', 'Open',
+  DATE '2024-02-10', DATE '2024-02-10',
   TIMESTAMP '2024-02-08 08:00:00', NULL,
-  TIMESTAMP '2024-02-20 17:00:00'
+  DATE '2024-02-20'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -259,10 +259,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76515', 'AH-AC-WS WS-76515', 'AH-AC-WS',
-  TIMESTAMP '2024-03-15 14:30:00', 'Open',
-  TIMESTAMP '2024-03-15 14:30:00', TIMESTAMP '2024-03-15 14:30:00',
+  DATE '2024-03-15', 'Open',
+  DATE '2024-03-15', DATE '2024-03-15',
   TIMESTAMP '2024-03-12 09:00:00', NULL,
-  TIMESTAMP '2024-03-25 17:00:00'
+  DATE '2024-03-25'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -311,10 +311,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76516', 'AH-AC-WS WS-76516', 'AH-AC-WS',
-  TIMESTAMP '2024-04-20 11:00:00', 'Open',
-  TIMESTAMP '2024-04-20 11:00:00', TIMESTAMP '2024-04-20 11:00:00',
+  DATE '2024-04-20', 'Open',
+  DATE '2024-04-20', DATE '2024-04-20',
   TIMESTAMP '2024-04-18 08:00:00', NULL,
-  TIMESTAMP '2024-04-30 17:00:00'
+  DATE '2024-04-30'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -344,10 +344,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-99999', 'AH-AC-WS WS-99999', 'AH-AC-WS',
-  TIMESTAMP '2023-12-01 08:00:00', 'Closed',  -- CLOSED status
-  TIMESTAMP '2023-12-01 08:00:00', TIMESTAMP '2023-12-01 08:00:00',
-  TIMESTAMP '2023-11-28 09:00:00', TIMESTAMP '2023-12-15 17:00:00',
-  TIMESTAMP '2023-12-10 17:00:00'
+  DATE '2023-12-01', 'Closed',  -- CLOSED status
+  DATE '2023-12-01', DATE '2023-12-01',
+  TIMESTAMP '2023-11-28 09:00:00', TIMESTAMP '2023-12-15 00:00:00',
+  DATE '2023-12-10'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -366,10 +366,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76517', 'AH-AC-WS WS-76517', 'AH-AC-WS',
-  TIMESTAMP '2024-06-01 09:00:00', 'Open',
-  TIMESTAMP '2024-06-01 09:00:00', TIMESTAMP '2024-06-01 09:00:00',
+  DATE '2024-06-01', 'Open',
+  DATE '2024-06-01', DATE '2024-06-01',
   TIMESTAMP '2024-05-30 08:00:00', NULL,
-  TIMESTAMP '2024-06-10 17:00:00'
+  DATE '2024-06-10'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -394,10 +394,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76518', 'AH-AC-WS WS-76518', 'AH-AC-WS',
-  TIMESTAMP '2024-01-05 08:30:00', 'Open',
-  TIMESTAMP '2024-01-05 08:30:00', TIMESTAMP '2024-01-05 08:30:00',
+  DATE '2024-01-05', 'Open',
+  DATE '2024-01-05', DATE '2024-01-05',
   TIMESTAMP '2024-01-01 09:00:00', NULL,
-  TIMESTAMP '2024-01-15 17:00:00'
+  DATE '2024-01-15'
 );
 
 INSERT INTO index_ac_workschedule (
@@ -426,10 +426,10 @@ INSERT INTO ahwork_ac (
   wslatestactivitycompletiondate, pysladeadline
 ) VALUES (
   'WS-76519', 'AH-AC-WS WS-76519', 'AH-AC-WS',
-  TIMESTAMP '2024-05-15 09:00:00', 'Open',
-  TIMESTAMP '2024-05-15 09:00:00', TIMESTAMP '2024-05-15 09:00:00',
+  DATE '2024-05-15', 'Open',
+  DATE '2024-05-15', DATE '2024-05-15',
   TIMESTAMP '2024-05-10 08:00:00', NULL,
-  TIMESTAMP '2024-05-25 17:00:00'
+  DATE '2024-05-25'
 );
 
 INSERT INTO index_ac_workschedule (
