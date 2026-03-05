@@ -261,27 +261,9 @@ describe('workorders/find', () => {
             type: 'activities'
           },
           {
-            activityName: 'Initial Farm Assessment',
-            id: 'WS-76514-ACT1',
-            sequenceNumber: 1,
-            type: 'activities'
-          },
-          {
             activityName: 'Livestock Document Review',
             id: 'WS-76514-ACT2',
             sequenceNumber: 2,
-            type: 'activities'
-          },
-          {
-            activityName: 'Livestock Document Review',
-            id: 'WS-76514-ACT2',
-            sequenceNumber: 2,
-            type: 'activities'
-          },
-          {
-            activityName: 'Physical Animal Inspection',
-            id: 'WS-76514-ACT3',
-            sequenceNumber: 3,
             type: 'activities'
           },
           {
@@ -340,7 +322,11 @@ describe('workorders/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: [testWorkorders.workorder1, testWorkorders.workorder2]
+          ids: [
+            testWorkorders.workorder1,
+            testWorkorders.workorder2,
+            testWorkorders.workorder3
+          ]
         },
         url
       })
@@ -348,7 +334,8 @@ describe('workorders/find', () => {
       expect(response.result).toEqual({
         data: [
           expectedWorkordersData.workorder1,
-          expectedWorkordersData.workorder2
+          expectedWorkordersData.workorder2,
+          expectedWorkordersData.workorder3
         ],
         links: {
           self: url,
