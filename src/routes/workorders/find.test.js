@@ -9,6 +9,7 @@ import * as executeOperation from '../../lib/db/operations/execute.js'
 
 /**
  * @import {PostFindWorkordersResponse} from './find.js'
+ * @import {Workorders} from '../../types/find/workorders.js'
  */
 
 const path = '/workorders/find'
@@ -64,8 +65,6 @@ describe('workorders/find', () => {
       const responseBody = /** @type {Record<string, any>} */ (response.result)
 
       expect(responseBody.code).not.toBe('BAD_REQUEST')
-
-      await server.stop()
     })
 
     test('fails validation for invalid workorder ids payload', async () => {
@@ -86,8 +85,6 @@ describe('workorders/find', () => {
       expect(responseBody.errors).toBeDefined()
       expect(responseBody.errors.length).toBeGreaterThan(0)
       expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
-
-      await server.stop()
     })
 
     test('fails validation for missing ids payload', async () => {
@@ -106,8 +103,6 @@ describe('workorders/find', () => {
       expect(responseBody.errors).toBeDefined()
       expect(responseBody.errors.length).toBeGreaterThan(0)
       expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
-
-      await server.stop()
     })
 
     test('fails validation for non-array ids payload', async () => {
@@ -128,8 +123,6 @@ describe('workorders/find', () => {
       expect(responseBody.errors).toBeDefined()
       expect(responseBody.errors.length).toBeGreaterThan(0)
       expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
-
-      await server.stop()
     })
   })
 
@@ -350,8 +343,6 @@ describe('workorders/find', () => {
           prev: null
         }
       })
-
-      await server.stop()
     })
 
     test('returns workorders in the order they appear in the request ids', async () => {
@@ -386,8 +377,6 @@ describe('workorders/find', () => {
         next: null,
         prev: null
       })
-
-      await server.stop()
     })
 
     test('returns an empty array for no matches', async () => {
@@ -413,8 +402,6 @@ describe('workorders/find', () => {
           prev: null
         }
       })
-
-      await server.stop()
     })
 
     test('returns workorders paginated', async () => {
@@ -502,8 +489,6 @@ describe('workorders/find', () => {
           prev: urlPage2
         }
       })
-
-      await server.stop()
     })
   })
 
@@ -539,8 +524,6 @@ describe('workorders/find', () => {
       expect(responseBody.errors).toBeDefined()
       expect(responseBody.errors.length).toBeGreaterThan(0)
       expect(responseBody.errors[0].code).toBe('DATABASE_ERROR')
-
-      await server.stop()
     })
 
     test('returns thrown HTTPException without wrapping', async () => {
@@ -570,8 +553,6 @@ describe('workorders/find', () => {
         'Deliberate HTTP exception from mocked execute'
       )
       expect(responseBody.errors).toEqual([])
-
-      await server.stop()
     })
   })
 })
