@@ -1,15 +1,22 @@
 import Hapi from '@hapi/hapi'
 import hapiPino from 'hapi-pino'
-import { test, expect, describe, afterEach, jest } from '@jest/globals'
+import {
+  test,
+  expect,
+  describe,
+  afterEach,
+  afterAll,
+  jest
+} from '@jest/globals'
 import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
 import * as executeOperation from '../../lib/db/operations/execute.js'
+import { meterProvider } from '../../lib/telemetry/index.js'
 
 /**
  * @import {PostFindWorkordersResponse} from './find.js'
- * @import {Workorders} from '../../types/find/workorders.js'
  */
 
 const path = '/workorders/find'
@@ -41,6 +48,10 @@ async function createServer() {
 describe('workorders/find', () => {
   afterEach(() => {
     jest.restoreAllMocks()
+  })
+
+  afterAll(async () => {
+    await meterProvider.shutdown()
   })
 
   describe('Payload validation', () => {
