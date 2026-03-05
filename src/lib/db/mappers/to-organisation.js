@@ -2,6 +2,28 @@ import { asNullableString } from './as-nullable-string.js'
 import { createOrganisation } from './create-organisation.js'
 import { toAddress } from './to-address.js'
 
+const emptyAddress = () => ({
+  primaryAddressableObject: {
+    startNumber: null,
+    startNumberSuffix: null,
+    endNumber: null,
+    endNumberSuffix: null,
+    description: null
+  },
+  secondaryAddressableObject: {
+    startNumber: null,
+    startNumberSuffix: null,
+    endNumber: null,
+    endNumberSuffix: null,
+    description: null
+  },
+  street: null,
+  locality: null,
+  town: null,
+  postcode: null,
+  countryCode: null
+})
+
 /**
  * @param {Record<string, unknown>} row
  */
@@ -25,6 +47,8 @@ export const toOrganisation = (row) => {
     delete organisationAddress.isPreferred
 
     organisation.address = organisationAddress
+  } else {
+    organisation.address = emptyAddress()
   }
 
   const phoneNumber =
