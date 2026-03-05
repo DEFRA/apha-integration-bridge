@@ -36,12 +36,17 @@ const WorkordersData = baseData({
   singular: 'workorder'
 }).meta({ response: { type: 'workorders' } })
 
-const CustomerOrOrganisationRelationship = relationshipToOne(
-  baseData({
-    plural: 'customersOrOrganisations',
-    singular: 'customerOrOrganisation'
+const CustomerOrOrganisationRelationship = Joi.object({
+  data: Joi.object({
+    type: Joi.string()
+      .valid('customers', 'organisations')
+      .required()
+      .label('CustomerOrOrganisation type'),
+    id: Joi.string().required().label('CustomerOrOrganisation ID')
   })
-)
+    .required()
+    .allow(null)
+})
 
 export const WorkordersSchema = WorkordersData.keys({
   type: Joi.string().valid('workorders').required().label('Type'),

@@ -20,11 +20,18 @@ export const toWorkorder = (row) => {
   const locationId = asNullableString(row.location_id)
   const livestockUnitId = asNullableString(row.livestock_unit_id)
 
-  workorder.activities.push(toActivity(row))
+  const activity = toActivity(row)
+  if (activity.id) {
+    workorder.activities.push(activity)
+  }
 
   if (customerOrOrganisationId) {
+    // Determine if it's a customer or organisation based on ID prefix
+    const type = customerOrOrganisationId.startsWith('C')
+      ? 'customers'
+      : 'organisations'
     workorder.relationships.customerOrOrganisation.data = {
-      type: 'customerOrOrganisation',
+      type,
       id: customerOrOrganisationId
     }
   }

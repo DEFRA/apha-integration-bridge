@@ -9,6 +9,7 @@ export const toActivity = (row) => {
     type: 'activities',
     id: asNullableString(row.wsa_id),
     activityName: asNullableString(row.activity_name),
+    default: false,
     sequenceNumber: asNullableNumber(row.activitysequencenumber)
   }
 }
