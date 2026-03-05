@@ -41,3 +41,19 @@ export const relationshipToMany = (entityDataSchema) =>
   Joi.object({
     data: Joi.array().items(entityDataSchema).required()
   })
+
+/**
+ * @typedef BaseData
+ * @property {string} type
+ * @property {string} id
+ */
+
+/**
+ * @typedef {Object} RelationshipToOne
+ * @property {BaseData|null} data
+ */
+
+/**
+ * @typedef {Object} RelationshipToMany
+ * @property {BaseData[]} data
+ */
