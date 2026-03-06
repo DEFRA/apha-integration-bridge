@@ -270,6 +270,34 @@ describe('locations/find', () => {
       expect(responseResult.data[1].id).toBe(testLocations.location1)
     })
 
+    test('returns empty data and does not query DB when page is out of range', async () => {
+      const server = await createServer()
+      const executeSpy = jest.spyOn(executeOperation, 'execute')
+      const queryParams = new URLSearchParams({
+        page: '2',
+        pageSize: '10'
+      })
+      const url = `${path}?${queryParams.toString()}`
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: [testLocations.location1]
+        },
+        url
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.result).toEqual({
+        data: [],
+        links: {
+          self: url,
+          next: null,
+          prev: '/locations/find?page=1&pageSize=10'
+        }
+      })
+      expect(executeSpy).not.toHaveBeenCalled()
+    })
+
     test('returns an empty array for no matches', async () => {
       const server = await createServer()
       const queryParams = new URLSearchParams({

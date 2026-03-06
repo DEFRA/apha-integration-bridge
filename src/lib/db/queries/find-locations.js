@@ -1,15 +1,35 @@
+import Joi from 'joi'
+
 import { toLocations } from '../mappers/to-locations.js'
 import { execute } from '../operations/execute.js'
 import { loadSQL } from '../utils/load-sql.js'
 
 const sql = loadSQL(import.meta.filename)
 
+const FindLocationsSchema = Joi.object({
+  ids: Joi.array()
+    .items(
+      Joi.string()
+        .pattern(/^L\d+$/)
+        .required()
+    )
+    .min(1)
+    .required()
+    .description('Location ids')
+})
+
 /**
  * @param {Array<string>} ids
  * @returns {{ sql: string; }} The query and its bindings
  */
 export function findLocationsQuery(ids) {
-  const quotedLocationIds = ids.map((locationId) => `'${locationId}'`)
+  const { value, error } = FindLocationsSchema.validate({ ids })
+
+  if (error) {
+    throw new Error(`Invalid parameters: ${error.message}`)
+  }
+
+  const quotedLocationIds = value.ids.map((locationId) => `'${locationId}'`)
   const query = sql.replaceAll(':locationIds', quotedLocationIds.join(', '))
 
   return {

@@ -16,7 +16,12 @@ const CUSTOMER_TYPES = ['PERSON', 'ORGANISATION']
 
 export const FindCustomersSchema = Joi.object({
   ids: Joi.array()
-    .items(Joi.string().trim().min(1).required())
+    .items(
+      Joi.string()
+        .regex(/^[A-Z0-9]+$/i)
+        .min(1)
+        .required()
+    )
     .min(1)
     .required()
     .description('Customer ids'),

@@ -97,9 +97,13 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('locationsFindRequest', 1, Unit.Count)
 
-    await using oracledb = await request.server['oracledb.sam']()
-
     const findRequest = new HTTPFindRequest(request, LocationsSchema)
+
+    if (findRequest.ids.length === 0) {
+      return h.response(findRequest.toResponse()).code(200)
+    }
+
+    await using oracledb = await request.server['oracledb.sam']()
 
     const locations = await findLocations(oracledb.connection, findRequest.ids)
 

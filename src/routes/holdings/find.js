@@ -97,9 +97,13 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('holdingFindRequest', 1, Unit.Count)
 
-    await using oracledb = await request.server['oracledb.sam']()
-
     const findRequest = new HTTPFindRequest(request, HoldingsSchema)
+
+    if (findRequest.ids.length === 0) {
+      return h.response(findRequest.toResponse()).code(200)
+    }
+
+    await using oracledb = await request.server['oracledb.sam']()
 
     const holdings = await findHoldings(oracledb.connection, findRequest.ids)
 
