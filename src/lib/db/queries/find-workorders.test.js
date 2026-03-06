@@ -17,3 +17,7 @@ test('returns the expected query for multiple ids', () => {
 
   expect(sql).toMatchSnapshot()
 })
+
+test('throws when ids is empty', () => {
+  expect(() => findWorkordersQuery([])).toThrow('Invalid parameters')
+})

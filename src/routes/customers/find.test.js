@@ -1,10 +1,11 @@
 import Hapi from '@hapi/hapi'
-import { describe, test, expect } from '@jest/globals'
+import { describe, test, expect, jest, afterEach } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
 import route from './find.js'
 import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
+import * as executeOperation from '../../lib/db/operations/execute.js'
 
 const path = '/customers/find'
 const organisationId = 'O123456'
@@ -117,6 +118,10 @@ async function createServer() {
 }
 
 describe('POST /customers/find', () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   test('requires authentication explicitly', () => {
     expect(route.options.auth).toEqual({ mode: 'required' })
   })
@@ -307,6 +312,38 @@ describe('POST /customers/find', () => {
         prev: firstUrl
       }
     })
+  })
+
+  test('returns empty data and does not query DB or acquire connection when page is out of range', async () => {
+    const server = await createServer()
+    const executeSpy = jest.spyOn(executeOperation, 'execute')
+    const samSpy = jest.spyOn(server, 'oracledb.sam')
+    const queryParams = new URLSearchParams({
+      page: '2',
+      pageSize: '10'
+    })
+    const url = `${path}?${queryParams.toString()}`
+
+    const response = await server.inject({
+      method: 'POST',
+      payload: {
+        ids: [customer1.id]
+      },
+      headers: authHeaders,
+      url
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({
+      data: [],
+      links: {
+        self: url,
+        next: null,
+        prev: '/customers/find?page=1&pageSize=10'
+      }
+    })
+    expect(executeSpy).not.toHaveBeenCalled()
+    expect(samSpy).not.toHaveBeenCalled()
   })
 
   test.each(['0', '51'])(
