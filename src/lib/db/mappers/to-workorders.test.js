@@ -175,7 +175,7 @@ test('toWorkorders aggregates activities, facilities and livestockUnits together
   expect(workorders[0].relationships.livestockUnits.data[1].id).toBe('LU002')
 })
 
-test('toWorkorders deduplicates facilities and livestockUnits but not duplicate row activities', () => {
+test('toWorkorders deduplicates facilities, livestockUnits and activities', () => {
   const rows = [
     {
       ...mockWorkorderRowBase,
@@ -206,15 +206,13 @@ test('toWorkorders deduplicates facilities and livestockUnits but not duplicate 
   const workorders = toWorkorders(rows, ['WO123456'])
 
   expect(workorders).toHaveLength(1)
-  // Activities are added for each row, including duplicates, due to how objects are compared
-  expect(workorders[0].activities).toHaveLength(3)
-  // Facilities and livestockUnits are deduplicated by ID
+  // Activities, facilities and livestockUnits are deduplicated by ID
+  expect(workorders[0].activities).toHaveLength(2)
   expect(workorders[0].relationships.facilities.data).toHaveLength(2)
   expect(workorders[0].relationships.livestockUnits.data).toHaveLength(1)
 
   expect(workorders[0].activities[0].id).toBe('ACT-1')
-  expect(workorders[0].activities[1].id).toBe('ACT-1')
-  expect(workorders[0].activities[2].id).toBe('ACT-2')
+  expect(workorders[0].activities[1].id).toBe('ACT-2')
 
   expect(workorders[0].relationships.facilities.data[0].id).toBe('F001')
   expect(workorders[0].relationships.facilities.data[1].id).toBe('F002')

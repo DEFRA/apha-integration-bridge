@@ -1,15 +1,22 @@
 import Hapi from '@hapi/hapi'
 import hapiPino from 'hapi-pino'
-import { test, expect, describe, afterEach, jest } from '@jest/globals'
+import {
+  test,
+  expect,
+  describe,
+  afterEach,
+  afterAll,
+  jest
+} from '@jest/globals'
 import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
 import * as executeOperation from '../../lib/db/operations/execute.js'
+import { meterProvider } from '../../lib/telemetry/index.js'
 
 /**
  * @import {PostFindWorkordersResponse} from './find.js'
- * @import {Workorders} from '../../types/find/workorders.js'
  */
 
 const path = '/workorders/find'
@@ -41,6 +48,10 @@ async function createServer() {
 describe('workorders/find', () => {
   afterEach(() => {
     jest.restoreAllMocks()
+  })
+
+  afterAll(async () => {
+    await meterProvider.shutdown()
   })
 
   describe('Payload validation', () => {
@@ -261,27 +272,9 @@ describe('workorders/find', () => {
             type: 'activities'
           },
           {
-            activityName: 'Initial Farm Assessment',
-            id: 'WS-76514-ACT1',
-            sequenceNumber: 1,
-            type: 'activities'
-          },
-          {
             activityName: 'Livestock Document Review',
             id: 'WS-76514-ACT2',
             sequenceNumber: 2,
-            type: 'activities'
-          },
-          {
-            activityName: 'Livestock Document Review',
-            id: 'WS-76514-ACT2',
-            sequenceNumber: 2,
-            type: 'activities'
-          },
-          {
-            activityName: 'Physical Animal Inspection',
-            id: 'WS-76514-ACT3',
-            sequenceNumber: 3,
             type: 'activities'
           },
           {
@@ -340,7 +333,11 @@ describe('workorders/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: [testWorkorders.workorder1, testWorkorders.workorder2]
+          ids: [
+            testWorkorders.workorder1,
+            testWorkorders.workorder2,
+            testWorkorders.workorder3
+          ]
         },
         url
       })
@@ -348,7 +345,8 @@ describe('workorders/find', () => {
       expect(response.result).toEqual({
         data: [
           expectedWorkordersData.workorder1,
-          expectedWorkordersData.workorder2
+          expectedWorkordersData.workorder2,
+          expectedWorkordersData.workorder3
         ],
         links: {
           self: url,
