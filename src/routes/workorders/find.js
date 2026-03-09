@@ -92,25 +92,27 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('workordersFindRequest', 1, Unit.Count)
 
-    await using oracledb = await request.server['oracledb.sam']()
-
     const findRequest = new HTTPFindRequest(request, WorkordersSchema)
 
-    const workorders = await findWorkorders(
-      oracledb.connection,
-      findRequest.ids
-    )
+    if (findRequest.ids.length > 0) {
+      await using oracledb = await request.server['oracledb.sam']()
 
-    request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)
-
-    for (const workorder of workorders) {
-      const workorderResponse = new HTTPObjectResponse(
-        WorkordersSchema,
-        workorder.id,
-        workorder
+      const workorders = await findWorkorders(
+        oracledb.connection,
+        findRequest.ids
       )
 
-      findRequest.add(workorderResponse)
+      request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)
+
+      for (const workorder of workorders) {
+        const workorderResponse = new HTTPObjectResponse(
+          WorkordersSchema,
+          workorder.id,
+          workorder
+        )
+
+        findRequest.add(workorderResponse)
+      }
     }
 
     return h.response(findRequest.toResponse()).code(200)

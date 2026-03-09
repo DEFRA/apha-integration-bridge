@@ -15,6 +15,12 @@ test('throws if the parameters are invalid', () => {
   expect(() => findCustomersQuery([], 'PERSON')).toThrow(/invalid/i)
 })
 
+test('throws when ids contain invalid characters', () => {
+  expect(() => findCustomersQuery(["C123456' OR '1'='1"], 'PERSON')).toThrow(
+    /invalid/i
+  )
+})
+
 test('throws if customerType is missing', () => {
   expect(() =>
     // @ts-expect-error - explicitly testing missing required parameter

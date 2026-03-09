@@ -12,10 +12,7 @@ import {
   HTTPError
 } from '../../../../lib/http/http-exception.js'
 import { execute } from '../../../../lib/db/operations/execute.js'
-import {
-  findHoldingQuery,
-  FindHoldingSchema
-} from '../../../../lib/db/queries/find-holding.js'
+import { findHoldingQuery } from '../../../../lib/db/queries/find-holding.js'
 import { HTTPObjectResponse } from '../../../../lib/http/http-response.js'
 import { TopLevelLinksReferenceSchema } from '../../../../types/links.js'
 
@@ -29,6 +26,24 @@ const FindHoldingResponseSchema = Joi.object({
     'A matching CPH number exists in Sam and basic information about the holding has been retrieved.'
   )
   .label('Find Holding Response')
+
+export const FindHoldingRequestParametersSchema = Joi.object({
+  countyId: Joi.string()
+    .length(2)
+    .regex(/^\d+$/)
+    .required()
+    .description('County ID'),
+  parishId: Joi.string()
+    .length(3)
+    .regex(/^\d+$/)
+    .required()
+    .description('Parish ID'),
+  holdingId: Joi.string()
+    .length(4)
+    .regex(/^\d+$/)
+    .required()
+    .description('Holding ID')
+}).required()
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
@@ -50,7 +65,7 @@ export const options = {
     }
   },
   validate: {
-    params: FindHoldingSchema,
+    params: FindHoldingRequestParametersSchema,
     headers: Joi.object({
       accept: Joi.string()
         .default('application/vnd.apha.1+json')
@@ -87,10 +102,14 @@ export async function handler(request, h) {
      */
     await using oracledb = await request.server['oracledb.sam']()
 
+    const { countyId, parishId, holdingId } = request.params
+
     /**
      * construct the query to find the holding
      */
-    const query = findHoldingQuery(request.params)
+    const query = findHoldingQuery({
+      cph: `${countyId}/${parishId}/${holdingId}`
+    })
 
     request.logger?.debug(`query: ${JSON.stringify(query)}`)
 

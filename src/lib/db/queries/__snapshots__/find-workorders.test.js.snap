@@ -112,7 +112,7 @@ ac.pxobjclass = 'AH-AC-WS'
 AND
 ac.pystatuswork IN ('Open')
 AND
-ws.pyid IN ('WS12345', 'WS12346')
+ws.pyid IN ('WS-12345', 'WS-12346')
 "
 `;
 
@@ -228,6 +228,6 @@ ac.pxobjclass = 'AH-AC-WS'
 AND
 ac.pystatuswork IN ('Open')
 AND
-ws.pyid IN ('WS12345')
+ws.pyid IN ('WS-12345')
 "
 `;

@@ -17,3 +17,13 @@ test('returns the expected query for multiple ids', () => {
 
   expect(sql).toMatchSnapshot()
 })
+
+test('throws when ids is empty', () => {
+  expect(() => findHoldingsQuery([])).toThrow('Invalid parameters')
+})
+
+test('throws when ids contain invalid characters', () => {
+  expect(() => findHoldingsQuery(["11/111/1111' OR '1'='1"])).toThrow(
+    'Invalid parameters'
+  )
+})

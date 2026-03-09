@@ -1,6 +1,7 @@
 import Joi from 'joi'
 import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
+import { HoldingIdSchema } from '../../../types/holdings.js'
 
 const sql = loadSQL(import.meta.filename)
 
@@ -9,21 +10,7 @@ const sql = loadSQL(import.meta.filename)
  */
 
 export const FindHoldingSchema = Joi.object({
-  countyId: Joi.string()
-    .length(2)
-    .regex(/^\d+$/)
-    .required()
-    .description('County ID'),
-  parishId: Joi.string()
-    .length(3)
-    .regex(/^\d+$/)
-    .required()
-    .description('Parish ID'),
-  holdingId: Joi.string()
-    .length(4)
-    .regex(/^\d+$/)
-    .required()
-    .description('Holding ID')
+  cph: HoldingIdSchema
 })
 
 /**
@@ -40,9 +27,7 @@ export function findHoldingQuery(parameters) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const cph = `${value.countyId}/${value.parishId}/${value.holdingId}`
-
   return {
-    sql: query().raw(sql, { cph }).toString()
+    sql: query().raw(sql, value).toString()
   }
 }

@@ -17,3 +17,13 @@ test('returns the expected query for multiple ids', () => {
 
   expect(sql).toMatchSnapshot()
 })
+
+test('throws when ids is empty', () => {
+  expect(() => findLocationsQuery([])).toThrow('Invalid parameters')
+})
+
+test('throws when ids contain invalid characters', () => {
+  expect(() => findLocationsQuery(["L97339' OR '1'='1"])).toThrow(
+    'Invalid parameters'
+  )
+})

@@ -78,31 +78,33 @@ const handler = async (request, h) => {
   try {
     metrics.putMetric('customersFindRequest', 1, Unit.Count)
 
+    const findRequest = new HTTPFindRequest(request, Customer)
+
+    if (findRequest.ids.length === 0) {
+      return h.response(findRequest.toResponse()).code(200)
+    }
+
     /**
      * request an oracledb sam connection from the server
      */
     await using oracledb = await request.server['oracledb.sam']()
 
-    const findRequest = new HTTPFindRequest(request, Customer)
+    const customers = await findCustomers(
+      oracledb.connection,
+      findRequest.ids,
+      'PERSON'
+    )
 
-    if (findRequest.ids.length > 0) {
-      const customers = await findCustomers(
-        oracledb.connection,
-        findRequest.ids,
-        'PERSON'
+    request.logger?.debug(`customers: ${JSON.stringify(customers)}`)
+
+    for (const customer of customers) {
+      const customerResponse = new HTTPObjectResponse(
+        Customer,
+        customer.id,
+        customer
       )
 
-      request.logger?.debug(`customers: ${JSON.stringify(customers)}`)
-
-      for (const customer of customers) {
-        const customerResponse = new HTTPObjectResponse(
-          Customer,
-          customer.id,
-          customer
-        )
-
-        findRequest.add(customerResponse)
-      }
+      findRequest.add(customerResponse)
     }
 
     return h.response(findRequest.toResponse()).code(200)
