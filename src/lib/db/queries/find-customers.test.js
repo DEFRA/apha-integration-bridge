@@ -110,7 +110,30 @@ describe('findCustomers', () => {
         firstName: 'Roberta',
         middleName: null,
         lastName: 'Farmer',
-        addresses: [],
+        addresses: [
+          {
+            countryCode: null,
+            isPreferred: false,
+            locality: null,
+            postcode: null,
+            primaryAddressableObject: {
+              description: null,
+              endNumber: null,
+              endNumberSuffix: null,
+              startNumber: null,
+              startNumberSuffix: null
+            },
+            secondaryAddressableObject: {
+              description: null,
+              endNumber: null,
+              endNumberSuffix: null,
+              startNumber: null,
+              startNumberSuffix: null
+            },
+            street: null,
+            town: null
+          }
+        ],
         contactDetails: [
           {
             type: 'landline',
