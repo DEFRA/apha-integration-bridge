@@ -15,6 +15,7 @@ import { findLocations } from '../../lib/db/queries/find-locations.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
+import { LocationIdSchema } from '../../types/locations.js'
 
 /**
  * @import {PaginatedLink} from '../../types/find/links.js'
@@ -37,12 +38,7 @@ const PostFindLocationsResponseSchema = Joi.object({
 
 const PostFindPayloadSchema = Joi.object({
   ids: Joi.array()
-    .items(
-      Joi.string()
-        .pattern(/^L\d+$/)
-        .required()
-        .description('Location ID (e.g., L97339)')
-    )
+    .items(LocationIdSchema.description('Location ID (e.g., L97339)'))
     .min(1)
     .required()
     .label('Location ids')

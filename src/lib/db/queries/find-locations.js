@@ -3,16 +3,13 @@ import Joi from 'joi'
 import { toLocations } from '../mappers/to-locations.js'
 import { execute } from '../operations/execute.js'
 import { loadSQL } from '../utils/load-sql.js'
+import { LocationIdSchema } from '../../../types/locations.js'
 
 const sql = loadSQL(import.meta.filename)
 
 const FindLocationsSchema = Joi.object({
   ids: Joi.array()
-    .items(
-      Joi.string()
-        .pattern(/^L\d+$/)
-        .required()
-    )
+    .items(LocationIdSchema)
     .min(1)
     .required()
     .description('Location ids')

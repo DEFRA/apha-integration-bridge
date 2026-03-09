@@ -1,15 +1,12 @@
 import Joi from 'joi'
 import { loadSQL } from '../utils/load-sql.js'
 import { query } from '../operations/query.js'
+import { LocationIdSchema } from '../../../types/locations.js'
 
 const sql = loadSQL(import.meta.filename)
 
 export const GetLocationSchema = Joi.object({
-  locationId: Joi.string()
-    .trim()
-    .pattern(/^L\d+$/)
-    .required()
-    .description('Location ID (e.g., L97339)')
+  locationId: LocationIdSchema.description('Location ID (e.g., L97339)')
 })
 
 /**

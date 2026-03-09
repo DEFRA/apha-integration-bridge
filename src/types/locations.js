@@ -2,6 +2,11 @@ import Joi from 'joi'
 
 import { CommoditiesData } from './commodities.js'
 import { FacilitiesData } from './facilities.js'
+
+export const LocationIdSchema = Joi.string()
+  .pattern(/^L\d+$/)
+  .required()
+
 export const LocationsData = Joi.object({
   type: Joi.string()
     .valid('locations')
