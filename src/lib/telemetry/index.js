@@ -36,9 +36,16 @@ let spanProcessor = new SimpleSpanProcessor({
 })
 
 /**
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+export function shouldUseOtlpExporter(env = process.env) {
+  return Boolean(env.OTEL_EXPORTER_OTLP_ENDPOINT) && env.NODE_ENV !== 'test'
+}
+
+/**
  * if an OTLP exporter endpoint is defined, use it for both metrics and traces
  */
-if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
+if (shouldUseOtlpExporter()) {
   spanProcessor = new SimpleSpanProcessor(new OTLPTraceExporter({}))
 
   metricExporter = new OTLPMetricExporter({})

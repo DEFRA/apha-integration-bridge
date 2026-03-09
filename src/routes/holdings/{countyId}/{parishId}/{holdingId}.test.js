@@ -23,7 +23,7 @@ test('returns the cph and type for a CPH ID that exists', async () => {
    */
   server.auth.scheme('simple', () => {
     return {
-      authenticate: (request, h) => {
+      authenticate: (_request, h) => {
         return h.authenticated({ credentials: {} })
       }
     }
@@ -34,7 +34,8 @@ test('returns the cph and type for a CPH ID that exists', async () => {
   server.auth.default('simple')
 
   server.route({
-    ...route,
+    handler: route.handler,
+    options: route.options,
     path: '/{countyId}/{parishId}/{holdingId}',
     method: 'GET'
   })
@@ -103,7 +104,8 @@ test('returns 404 for a CPH ID that does not exist', async () => {
   server.auth.default('simple')
 
   server.route({
-    ...route,
+    handler: route.handler,
+    options: route.options,
     path: '/{countyId}/{parishId}/{holdingId}',
     method: 'GET'
   })
@@ -145,7 +147,8 @@ test('returns a 409 conflict error when a CPH ID has multiple locations', async 
   server.auth.default('simple')
 
   server.route({
-    ...route,
+    handler: route.handler,
+    options: route.options,
     path: '/{countyId}/{parishId}/{holdingId}',
     method: 'GET'
   })

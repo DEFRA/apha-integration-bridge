@@ -3,16 +3,13 @@ import Joi from 'joi'
 import { toHoldings } from '../mappers/to-holdings.js'
 import { execute } from '../operations/execute.js'
 import { loadSQL } from '../utils/load-sql.js'
+import { HoldingIdSchema } from '../../../types/holdings.js'
 
 const sql = loadSQL(import.meta.filename)
 
 const FindHoldingsSchema = Joi.object({
   ids: Joi.array()
-    .items(
-      Joi.string()
-        .pattern(/^\d{2}\/\d{3}\/\d{4}$/)
-        .required()
-    )
+    .items(HoldingIdSchema)
     .min(1)
     .required()
     .description('List of CPHs')

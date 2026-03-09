@@ -8,7 +8,13 @@ const sql = loadSQL(import.meta.filename)
 
 const FindWorkordersSchema = Joi.object({
   ids: Joi.array()
-    .items(Joi.string().trim().min(1).required())
+    .items(
+      Joi.string()
+        .trim()
+        .pattern(/^WS-[0-9]{5}$/i)
+        .min(1)
+        .required()
+    )
     .min(1)
     .required()
     .description('Workorder ids')
