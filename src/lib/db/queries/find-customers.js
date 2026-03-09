@@ -1,5 +1,6 @@
 import Joi from 'joi'
 
+import { toOrganisations } from '../mappers/to-organisations.js'
 import { toPeople } from '../mappers/to-people.js'
 import { execute } from '../operations/execute.js'
 import { query } from '../operations/query.js'
@@ -53,20 +54,20 @@ export function findCustomersQuery(ids, customerType) {
 }
 
 /**
- * Executes the find customers query and maps database rows to API customer objects.
+ * Executes the find customers query and maps database rows to API resources.
  *
  * @param {import('oracledb').Connection} connection
  * @param {string[]} ids
  * @param {'PERSON' | 'ORGANISATION'} customerType
  */
 export async function findCustomers(connection, ids, customerType) {
-  if (customerType === 'ORGANISATION') {
-    throw new Error('ORGANISATION customer type is not implemented')
-  }
-
   const query = findCustomersQuery(ids, customerType)
 
   const rows = await execute(connection, query)
+
+  if (customerType === 'ORGANISATION') {
+    return toOrganisations(rows, ids)
+  }
 
   return toPeople(rows, ids)
 }

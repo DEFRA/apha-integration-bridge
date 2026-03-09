@@ -6,8 +6,10 @@ import route from './find.js'
 import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 
-const path = '/customers/find'
+const path = '/organisations/find'
 const organisationId = 'O123456'
+const customer1Id = 'C123456'
+const customer2Id = 'C234567'
 const authToken = [
   Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString(
     'base64url'
@@ -19,94 +21,43 @@ const authToken = [
 ].join('.')
 const authHeaders = { authorization: `Bearer ${authToken}` }
 
-const customer1 = {
-  type: 'customers',
-  id: 'C123456',
-  title: 'Mr',
-  firstName: 'Bert',
-  middleName: null,
-  lastName: 'Farmer',
-  addresses: [
-    {
-      primaryAddressableObject: {
-        startNumber: 12,
-        startNumberSuffix: null,
-        endNumber: null,
-        endNumberSuffix: null,
-        description: 'Rose cottage'
-      },
-      secondaryAddressableObject: {
-        startNumber: 12,
-        startNumberSuffix: null,
-        endNumber: null,
-        endNumberSuffix: null,
-        description: null
-      },
-      street: 'Street',
-      locality: null,
-      town: 'Town',
-      postcode: '1AA A11',
-      countryCode: null,
-      isPreferred: false
-    }
-  ],
-  contactDetails: [
-    {
-      type: 'email',
-      emailAddress: 'example@example.com',
-      isPreferred: false
+const organisation = {
+  type: 'organisations',
+  id: organisationId,
+  organisationName: 'Acme Farms Ltd',
+  address: {
+    primaryAddressableObject: {
+      startNumber: 100,
+      startNumberSuffix: null,
+      endNumber: null,
+      endNumberSuffix: null,
+      description: 'Head office'
     },
-    {
-      type: 'mobile',
-      phoneNumber: '+44 11111 11111',
-      isPreferred: true
+    secondaryAddressableObject: {
+      startNumber: null,
+      startNumberSuffix: null,
+      endNumber: null,
+      endNumberSuffix: null,
+      description: null
+    },
+    street: 'Enterprise Way',
+    locality: null,
+    town: 'Town',
+    postcode: '2BB B22',
+    countryCode: 'GB'
+  },
+  contactDetails: {
+    primaryContact: {
+      fullName: 'Jane Contact',
+      emailAddress: null,
+      phoneNumber: null
+    },
+    secondaryContact: {
+      fullName: 'John Contact',
+      emailAddress: null,
+      phoneNumber: null
     }
-  ],
-  relationships: {
-    srabpiPlants: {
-      data: []
-    }
-  }
-}
-
-const customer2 = {
-  type: 'customers',
-  id: 'C234567',
-  title: 'Mrs',
-  firstName: 'Roberta',
-  middleName: null,
-  lastName: 'Farmer',
-  addresses: [
-    {
-      countryCode: null,
-      isPreferred: false,
-      locality: null,
-      postcode: null,
-      primaryAddressableObject: {
-        description: null,
-        endNumber: null,
-        endNumberSuffix: null,
-        startNumber: null,
-        startNumberSuffix: null
-      },
-      secondaryAddressableObject: {
-        description: null,
-        endNumber: null,
-        endNumberSuffix: null,
-        startNumber: null,
-        startNumberSuffix: null
-      },
-      street: null,
-      town: null
-    }
-  ],
-  contactDetails: [
-    {
-      type: 'landline',
-      phoneNumber: '+44 1111 11111',
-      isPreferred: true
-    }
-  ],
+  },
   relationships: {
     srabpiPlants: {
       data: []
@@ -139,7 +90,7 @@ async function createServer() {
   return server
 }
 
-describe('POST /customers/find', () => {
+describe('POST /organisations/find', () => {
   test('requires authentication explicitly', () => {
     expect(route.options.auth).toEqual({ mode: 'required' })
   })
@@ -150,7 +101,7 @@ describe('POST /customers/find', () => {
     const response = await server.inject({
       method: 'POST',
       payload: {
-        ids: [customer1.id]
+        ids: [organisationId]
       },
       url: `${path}?page=1&pageSize=10`
     })
@@ -158,7 +109,7 @@ describe('POST /customers/find', () => {
     expect(response.statusCode).toBe(401)
   })
 
-  test('returns all matching ids', async () => {
+  test('returns all matching organisation ids', async () => {
     const server = await createServer()
 
     const queryParams = new URLSearchParams({
@@ -171,7 +122,7 @@ describe('POST /customers/find', () => {
     const response = await server.inject({
       method: 'POST',
       payload: {
-        ids: [customer1.id, customer2.id]
+        ids: [organisationId]
       },
       headers: authHeaders,
       url
@@ -179,7 +130,7 @@ describe('POST /customers/find', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({
-      data: [customer1, customer2],
+      data: [organisation],
       links: {
         self: url,
         next: null,
@@ -218,7 +169,7 @@ describe('POST /customers/find', () => {
     })
   })
 
-  test('returns customers in order requested', async () => {
+  test('returns an empty array when only person ids are requested', async () => {
     const server = await createServer()
 
     const queryParams = new URLSearchParams({
@@ -231,67 +182,7 @@ describe('POST /customers/find', () => {
     const response = await server.inject({
       method: 'POST',
       payload: {
-        ids: [customer2.id, customer1.id]
-      },
-      headers: authHeaders,
-      url
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(response.result).toEqual({
-      data: [customer2, customer1],
-      links: {
-        self: url,
-        next: null,
-        prev: null
-      }
-    })
-  })
-
-  test('excludes organisation ids from results', async () => {
-    const server = await createServer()
-
-    const queryParams = new URLSearchParams({
-      page: '1',
-      pageSize: '10'
-    })
-
-    const url = `${path}?${queryParams.toString()}`
-
-    const response = await server.inject({
-      method: 'POST',
-      payload: {
-        ids: [customer1.id, organisationId, customer2.id]
-      },
-      headers: authHeaders,
-      url
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(response.result).toEqual({
-      data: [customer1, customer2],
-      links: {
-        self: url,
-        next: null,
-        prev: null
-      }
-    })
-  })
-
-  test('returns an empty array when only organisation ids are requested', async () => {
-    const server = await createServer()
-
-    const queryParams = new URLSearchParams({
-      page: '1',
-      pageSize: '10'
-    })
-
-    const url = `${path}?${queryParams.toString()}`
-
-    const response = await server.inject({
-      method: 'POST',
-      payload: {
-        ids: [organisationId]
+        ids: [customer1Id, customer2Id]
       },
       headers: authHeaders,
       url
@@ -308,7 +199,37 @@ describe('POST /customers/find', () => {
     })
   })
 
-  test('returns customers paginated', async () => {
+  test('excludes person ids from mixed results', async () => {
+    const server = await createServer()
+
+    const queryParams = new URLSearchParams({
+      page: '1',
+      pageSize: '10'
+    })
+
+    const url = `${path}?${queryParams.toString()}`
+
+    const response = await server.inject({
+      method: 'POST',
+      payload: {
+        ids: [customer1Id, organisationId, customer2Id]
+      },
+      headers: authHeaders,
+      url
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({
+      data: [organisation],
+      links: {
+        self: url,
+        next: null,
+        prev: null
+      }
+    })
+  })
+
+  test('returns organisations paginated when non-organisation ids are present', async () => {
     const server = await createServer()
 
     const queryParams = new URLSearchParams({
@@ -321,7 +242,7 @@ describe('POST /customers/find', () => {
     const firstResponse = await server.inject({
       method: 'POST',
       payload: {
-        ids: [customer2.id, customer1.id]
+        ids: [organisationId, customer1Id]
       },
       headers: authHeaders,
       url: firstUrl
@@ -333,7 +254,7 @@ describe('POST /customers/find', () => {
 
     expect(firstResponse.statusCode).toBe(200)
     expect(firstResponse.result).toEqual({
-      data: [customer2],
+      data: [organisation],
       links: {
         self: firstUrl,
         next: `${path}?${nextQueryParams.toString()}`,
@@ -344,7 +265,7 @@ describe('POST /customers/find', () => {
     const secondResponse = await server.inject({
       method: 'POST',
       payload: {
-        ids: [customer2.id, customer1.id]
+        ids: [organisationId, customer1Id]
       },
       headers: authHeaders,
       // @ts-expect-error - test response typing is not strict enough
@@ -353,7 +274,7 @@ describe('POST /customers/find', () => {
 
     expect(secondResponse.statusCode).toBe(200)
     expect(secondResponse.result).toEqual({
-      data: [customer1],
+      data: [],
       links: {
         self: `${path}?${nextQueryParams.toString()}`,
         next: null,
@@ -375,7 +296,7 @@ describe('POST /customers/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: [customer1.id]
+          ids: [organisationId]
         },
         headers: authHeaders,
         url: `${path}?${queryParams.toString()}`
@@ -396,7 +317,7 @@ describe('POST /customers/find', () => {
     const response = await server.inject({
       method: 'POST',
       payload: {
-        ids: [customer1.id]
+        ids: [organisationId]
       },
       headers: authHeaders,
       url: `${path}?${queryParams.toString()}`
@@ -404,7 +325,7 @@ describe('POST /customers/find', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({
-      data: [customer1],
+      data: [organisation],
       links: {
         self: `${path}?${queryParams.toString()}`,
         next: null,
