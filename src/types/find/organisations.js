@@ -30,7 +30,7 @@ export const OrganisationRelationships = Joi.object({
 
 export const Organisation = OrganisationData.keys({
   organisationName: Joi.string().required().label('Organisation Name'),
-  address: Address.allow(null).required(),
+  address: Address.required(),
   contactDetails: OrganisationContactDetails,
   relationships: OrganisationRelationships
 })
