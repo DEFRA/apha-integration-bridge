@@ -18,7 +18,9 @@ const logger = createLogger()
 /**
  * @type {import("@opentelemetry/sdk-metrics").PushMetricExporter}
  */
-let metricExporter
+let metricExporter = new EMFMetricExporter({
+  emf: createMetricsLogger()
+})
 
 let spanProcessor = new SimpleSpanProcessor({
   shutdown: () => Promise.resolve(),
@@ -34,48 +36,24 @@ let spanProcessor = new SimpleSpanProcessor({
 })
 
 /**
- * @param {NodeJS.ProcessEnv} [env]
- */
-export function shouldUseOtlpExporter(env = process.env) {
-  return Boolean(env.OTEL_EXPORTER_OTLP_ENDPOINT) && env.NODE_ENV !== 'test'
-}
-
-/**
- * @param {NodeJS.ProcessEnv} [env]
- */
-export function shouldEnableMetricReader(env = process.env) {
-  return env.NODE_ENV !== 'test'
-}
-
-/**
  * if an OTLP exporter endpoint is defined, use it for both metrics and traces
  */
-if (shouldUseOtlpExporter()) {
+if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
   spanProcessor = new SimpleSpanProcessor(new OTLPTraceExporter({}))
 
   metricExporter = new OTLPMetricExporter({})
-} else if (shouldEnableMetricReader()) {
-  metricExporter = new EMFMetricExporter({
-    emf: createMetricsLogger()
-  })
-}
-
-const readers = []
-
-if (metricExporter) {
-  readers.push(
-    new PeriodicExportingMetricReader({
-      exporter: metricExporter,
-      exportIntervalMillis: 30_000
-    })
-  )
 }
 
 /**
  * define a meter provider that exports metrics every 30 seconds
  */
 export const meterProvider = new MeterProvider({
-  readers
+  readers: [
+    new PeriodicExportingMetricReader({
+      exporter: metricExporter,
+      exportIntervalMillis: 30_000
+    })
+  ]
 })
 
 export const meter = meterProvider.getMeter('metrics')
