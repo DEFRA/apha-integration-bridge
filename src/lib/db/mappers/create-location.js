@@ -16,12 +16,16 @@ export const createLocation = (row, id) => {
   const location = {
     type: 'locations',
     id,
-    name: null,
+    name: asNullableString(row.feature_name),
     address,
     osMapReference: asNullableString(row.os_map_reference),
     livestockUnits: [],
     facilities: [],
-    relationships: {}
+    relationships: {
+      holdings: {
+        data: []
+      }
+    }
   }
 
   return location

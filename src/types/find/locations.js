@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { baseData, relationshipToOne } from './helpers.js'
+import { baseData, relationshipToOne, relationshipToMany } from './helpers.js'
 import { Address } from '../address.js'
 
 /**
@@ -68,6 +68,13 @@ const Facilities = baseData({
   })
   .label('Facility')
 
+const HoldingsRelationship = relationshipToMany(
+  baseData({
+    plural: 'holdings',
+    singular: 'holding'
+  })
+)
+
 export const LocationsSchema = LocationsData.keys({
   type: Joi.string().valid('locations').required().label('Type'),
   id: Joi.string().required().label('Location ID'),
@@ -81,5 +88,7 @@ export const LocationsSchema = LocationsData.keys({
     .required()
     .label('Livestock units'),
   facilities: Joi.array().items(Facilities).required().label('Facilities'),
-  relationships: Joi.object({}).required()
+  relationships: Joi.object({
+    holdings: HoldingsRelationship.description('Holdings using this location')
+  }).required()
 }).label('Locations Data')

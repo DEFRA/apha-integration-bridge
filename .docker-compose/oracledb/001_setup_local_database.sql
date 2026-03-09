@@ -141,12 +141,33 @@ BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code PURGE';         EXCEPTION WHEN
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set_map PURGE';      EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
+-- Core reference data tables (needed by both holdings and locations)
+CREATE TABLE ref_data_set (
+  ref_data_set_pk       NUMBER        PRIMARY KEY,
+  ref_data_set_name     VARCHAR2(100) NOT NULL,
+  effective_to_date     DATE
+);
+
+CREATE TABLE ref_data_code (
+  ref_data_code_pk      NUMBER        PRIMARY KEY,
+  code                  VARCHAR2(50)  NOT NULL,
+  ref_data_set_pk       NUMBER        NOT NULL,
+  effective_to_date     DATE          NOT NULL
+);
+
+CREATE TABLE ref_data_code_desc (
+  ref_data_code_pk      NUMBER        PRIMARY KEY,
+  short_description     VARCHAR2(255) NOT NULL,
+  language_code         VARCHAR2(10)  NOT NULL
+);
+
 -- Core feature tables
 CREATE TABLE feature_involvement (
   feature_pk                  NUMBER       PRIMARY KEY,
   cph                         VARCHAR2(50) NOT NULL,
   feature_involvement_type    VARCHAR2(50) NOT NULL,
-  feature_involv_to_date      DATE
+  feature_involv_to_date      DATE,
+  party_role_pk               NUMBER
 );
 
 -- ✅ Refactor: allow multiple locations per feature (and thus per CPH)
@@ -170,17 +191,6 @@ CREATE TABLE ref_data_set_map (
   effective_to_date     DATE          NOT NULL
 );
 
-CREATE TABLE ref_data_code (
-  ref_data_code_pk  NUMBER        PRIMARY KEY,
-  code              VARCHAR2(50)  NOT NULL,
-  effective_to_date DATE          NOT NULL
-);
-
-CREATE TABLE ref_data_code_desc (
-  ref_data_code_pk  NUMBER        PRIMARY KEY,
-  short_description VARCHAR2(255) NOT NULL
-);
-
 CREATE TABLE ref_data_code_map (
   ref_data_code_map_pk   NUMBER       PRIMARY KEY,
   ref_data_set_map_pk    NUMBER       NOT NULL,
@@ -192,24 +202,6 @@ CREATE TABLE ref_data_code_map (
 -- Minimal reference data to satisfy WHERE filters and joins
 INSERT INTO ref_data_set_map (ref_data_set_map_pk, ref_data_set_map_name, effective_to_date)
 VALUES (1, 'LOCAL_AUTHORITY_COUNTY_PARISH', DATE '9999-12-31');
-
--- rdc: local authority numbers (what your query returns as laNumber)
-INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (101, 'LA01001', DATE '9999-12-31');
-INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (101, 'Local Authority 01/001');
-
-INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (102, 'LA45001', DATE '9999-12-31');
-INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (102, 'Dev Sample LA 45/001');
-
--- rdc1: county/parish codes (must equal SUBSTR(cph,1,6))
-INSERT INTO ref_data_code (ref_data_code_pk, code,     effective_to_date) VALUES (201, '01/001', DATE '9999-12-31');
-INSERT INTO ref_data_code (ref_data_code_pk, code,     effective_to_date) VALUES (202, '45/001', DATE '9999-12-31');
-
--- Map each LA number (rdc) to its county/parish (rdc1)
-INSERT INTO ref_data_code_map (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
-VALUES (301, 1, 101, 201, DATE '9999-12-31');
-
-INSERT INTO ref_data_code_map (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
-VALUES (302, 1, 102, 202, DATE '9999-12-31');
 
 -- Feature graph for each existing test CPH
 -- CPH 01/001/0001
@@ -231,9 +223,9 @@ VALUES                           (5999,      '99/999/9999',  'CPHHOLDERSHIP',   
 INSERT INTO location            (feature_pk, location_id) VALUES (5999, 'LOC-ZZ');
 INSERT INTO feature_state       (feature_pk, feature_status_code) VALUES (5999, 'INACTIVE');
 -- also wire a county/parish map so the joins succeed but the WHERE filters exclude it
-INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (1099, 'LA99999', DATE '9999-12-31');
-INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (1099, 'Control LA 99/999');
-INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (2099, '99/999', DATE '9999-12-31');
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     ref_data_set_pk, effective_to_date) VALUES (1099, 'LA99999', 2000, DATE '9999-12-31');
+INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)           VALUES (1099, 'Control LA 99/999', 'ENG');
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     ref_data_set_pk, effective_to_date) VALUES (2099, '99/999', 2000, DATE '9999-12-31');
 INSERT INTO ref_data_code_map  (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
 VALUES (3099, 1, 1099, 2099, DATE '9999-12-31');
 
@@ -245,9 +237,9 @@ VALUES (3099, 1, 1099, 2099, DATE '9999-12-31');
 INSERT INTO v_cph_customer_unit (cph, cph_type) VALUES ('01/409/1111', 'MULTI_LOC_TEST');
 
 -- Reference data so SUBSTR(cph,1,6) = '01/409' joins correctly
-INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (103, 'LA01409', DATE '9999-12-31');
-INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)           VALUES (103, 'Local Authority 01/409');
-INSERT INTO ref_data_code      (ref_data_code_pk, code,     effective_to_date) VALUES (203, '01/409', DATE '9999-12-31');
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     ref_data_set_pk, effective_to_date) VALUES (103, 'LA01409', 2000, DATE '9999-12-31');
+INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)           VALUES (103, 'Local Authority 01/409', 'ENG');
+INSERT INTO ref_data_code      (ref_data_code_pk, code,     ref_data_set_pk, effective_to_date) VALUES (203, '01/409', 2000, DATE '9999-12-31');
 INSERT INTO ref_data_code_map  (ref_data_code_map_pk, ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk, effective_to_date)
 VALUES (303, 1, 103, 203, DATE '9999-12-31');
 
@@ -284,19 +276,108 @@ BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_rdcm_from_pk     ON ref_data_code_map 
 -- NEW: /locations endpoint structures (BS7666 + assets) + seed data
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Drop minimal tables if re-running locally (idempotent dev runs)
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_location PURGE';  EXCEPTION WHEN OTHERS THEN NULL; END;
+-- Drop all tables in correct order (reverse dependency order)
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_location PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_state PURGE';     EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_state PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility PURGE';        EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE coll_regstrd_animal_group PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE livestock_unit PURGE';  EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_address PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_business_activty PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE bs7666_address PURGE';  EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_type PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
 /
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal_species PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal PURGE';                  EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE livestock_unit PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_point PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_address PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE bs7666_address PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_role PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_state PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+
+-- Animal tables for livestock species
+CREATE TABLE animal_species (
+  animal_species_pk     NUMBER        PRIMARY KEY,
+  animal_species_code   VARCHAR2(50)  NOT NULL,
+  animal_species_to_date DATE
+);
+
+CREATE TABLE animal (
+  animal_pk             NUMBER        PRIMARY KEY,
+  animal_species_pk     NUMBER        NOT NULL
+);
+
+-- Facility tables for facility business activity
+CREATE TABLE facility_type (
+  facility_type_pk      NUMBER        PRIMARY KEY,
+  facility_type_code    VARCHAR2(50)  NOT NULL
+);
+
+CREATE TABLE facility_business_activty (
+  facility_business_activty_pk  NUMBER        PRIMARY KEY,
+  facility_type_pk              NUMBER        NOT NULL,
+  facility_businss_actvty_code  VARCHAR2(50)  NOT NULL
+);
+
+-- Party tables for holdings relationships
+CREATE TABLE party (
+  party_pk              NUMBER        PRIMARY KEY,
+  party_id              VARCHAR2(50)  NOT NULL
+);
+
+CREATE TABLE party_state (
+  party_pk              NUMBER        NOT NULL,
+  party_status_code     VARCHAR2(20)  NOT NULL,
+  party_state_to_dttm   DATE
+);
+
+CREATE TABLE party_role (
+  party_role_pk         NUMBER        PRIMARY KEY,
+  party_pk              NUMBER        NOT NULL,
+  party_role_to_date    DATE
+);
+
+-- Feature table for feature names
+CREATE TABLE feature (
+  feature_pk            NUMBER        PRIMARY KEY,
+  feature_name          VARCHAR2(255)
+);
+
+-- Feature point table for OS map references
+CREATE TABLE feature_point (
+  feature_pk                  NUMBER        NOT NULL,
+  primary_feature_point_ind   VARCHAR2(1)   NOT NULL,
+  feature_point_to_date       DATE,
+  os_map_reference            VARCHAR2(100)
+);
+
+-- Asset table linking to animals
+CREATE TABLE asset (
+  asset_pk              NUMBER        PRIMARY KEY,
+  animal_pk             NUMBER
+);
+
+CREATE TABLE coll_regstrd_animal_group (
+  animal_pk                     NUMBER        NOT NULL,
+  usual_quantity_of_animals     NUMBER
+);
 
 -- Core BS7666 address tables
 CREATE TABLE bs7666_address (
@@ -336,13 +417,15 @@ CREATE TABLE asset_location (
 );
 
 CREATE TABLE livestock_unit (
-  asset_pk   NUMBER        PRIMARY KEY,
-  unit_id    VARCHAR2(30)  NOT NULL
+  asset_pk      NUMBER        PRIMARY KEY,
+  unit_id       VARCHAR2(30)  NOT NULL
 );
 
 CREATE TABLE facility (
-  asset_pk   NUMBER        PRIMARY KEY,
-  unit_id    VARCHAR2(30)  NOT NULL
+  asset_pk                      NUMBER        PRIMARY KEY,
+  unit_id                       VARCHAR2(30)  NOT NULL,
+  facility_name                 VARCHAR2(200),
+  facility_business_activty_pk  NUMBER
 );
 
 CREATE TABLE asset_state (

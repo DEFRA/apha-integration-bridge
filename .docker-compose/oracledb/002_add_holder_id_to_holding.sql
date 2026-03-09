@@ -74,21 +74,21 @@ END;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- rdc (laNumber) + rdcd (laName)
 BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (10432, 'LA04432', DATE '9999-12-31');
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (10432, 'LA04432', 2000, DATE '9999-12-31');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
 BEGIN
-  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)
-  VALUES (10432, 'Local Authority 04/432');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (10432, 'Local Authority 04/432', 'ENG');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
 -- rdc1 (county/parish) = '04/432'
 BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (20432, '04/432', DATE '9999-12-31');
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (20432, '04/432', 2000, DATE '9999-12-31');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /

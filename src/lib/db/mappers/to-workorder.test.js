@@ -55,7 +55,7 @@ test('toWorkorder maps a single row into one workorder resource', () => {
     relationships: {
       customerOrOrganisation: {
         data: {
-          type: 'customerOrOrganisation',
+          type: 'customers',
           id: 'C001'
         }
       },
@@ -124,14 +124,7 @@ test('toWorkorder handles rows with minimal data', () => {
     purpose: null,
     earliestActivityStartDate: null,
     species: null,
-    activities: [
-      {
-        type: 'activities',
-        id: null,
-        activityName: null,
-        sequenceNumber: null
-      }
-    ],
+    activities: [],
     phase: null,
     relationships: {
       customerOrOrganisation: {
