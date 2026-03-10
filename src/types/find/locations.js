@@ -78,7 +78,7 @@ const HoldingsRelationship = relationshipToMany(
 export const LocationsSchema = LocationsData.keys({
   type: Joi.string().valid('locations').required().label('Type'),
   id: Joi.string().required().label('Location ID'),
-  name: Joi.string().required().allow(null).label('Location name'),
+  name: Joi.string().required().label('Location name'),
   address: Address.required()
     .label('Address')
     .description('Address of the location'),
