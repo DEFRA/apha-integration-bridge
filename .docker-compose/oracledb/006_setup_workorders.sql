@@ -26,13 +26,13 @@ CONNECT pega_data/password@FREEPDB1;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Drop existing tables if they exist (idempotent)
 -- ─────────────────────────────────────────────────────────────────────────────
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE index_ac_activity PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.index_ac_activity PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE index_ac_wsentities PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.index_ac_wsentities PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE index_ac_workschedule PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.index_ac_workschedule PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ahwork_ac PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.ahwork_ac PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ BEGIN EXECUTE IMMEDIATE 'DROP TABLE ahwork_ac PURGE'; EXCEPTION WHEN OTHERS THEN
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Main work order table (AHWORK_AC)
-CREATE TABLE ahwork_ac (
+CREATE TABLE pega_data.ahwork_ac (
   pyid                              VARCHAR2(50)  PRIMARY KEY,  -- Work order ID (e.g., 'WS-76512')
   pzinskey                          VARCHAR2(200) NOT NULL,     -- Instance key
   pxinsname                         VARCHAR2(200),              -- Instance name
@@ -53,13 +53,14 @@ CREATE TABLE ahwork_ac (
   wslatestactivitycompletiondate    DATE,                       -- Latest activity completion
   pysladeadline                     DATE,                       -- SLA deadline
   pxcoverinskey                     VARCHAR2(200),              -- Cover instance key (for activities)
-  pydescription                     VARCHAR2(500)               -- Description
+  pydescription                     VARCHAR2(500),              -- Description
+  activitysequencenumber            NUMBER                      -- Sequence number
 );
 
 -- Work schedule index table (denormalized Pega structure)
-CREATE TABLE index_ac_workschedule (
+CREATE TABLE pega_data.index_ac_workschedule (
   pyid                  VARCHAR2(50)  NOT NULL,       -- Work order ID
-  pxinsindexedkey       VARCHAR2(200) PRIMARY KEY,    -- Indexed key (links to ahwork_ac.pzinskey)
+  pxinsindexedkey       VARCHAR2(200) PRIMARY KEY,    -- Indexed key (links to pega_data.ahwork_ac.pzinskey)
   purposeworkarea       VARCHAR2(100),                -- Work area (e.g., 'Tuberculosis')
   purposecountry        VARCHAR2(50),                 -- Country
   aimname               VARCHAR2(500),                -- Aim
@@ -70,7 +71,7 @@ CREATE TABLE index_ac_workschedule (
 );
 
 -- Entities table (handles locations, customers, livestock units, facilities)
-CREATE TABLE index_ac_wsentities (
+CREATE TABLE pega_data.index_ac_wsentities (
   entityid          VARCHAR2(50)  NOT NULL,   -- Entity ID (location_id, customer_id, etc.)
   pyid              VARCHAR2(50)  NOT NULL,   -- Work order ID
   pxindexpurpose    VARCHAR2(100) NOT NULL,   -- Purpose flag determines entity type
@@ -79,27 +80,25 @@ CREATE TABLE index_ac_wsentities (
 );
 
 -- Activity index table
-CREATE TABLE index_ac_activity (
+CREATE TABLE pega_data.index_ac_activity (
   pyid                      VARCHAR2(50)  PRIMARY KEY,  -- Activity ID
-  actname                   VARCHAR2(255) NOT NULL,     -- Activity name
-  activitysequencenumber    NUMBER,                     -- Sequence number
-  pydescription             VARCHAR2(500)               -- Description
+  actname                   VARCHAR2(255) NOT NULL     -- Activity name
 );
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Create indexes for performance
 -- ─────────────────────────────────────────────────────────────────────────────
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ahwork_pyid ON ahwork_ac (pyid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ahwork_pyid ON pega_data.ahwork_ac (pyid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ahwork_status ON ahwork_ac (pystatuswork)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ahwork_status ON pega_data.ahwork_ac (pystatuswork)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ws_pyid ON index_ac_workschedule (pyid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ws_pyid ON pega_data.index_ac_workschedule (pyid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ws_country ON index_ac_workschedule (purposecountry)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ws_country ON pega_data.index_ac_workschedule (purposecountry)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_pyid ON index_ac_wsentities (pyid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_pyid ON pega_data.index_ac_wsentities (pyid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_purpose ON index_ac_wsentities (pxindexpurpose)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_purpose ON pega_data.index_ac_wsentities (pxindexpurpose)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -107,7 +106,7 @@ BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_purpose ON index_ac_wsentities (px
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- WS-76512: England, Cattle, Empty relationships
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -119,7 +118,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-01-15'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -130,17 +129,17 @@ INSERT INTO index_ac_workschedule (
   'Cattle', 'EXPOSURETRACKING'
 );
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('C123456', 'WS-76512', 'workScheduleCustomers', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-ALPHA', 'WS-76512', 'workScheduleLocation', '01/001/0001');
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000010', 'WS-76512', 'workScheduleLivestockUnits', NULL);
 
 -- WS-76513: Scotland, Sheep, Mixed relationships (1 livestock + 1 facility)
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -152,7 +151,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-01-16'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -163,41 +162,43 @@ INSERT INTO index_ac_workschedule (
   'Sheep', 'EXPOSURETRACKING'
 );
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('O123456', 'WS-76513', 'workScheduleCustomers', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-BETA', 'WS-76513', 'workScheduleLocation', '45/001/0002');
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000020', 'WS-76513', 'workScheduleLivestockUnits', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000030', 'WS-76513', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76513
-INSERT INTO ahwork_ac (
-  pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey
+INSERT INTO pega_data.ahwork_ac (
+  pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey,
+  activitysequencenumber
 ) VALUES (
   'WS-76513-ACT1', 'AH-AC-WS-ACT WS-76513-ACT1', 'activity-1',
-  'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76513'
+  'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76513', 1
 );
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-1', 'Arrange Visit', 1);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-1', 'Arrange Visit');
 
-INSERT INTO ahwork_ac (
-  pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey
+INSERT INTO pega_data.ahwork_ac (
+  pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey,
+  activitysequencenumber
 ) VALUES (
   'WS-76513-ACT2', 'AH-AC-WS-ACT WS-76513-ACT2', 'activity-2',
-  'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76513'
+  'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76513', 2
 );
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-2', 'Perform TB Skin Test', 2);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-2', 'Perform TB Skin Test');
 
 -- WS-76514: Wales, Multiple livestock units (2)
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -209,7 +210,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-02-20'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -220,40 +221,40 @@ INSERT INTO index_ac_workschedule (
   'Cattle', 'INSPECTION'
 );
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('C789012', 'WS-76514', 'workScheduleCustomers', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-OMEGA', 'WS-76514', 'workScheduleLocation', '01/409/1111');
 
 -- Multiple livestock units
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000010', 'WS-76514', 'workScheduleLivestockUnits', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000020', 'WS-76514', 'workScheduleLivestockUnits', NULL);
 
 -- Activities for WS-76514 (3 activities)
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76514-ACT1', 'AH-AC-WS-ACT WS-76514-ACT1', 'activity-3', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76514-ACT1', 'AH-AC-WS-ACT WS-76514-ACT1', 'activity-3', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514', 1);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-3', 'Initial Farm Assessment', 1);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-3', 'Initial Farm Assessment');
 
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514', 2);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-4', 'Livestock Document Review', 2);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-4', 'Livestock Document Review');
 
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514', 3);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-5', 'Physical Animal Inspection', 3);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-5', 'Physical Animal Inspection');
 
 -- WS-76515: England, Multiple livestock (2) + facility (1)
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -265,7 +266,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-03-25'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -276,36 +277,36 @@ INSERT INTO index_ac_workschedule (
   'Sheep', 'POSTMOVEMENT'
 );
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('O456789', 'WS-76515', 'workScheduleCustomers', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-ALPHA', 'WS-76515', 'workScheduleLocation', '01/001/0001');
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000010', 'WS-76515', 'workScheduleLivestockUnits', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000020', 'WS-76515', 'workScheduleLivestockUnits', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000030', 'WS-76515', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76515
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76515-ACT1', 'AH-AC-WS-ACT WS-76515-ACT1', 'activity-6', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76515');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76515-ACT1', 'AH-AC-WS-ACT WS-76515-ACT1', 'activity-6', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76515', 1);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-6', 'Verify Movement Documentation', 1);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-6', 'Verify Movement Documentation');
 
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76515-ACT2', 'AH-AC-WS-ACT WS-76515-ACT2', 'activity-7', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76515');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76515-ACT2', 'AH-AC-WS-ACT WS-76515-ACT2', 'activity-7', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76515', 2);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-7', 'Inspect Holding Facilities', 2);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-7', 'Inspect Holding Facilities');
 
 -- WS-76516: Northern Ireland, NULL relationships
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -317,7 +318,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-04-30'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -331,36 +332,14 @@ INSERT INTO index_ac_workschedule (
 -- No entities for WS-76516 (NULL relationships test)
 
 -- Activity for WS-76516
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76516-ACT1', 'AH-AC-WS-ACT WS-76516-ACT1', 'activity-8', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76516');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76516-ACT1', 'AH-AC-WS-ACT WS-76516-ACT1', 'activity-8', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76516', 1);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-8', 'Emergency Site Assessment', 1);
-
--- WS-99999: INACTIVE (negative control)
-INSERT INTO ahwork_ac (
-  pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
-  wsactivationdate, wsstartdate, wsearliestactivitystartdate,
-  wslatestactivitycompletiondate, pysladeadline
-) VALUES (
-  'WS-99999', 'AH-AC-WS WS-99999', 'AH-AC-WS',
-  DATE '2023-12-01', 'Closed',  -- CLOSED status
-  DATE '2023-12-01', DATE '2023-12-01',
-  TIMESTAMP '2023-11-28 09:00:00', TIMESTAMP '2023-12-15 00:00:00',
-  DATE '2023-12-10'
-);
-
-INSERT INTO index_ac_workschedule (
-  pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
-  businessarea, purposename, speciesforpurpose, phase
-) VALUES (
-  'WS-99999', 'AH-AC-WS WS-99999', 'Test', 'England',
-  'Test Purpose', 'Test Area', 'Archived Work Order',
-  'Cattle', 'COMPLETED'
-);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-8', 'Emergency Site Assessment');
 
 -- WS-76517: Future date
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -372,7 +351,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-06-10'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -381,14 +360,14 @@ INSERT INTO index_ac_workschedule (
   'Planned Routine Inspection', 'Cattle', 'PREINSPECTION'
 );
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('C123456', 'WS-76517', 'workScheduleCustomers', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-ALPHA', 'WS-76517', 'workScheduleLocation', '01/001/0001');
 
 -- WS-76518: Pagination test + facility only
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -400,7 +379,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-01-15'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -410,17 +389,17 @@ INSERT INTO index_ac_workschedule (
   'Cattle', 'INVESTIGATION'
 );
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('C123456', 'WS-76518', 'workScheduleCustomers', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-ALPHA', 'WS-76518', 'workScheduleLocation', '01/001/0001');
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000030', 'WS-76518', 'workScheduleFacilities', NULL);
 
 -- WS-76519: Comprehensive (4 activities + 2 livestock + 1 facility)
-INSERT INTO ahwork_ac (
+INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxobjclass, pxupdatedatetime, pystatuswork,
   wsactivationdate, wsstartdate, wsearliestactivitystartdate,
   wslatestactivitycompletiondate, pysladeadline
@@ -432,7 +411,7 @@ INSERT INTO ahwork_ac (
   DATE '2024-05-25'
 );
 
-INSERT INTO index_ac_workschedule (
+INSERT INTO pega_data.index_ac_workschedule (
   pyid, pxinsindexedkey, purposeworkarea, purposecountry, aimname,
   businessarea, purposename, speciesforpurpose, phase
 ) VALUES (
@@ -442,45 +421,45 @@ INSERT INTO index_ac_workschedule (
   'Mixed', 'AUDIT'
 );
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('C789012', 'WS-76519', 'workScheduleCustomers', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-THETA', 'WS-76519', 'workScheduleLocation', '01/409/1111');
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000010', 'WS-76519', 'workScheduleLivestockUnits', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000020', 'WS-76519', 'workScheduleLivestockUnits', NULL);
 
-INSERT INTO index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('U000030', 'WS-76519', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76519 (4 activities)
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76519-ACT1', 'AH-AC-WS-ACT WS-76519-ACT1', 'activity-9', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76519-ACT1', 'AH-AC-WS-ACT WS-76519-ACT1', 'activity-9', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 1);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-9', 'Comprehensive Site Audit', 1);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-9', 'Comprehensive Site Audit');
 
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76519-ACT2', 'AH-AC-WS-ACT WS-76519-ACT2', 'activity-10', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76519-ACT2', 'AH-AC-WS-ACT WS-76519-ACT2', 'activity-10', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 2);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-10', 'Review All Livestock Units', 2);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-10', 'Review All Livestock Units');
 
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76519-ACT3', 'AH-AC-WS-ACT WS-76519-ACT3', 'activity-11', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76519-ACT3', 'AH-AC-WS-ACT WS-76519-ACT3', 'activity-11', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 3);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-11', 'Inspect All Facilities', 3);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-11', 'Inspect All Facilities');
 
-INSERT INTO ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey)
-VALUES ('WS-76519-ACT4', 'AH-AC-WS-ACT WS-76519-ACT4', 'activity-12', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
+VALUES ('WS-76519-ACT4', 'AH-AC-WS-ACT WS-76519-ACT4', 'activity-12', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 4);
 
-INSERT INTO index_ac_activity (pyid, actname, activitysequencenumber)
-VALUES ('activity-12', 'Generate Compliance Report', 4);
+INSERT INTO pega_data.index_ac_activity (pyid, actname)
+VALUES ('activity-12', 'Generate Compliance Report');
 
 COMMIT;
 
@@ -494,12 +473,4 @@ BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_workschedule TO sam'
 BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_wsentities TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_activity TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
-/
-BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.ahwork_ac TO ahbrp'; EXCEPTION WHEN OTHERS THEN NULL; END;
-/
-BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_workschedule TO ahbrp'; EXCEPTION WHEN OTHERS THEN NULL; END;
-/
-BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_wsentities TO ahbrp'; EXCEPTION WHEN OTHERS THEN NULL; END;
-/
-BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_activity TO ahbrp'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /

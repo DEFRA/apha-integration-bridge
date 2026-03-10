@@ -142,7 +142,7 @@ describe('workorders/find', () => {
         country: 'England',
         aim: 'Contain / Control / Eradicate Endemic Disease',
         purpose: 'Initiate Incident Premises Spread Tracing Action',
-        earliestActivityStartDate: '01/01/2024 09:00:00',
+        earliestActivityStartDate: null, // setting to null as it's not available in the current views
         species: 'Cattle',
         activities: [],
         phase: 'EXPOSURETRACKING',
@@ -187,7 +187,7 @@ describe('workorders/find', () => {
         country: 'Scotland',
         aim: 'Contain / Control / Eradicate Endemic Disease',
         purpose: 'Initiate Incident Premises Spread Tracing Action',
-        earliestActivityStartDate: '03/01/2024 09:00:00',
+        earliestActivityStartDate: null, // setting to null as it's not available in the current views
         species: 'Sheep',
         activities: [
           {
@@ -250,7 +250,7 @@ describe('workorders/find', () => {
         country: 'Wales',
         aim: 'Ensure Compliance with Animal Health Standards',
         purpose: 'Routine Inspection and Disease Monitoring',
-        earliestActivityStartDate: '08/02/2024 08:00:00',
+        earliestActivityStartDate: null, // setting to null as it's not available in the current views
         species: 'Cattle',
         activities: [
           {
