@@ -18,14 +18,14 @@ const config = convict({
         format: String,
         nullable: false,
         default: 'pega',
-        env: 'ORACLEDB_PEGA_USERNAME'
+        env: 'ORACLEDB_SAM_SMDB_USERNAME'
       },
       password: {
         doc: 'PEGA Database Password',
         format: String,
         nullable: false,
         default: 'password',
-        env: 'ORACLEDB_PEGA_PASSWORD'
+        env: 'ORACLEDB_SAM_SMDB_PASSWORD'
       },
       host: {
         doc: 'PEGA Database host',
