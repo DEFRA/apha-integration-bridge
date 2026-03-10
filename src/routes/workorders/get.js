@@ -1,0 +1,143 @@
+import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
+import Joi from 'joi'
+import fs from 'node:fs'
+import path from 'node:path'
+
+import {
+  HTTPExceptionSchema,
+  HTTPException,
+  HTTPError
+} from '../../lib/http/http-exception.js'
+import { paginateWorkorders } from '../../lib/db/queries/paginate-workorders.js'
+import { HTTPArrayResponse } from '../../lib/http/http-response.js'
+import { HTTPPaginationLinks } from '../../lib/http/http-pagination-links.js'
+import { WorkordersSchema } from '../../types/find/workorders.js'
+import { PaginatedLinkSchema } from '../../types/find/links.js'
+import { PaginateWorkordersSchema } from '../../types/find/workorders-pagination.js'
+
+const __dirname = new URL('.', import.meta.url).pathname
+
+const GetWorkordersResponseSchema = Joi.object({
+  data: Joi.array().items(WorkordersSchema).required(),
+  links: PaginatedLinkSchema
+})
+  .description('Workorder Details')
+  .label('Get Workorders Response')
+
+/**
+ * @type {import('@hapi/hapi').ServerRoute['options']}
+ */
+const options = {
+  auth: {
+    mode: 'required'
+  },
+  tags: ['api', 'workorders'],
+  description: 'Retrieve workorders by activation date range',
+  notes: fs.readFileSync(
+    path.join(decodeURIComponent(__dirname), 'get.md'),
+    'utf8'
+  ),
+  plugins: {
+    'hapi-swagger': {
+      id: 'workorders-get',
+      security: [{ Bearer: [] }]
+    }
+  },
+  validate: {
+    query: PaginateWorkordersSchema,
+    headers: Joi.object({
+      accept: Joi.string()
+        .default('application/vnd.apha.1+json')
+        .description('Accept header for API versioning')
+    }).options({ allowUnknown: true }),
+    failAction: HTTPException.failValidation
+  },
+  response: {
+    status: {
+      200: GetWorkordersResponseSchema,
+      '400-500': HTTPExceptionSchema
+    }
+  }
+}
+
+const metrics = createMetricsLogger()
+
+/**
+ * @type {import('@hapi/hapi').Lifecycle.Method}
+ */
+export async function handler(request, h) {
+  const startActivationDate = new Date(request.query.startActivationDate)
+  const endActivationDate = new Date(request.query.endActivationDate)
+
+  if (endActivationDate <= startActivationDate) {
+    return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
+      new HTTPError(
+        'VALIDATION_ERROR',
+        'End activation date must be after start activation date',
+        {
+          startActivationDate: request.query.startActivationDate,
+          endActivationDate: request.query.endActivationDate
+        }
+      )
+    ]).boomify()
+  }
+
+  try {
+    metrics.putMetric('workordersGetRequest', 1, Unit.Count)
+
+    await using oracledb = await request.server['oracledb.sam']()
+
+    /** @type {{
+     *   startActivationDate: string
+     *   endActivationDate: string
+     *   page: number
+     *   pageSize: number
+     * }} */
+    const pagination = {
+      startActivationDate: request.query.startActivationDate,
+      endActivationDate: request.query.endActivationDate,
+      page: request.query.page,
+      pageSize: request.query.pageSize
+    }
+
+    const { workorders, hasMore } = await paginateWorkorders(
+      oracledb.connection,
+      pagination
+    )
+
+    request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)
+
+    const response = new HTTPArrayResponse(WorkordersSchema)
+    const links = new HTTPPaginationLinks(request)
+
+    links.setHasMore(hasMore)
+    response.links(links)
+
+    for (const workorder of workorders) {
+      response.add(workorder.id, workorder)
+    }
+
+    return h.response(response.toResponse()).code(200)
+  } catch (error) {
+    request.logger?.error(error)
+
+    let httpException = error
+
+    if (!(httpException instanceof HTTPException)) {
+      httpException = new HTTPException(
+        'INTERNAL_SERVER_ERROR',
+        'An error occurred while processing your request',
+        [new HTTPError('DATABASE_ERROR', 'Failed to execute database query')]
+      )
+    }
+
+    return httpException.boomify()
+  }
+}
+
+export default {
+  method: 'GET',
+  path: '/workorders',
+  options,
+  handler
+}
