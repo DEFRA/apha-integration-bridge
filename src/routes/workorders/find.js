@@ -95,7 +95,7 @@ export async function handler(request, h) {
     const findRequest = new HTTPFindRequest(request, WorkordersSchema)
 
     if (findRequest.ids.length > 0) {
-      await using oracledb = await request.server['oracledb.sam']()
+      await using oracledb = await request.server['oracledb.pega']()
 
       const workorders = await findWorkorders(
         oracledb.connection,
