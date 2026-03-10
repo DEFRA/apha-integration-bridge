@@ -4,8 +4,11 @@ Required query parameters:
 
 - `startActivationDate`: ISO date-time lower bound (inclusive)
 - `endActivationDate`: ISO date-time upper bound (exclusive)
-- `page`: page number (1-based)
-- `pageSize`: items per page (max 50)
+
+Optional query parameters:
+
+- `page`: page number (1-based, default: `1`)
+- `pageSize`: items per page (max `50`, default: `50`)
 
 Example query string:
 

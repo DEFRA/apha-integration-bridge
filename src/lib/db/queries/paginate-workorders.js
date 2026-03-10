@@ -1,18 +1,10 @@
-import Joi from 'joi'
-
 import { toWorkorders } from '../mappers/to-workorders.js'
 import { execute } from '../operations/execute.js'
 import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
+import { PaginateWorkordersSchema } from '../../../types/find/workorders-pagination.js'
 
 const sql = loadSQL(import.meta.filename)
-
-const PaginateWorkordersSchema = Joi.object({
-  startActivationDate: Joi.string().isoDate().required(),
-  endActivationDate: Joi.string().isoDate().required(),
-  page: Joi.number().integer().min(1).required(),
-  pageSize: Joi.number().integer().min(1).max(50).required()
-})
 
 /**
  * @typedef {{

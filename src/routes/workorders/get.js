@@ -13,7 +13,7 @@ import { HTTPArrayResponse } from '../../lib/http/http-response.js'
 import { HTTPPaginationLinks } from '../../lib/http/http-pagination-links.js'
 import { WorkordersSchema } from '../../types/find/workorders.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
-import { PaginationSchema } from '../../types/find/pagination.js'
+import { PaginateWorkordersSchema } from '../../types/find/workorders-pagination.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -44,18 +44,7 @@ const options = {
     }
   },
   validate: {
-    query: PaginationSchema.keys({
-      startActivationDate: Joi.string()
-        .isoDate()
-        .required()
-        .description(
-          'Paginate workorders after or on this start activation date'
-        ),
-      endActivationDate: Joi.string()
-        .isoDate()
-        .required()
-        .description('Paginate workorders before this end activation date')
-    }),
+    query: PaginateWorkordersSchema,
     headers: Joi.object({
       accept: Joi.string()
         .default('application/vnd.apha.1+json')
@@ -94,7 +83,7 @@ export async function handler(request, h) {
   }
 
   try {
-    metrics.putMetric('workordersRequest', 1, Unit.Count)
+    metrics.putMetric('workordersGetRequest', 1, Unit.Count)
 
     await using oracledb = await request.server['oracledb.sam']()
 

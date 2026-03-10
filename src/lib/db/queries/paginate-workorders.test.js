@@ -51,6 +51,16 @@ test('throws when page and pageSize are invalid', () => {
   ).toThrow(/invalid parameters/i)
 })
 
+test('defaults page and pageSize when omitted', () => {
+  const { sql } = paginateWorkordersQuery({
+    startActivationDate: '2024-01-01T00:00:00.000Z',
+    endActivationDate: '2024-02-01T00:00:00.000Z'
+  })
+
+  expect(sql).toContain('row_num > 0')
+  expect(sql).toContain('row_num <= 0 + 51')
+})
+
 describe('paginateWorkorders', () => {
   /** @type {import('oracledb').Connection} */
   let connection
