@@ -27,7 +27,7 @@ test('createWorkorder maps a workorder row into the workorder response skeleton'
     country: 'GB',
     aim: 'Surveillance',
     purpose: 'Monitoring',
-    earliestActivityStartDate: '2024-02-01',
+    earliestActivityStartDate: null, // setting to null as it's not available in the current views
     species: 'Cattle',
     activities: [],
     phase: 'Active',
