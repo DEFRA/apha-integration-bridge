@@ -85,7 +85,7 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('workordersGetRequest', 1, Unit.Count)
 
-    await using oracledb = await request.server['oracledb.sam']()
+    await using oracledb = await request.server['oracledb.pega']()
 
     /** @type {{
      *   startActivationDate: string
