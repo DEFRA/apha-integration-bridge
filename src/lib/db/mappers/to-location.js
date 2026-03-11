@@ -1,15 +1,6 @@
 import { asNullableString } from './as-nullable-string.js'
+import { asNullableOrNAString } from './as-nullable-or-na-string.js'
 import { createLocation } from './create-location.js'
-
-/**
- * Helper to convert 'N/A' to null, otherwise return the value as nullable string
- * @param {unknown} value
- * @returns {string | null}
- */
-const asNullableOrNA = (value) => {
-  const str = asNullableString(value)
-  return str === 'N/A' ? null : str
-}
 
 /**
  * @param {Record<string, unknown>} row
@@ -29,8 +20,8 @@ export const toLocation = (row, locationMap) => {
   }
 
   const location = locationMap.get(locationId)
-  const unitId = asNullableOrNA(row.unit_id)
-  const unitType = asNullableOrNA(row.unit_type)
+  const unitId = asNullableOrNAString(row.unit_id)
+  const unitType = asNullableOrNAString(row.unit_type)
   const cph = asNullableString(row.cph)
 
   // Add livestock unit
@@ -41,7 +32,7 @@ export const toLocation = (row, locationMap) => {
         type: 'animal-commodities',
         id: unitId,
         animalQuantities: row.usual_quantity_of_animals ?? 0,
-        species: asNullableOrNA(row.species)
+        species: asNullableOrNAString(row.species)
       })
     }
   }
@@ -53,24 +44,19 @@ export const toLocation = (row, locationMap) => {
       location.facilities.push({
         type: 'facilities',
         id: unitId,
-        name: asNullableOrNA(row.facility_name),
-        facilityType: asNullableOrNA(row.facility_type),
-        businessActivity: asNullableOrNA(row.business_activity)
+        name: asNullableOrNAString(row.facility_name),
+        facilityType: asNullableOrNAString(row.facility_type),
+        businessActivity: asNullableOrNAString(row.business_activity)
       })
     }
   }
 
   // Add holding relationship
   if (cph) {
-    const existingHolding = location.relationships.holdings.data.find(
-      (h) => h.id === cph
-    )
-    if (!existingHolding) {
-      location.relationships.holdings.data.push({
-        type: 'holdings',
-        id: cph
-      })
-    }
+    location.relationships.holdings.data.push({
+      type: 'holdings',
+      id: cph
+    })
   }
 
   return location
