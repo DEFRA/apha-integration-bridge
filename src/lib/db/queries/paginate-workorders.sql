@@ -122,7 +122,7 @@ pega_Data.index_ac_workschedule ws,
   wsa.pyid wsa_id,
   aca.actname activity_name,
   wsa.pystatuswork wsa_status,
-  aca.activitysequencenumber
+  wsa.activitysequencenumber
 
   FROM
   pega_Data.ahwork_ac wsa,
@@ -131,7 +131,7 @@ pega_Data.index_ac_workschedule ws,
   WHERE
   wsa.pxinsname = aca.pyid
   AND
-  aca.pydescription IS NULL
+  wsa.pydescription IS NULL
   AND
   SUBSTR(wsa.pxcoverinskey, 6) IS NOT NULL
 ) wsa
