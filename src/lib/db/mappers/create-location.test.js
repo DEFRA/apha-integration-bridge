@@ -44,6 +44,10 @@ test('createLocation maps a location row into the location response skeleton', (
     osMapReference: 'TQ123456',
     livestockUnits: [],
     facilities: [],
-    relationships: {}
+    relationships: {
+      holdings: {
+        data: []
+      }
+    }
   })
 })

@@ -135,7 +135,7 @@ describe('locations/find', () => {
       location1: {
         type: 'locations',
         id: 'L98001',
-        name: null,
+        name: 'Test Farm Location',
         address: {
           primaryAddressableObject: {
             startNumber: 123,
@@ -163,24 +163,33 @@ describe('locations/find', () => {
             type: 'animal-commodities',
             id: 'LU98001001',
             animalQuantities: 50,
-            species: null
+            species: 'CATTLE'
           }
         ],
         facilities: [
           {
             type: 'facilities',
             id: 'F98001001',
-            name: null,
-            facilityType: null,
-            businessActivity: null
+            name: 'Main Cattle Facility',
+            facilityType: 'Animal Breeding',
+            businessActivity: 'Cattle breeding and dairy production'
           }
         ],
-        relationships: {}
+        relationships: {
+          holdings: {
+            data: [
+              {
+                type: 'holdings',
+                id: '98/001/0001'
+              }
+            ]
+          }
+        }
       },
       location2: {
         type: 'locations',
         id: 'L98002',
-        name: null,
+        name: 'Highland Farm',
         address: {
           primaryAddressableObject: {
             startNumber: 456,
@@ -208,11 +217,20 @@ describe('locations/find', () => {
             type: 'animal-commodities',
             id: 'LU98002001',
             animalQuantities: 100,
-            species: null
+            species: 'SHEEP'
           }
         ],
         facilities: [],
-        relationships: {}
+        relationships: {
+          holdings: {
+            data: [
+              {
+                type: 'holdings',
+                id: '98/002/0001'
+              }
+            ]
+          }
+        }
       }
     }
 

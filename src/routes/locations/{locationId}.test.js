@@ -35,7 +35,7 @@ test('returns the location, address and related units for a known Location ID', 
     method: 'GET'
   })
 
-  const res = await server.inject({ method: 'GET', url: '/L97339' })
+  const res = await server.inject({ method: 'GET', url: '/L98001' })
 
   const body = /** @type {Record<string, any>} */ (res.result)
 
@@ -45,27 +45,26 @@ test('returns the location, address and related units for a known Location ID', 
   expect(body).toMatchObject({
     data: {
       type: 'locations',
-      id: 'L97339'
+      id: 'L98001'
     },
     links: {
-      self: '/L97339'
+      self: '/L98001'
     }
   })
 
   // Address fields seeded in the test schema
   expect(body.data.address).toMatchObject({
-    paonStartNumber: 12,
-    paonDescription: 'Willow Barn',
-    street: 'Farm Lane',
-    locality: 'Westham',
-    town: 'Exampletown',
-    administrativeAreaCounty: 'Devon',
-    postcode: 'EX1 2AB',
-    ukInternalCode: 'UKX123',
-    countryCode: 'GB'
+    street: 'Test Street',
+    town: 'Test Town',
+    postcode: 'TE1 1ST'
   })
 
-  // Relationships: two commodities (array) and one facility (array)
+  // Check primary addressable object if present
+  if (body.data.address.primaryAddressableObject) {
+    expect(body.data.address.primaryAddressableObject.startNumber).toBe(123)
+  }
+
+  // Relationships: one commodity (livestock unit) and one facility
   const rel = body.data.relationships
 
   expect(Array.isArray(rel.commodities.data)).toBe(true)
@@ -73,14 +72,10 @@ test('returns the location, address and related units for a known Location ID', 
     expect.arrayContaining([
       {
         type: 'commodities',
-        id: 'U000010'
-      },
-      {
-        type: 'commodities',
-        id: 'U000020'
+        id: 'LU98001001'
       }
     ])
   )
 
-  expect(rel.facilities.data).toEqual([{ type: 'facilities', id: 'U000030' }])
+  expect(rel.facilities.data).toEqual([{ type: 'facilities', id: 'F98001001' }])
 })

@@ -42,33 +42,33 @@ test('returns the cph and type for a CPH ID that exists', async () => {
 
   const res = await server.inject({
     method: 'GET',
-    url: '/45/001/0002'
+    url: '/04/432/1234'
   })
 
   const response = /** @type {Record<string,unknown>} */ (res.result)
 
   expect(response).toMatchObject({
     data: {
-      id: '45/001/0002',
+      id: '04/432/1234',
       type: 'holdings',
-      cphType: 'DEV_SAMPLE',
+      cphType: 'HOLDER_TEST',
       relationships: {
         location: {
           data: {
             type: 'locations',
-            id: 'LOC-BETA'
+            id: 'LOC-GAMMA'
           }
         },
         cphHolder: {
           data: {
             type: 'customers',
-            id: 'CUST-450010002'
+            id: 'CUST-044321234'
           }
         }
       }
     },
     links: {
-      self: '/45/001/0002'
+      self: '/04/432/1234'
     }
   })
 

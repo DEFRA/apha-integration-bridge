@@ -9,20 +9,20 @@ CONNECT ahbrp/password@FREEPDB1;
 
 -- Local authority mapping for 11/111
 BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (11111, 'LA11111', DATE '9999-12-31');
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (11111, 'LA11111', 2000, DATE '9999-12-31');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
 BEGIN
-  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)
-  VALUES (11111, 'Local Authority 11/111');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (11111, 'Local Authority 11/111', 'ENG');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
 BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (21111, '11/111', DATE '9999-12-31');
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (21111, '11/111', 2000, DATE '9999-12-31');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
@@ -46,20 +46,20 @@ END;
 
 -- Local authority mapping for 22/222
 BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (12222, 'LA22222', DATE '9999-12-31');
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (12222, 'LA22222', 2000, DATE '9999-12-31');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
 BEGIN
-  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description)
-  VALUES (12222, 'Local Authority 22/222');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (12222, 'Local Authority 22/222', 'ENG');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
 BEGIN
-  INSERT INTO ref_data_code (ref_data_code_pk, code, effective_to_date)
-  VALUES (22222, '22/222', DATE '9999-12-31');
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (22222, '22/222', 2000, DATE '9999-12-31');
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 /
