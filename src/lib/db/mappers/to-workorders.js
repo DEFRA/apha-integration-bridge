@@ -21,7 +21,7 @@ export const toWorkorders = (rows, ids) => {
       workorders.set(mapped.id, mapped)
       activityKeys.set(
         mapped.id,
-        new Set(mapped.activities.map((activity) => activity))
+        new Set(mapped.activities.map((activity) => activity.id))
       )
       facilityKeys.set(
         mapped.id,
@@ -49,9 +49,11 @@ export const toWorkorders = (rows, ids) => {
     }
 
     for (const activity of mapped.activities) {
-      if (!activityKeys.get(mapped.id)?.has(activity)) {
+      const key = activity.id
+
+      if (!activityKeys.get(mapped.id)?.has(key)) {
         workorder.activities.push(activity)
-        activityKeys.get(mapped.id)?.add(activity)
+        activityKeys.get(mapped.id)?.add(key)
       }
     }
 

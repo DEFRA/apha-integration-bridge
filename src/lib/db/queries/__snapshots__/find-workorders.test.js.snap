@@ -21,7 +21,8 @@ wsa.wsa_id,
 wsa.activity_name,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd') wsactivationdate,
 TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
-TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
+-- commenting out the earliest activity start date as it's currently not available in the views. We’ve submitted a request to IBM to expose it, as the information is currently stored as a blob in Pega. We’ll need to revisit this attribute once IBM makes it available in a view.
+-- TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
 TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 ws.phase,
 TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
@@ -77,22 +78,22 @@ pega_Data.index_ac_workschedule ws,
 ) ws_f,
 (
   SELECT
-  SUBSTR(wsa.pxcoverinskey, 7) ws_id,
+  SUBSTR(pxcoverinskey, 7) ws_id,
   wsa.pyid wsa_id,
-  aca.actname activity_name,
-  wsa.pystatuswork wsa_status,
-  aca.activitysequencenumber
+  actname activity_name,
+  pystatuswork wsa_status,
+  activitysequencenumber
 
   FROM
   pega_Data.ahwork_ac wsa,
-  pega_data.index_ac_activity aca
+  pega_data.index_ac_activity ac
 
   WHERE
-  wsa.pxinsname = aca.pyid
+  wsa.pxinsname = ac.pyid
   AND
-  aca.pydescription IS NULL
+  pydescription IS NULL
   AND
-  SUBSTR(wsa.pxcoverinskey, 6) IS NOT NULL
+  SUBSTR(pxcoverinskey, 6) IS NOT NULL
 ) wsa
 
 WHERE
@@ -110,9 +111,7 @@ ws.pyid = wsa.ws_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
-AND
-ws.pyid IN ('WS12345', 'WS12346')
+ws.pyid IN ('WS-12345', 'WS-12346')
 "
 `;
 
@@ -137,7 +136,8 @@ wsa.wsa_id,
 wsa.activity_name,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd') wsactivationdate,
 TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
-TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
+-- commenting out the earliest activity start date as it's currently not available in the views. We’ve submitted a request to IBM to expose it, as the information is currently stored as a blob in Pega. We’ll need to revisit this attribute once IBM makes it available in a view.
+-- TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
 TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 ws.phase,
 TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
@@ -193,22 +193,22 @@ pega_Data.index_ac_workschedule ws,
 ) ws_f,
 (
   SELECT
-  SUBSTR(wsa.pxcoverinskey, 7) ws_id,
+  SUBSTR(pxcoverinskey, 7) ws_id,
   wsa.pyid wsa_id,
-  aca.actname activity_name,
-  wsa.pystatuswork wsa_status,
-  aca.activitysequencenumber
+  actname activity_name,
+  pystatuswork wsa_status,
+  activitysequencenumber
 
   FROM
   pega_Data.ahwork_ac wsa,
-  pega_data.index_ac_activity aca
+  pega_data.index_ac_activity ac
 
   WHERE
-  wsa.pxinsname = aca.pyid
+  wsa.pxinsname = ac.pyid
   AND
-  aca.pydescription IS NULL
+  pydescription IS NULL
   AND
-  SUBSTR(wsa.pxcoverinskey, 6) IS NOT NULL
+  SUBSTR(pxcoverinskey, 6) IS NOT NULL
 ) wsa
 
 WHERE
@@ -226,8 +226,6 @@ ws.pyid = wsa.ws_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
-AND
-ws.pyid IN ('WS12345')
+ws.pyid IN ('WS-12345')
 "
 `;

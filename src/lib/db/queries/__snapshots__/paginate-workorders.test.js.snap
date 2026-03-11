@@ -1,5 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`returns the expected query for valid parameters 1`] = `
+"WITH filtered_workorders AS (
+  SELECT DISTINCT
+    ws.pyid work_order_id,
+    ac.wsactivationdate activation_date
+
+  FROM
+  pega_data.ahwork_ac ac,
+  pega_Data.index_ac_workschedule ws
+
+  WHERE
+  ac.pzinskey = ws.pxinsindexedkey
+  AND
+  ac.pxobjclass = 'AH-AC-WS'
+  AND
+  ac.pystatuswork IN ('Open')
+  AND
+  ac.wsactivationdate >= TO_DATE('2024-01-01', 'yyyy-mm-dd')
+  AND
+  ac.wsactivationdate < TO_DATE('2024-02-01', 'yyyy-mm-dd')
+),
+ordered_workorders AS (
+  SELECT
+  work_order_id,
+  ROW_NUMBER() OVER (ORDER BY activation_date ASC, work_order_id ASC) row_num
+
+  FROM
+  filtered_workorders
+),
+requested_workorders AS (
+  SELECT
+  work_order_id,
+  row_num
+
+  FROM
+  ordered_workorders
+
+  WHERE
+  row_num > 0
+  AND
+  row_num <= 0 + 11
+)
+
 SELECT
-DISTINCT ws.pyid work_order_id,
+DISTINCT rw.row_num page_order,
+ws.pyid work_order_id,
 TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
 ws.purposeworkarea work_area,
 ws.purposecountry country,
@@ -18,14 +64,14 @@ wsa.wsa_id,
 wsa.activity_name,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd') wsactivationdate,
 TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
--- commenting out the earliest activity start date as it's currently not available in the views. We’ve submitted a request to IBM to expose it, as the information is currently stored as a blob in Pega. We’ll need to revisit this attribute once IBM makes it available in a view.
--- TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
+TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
 TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 ws.phase,
 TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
 wsa.activitysequencenumber
 
 FROM
+requested_workorders rw,
 pega_data.ahwork_ac ac,
 pega_Data.index_ac_workschedule ws,
 (
@@ -75,26 +121,28 @@ pega_Data.index_ac_workschedule ws,
 ) ws_f,
 (
   SELECT
-  SUBSTR(pxcoverinskey, 7) ws_id,
+  SUBSTR(wsa.pxcoverinskey, 7) ws_id,
   wsa.pyid wsa_id,
-  actname activity_name,
-  pystatuswork wsa_status,
-  activitysequencenumber
+  aca.actname activity_name,
+  wsa.pystatuswork wsa_status,
+  wsa.activitysequencenumber
 
   FROM
   pega_Data.ahwork_ac wsa,
-  pega_data.index_ac_activity ac
+  pega_data.index_ac_activity aca
 
   WHERE
-  wsa.pxinsname = ac.pyid
+  wsa.pxinsname = aca.pyid
   AND
-  pydescription IS NULL
+  wsa.pydescription IS NULL
   AND
-  SUBSTR(pxcoverinskey, 6) IS NOT NULL
+  SUBSTR(wsa.pxcoverinskey, 6) IS NOT NULL
 ) wsa
 
 WHERE
 ac.pzinskey = ws.pxinsindexedkey
+AND
+ws.pyid = rw.work_order_id
 AND
 ac.pyid = ws_loc.pyid (+)
 AND
@@ -108,4 +156,10 @@ ws.pyid = wsa.ws_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ws.pyid IN (:workorder_ids)
+ac.pystatuswork IN ('Open')
+
+ORDER BY
+rw.row_num ASC,
+wsa.activitysequencenumber ASC
+"
+`;

@@ -2,7 +2,7 @@ import { expect, test } from '@jest/globals'
 
 import { toAddress } from './to-address.js'
 
-test('toAddress returns null when no address fields are populated', () => {
+test('toAddress still returns full address object even when no address fields are populated', () => {
   expect(
     toAddress({
       paon_start_number: null,
@@ -21,7 +21,28 @@ test('toAddress returns null when no address fields are populated', () => {
       postcode: null,
       country_code: null
     })
-  ).toBeNull()
+  ).toEqual({
+    primaryAddressableObject: {
+      startNumber: null,
+      startNumberSuffix: null,
+      endNumber: null,
+      endNumberSuffix: null,
+      description: null
+    },
+    secondaryAddressableObject: {
+      startNumber: null,
+      startNumberSuffix: null,
+      endNumber: null,
+      endNumberSuffix: null,
+      description: null
+    },
+    street: null,
+    locality: null,
+    town: null,
+    postcode: null,
+    countryCode: null,
+    isPreferred: false
+  })
 })
 
 test('toAddress maps populated fields to API address shape', () => {

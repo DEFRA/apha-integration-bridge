@@ -14,6 +14,7 @@ import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import { findHoldings } from '../../lib/db/queries/find-holdings.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
+import { HoldingIdSchema } from '../../types/holdings.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
 
 /**
@@ -37,12 +38,7 @@ const PostFindHoldingsResponseSchema = Joi.object({
 
 const PostFindPayloadSchema = Joi.object({
   ids: Joi.array()
-    .items(
-      Joi.string()
-        .pattern(/^\d{2}\/\d{3}\/\d{4}$/)
-        .required()
-        .description('CPH')
-    )
+    .items(HoldingIdSchema)
     .min(1)
     .required()
     .description('List of CPHs')
@@ -97,9 +93,13 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('holdingFindRequest', 1, Unit.Count)
 
-    await using oracledb = await request.server['oracledb.sam']()
-
     const findRequest = new HTTPFindRequest(request, HoldingsSchema)
+
+    if (findRequest.ids.length === 0) {
+      return h.response(findRequest.toResponse()).code(200)
+    }
+
+    await using oracledb = await request.server['oracledb.sam']()
 
     const holdings = await findHoldings(oracledb.connection, findRequest.ids)
 

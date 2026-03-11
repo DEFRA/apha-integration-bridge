@@ -3,6 +3,10 @@ import Joi from 'joi'
 import { LocationsReference } from './locations.js'
 import { CustomersReference } from './customers.js'
 
+export const HoldingIdSchema = Joi.string()
+  .pattern(/^\d{2}\/\d{3}\/\d{4}$/)
+  .required()
+
 const HoldingsData = Joi.object({
   type: Joi.string()
     .valid('holdings')

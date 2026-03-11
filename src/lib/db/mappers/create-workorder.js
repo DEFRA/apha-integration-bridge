@@ -21,9 +21,8 @@ export const createWorkorder = (row, id) => {
     country: asNullableString(row.country),
     aim: asNullableString(row.aim),
     purpose: asNullableString(row.purpose),
-    earliestActivityStartDate: asNullableString(
-      row.wsearliestactivitystartdate
-    ),
+    earliestActivityStartDate: null, // setting to null as it's not available in the current views
+    // We’ve submitted a request to IBM to expose it, as the information is currently stored as a blob in Pega. We’ll need to revisit this attribute once IBM makes it available in a view.
     species: asNullableString(row.purpose_species),
     activities: [],
     phase: asNullableString(row.phase),

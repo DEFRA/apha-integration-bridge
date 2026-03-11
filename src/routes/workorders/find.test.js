@@ -9,7 +9,6 @@ import * as executeOperation from '../../lib/db/operations/execute.js'
 
 /**
  * @import {PostFindWorkordersResponse} from './find.js'
- * @import {Workorders} from '../../types/find/workorders.js'
  */
 
 const path = '/workorders/find'
@@ -143,7 +142,7 @@ describe('workorders/find', () => {
         country: 'England',
         aim: 'Contain / Control / Eradicate Endemic Disease',
         purpose: 'Initiate Incident Premises Spread Tracing Action',
-        earliestActivityStartDate: '01/01/2024 09:00:00',
+        earliestActivityStartDate: null, // setting to null as it's not available in the current views
         species: 'Cattle',
         activities: [],
         phase: 'EXPOSURETRACKING',
@@ -188,7 +187,7 @@ describe('workorders/find', () => {
         country: 'Scotland',
         aim: 'Contain / Control / Eradicate Endemic Disease',
         purpose: 'Initiate Incident Premises Spread Tracing Action',
-        earliestActivityStartDate: '03/01/2024 09:00:00',
+        earliestActivityStartDate: null, // setting to null as it's not available in the current views
         species: 'Sheep',
         activities: [
           {
@@ -251,7 +250,7 @@ describe('workorders/find', () => {
         country: 'Wales',
         aim: 'Ensure Compliance with Animal Health Standards',
         purpose: 'Routine Inspection and Disease Monitoring',
-        earliestActivityStartDate: '08/02/2024 08:00:00',
+        earliestActivityStartDate: null, // setting to null as it's not available in the current views
         species: 'Cattle',
         activities: [
           {
@@ -261,27 +260,9 @@ describe('workorders/find', () => {
             type: 'activities'
           },
           {
-            activityName: 'Initial Farm Assessment',
-            id: 'WS-76514-ACT1',
-            sequenceNumber: 1,
-            type: 'activities'
-          },
-          {
             activityName: 'Livestock Document Review',
             id: 'WS-76514-ACT2',
             sequenceNumber: 2,
-            type: 'activities'
-          },
-          {
-            activityName: 'Livestock Document Review',
-            id: 'WS-76514-ACT2',
-            sequenceNumber: 2,
-            type: 'activities'
-          },
-          {
-            activityName: 'Physical Animal Inspection',
-            id: 'WS-76514-ACT3',
-            sequenceNumber: 3,
             type: 'activities'
           },
           {
@@ -340,7 +321,11 @@ describe('workorders/find', () => {
       const response = await server.inject({
         method: 'POST',
         payload: {
-          ids: [testWorkorders.workorder1, testWorkorders.workorder2]
+          ids: [
+            testWorkorders.workorder1,
+            testWorkorders.workorder2,
+            testWorkorders.workorder3
+          ]
         },
         url
       })
@@ -348,7 +333,8 @@ describe('workorders/find', () => {
       expect(response.result).toEqual({
         data: [
           expectedWorkordersData.workorder1,
-          expectedWorkordersData.workorder2
+          expectedWorkordersData.workorder2,
+          expectedWorkordersData.workorder3
         ],
         links: {
           self: url,
@@ -390,6 +376,35 @@ describe('workorders/find', () => {
         next: null,
         prev: null
       })
+    })
+
+    test('returns empty data and does not query DB when page is out of range', async () => {
+      const server = await createServer()
+      const executeSpy = jest.spyOn(executeOperation, 'execute')
+      const queryParams = new URLSearchParams({
+        page: '2',
+        pageSize: '10'
+      })
+      const url = `${path}?${queryParams.toString()}`
+
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: [testWorkorders.workorder1]
+        },
+        url
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.result).toEqual({
+        data: [],
+        links: {
+          self: url,
+          next: null,
+          prev: '/workorders/find?page=1&pageSize=10'
+        }
+      })
+      expect(executeSpy).not.toHaveBeenCalled()
     })
 
     test('returns an empty array for no matches', async () => {

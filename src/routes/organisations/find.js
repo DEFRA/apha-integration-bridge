@@ -12,21 +12,21 @@ import {
   HTTPException,
   HTTPError
 } from '../../lib/http/http-exception.js'
-import { HTTPObjectResponse } from '../../lib/http/http-response.js'
-import { Customer } from '../../types/find/customers.js'
-import { PaginatedLinkSchema } from '../../types/find/links.js'
-import { PaginationSchema } from '../../types/find/pagination.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
+import { HTTPObjectResponse } from '../../lib/http/http-response.js'
+import { PaginatedLinkSchema } from '../../types/find/links.js'
+import { Organisation } from '../../types/find/organisations.js'
+import { PaginationSchema } from '../../types/find/pagination.js'
 
-const PostFindCustomersSchema = Joi.object({
-  data: Joi.array().items(Customer).required(),
+const PostFindOrganisationsSchema = Joi.object({
+  data: Joi.array().items(Organisation).required(),
   links: PaginatedLinkSchema
 })
-  .description('Customer Details')
-  .label('Find Customer Response')
+  .description('Organisation Details')
+  .label('Find Organisation Response')
 
 const PostFindPayloadSchema = Joi.object({
-  ids: FindCustomersSchema.extract('ids').label('Customer ids')
+  ids: FindCustomersSchema.extract('ids').label('Organisation ids')
 })
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -38,15 +38,15 @@ const options = {
   auth: {
     mode: 'required'
   },
-  tags: ['api', 'customers'],
-  description: 'Retrieve customers by ids',
+  tags: ['api', 'organisations'],
+  description: 'Retrieve organisations by ids',
   notes: fs.readFileSync(
     path.join(decodeURIComponent(__dirname), 'find.md'),
     'utf8'
   ),
   plugins: {
     'hapi-swagger': {
-      id: 'customers-find',
+      id: 'organisations-find',
       security: [{ Bearer: [] }]
     }
   },
@@ -63,7 +63,7 @@ const options = {
   },
   response: {
     status: {
-      200: PostFindCustomersSchema,
+      200: PostFindOrganisationsSchema,
       '400-500': HTTPExceptionSchema
     }
   }
@@ -76,35 +76,33 @@ const metrics = createMetricsLogger()
  */
 const handler = async (request, h) => {
   try {
-    metrics.putMetric('customersFindRequest', 1, Unit.Count)
-
-    const findRequest = new HTTPFindRequest(request, Customer)
-
-    if (findRequest.ids.length === 0) {
-      return h.response(findRequest.toResponse()).code(200)
-    }
+    metrics.putMetric('organisationsFindRequest', 1, Unit.Count)
 
     /**
      * request an oracledb sam connection from the server
      */
     await using oracledb = await request.server['oracledb.sam']()
 
-    const customers = await findCustomers(
-      oracledb.connection,
-      findRequest.ids,
-      'PERSON'
-    )
+    const findRequest = new HTTPFindRequest(request, Organisation)
 
-    request.logger?.debug(`customers: ${JSON.stringify(customers)}`)
-
-    for (const customer of customers) {
-      const customerResponse = new HTTPObjectResponse(
-        Customer,
-        customer.id,
-        customer
+    if (findRequest.ids.length > 0) {
+      const organisations = await findCustomers(
+        oracledb.connection,
+        findRequest.ids,
+        'ORGANISATION'
       )
 
-      findRequest.add(customerResponse)
+      request.logger?.debug(`organisations: ${JSON.stringify(organisations)}`)
+
+      for (const organisation of organisations) {
+        const organisationResponse = new HTTPObjectResponse(
+          Organisation,
+          organisation.id,
+          organisation
+        )
+
+        findRequest.add(organisationResponse)
+      }
     }
 
     return h.response(findRequest.toResponse()).code(200)
