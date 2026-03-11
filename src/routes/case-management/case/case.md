@@ -1,6 +1,6 @@
-# POST /case-management/case
+# Create Case
 
-Use this endpoint to create a new case from an application payload.
+Creates a new case in Salesforce using a composite API request. This endpoint processes license application data and submits it to Salesforce as a transactional composite request with automatic retry logic.
 
 ## What this endpoint does
 
