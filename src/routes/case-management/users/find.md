@@ -1,21 +1,30 @@
-# Find Case Management User
+# POST /case-management/users/find
 
-Finds if a user exists in Salesforce by their email address.
+Use this endpoint to check whether a case-management user exists for a given email address.
 
-This endpoint allows you to query the case management service (Salesforce) to determine if a user with a given email address exists in the system. This is used for implementing authorization in the apha-apps-perms-case-mgmt-ui.
+## What this endpoint does
+
+- Searches for an active case-management user by email.
+- Returns a lightweight user reference if found.
+- Returns an empty array when not found.
+
+This is intentionally a lookup endpoint, not a full profile endpoint.
+
+## Authentication and headers
+
+- Endpoint-level auth is disabled in the route.
+- `Accept: application/vnd.apha.1+json` is supported.
+- `Content-Type: application/json` is required.
 
 ## Request
 
-**Method:** POST
+### JSON body
 
-**Path:** `/case-management/users/find`
+| Field          | Type   | Required | Rules                        |
+| -------------- | ------ | -------- | ---------------------------- |
+| `emailAddress` | string | Yes      | Must be a valid email format |
 
-**Headers:**
-
-- `Content-Type: application/json`
-- `Accept: application/vnd.apha.1+json`
-
-**Body:**
+Example:
 
 ```json
 {
@@ -23,42 +32,43 @@ This endpoint allows you to query the case management service (Salesforce) to de
 }
 ```
 
-## Response Scenarios
+## Success response (`200 OK`)
 
-### User Exists in Salesforce
-
-**Status:** 200 OK
-
-**Body:**
+### When a user exists
 
 ```json
 {
   "data": [
     {
-      "id": "<user-id>",
-      "type": "case-management-user"
+      "type": "case-management-user",
+      "id": "005ABC123456789"
     }
-  ]
+  ],
+  "links": {
+    "self": "/case-management/users/find"
+  }
 }
 ```
 
-### User Does Not Exist in Salesforce
-
-**Status:** 200 OK
-
-**Body:**
+### When no user exists
 
 ```json
 {
-  "data": []
+  "data": [],
+  "links": {
+    "self": "/case-management/users/find"
+  }
 }
 ```
 
-### Invalid Email Format
+## Error responses
 
-**Status:** 400 BAD REQUEST
+| Status | When it happens                                | Typical code                               |
+| ------ | ---------------------------------------------- | ------------------------------------------ |
+| `400`  | Invalid email format or malformed request body | `BAD_REQUEST` / `VALIDATION_ERROR`         |
+| `500`  | Upstream query failures after retries          | `INTERNAL_SERVER_ERROR` / `DATABASE_ERROR` |
 
-**Body:**
+Example invalid email:
 
 ```json
 {
@@ -66,37 +76,15 @@ This endpoint allows you to query the case management service (Salesforce) to de
   "code": "BAD_REQUEST",
   "errors": [
     {
-      "code": "BAD_REQUEST",
+      "code": "VALIDATION_ERROR",
       "message": "emailAddress provided is not in a valid format"
     }
   ]
 }
 ```
 
-### Salesforce Service Error
+## Practical tips
 
-When Salesforce cannot be reached, does not respond, or returns an error, the endpoint will retry with exponential backoff (3 times within a maximum of 10 seconds).
-
-**Status:** 500 INTERNAL SERVER ERROR
-
-**Body:**
-
-```json
-{
-  "message": "Your request could not be processed",
-  "code": "INTERNAL_SERVER_ERROR",
-  "errors": [
-    {
-      "code": "INTERNAL_SERVER_ERROR",
-      "message": "Cannot perform query successfully on the case management service"
-    }
-  ]
-}
-```
-
-## Notes
-
-- Email validation uses Joi's email validation without top-level domain constraints
-- The endpoint implements automatic retry with exponential backoff (3 retries within 10 seconds maximum)
-- Error logs are emitted with sufficient detail for debugging when Salesforce queries fail
-- Test user: `aphadev.mehboob.alam@defra.gov.uk` exists in the QA environment
+- Treat `data: []` as a normal “not found” response.
+- Use lowercase/trimmed email values from your own system where possible.
+- The endpoint retries transient upstream failures automatically, so occasional calls may take longer before a final `500`.

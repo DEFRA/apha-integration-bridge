@@ -1,27 +1,79 @@
-Use this endpoint to look up a CPH number in Sam. A CPH number is assigned to land and buildings used to keep livestock.
+# GET /holdings/{countyId}/{parishId}/{holdingId}
 
-Sam is a legacy Animal and Plant Health Agency (APHA) system. Sam’s core functionality includes managing customer, location, livestock, and work schedule information.
+Use this endpoint for a single CPH lookup when you already have county/parish/holding parts separately.
 
-The endpoint also returns basic information about the holding, including the type of CPH number that has been issued (permanent, temporary, or emergency) and the related location ID.
+## What this endpoint does
 
-A CPH number is a string of 9 numbers, with a slash in both the 3rd and 7th position (e.g., 12/345/6789). It consists of a County Id (CHAR(2)), a Parish Id (CHAR(3)), and a Holding Id (CHAR(4)).
+- Looks up exactly one holding by its CPH components.
+- Returns core holding identity (`id`, `cphType`) and key relationships.
+- Fails with specific errors when the CPH is missing or ambiguous.
 
-Counties are divided into parishes. Parishes are divided into holdings. The Holding ID is unique to the keeper.
+## Authentication and headers
 
-Below is an example of how to consume this endpoint using the Swagger Client library in JavaScript:
+- `Authorization: Bearer <token>` is required.
+- `Accept: application/vnd.apha.1+json` is supported.
 
-```js
-import SwaggerClient from 'swagger-client'
+## Path parameters
 
-const client = await new SwaggerClient(
-  `${url}/.well-known/openapi/v1/openapi.json`
-)
+| Parameter   | Type   | Required | Rules            |
+| ----------- | ------ | -------- | ---------------- |
+| `countyId`  | string | Yes      | Exactly 2 digits |
+| `parishId`  | string | Yes      | Exactly 3 digits |
+| `holdingId` | string | Yes      | Exactly 4 digits |
 
-const response = await client.apis.holdings.find({
-  countyId: '45',
-  parishId: '001',
-  holdingId: '0002'
-})
+The full CPH represented by these values is `countyId/parishId/holdingId`.
 
-console.log(response.body) // { "data": { ... }, }
+Example request:
+
+```bash
+curl -X GET \
+  'https://<host>/holdings/45/001/0002' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Accept: application/vnd.apha.1+json'
 ```
+
+## Success response (`200 OK`)
+
+Example:
+
+```json
+{
+  "data": {
+    "type": "holdings",
+    "id": "45/001/0002",
+    "cphType": "DEV_SAMPLE",
+    "relationships": {
+      "location": {
+        "data": {
+          "type": "locations",
+          "id": "LOC-BETA"
+        }
+      },
+      "cphHolder": {
+        "data": {
+          "type": "customers",
+          "id": "CUST-450010002"
+        }
+      }
+    }
+  },
+  "links": {
+    "self": "/holdings/45/001/0002"
+  }
+}
+```
+
+## Error responses
+
+| Status | When it happens                                          | Typical code                               |
+| ------ | -------------------------------------------------------- | ------------------------------------------ |
+| `400`  | Invalid path parameter format                            | `BAD_REQUEST` / `VALIDATION_ERROR`         |
+| `401`  | Missing or invalid bearer token                          | Unauthorized by auth layer                 |
+| `404`  | Holding not found or inactive                            | `NOT_FOUND`                                |
+| `409`  | Multiple holdings found for the same CPH (data conflict) | `DUPLICATE_RESOURCES_FOUND`                |
+| `500`  | Unexpected backend failure                               | `INTERNAL_SERVER_ERROR` / `DATABASE_ERROR` |
+
+## Practical tips
+
+- If your source system already stores full CPH strings, `POST /holdings/find` may be easier.
+- Treat `409` as a data-quality issue that needs investigation rather than a transient retry.
