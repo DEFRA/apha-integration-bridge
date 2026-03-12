@@ -11,7 +11,7 @@ const FindWorkordersSchema = Joi.object({
     .items(
       Joi.string()
         .trim()
-        .pattern(/^WS-[0-9]{5}$/i)
+        .pattern(/^WS-\d+$/i)
         .min(1)
         .required()
     )
