@@ -26,9 +26,9 @@ Need a selected set of work orders by ID? This endpoint is for that exact job.
 
 ### JSON body
 
-| Field | Type             | Required | Rules                                                 |
-| ----- | ---------------- | -------- | ----------------------------------------------------- |
-| `ids` | array of strings | Yes      | At least 1 item; each item must be a non-empty string |
+| Field | Type             | Required | Rules                                                                                     |
+| ----- | ---------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `ids` | array of strings | Yes      | At least 1 item; each item must match `WS-` followed by 5 digits (for example `WS-12345`) |
 
 Example:
 

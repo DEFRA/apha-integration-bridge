@@ -1,4 +1,5 @@
 import Hapi from '@hapi/hapi'
+import Boom from '@hapi/boom'
 import {
   test,
   expect,
@@ -69,6 +70,28 @@ const mockGetLinkedFiles = jest.spyOn(salesforceClient, 'getLinkedFiles')
 const mockAddKeyFacts = jest.spyOn(salesforceClient, 'addKeyFacts')
 const mockGetKeyFacts = jest.spyOn(salesforceClient, 'getKeyFacts')
 const mockLoggerError = jest.fn()
+
+/**
+ * @param {Hapi.Server} server
+ */
+function registerStrictAuthStrategy(server) {
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (request, h) => {
+        const authHeader = request.raw.req.headers.authorization
+
+        if (!authHeader?.startsWith('Bearer ')) {
+          throw Boom.unauthorized('Missing or invalid Authorization header')
+        }
+
+        return h.authenticated({ credentials: {} })
+      }
+    }
+  })
+
+  server.auth.strategy('simple', 'simple', {})
+  server.auth.default('simple')
+}
 
 const mockSuccessfulCreateCustomerResponse = {
   id: 'TEST-CUSTOMER-123',
@@ -155,6 +178,8 @@ async function createTestServer() {
     }
   ])
 
+  registerStrictAuthStrategy(server)
+
   server.ext('onPreHandler', (request, h) => {
     request.logger = /** @type {any} */ ({
       error: mockLoggerError,
@@ -183,6 +208,7 @@ async function createCase(server, payload, headers = {}) {
     method: ENDPOINT_METHOD,
     url: ENDPOINT_PATH,
     headers: {
+      authorization: 'Bearer test-m2m-token',
       'Content-Type': 'application/json',
       ...headers
     },
@@ -237,6 +263,16 @@ function createValidPayload() {
 }
 
 describe('POST /case-management/case', () => {
+  describe('Authentication', () => {
+    test('returns 401 when Authorization header is missing', async () => {
+      const server = await createTestServer()
+
+      const res = await createCase(server, {}, { authorization: '' })
+
+      expect(res.statusCode).toBe(401)
+    })
+  })
+
   describe('Payload validation', () => {
     test('returns 400 for missing applicationReferenceNumber', async () => {
       const server = await createTestServer()

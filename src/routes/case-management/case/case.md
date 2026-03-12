@@ -11,7 +11,7 @@ Creates a new case in Salesforce using a composite API request. This endpoint pr
 
 ## Authentication and headers
 
-- Endpoint-level auth is disabled in the route.
+- `Authorization: Bearer <service-token>` is required.
 - `Accept: application/vnd.apha.1+json` is supported.
 - `Content-Type: application/json` is required.
 
@@ -137,6 +137,7 @@ The endpoint signals success through the status code rather than a response payl
 | Status | When it happens                        | Typical code                       |
 | ------ | -------------------------------------- | ---------------------------------- |
 | `400`  | Payload validation failed              | `BAD_REQUEST` / `VALIDATION_ERROR` |
+| `401`  | Missing or invalid bearer token        | Unauthorized by auth layer         |
 | `500`  | Case creation workflow failed upstream | `INTERNAL_SERVER_ERROR`            |
 
 Example `400`:

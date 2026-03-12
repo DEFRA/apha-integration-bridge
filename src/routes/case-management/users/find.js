@@ -37,7 +37,9 @@ const __dirname = new URL('.', import.meta.url).pathname
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: false,
+  auth: {
+    mode: 'required'
+  },
   tags: ['api', 'case-management'],
   description: 'Find if a user exists in Salesforce',
   notes: fs.readFileSync(

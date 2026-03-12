@@ -107,7 +107,7 @@ Example:
     }
   ],
   "links": {
-    "self": "/locations/find?page=1&pageSize=10",
+    "self": "/locations/find?page=1&pageSize=50",
     "prev": null,
     "next": null
   }

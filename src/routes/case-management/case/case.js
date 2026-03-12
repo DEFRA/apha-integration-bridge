@@ -38,7 +38,9 @@ const retriesConfig = {
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: false,
+  auth: {
+    mode: 'required'
+  },
   tags: ['api', 'case-management'],
   description: 'Create a case in APHA CRM (Salesforce)',
   notes: fs.readFileSync(

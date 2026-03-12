@@ -12,7 +12,7 @@ This is intentionally a lookup endpoint, not a full profile endpoint.
 
 ## Authentication and headers
 
-- Endpoint-level auth is disabled in the route.
+- `Authorization: Bearer <service-token>` is required.
 - `Accept: application/vnd.apha.1+json` is supported.
 - `Content-Type: application/json` is required.
 
@@ -66,6 +66,7 @@ Example:
 | Status | When it happens                                | Typical code                               |
 | ------ | ---------------------------------------------- | ------------------------------------------ |
 | `400`  | Invalid email format or malformed request body | `BAD_REQUEST` / `VALIDATION_ERROR`         |
+| `401`  | Missing or invalid bearer token                | Unauthorized by auth layer                 |
 | `500`  | Upstream query failures after retries          | `INTERNAL_SERVER_ERROR` / `DATABASE_ERROR` |
 
 Example invalid email:

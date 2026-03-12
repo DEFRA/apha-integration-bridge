@@ -12,7 +12,7 @@ Use this endpoint to fetch current details for a single case.
 
 - `X-Forwarded-Authorization: Bearer <user-jwt>` is required by endpoint logic.
 - `Accept: application/vnd.apha.1+json` is supported.
-- `Authorization: Bearer <service-token>` may also be required by your API gateway/environment.
+- `Authorization: Bearer <service-token>` is required in our deployed setup.
 
 The forwarded user token must include an email claim so user context can be resolved.
 
