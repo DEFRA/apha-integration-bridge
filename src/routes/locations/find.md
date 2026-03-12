@@ -1,81 +1,106 @@
 # POST /locations/find
 
-Retrieve multiple locations by their IDs with pagination support.
+If you already have location IDs and want full location records in one call, this is the endpoint.
 
-## Description
+## What this endpoint does
 
-This endpoint allows Work Force Management (WFM) to batch-fetch multiple locations related to work orders. It follows the standard "find" endpoint pattern with pagination support.
+- Batch fetches locations by ID.
+- Preserves request order in the response.
+- Supports pagination over the submitted ID list.
+- Returns only matched locations.
+
+## Authentication and headers
+
+- `Authorization: Bearer <token>` is required.
+- `Accept: application/vnd.apha.1+json` is supported.
+- `Content-Type: application/json` is required.
 
 ## Request
 
-### Headers
+### Query parameters
 
-- `Authorization`: Bearer token (required)
-- `Accept`: `application/vnd.apha.1+json`
+| Parameter  | Type    | Required | Default | Rules                     |
+| ---------- | ------- | -------- | ------- | ------------------------- |
+| `page`     | integer | No       | `1`     | Minimum `1`               |
+| `pageSize` | integer | No       | `50`    | Minimum `1`, maximum `50` |
 
-### Body
+### JSON body
+
+| Field | Type             | Required | Rules                                                                          |
+| ----- | ---------------- | -------- | ------------------------------------------------------------------------------ |
+| `ids` | array of strings | Yes      | At least 1 item; each must match `L` followed by digits (for example `L97339`) |
+
+Example:
 
 ```json
 {
-  "ids": ["L123", "L456", "L789"]
+  "ids": ["L98001", "L98002"]
 }
 ```
 
-- `ids` (required): Array of location ID strings to retrieve
+## ID handling and pagination behavior
 
-### Query Parameters
+- Duplicate IDs are removed before paging (first occurrence is kept).
+- Paging is applied to IDs first, then lookup runs for that page slice.
+- Out-of-range page returns `200` with empty `data`.
 
-- `page` (optional): Page number to retrieve (default: 1, min: 1)
-- `pageSize` (optional): Number of items per page (default: 50, min: 1, max: 50)
+## Success response (`200 OK`)
 
-## Response
+Each location includes:
 
-### Success Response (200 OK)
+- `type`, `id`, `name`
+- `address` (BS7666-style address structure)
+- `osMapReference`
+- `livestockUnits` (array)
+- `facilities` (array)
+- `relationships` (object)
+
+Example:
 
 ```json
 {
   "data": [
     {
       "type": "locations",
-      "id": "L123",
-      "name": "Farm Location Name",
+      "id": "L98001",
+      "name": null,
       "address": {
         "primaryAddressableObject": {
           "startNumber": 123,
           "startNumberSuffix": null,
           "endNumber": null,
           "endNumberSuffix": null,
-          "description": "Main Building"
+          "description": "Test Building"
         },
         "secondaryAddressableObject": {
           "startNumber": null,
           "startNumberSuffix": null,
           "endNumber": null,
           "endNumberSuffix": null,
-          "description": null
+          "description": "Unit 1"
         },
-        "street": "High Street",
-        "locality": "Village Name",
-        "town": "Town Name",
-        "postcode": "AB12 3CD",
+        "street": "Test Street",
+        "locality": "Test Locality",
+        "town": "Test Town",
+        "postcode": "TE1 1ST",
         "countryCode": "GB"
       },
       "osMapReference": "SK123456",
       "livestockUnits": [
         {
           "type": "animal-commodities",
-          "id": "LU123",
+          "id": "LU98001001",
           "animalQuantities": 50,
-          "species": "Cattle"
+          "species": null
         }
       ],
       "facilities": [
         {
           "type": "facilities",
-          "id": "F456",
-          "name": "Dairy Parlour",
-          "facilityType": "Dairy",
-          "businessActivity": "Milk Production"
+          "id": "F98001001",
+          "name": null,
+          "facilityType": null,
+          "businessActivity": null
         }
       ],
       "relationships": {}
@@ -84,51 +109,21 @@ This endpoint allows Work Force Management (WFM) to batch-fetch multiple locatio
   "links": {
     "self": "/locations/find?page=1&pageSize=50",
     "prev": null,
-    "next": "/locations/find?page=2&pageSize=50"
+    "next": null
   }
 }
 ```
 
-### Error Responses
+## Error responses
 
-#### 400 Bad Request
+| Status | When it happens                                                                | Typical code                               |
+| ------ | ------------------------------------------------------------------------------ | ------------------------------------------ |
+| `400`  | Invalid body/query (bad location ID format, missing `ids`, invalid `pageSize`) | `BAD_REQUEST` / `VALIDATION_ERROR`         |
+| `401`  | Missing or invalid bearer token                                                | Unauthorized by auth layer                 |
+| `500`  | Unexpected backend failure                                                     | `INTERNAL_SERVER_ERROR` / `DATABASE_ERROR` |
 
-Invalid request parameters:
+## Practical tips
 
-```json
-{
-  "message": "Validation failed",
-  "code": "BAD_REQUEST",
-  "errors": [
-    {
-      "code": "VALIDATION_ERROR",
-      "message": "\"ids\" is required"
-    }
-  ]
-}
-```
-
-#### 401 Unauthorized
-
-Missing or invalid authorization token.
-
-#### 404 Not Found
-
-Unsupported API version.
-
-#### 500 Internal Server Error
-
-Database or server error.
-
-## Behavior
-
-### Pagination
-
-- The endpoint paginates the provided list of IDs
-- For page 1 with pageSize 3: returns results for IDs at positions 0, 1, 2
-- For page 2 with pageSize 3: returns results for IDs at positions 3, 4, 5
-- Pagination links in the response indicate available next/previous pages
-
-### Filtering
-
-- Only locations with status "active" are returned
+- Location IDs must be in `L12345` format.
+- Expect `data: []` for unknown IDs; this is normal.
+- Use pagination links directly when walking large ID batches.

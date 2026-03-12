@@ -37,7 +37,12 @@ const PostFindWorkordersResponseSchema = Joi.object({
 
 const PostFindPayloadSchema = Joi.object({
   ids: Joi.array()
-    .items(Joi.string().trim().min(1).required())
+    .items(
+      Joi.string()
+        .trim()
+        .pattern(/^WS-[0-9]{5}$/i)
+        .required()
+    )
     .min(1)
     .required()
     .description('Workorder ids')

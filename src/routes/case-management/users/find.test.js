@@ -1,4 +1,5 @@
 import Hapi from '@hapi/hapi'
+import Boom from '@hapi/boom'
 import { test, expect, describe, jest, beforeEach } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 import * as route from './find.js'
@@ -11,6 +12,28 @@ const MOCK_SALESFORCE_TOKEN = 'mock-salesforce-m2m-token-12345'
 
 const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
 const mockGetAccessToken = jest.spyOn(salesforceClient, 'getAccessToken')
+
+/**
+ * @param {Hapi.Server} server
+ */
+function registerStrictAuthStrategy(server) {
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (request, h) => {
+        const authHeader = request.raw.req.headers.authorization
+
+        if (!authHeader?.startsWith('Bearer ')) {
+          throw Boom.unauthorized('Missing or invalid Authorization header')
+        }
+
+        return h.authenticated({ credentials: {} })
+      }
+    }
+  })
+
+  server.auth.strategy('simple', 'simple', {})
+  server.auth.default('simple')
+}
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -28,6 +51,8 @@ async function createTestServer() {
       }
     }
   ])
+
+  registerStrictAuthStrategy(server)
 
   server.route({
     handler: route.default.handler,
@@ -48,7 +73,10 @@ async function findUser(server, emailAddress, headers = {}) {
   return server.inject({
     method: ENDPOINT_METHOD,
     url: ENDPOINT_PATH,
-    headers,
+    headers: {
+      authorization: 'Bearer test-m2m-token',
+      ...headers
+    },
     payload: { emailAddress }
   })
 }
@@ -78,6 +106,20 @@ function assertUserData(userData) {
 }
 
 describe('POST /case-management/users/find', () => {
+  describe('Authentication', () => {
+    test('returns 401 when Authorization header is missing', async () => {
+      const server = await createTestServer()
+
+      const res = await findUser(server, 'not-an-email', {
+        authorization: ''
+      })
+
+      expect(res.statusCode).toBe(401)
+      expect(mockGetAccessToken).not.toHaveBeenCalled()
+      expect(mockSendQuery).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Successful user lookup', () => {
     test('returns user when email exists in Salesforce', async () => {
       const server = await createTestServer()
@@ -171,6 +213,9 @@ describe('POST /case-management/users/find', () => {
       const res = await server.inject({
         method: ENDPOINT_METHOD,
         url: ENDPOINT_PATH,
+        headers: {
+          authorization: 'Bearer test-m2m-token'
+        },
         payload: {}
       })
 

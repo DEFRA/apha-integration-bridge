@@ -86,6 +86,26 @@ describe('workorders/find', () => {
       expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
     })
 
+    test('fails validation when workorder ID format is not WS-#####', async () => {
+      const server = await createServer()
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: ['ABC-12345']
+        },
+        url
+      })
+
+      expect(response.statusCode).toBe(400)
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+
+      expect(responseBody.code).toBe('BAD_REQUEST')
+      expect(responseBody.errors).toBeDefined()
+      expect(responseBody.errors.length).toBeGreaterThan(0)
+      expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
+    })
+
     test('fails validation for missing ids payload', async () => {
       const server = await createServer()
       const response = await server.inject({
