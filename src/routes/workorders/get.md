@@ -17,12 +17,17 @@ Use this endpoint when you want work orders by activation-date window rather tha
 
 ### Query parameters
 
-| Parameter             | Type                     | Required | Default | Rules                                                              |
-| --------------------- | ------------------------ | -------- | ------- | ------------------------------------------------------------------ |
-| `startActivationDate` | ISO 8601 datetime string | Yes      | -       | Inclusive lower bound                                              |
-| `endActivationDate`   | ISO 8601 datetime string | Yes      | -       | Exclusive upper bound and must be later than `startActivationDate` |
-| `page`                | integer                  | No       | `1`     | Minimum `1`                                                        |
-| `pageSize`            | integer                  | No       | `50`    | Minimum `1`, maximum `50`                                          |
+| Parameter             | Type                          | Required | Default | Rules                                                                                                   |
+| --------------------- | ----------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------- |
+| `startActivationDate` | ISO 8601 date/datetime string | Yes      | -       | Inclusive lower date bound; only the `YYYY-MM-DD` portion is used (time-of-day, if present, is ignored) |
+| `endActivationDate`   | ISO 8601 date/datetime string | Yes      | -       | Exclusive upper date bound; must be later than `startActivationDate`; only `YYYY-MM-DD` is used         |
+| `page`                | integer                       | No       | `1`     | Minimum `1`                                                                                             |
+| `pageSize`            | integer                       | No       | `50`    | Minimum `1`, maximum `50`                                                                               |
+
+Date handling:
+
+- Filtering is applied at calendar-date boundaries (`[startDate, endDate)`).
+- If a datetime is provided, its time component is ignored.
 
 Example request:
 
