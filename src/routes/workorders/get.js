@@ -90,19 +90,21 @@ export async function handler(request, h) {
     /** @type {{
      *   startActivationDate: string
      *   endActivationDate: string
+     *   country: string
      *   page: number
      *   pageSize: number
      * }} */
-    const pagination = {
+    const parameters = {
       startActivationDate: request.query.startActivationDate,
       endActivationDate: request.query.endActivationDate,
+      country: request.query.country,
       page: request.query.page,
       pageSize: request.query.pageSize
     }
 
     const { workorders, hasMore } = await paginateWorkorders(
       oracledb.connection,
-      pagination
+      parameters
     )
 
     request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)

@@ -10,6 +10,7 @@ const sql = loadSQL(import.meta.filename)
  * @typedef {{
  *   startActivationDate: string
  *   endActivationDate: string
+ *   country?: string
  *   page: number
  *   pageSize: number
  * }} PaginateWorkordersParams
@@ -37,12 +38,14 @@ export function paginateWorkordersQuery(params) {
 
   const offsetRows = (value.page - 1) * value.pageSize
   const fetchRows = value.pageSize + 1
+  const normalizedCountry = value.country.trim().toUpperCase()
 
   return {
     sql: query()
       .raw(sql, {
         start_activation_date: value.startActivationDate.slice(0, 10),
         end_activation_date: value.endActivationDate.slice(0, 10),
+        country: normalizedCountry,
         offset_rows: offsetRows,
         fetch_rows: fetchRows
       })

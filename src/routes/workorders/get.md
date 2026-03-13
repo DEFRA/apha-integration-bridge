@@ -5,6 +5,7 @@ Use this endpoint when you want work orders by activation-date window rather tha
 ## What this endpoint does
 
 - Returns work orders where activation date is inside the requested range.
+- Filters by `country`, defaulting to `Scotland` when omitted.
 - Supports standard pagination links (`self`, `prev`, `next`).
 - Enforces date-window sanity (`endActivationDate` must be after `startActivationDate`).
 
@@ -17,12 +18,13 @@ Use this endpoint when you want work orders by activation-date window rather tha
 
 ### Query parameters
 
-| Parameter             | Type                          | Required | Default | Rules                                                                                                   |
-| --------------------- | ----------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| `startActivationDate` | ISO 8601 date/datetime string | Yes      | -       | Inclusive lower date bound; only the `YYYY-MM-DD` portion is used (time-of-day, if present, is ignored) |
-| `endActivationDate`   | ISO 8601 date/datetime string | Yes      | -       | Exclusive upper date bound; must be later than `startActivationDate`; only `YYYY-MM-DD` is used         |
-| `page`                | integer                       | No       | `1`     | Minimum `1`                                                                                             |
-| `pageSize`            | integer                       | No       | `50`    | Minimum `1`, maximum `50`                                                                               |
+| Parameter             | Type                          | Required | Default    | Rules                                                                                                   |
+| --------------------- | ----------------------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| `startActivationDate` | ISO 8601 date/datetime string | Yes      | -          | Inclusive lower date bound; only the `YYYY-MM-DD` portion is used (time-of-day, if present, is ignored) |
+| `endActivationDate`   | ISO 8601 date/datetime string | Yes      | -          | Exclusive upper date bound; must be later than `startActivationDate`; only `YYYY-MM-DD` is used         |
+| `country`             | string                        | No       | `Scotland` | Filters against work order `purposecountry`; matching is case-insensitive                               |
+| `page`                | integer                       | No       | `1`        | Minimum `1`                                                                                             |
+| `pageSize`            | integer                       | No       | `50`       | Minimum `1`, maximum `50`                                                                               |
 
 Date handling:
 
@@ -33,7 +35,7 @@ Example request:
 
 ```bash
 curl -X GET \
-  'https://<host>/workorders?startActivationDate=2014-05-01T00:00:00.000Z&endActivationDate=2014-07-01T00:00:00.000Z&page=1&pageSize=10' \
+  'https://<host>/workorders?startActivationDate=2014-05-01T00:00:00.000Z&endActivationDate=2014-07-01T00:00:00.000Z&country=Scotland&page=1&pageSize=10' \
   -H 'Authorization: Bearer <token>' \
   -H 'Accept: application/vnd.apha.1+json'
 ```
@@ -56,9 +58,9 @@ Example:
     }
   ],
   "links": {
-    "self": "/workorders?startActivationDate=2014-05-01T00%3A00%3A00.000Z&endActivationDate=2014-07-01T00%3A00%3A00.000Z&page=1&pageSize=1",
+    "self": "/workorders?startActivationDate=2014-05-01T00%3A00%3A00.000Z&endActivationDate=2014-07-01T00%3A00%3A00.000Z&country=Scotland&page=1&pageSize=1",
     "prev": null,
-    "next": "/workorders?startActivationDate=2014-05-01T00%3A00%3A00.000Z&endActivationDate=2014-07-01T00%3A00%3A00.000Z&page=2&pageSize=1"
+    "next": "/workorders?startActivationDate=2014-05-01T00%3A00%3A00.000Z&endActivationDate=2014-07-01T00%3A00%3A00.000Z&country=Scotland&page=2&pageSize=1"
   }
 }
 ```
