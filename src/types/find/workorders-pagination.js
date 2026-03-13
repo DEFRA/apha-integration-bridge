@@ -10,5 +10,10 @@ export const PaginateWorkordersSchema = PaginationSchema.keys({
   endActivationDate: Joi.string()
     .isoDate()
     .required()
-    .description('Paginate workorders before this end activation date')
+    .description('Paginate workorders before this end activation date'),
+  country: Joi.string()
+    .trim()
+    .min(1)
+    .default('Scotland')
+    .description('Filter workorders by country (default: Scotland)')
 })

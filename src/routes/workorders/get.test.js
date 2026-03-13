@@ -7,6 +7,7 @@ import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/si
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
 import * as executeOperation from '../../lib/db/operations/execute.js'
+import * as paginateWorkordersOperation from '../../lib/db/queries/paginate-workorders.js'
 
 const path = '/workorders'
 
@@ -134,6 +135,75 @@ describe('GET /workorders', () => {
     expect(responseBody.code).toBe('BAD_REQUEST')
     expect(responseBody.errors).toBeDefined()
     expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
+  })
+
+  test('defaults country filter to Scotland when country is omitted', async () => {
+    const server = await createServer()
+    const paginateWorkordersSpy = jest
+      .spyOn(paginateWorkordersOperation, 'paginateWorkorders')
+      .mockResolvedValue({
+        hasMore: false,
+        workorders: []
+      })
+
+    const query = new URLSearchParams({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
+      endActivationDate: '2024-02-01T00:00:00.000Z',
+      page: '1',
+      pageSize: '10'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: `${path}?${query.toString()}`
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(paginateWorkordersSpy).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        startActivationDate: '2024-01-01T00:00:00.000Z',
+        endActivationDate: '2024-02-01T00:00:00.000Z',
+        country: 'Scotland',
+        page: 1,
+        pageSize: 10
+      })
+    )
+  })
+
+  test('filters by explicit country using case-insensitive input', async () => {
+    const server = await createServer()
+    const paginateWorkordersSpy = jest
+      .spyOn(paginateWorkordersOperation, 'paginateWorkorders')
+      .mockResolvedValue({
+        hasMore: false,
+        workorders: []
+      })
+
+    const query = new URLSearchParams({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
+      endActivationDate: '2024-02-01T00:00:00.000Z',
+      country: 'eNgLaNd',
+      page: '1',
+      pageSize: '10'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: `${path}?${query.toString()}`
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(paginateWorkordersSpy).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        startActivationDate: '2024-01-01T00:00:00.000Z',
+        endActivationDate: '2024-02-01T00:00:00.000Z',
+        country: 'eNgLaNd',
+        page: 1,
+        pageSize: 10
+      })
+    )
   })
 
   test.each([
