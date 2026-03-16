@@ -2,7 +2,7 @@ import { toWorkorders } from '../mappers/to-workorders.js'
 import { execute } from '../operations/execute.js'
 import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
-import { PaginateWorkordersSchema } from '../../../types/find/workorders-pagination.js'
+import { GetWorkordersSchema } from '../../../types/find/workorders-get.js'
 
 const sql = loadSQL(import.meta.filename)
 
@@ -11,17 +11,17 @@ const sql = loadSQL(import.meta.filename)
  *   startActivationDate: string
  *   endActivationDate: string
  *   country?: string
- *   page: number
- *   pageSize: number
- * }} PaginateWorkordersParams
+ *   page?: number
+ *   pageSize?: number
+ * }} GetWorkordersParams
  */
 
 /**
- * @param {PaginateWorkordersParams} params
+ * @param {GetWorkordersParams} params
  * @returns {{ sql: string }}
  */
-export function paginateWorkordersQuery(params) {
-  const { value, error } = PaginateWorkordersSchema.validate(params)
+export function getWorkordersQuery(params) {
+  const { value, error } = GetWorkordersSchema.validate(params)
 
   if (error) {
     throw new Error(`Invalid parameters: ${error.message}`)
@@ -49,16 +49,16 @@ export function paginateWorkordersQuery(params) {
         offset_rows: offsetRows,
         fetch_rows: fetchRows
       })
-      .toString()
+      .toQuery()
   }
 }
 
 /**
  * @param {import('oracledb').Connection} connection
- * @param {PaginateWorkordersParams} params
+ * @param {GetWorkordersParams} params
  */
-export async function paginateWorkorders(connection, params) {
-  const queryToRun = paginateWorkordersQuery(params)
+export async function getWorkorders(connection, params) {
+  const queryToRun = getWorkordersQuery(params)
 
   const rows = await execute(connection, queryToRun)
 

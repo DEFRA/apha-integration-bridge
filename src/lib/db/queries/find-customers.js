@@ -54,7 +54,7 @@ export function findCustomersQuery(ids, customerType) {
   return {
     sql: query()
       .raw(sqlWithFilters, { ...bindings, customerType: value.customerType })
-      .toString()
+      .toQuery()
   }
 }
 

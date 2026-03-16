@@ -22,6 +22,6 @@ export function getLocation(locationId) {
   }
 
   return {
-    sql: query().raw(sql, { location: value.locationId }).toString()
+    sql: query().raw(sql, { location: value.locationId }).toQuery()
   }
 }

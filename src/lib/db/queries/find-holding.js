@@ -28,6 +28,6 @@ export function findHoldingQuery(parameters) {
   }
 
   return {
-    sql: query().raw(sql, value).toString()
+    sql: query().raw(sql, value).toQuery()
   }
 }

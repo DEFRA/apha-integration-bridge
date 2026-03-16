@@ -7,7 +7,7 @@ import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/si
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
 import * as executeOperation from '../../lib/db/operations/execute.js'
-import * as paginateWorkordersOperation from '../../lib/db/queries/paginate-workorders.js'
+import * as getWorkordersOperation from '../../lib/db/queries/get-workorders.js'
 
 const path = '/workorders'
 
@@ -180,8 +180,8 @@ describe('GET /workorders', () => {
 
   test('defaults country filter to Scotland when country is omitted', async () => {
     const server = await createServer()
-    const paginateWorkordersSpy = jest
-      .spyOn(paginateWorkordersOperation, 'paginateWorkorders')
+    const getWorkordersSpy = jest
+      .spyOn(getWorkordersOperation, 'getWorkorders')
       .mockResolvedValue({
         hasMore: false,
         workorders: []
@@ -200,7 +200,7 @@ describe('GET /workorders', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(paginateWorkordersSpy).toHaveBeenCalledWith(
+    expect(getWorkordersSpy).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({
         startActivationDate: '2024-01-01T00:00:00.000Z',
@@ -214,8 +214,8 @@ describe('GET /workorders', () => {
 
   test('filters by explicit country using case-insensitive input', async () => {
     const server = await createServer()
-    const paginateWorkordersSpy = jest
-      .spyOn(paginateWorkordersOperation, 'paginateWorkorders')
+    const getWorkordersSpy = jest
+      .spyOn(getWorkordersOperation, 'getWorkorders')
       .mockResolvedValue({
         hasMore: false,
         workorders: []
@@ -235,12 +235,12 @@ describe('GET /workorders', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(paginateWorkordersSpy).toHaveBeenCalledWith(
+    expect(getWorkordersSpy).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({
         startActivationDate: '2024-01-01T00:00:00.000Z',
         endActivationDate: '2024-02-01T00:00:00.000Z',
-        country: 'eNgLaNd',
+        country: 'england',
         page: 1,
         pageSize: 10
       })
@@ -311,6 +311,13 @@ describe('GET /workorders', () => {
       startActivationDate: '2024-01-01T00:00:00.000Z',
       endActivationDate: '2024-02-01T00:00:00.000Z',
       page: '0',
+      pageSize: '10'
+    }),
+    new URLSearchParams({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
+      endActivationDate: '2024-02-01T00:00:00.000Z',
+      country: 'Northern Ireland',
+      page: '1',
       pageSize: '10'
     })
   ])('validates malformed query parameters: %s', async (query) => {

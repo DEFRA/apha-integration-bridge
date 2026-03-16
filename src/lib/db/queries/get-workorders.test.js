@@ -2,13 +2,10 @@ import { afterAll, beforeAll, describe, expect, test } from '@jest/globals'
 import oracledb from 'oracledb'
 
 import { config } from '../../../config.js'
-import {
-  paginateWorkorders,
-  paginateWorkordersQuery
-} from './paginate-workorders.js'
+import { getWorkorders, getWorkordersQuery } from './get-workorders.js'
 
 test('returns the expected query for valid parameters', () => {
-  const { sql } = paginateWorkordersQuery({
+  const { sql } = getWorkordersQuery({
     startActivationDate: '2024-01-01T00:00:00.000Z',
     endActivationDate: '2024-02-01T00:00:00.000Z',
     page: 1,
@@ -19,7 +16,7 @@ test('returns the expected query for valid parameters', () => {
 })
 
 test('defaults country filter to SCOTLAND in SQL', () => {
-  const { sql } = paginateWorkordersQuery({
+  const { sql } = getWorkordersQuery({
     startActivationDate: '2024-01-01T00:00:00.000Z',
     endActivationDate: '2024-02-01T00:00:00.000Z',
     page: 1,
@@ -30,7 +27,7 @@ test('defaults country filter to SCOTLAND in SQL', () => {
 })
 
 test('normalizes provided country to uppercase in SQL', () => {
-  const { sql } = paginateWorkordersQuery({
+  const { sql } = getWorkordersQuery({
     startActivationDate: '2024-01-01T00:00:00.000Z',
     endActivationDate: '2024-02-01T00:00:00.000Z',
     country: 'wales',
@@ -43,7 +40,7 @@ test('normalizes provided country to uppercase in SQL', () => {
 
 test('throws if query parameters are invalid', () => {
   expect(() =>
-    paginateWorkordersQuery({
+    getWorkordersQuery({
       startActivationDate: 'not-a-date',
       endActivationDate: '2024-02-01T00:00:00.000Z',
       page: 1,
@@ -54,7 +51,7 @@ test('throws if query parameters are invalid', () => {
 
 test('throws when endActivationDate is before startActivationDate', () => {
   expect(() =>
-    paginateWorkordersQuery({
+    getWorkordersQuery({
       startActivationDate: '2024-02-01T00:00:00.000Z',
       endActivationDate: '2024-01-01T00:00:00.000Z',
       page: 1,
@@ -65,7 +62,7 @@ test('throws when endActivationDate is before startActivationDate', () => {
 
 test('throws when page and pageSize are invalid', () => {
   expect(() =>
-    paginateWorkordersQuery({
+    getWorkordersQuery({
       startActivationDate: '2024-01-01T00:00:00.000Z',
       endActivationDate: '2024-02-01T00:00:00.000Z',
       page: 0,
@@ -74,8 +71,20 @@ test('throws when page and pageSize are invalid', () => {
   ).toThrow(/invalid parameters/i)
 })
 
+test('throws when country is not one of England, Wales, or Scotland', () => {
+  expect(() =>
+    getWorkordersQuery({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
+      endActivationDate: '2024-02-01T00:00:00.000Z',
+      country: 'Northern Ireland',
+      page: 1,
+      pageSize: 10
+    })
+  ).toThrow(/invalid parameters/i)
+})
+
 test('defaults page and pageSize when omitted', () => {
-  const { sql } = paginateWorkordersQuery({
+  const { sql } = getWorkordersQuery({
     startActivationDate: '2024-01-01T00:00:00.000Z',
     endActivationDate: '2024-02-01T00:00:00.000Z'
   })
@@ -84,7 +93,7 @@ test('defaults page and pageSize when omitted', () => {
   expect(sql).toContain('row_num <= 0 + 51')
 })
 
-describe('paginateWorkorders', () => {
+describe('getWorkorders', () => {
   /** @type {import('oracledb').Connection} */
   let connection
 
@@ -103,7 +112,7 @@ describe('paginateWorkorders', () => {
   })
 
   test('returns page-limited workorders and hasMore when extra rows exist', async () => {
-    const result = await paginateWorkorders(connection, {
+    const result = await getWorkorders(connection, {
       startActivationDate: '2014-05-01T00:00:00.000Z',
       endActivationDate: '2014-07-01T00:00:00.000Z',
       page: 1,
@@ -116,7 +125,7 @@ describe('paginateWorkorders', () => {
   })
 
   test('returns final page with hasMore false', async () => {
-    const result = await paginateWorkorders(connection, {
+    const result = await getWorkorders(connection, {
       startActivationDate: '2014-05-01T00:00:00.000Z',
       endActivationDate: '2014-07-01T00:00:00.000Z',
       page: 3,

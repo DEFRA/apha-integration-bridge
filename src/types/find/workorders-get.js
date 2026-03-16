@@ -2,7 +2,7 @@ import Joi from 'joi'
 
 import { PaginationSchema } from './pagination.js'
 
-export const PaginateWorkordersSchema = PaginationSchema.keys({
+export const GetWorkordersSchema = PaginationSchema.keys({
   startActivationDate: Joi.string()
     .isoDate()
     .required()
@@ -14,6 +14,10 @@ export const PaginateWorkordersSchema = PaginationSchema.keys({
   country: Joi.string()
     .trim()
     .min(1)
+    .valid('england', 'wales', 'scotland')
+    .insensitive()
     .default('Scotland')
-    .description('Filter workorders by country (default: Scotland)')
+    .description(
+      'Filter workorders by country (allowed: England, Wales, Scotland; default: Scotland)'
+    )
 })
