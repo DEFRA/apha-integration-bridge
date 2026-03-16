@@ -15,7 +15,9 @@ exports[`returns the expected query for valid parameters 1`] = `
   AND
   ac.pxobjclass = 'AH-AC-WS'
   AND
-  ac.pystatuswork IN ('Open')
+  ac.pystatuswork = 'Open'
+  AND
+  UPPER(ws.purposecountry) = 'SCOTLAND'
   AND
   ac.wsactivationdate >= TO_DATE('2024-01-01', 'yyyy-mm-dd')
   AND
@@ -156,7 +158,7 @@ ws.pyid = wsa.ws_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+ac.pystatuswork = 'Open'
 
 ORDER BY
 rw.row_num ASC,

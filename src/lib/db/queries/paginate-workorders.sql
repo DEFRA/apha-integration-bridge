@@ -12,7 +12,9 @@ WITH filtered_workorders AS (
   AND
   ac.pxobjclass = 'AH-AC-WS'
   AND
-  ac.pystatuswork IN ('Open')
+  ac.pystatuswork = 'Open'
+  AND
+  UPPER(ws.purposecountry) = 'SCOTLAND'
   AND
   ac.wsactivationdate >= TO_DATE(:start_activation_date, 'yyyy-mm-dd')
   AND
@@ -153,7 +155,7 @@ ws.pyid = wsa.ws_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+ac.pystatuswork = 'Open'
 
 ORDER BY
 rw.row_num ASC,
