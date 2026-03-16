@@ -137,6 +137,47 @@ describe('GET /workorders', () => {
     expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
   })
 
+  test.each([
+    [
+      '2014-06-24T00:00:00.000Z',
+      '2014-06-30T00:00:00.000Z',
+      ['WS-299', 'WS-1531']
+    ],
+    ['2014-06-24T00:00:00.000Z', '2014-06-29T00:00:00.000Z', ['WS-299']],
+    ['2014-06-29T00:00:00.000Z', '2014-06-30T00:00:00.000Z', ['WS-1531']]
+  ])(
+    'filters by activation date range with start=%s and end=%s',
+    async (startActivationDate, endActivationDate, expectedWorkorderIds) => {
+      const server = await createServer()
+
+      const query = new URLSearchParams({
+        startActivationDate,
+        endActivationDate,
+        page: '1',
+        pageSize: '10'
+      })
+
+      const url = `${path}?${query.toString()}`
+      const response = await server.inject({
+        method: 'GET',
+        url
+      })
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+      const returnedWorkorderIds = responseBody.data.map(
+        (workorder) => workorder.id
+      )
+
+      expect(response.statusCode).toBe(200)
+      expect(returnedWorkorderIds).toEqual(expectedWorkorderIds)
+      expect(responseBody.links).toEqual({
+        self: url,
+        next: null,
+        prev: null
+      })
+    }
+  )
+
   test('defaults country filter to Scotland when country is omitted', async () => {
     const server = await createServer()
     const paginateWorkordersSpy = jest
@@ -205,6 +246,55 @@ describe('GET /workorders', () => {
       })
     )
   })
+
+  test.each([
+    ['England', 'WS-76512', ['WS-76513', 'WS-76514']],
+    ['Scotland', 'WS-76513', ['WS-76512', 'WS-76514']],
+    ['Wales', 'WS-76514', ['WS-76512', 'WS-76513']]
+  ])(
+    'returns expected seeded %s workorder and excludes seeded workorders from other countries',
+    async (country, expectedWorkorderId, excludedWorkorderIds) => {
+      const server = await createServer()
+
+      const query = new URLSearchParams({
+        startActivationDate: '2024-01-01T00:00:00.000Z',
+        endActivationDate: '2024-03-01T00:00:00.000Z',
+        country,
+        page: '1',
+        pageSize: '10'
+      })
+
+      const url = `${path}?${query.toString()}`
+
+      const response = await server.inject({
+        method: 'GET',
+        url
+      })
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+      const returnedWorkorderIds = []
+
+      for (const workorder of responseBody.data) {
+        returnedWorkorderIds.push(workorder.id)
+      }
+
+      expect(response.statusCode).toBe(200)
+      expect(responseBody.links).toEqual({
+        self: url,
+        next: null,
+        prev: null
+      })
+      expect(returnedWorkorderIds).toContain(expectedWorkorderId)
+
+      for (const excludedWorkorderId of excludedWorkorderIds) {
+        expect(returnedWorkorderIds).not.toContain(excludedWorkorderId)
+      }
+
+      for (const workorder of responseBody.data) {
+        expect(workorder.country).toBe(country)
+      }
+    }
+  )
 
   test.each([
     new URLSearchParams({
