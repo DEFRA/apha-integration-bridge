@@ -18,6 +18,29 @@ test('returns the expected query for valid parameters', () => {
   expect(sql).toMatchSnapshot()
 })
 
+test('defaults country filter to SCOTLAND in SQL', () => {
+  const { sql } = paginateWorkordersQuery({
+    startActivationDate: '2024-01-01T00:00:00.000Z',
+    endActivationDate: '2024-02-01T00:00:00.000Z',
+    page: 1,
+    pageSize: 10
+  })
+
+  expect(sql).toContain("UPPER(ws.purposecountry) = 'SCOTLAND'")
+})
+
+test('normalizes provided country to uppercase in SQL', () => {
+  const { sql } = paginateWorkordersQuery({
+    startActivationDate: '2024-01-01T00:00:00.000Z',
+    endActivationDate: '2024-02-01T00:00:00.000Z',
+    country: 'wales',
+    page: 1,
+    pageSize: 10
+  })
+
+  expect(sql).toContain("UPPER(ws.purposecountry) = 'WALES'")
+})
+
 test('throws if query parameters are invalid', () => {
   expect(() =>
     paginateWorkordersQuery({
