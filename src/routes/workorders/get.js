@@ -8,12 +8,12 @@ import {
   HTTPException,
   HTTPError
 } from '../../lib/http/http-exception.js'
-import { paginateWorkorders } from '../../lib/db/queries/paginate-workorders.js'
+import { getWorkorders } from '../../lib/db/queries/get-workorders.js'
 import { HTTPArrayResponse } from '../../lib/http/http-response.js'
 import { HTTPPaginationLinks } from '../../lib/http/http-pagination-links.js'
 import { WorkordersSchema } from '../../types/find/workorders.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
-import { PaginateWorkordersSchema } from '../../types/find/workorders-pagination.js'
+import { GetWorkordersSchema } from '../../types/find/workorders-get.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -44,7 +44,7 @@ const options = {
     }
   },
   validate: {
-    query: PaginateWorkordersSchema,
+    query: GetWorkordersSchema,
     headers: Joi.object({
       accept: Joi.string()
         .default('application/vnd.apha.1+json')
@@ -102,7 +102,7 @@ export async function handler(request, h) {
       pageSize: request.query.pageSize
     }
 
-    const { workorders, hasMore } = await paginateWorkorders(
+    const { workorders, hasMore } = await getWorkorders(
       oracledb.connection,
       parameters
     )
