@@ -13,3 +13,17 @@ test('pads all date and time components to required widths', () => {
 
   expect(toOracleTimestampString(date)).toBe('2024-01-05 04:03:02.009')
 })
+
+test('throws a TypeError when the input is not a Date object', () => {
+  expect(() =>
+    toOracleTimestampString(/** @type {any} */ ('2024-01-15T14:30:00.123Z'))
+  ).toThrow(new TypeError('Invalid Date object'))
+})
+
+test('throws a TypeError when the input is an invalid Date object', () => {
+  const invalidDate = new Date('invalid-date-value')
+
+  expect(() => toOracleTimestampString(invalidDate)).toThrow(
+    new TypeError('Invalid Date object')
+  )
+})

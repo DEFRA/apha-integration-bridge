@@ -6,6 +6,9 @@
  * @returns {string} e.g. '2024-01-15 14:30:00.123'
  */
 export function toOracleTimestampString(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    throw new TypeError('Invalid Date object')
+  }
   const year = date.getUTCFullYear()
   const month = String(date.getUTCMonth() + 1).padStart(2, '0')
   const day = String(date.getUTCDate()).padStart(2, '0')
