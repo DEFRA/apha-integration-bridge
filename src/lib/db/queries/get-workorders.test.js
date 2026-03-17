@@ -7,7 +7,7 @@ import { getWorkorders, getWorkordersQuery } from './get-workorders.js'
 test('returns the expected query for valid parameters', () => {
   const { sql } = getWorkordersQuery({
     startActivationDate: '2024-01-01T00:00:00.000Z',
-    endActivationDate: '2024-02-01T00:00:00.000Z',
+    endActivationDate: '2024-01-01T00:05:00.001Z',
     page: 1,
     pageSize: 10
   })

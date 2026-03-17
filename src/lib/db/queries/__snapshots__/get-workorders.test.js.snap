@@ -19,9 +19,9 @@ exports[`returns the expected query for valid parameters 1`] = `
   AND
   UPPER(ws.purposecountry) = 'SCOTLAND'
   AND
-  ac.wsactivationdate >= TO_DATE('2024-01-01', 'yyyy-mm-dd')
+  ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3')
   AND
-  ac.wsactivationdate < TO_DATE('2024-02-01', 'yyyy-mm-dd')
+  ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3')
 ),
 ordered_workorders AS (
   SELECT
