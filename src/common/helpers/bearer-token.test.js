@@ -6,6 +6,7 @@ import { bearerTokenPlugin } from './bearer-token.js'
 
 // Constants
 const ISSUER = 'https://mock-cognito'
+const CLIENT_ID = 'test-client-id'
 
 describe('Bearer Token Plugin', () => {
   let server
@@ -24,7 +25,8 @@ describe('Bearer Token Plugin', () => {
     token = await new SignJWT({
       sub: 'test-user',
       iss: ISSUER,
-      token_use: 'access'
+      token_use: 'access',
+      client_id: CLIENT_ID
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuedAt(now)
@@ -95,7 +97,8 @@ describe('Bearer Token Plugin', () => {
     const badToken = await new SignJWT({
       sub: 'test-user',
       token_use: 'access',
-      scope: 'something-else'
+      scope: 'something-else',
+      client_id: CLIENT_ID
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuedAt(now)
@@ -110,6 +113,29 @@ describe('Bearer Token Plugin', () => {
 
     expect(res.statusCode).toBe(401)
     expect(res.result.message).toMatch(/missing.+iss.+claim/i)
+  })
+
+  test('rejects token with missing client_id', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const badToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access'
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now)
+      .setExpirationTime(now + 60)
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${badToken}` }
+    })
+
+    expect(res.statusCode).toBe(401)
+    expect(res.result.message).toMatch(/missing.+client_id.+claim/i)
   })
 
   test('allows valid token on secure route', async () => {

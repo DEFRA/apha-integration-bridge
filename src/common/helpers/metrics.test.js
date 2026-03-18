@@ -5,12 +5,14 @@ import { config } from '../../config.js'
 import { metricsCounter } from './metrics.js'
 
 const mockPutMetric = jest.fn()
+const mockPutDimensions = jest.fn()
 const mockFlush = jest.fn()
 const mockLoggerError = jest.fn()
 
 jest.mock('aws-embedded-metrics', () => ({
   ...jest.requireActual('aws-embedded-metrics'),
   createMetricsLogger: () => ({
+    putDimensions: mockPutDimensions,
     putMetric: mockPutMetric,
     flush: mockFlush
   })
@@ -22,8 +24,13 @@ jest.mock('./logging/logger.js', () => ({
 const mockMetricsName = 'mock-metrics-name'
 const defaultMetricsValue = 1
 const mockValue = 200
+const mockClientId = 'test-client-id'
 
 describe('#metrics', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
   describe('When metrics is not enabled', () => {
     beforeEach(async () => {
       config.set('isMetricsEnabled', false)
@@ -58,6 +65,22 @@ describe('#metrics', () => {
     test('Should send metric', async () => {
       await metricsCounter(mockMetricsName, mockValue)
 
+      expect(mockPutMetric).toHaveBeenCalledWith(
+        mockMetricsName,
+        mockValue,
+        Unit.Count,
+        StorageResolution.Standard
+      )
+    })
+
+    test('Should send metric dimensions when provided', async () => {
+      await metricsCounter(mockMetricsName, mockValue, {
+        client_id: mockClientId
+      })
+
+      expect(mockPutDimensions).toHaveBeenCalledWith({
+        client_id: mockClientId
+      })
       expect(mockPutMetric).toHaveBeenCalledWith(
         mockMetricsName,
         mockValue,

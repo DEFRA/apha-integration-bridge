@@ -14,9 +14,12 @@ const authToken = [
   Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString(
     'base64url'
   ),
-  Buffer.from(JSON.stringify({ iss: 'https://mock-cognito' })).toString(
-    'base64url'
-  ),
+  Buffer.from(
+    JSON.stringify({
+      iss: 'https://mock-cognito',
+      client_id: 'test-client-id'
+    })
+  ).toString('base64url'),
   'sig'
 ].join('.')
 const authHeaders = { authorization: `Bearer ${authToken}` }

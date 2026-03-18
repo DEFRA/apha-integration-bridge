@@ -8,6 +8,7 @@ import { authPlugin } from './auth.js'
 
 // Constants
 const ISSUER = 'https://mock-cognito'
+const CLIENT_ID = 'test-client-id'
 const JWKS_PATH = '/.well-known/jwks.json'
 
 // MSW server setup
@@ -46,7 +47,8 @@ describe('Auth Plugin (with MSW)', () => {
       sub: 'test-user',
       iss: ISSUER,
       token_use: 'access',
-      scope: 'apha-integration-bridge-resource-srv/access'
+      scope: 'apha-integration-bridge-resource-srv/access',
+      client_id: CLIENT_ID
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuedAt(now)
@@ -119,7 +121,8 @@ describe('Auth Plugin (with MSW)', () => {
       sub: 'test-user',
       iss: ISSUER,
       token_use: 'access',
-      scope: 'something-else'
+      scope: 'something-else',
+      client_id: CLIENT_ID
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuedAt(now)
@@ -134,6 +137,30 @@ describe('Auth Plugin (with MSW)', () => {
 
     expect(res.statusCode).toBe(403)
     expect(res.result.message).toMatch(/Token scope is not authorized/)
+  })
+
+  test('rejects token with missing client_id', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const badToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access',
+      scope: 'apha-integration-bridge-resource-srv/access'
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now)
+      .setExpirationTime(now + 60)
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${badToken}` }
+    })
+
+    expect(res.statusCode).toBe(401)
+    expect(res.result.message).toMatch(/missing.+client_id.+claim/i)
   })
 
   test('allows valid token on secure route', async () => {

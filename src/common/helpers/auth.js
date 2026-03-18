@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import Boom from '@hapi/boom'
 import { config } from '../../config.js'
+import { metricsCounter } from './metrics.js'
 
 const expectedScope = config.get('auth.scope')
 
@@ -65,9 +66,17 @@ export const authPlugin = {
                 return Boom.unauthorized('Token is not an access token')
               }
 
+              if (!payload.client_id || typeof payload.client_id !== 'string') {
+                return Boom.unauthorized('Missing `client_id` claim in token')
+              }
+
               if (payload.scope !== expectedScope) {
                 return Boom.forbidden('Token scope is not authorized')
               }
+
+              await metricsCounter('clientRequest', 1, {
+                client_id: payload.client_id
+              })
 
               return h.authenticated({
                 credentials: { token },
