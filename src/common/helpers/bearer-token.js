@@ -1,4 +1,5 @@
 import Boom from '@hapi/boom'
+import { metricsCounter } from './metrics.js'
 
 /**
  * @typedef {import('@hapi/hapi').Server} Server
@@ -49,6 +50,14 @@ export const bearerTokenPlugin = {
               if (!issuer) {
                 return Boom.unauthorized('Missing `iss` claim in token')
               }
+
+              if (!decoded.client_id) {
+                return Boom.unauthorized('Missing `client_id` claim in token')
+              }
+
+              await metricsCounter('clientRequest', 1, {
+                client_id: decoded.client_id
+              })
 
               return h.authenticated({
                 credentials: { token },
