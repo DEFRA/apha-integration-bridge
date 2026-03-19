@@ -389,6 +389,64 @@ describe('locations/find', () => {
         }
       })
     })
+
+    test('returns next page link when a missing id reduces first page result count', async () => {
+      const server = await createServer()
+
+      const firstQueryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '2'
+      })
+
+      const firstUrl = `${path}?${firstQueryParams.toString()}`
+      const payload = {
+        ids: [testLocations.location1, 'L99999', testLocations.location2]
+      }
+
+      const firstResponse = await server.inject({
+        method: 'POST',
+        payload,
+        url: firstUrl
+      })
+
+      const secondQueryParams = new URLSearchParams(firstQueryParams.toString())
+
+      secondQueryParams.set('page', '2')
+
+      const firstResponseResult = /** @type {PostFindLocationsResponse} */ (
+        firstResponse.result
+      )
+
+      expect(firstResponse.statusCode).toBe(200)
+      expect(firstResponseResult).toEqual({
+        data: [expectedLocationsData.location1],
+        links: {
+          self: firstUrl,
+          next: `${path}?${secondQueryParams.toString()}`,
+          prev: null
+        }
+      })
+
+      const secondResponse = await server.inject({
+        method: 'POST',
+        payload,
+        url: firstResponseResult.links.next
+      })
+
+      const secondResponseResult = /** @type {PostFindLocationsResponse} */ (
+        secondResponse.result
+      )
+
+      expect(secondResponse.statusCode).toBe(200)
+      expect(secondResponseResult).toEqual({
+        data: [expectedLocationsData.location2],
+        links: {
+          self: `${path}?${secondQueryParams.toString()}`,
+          next: null,
+          prev: firstUrl
+        }
+      })
+    })
   })
 
   describe('Error handling', () => {
