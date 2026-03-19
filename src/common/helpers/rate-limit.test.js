@@ -4,9 +4,12 @@ import { generateKeyPair, SignJWT } from 'jose'
 
 import { rateLimitPlugin } from './rate-limit.js'
 import { bearerTokenPlugin } from './bearer-token.js'
+import { config } from '../../config.js'
 
 const ISSUER = 'https://mock-cognito'
 const CLIENT_ID = 'test-client-123'
+const rateLimitConfig = config.get('rateLimit')
+const burstLimit = rateLimitConfig.burstLimit
 
 describe('Rate Limit Plugin', () => {
   let server
@@ -84,14 +87,14 @@ describe('Rate Limit Plugin', () => {
 
       expect(res.statusCode).toBe(200)
       expect(res.result).toEqual({ message: 'success' })
-      expect(res.headers['x-ratelimit-limit']).toBe('10')
-      expect(res.headers['x-ratelimit-remaining']).toBe('9')
+      expect(res.headers['x-ratelimit-limit']).toBe(String(burstLimit))
+      expect(res.headers['x-ratelimit-remaining']).toBe(String(burstLimit - 1))
       expect(res.headers['x-ratelimit-reset']).toBeDefined()
     })
 
     test('blocks requests exceeding the rate limit', async () => {
-      // Make 10 requests (the limit)
-      for (let i = 0; i < 10; i++) {
+      // Make requests up to the configured limit
+      for (let i = 0; i < burstLimit; i++) {
         const res = await server.inject({
           method: 'GET',
           url: '/api/test',
@@ -137,8 +140,8 @@ describe('Rate Limit Plugin', () => {
         headers: { authorization: `Bearer ${token}` }
       })
 
-      expect(res1.headers['x-ratelimit-limit']).toBe('10')
-      expect(res1.headers['x-ratelimit-remaining']).toBe('9')
+      expect(res1.headers['x-ratelimit-limit']).toBe(String(burstLimit))
+      expect(res1.headers['x-ratelimit-remaining']).toBe(String(burstLimit - 1))
       const resetTime1 = parseInt(res1.headers['x-ratelimit-reset'], 10)
       expect(resetTime1).toBeGreaterThan(beforeRequest)
       expect(resetTime1).toBeLessThan(beforeRequest + 61) // Within duration window
@@ -150,12 +153,12 @@ describe('Rate Limit Plugin', () => {
         headers: { authorization: `Bearer ${token}` }
       })
 
-      expect(res2.headers['x-ratelimit-remaining']).toBe('8')
+      expect(res2.headers['x-ratelimit-remaining']).toBe(String(burstLimit - 2))
     })
 
     test('includes Retry-After header when rate limit exceeded', async () => {
       // Exhaust the limit
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < burstLimit; i++) {
         await server.inject({
           method: 'GET',
           url: '/api/test',
@@ -180,7 +183,7 @@ describe('Rate Limit Plugin', () => {
   describe('Error Handling', () => {
     test('returns 429 with proper error message', async () => {
       // Exhaust the limit
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < burstLimit; i++) {
         await server.inject({
           method: 'GET',
           url: '/api/test',
@@ -202,7 +205,7 @@ describe('Rate Limit Plugin', () => {
 
     test('continues to block requests after limit exceeded', async () => {
       // Exhaust the limit
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < burstLimit; i++) {
         await server.inject({
           method: 'GET',
           url: '/api/test',
