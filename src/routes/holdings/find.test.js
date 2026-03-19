@@ -380,6 +380,64 @@ describe('holdings/find', () => {
         }
       })
     })
+
+    test('returns next page link when a missing id reduces first page result count', async () => {
+      const server = await createServer()
+
+      const firstQueryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '2'
+      })
+
+      const firstUrl = `${path}?${firstQueryParams.toString()}`
+      const payload = {
+        ids: [testHoldings.holding1, '99/999/9999', testHoldings.holding2]
+      }
+
+      const firstResponse = await server.inject({
+        method: 'POST',
+        payload,
+        url: firstUrl
+      })
+
+      const secondQueryParams = new URLSearchParams(firstQueryParams.toString())
+
+      secondQueryParams.set('page', '2')
+
+      const firstResponseResult = /** @type {PostFindHoldingsResponse} */ (
+        firstResponse.result
+      )
+
+      expect(firstResponse.statusCode).toBe(200)
+      expect(firstResponseResult).toEqual({
+        data: [expectedHoldingsData.holding1],
+        links: {
+          self: firstUrl,
+          next: `${path}?${secondQueryParams.toString()}`,
+          prev: null
+        }
+      })
+
+      const secondResponse = await server.inject({
+        method: 'POST',
+        payload,
+        url: firstResponseResult.links.next
+      })
+
+      const secondResponseResult = /** @type {PostFindHoldingsResponse} */ (
+        secondResponse.result
+      )
+
+      expect(secondResponse.statusCode).toBe(200)
+      expect(secondResponseResult).toEqual({
+        data: [expectedHoldingsData.holding2],
+        links: {
+          self: `${path}?${secondQueryParams.toString()}`,
+          next: null,
+          prev: firstUrl
+        }
+      })
+    })
   })
 
   describe('Error handling', () => {

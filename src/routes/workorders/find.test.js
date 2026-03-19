@@ -538,6 +538,64 @@ describe('workorders/find', () => {
         }
       })
     })
+
+    test('returns next page link when a missing id reduces first page result count', async () => {
+      const server = await createServer()
+
+      const firstQueryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '2'
+      })
+
+      const firstUrl = `${path}?${firstQueryParams.toString()}`
+      const payload = {
+        ids: [testWorkorders.workorder1, 'WS-99999', testWorkorders.workorder2]
+      }
+
+      const firstResponse = await server.inject({
+        method: 'POST',
+        payload,
+        url: firstUrl
+      })
+
+      const secondQueryParams = new URLSearchParams(firstQueryParams.toString())
+
+      secondQueryParams.set('page', '2')
+
+      const firstResponseResult = /** @type {PostFindWorkordersResponse} */ (
+        firstResponse.result
+      )
+
+      expect(firstResponse.statusCode).toBe(200)
+      expect(firstResponseResult).toEqual({
+        data: [expectedWorkordersData.workorder1],
+        links: {
+          self: firstUrl,
+          next: `${path}?${secondQueryParams.toString()}`,
+          prev: null
+        }
+      })
+
+      const secondResponse = await server.inject({
+        method: 'POST',
+        payload,
+        url: firstResponseResult.links.next
+      })
+
+      const secondResponseResult = /** @type {PostFindWorkordersResponse} */ (
+        secondResponse.result
+      )
+
+      expect(secondResponse.statusCode).toBe(200)
+      expect(secondResponseResult).toEqual({
+        data: [expectedWorkordersData.workorder2],
+        links: {
+          self: `${path}?${secondQueryParams.toString()}`,
+          next: null,
+          prev: firstUrl
+        }
+      })
+    })
   })
 
   describe('Error handling', () => {
