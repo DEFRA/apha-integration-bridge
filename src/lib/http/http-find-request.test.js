@@ -50,7 +50,7 @@ describe('HTTPFindRequest', () => {
     })
   })
 
-  test('toResponse() keeps next null when fewer than pageSize items were added', () => {
+  test('toResponse() sets next link when there are ids left even if fewer than pageSize items were added', () => {
     const req = new HTTPFindRequest(
       /** @type {any} */ ({
         url: 'http://localhost/customers/find?page=1&pageSize=2',
@@ -67,7 +67,7 @@ describe('HTTPFindRequest', () => {
       links: {
         self: '/customers/find?page=1&pageSize=2',
         prev: null,
-        next: null
+        next: '/customers/find?page=2&pageSize=2'
       }
     })
   })

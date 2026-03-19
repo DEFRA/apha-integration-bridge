@@ -36,10 +36,7 @@ export class HTTPFindRequest {
   }
 
   add(id, data) {
-    this.total += 1
-
     this._response.add(id, data)
-
     return this
   }
 
@@ -48,10 +45,7 @@ export class HTTPFindRequest {
   }
 
   toResponse() {
-    this._links.setHasMore(
-      this.hasRemainingIds() && this.total === this.pageSize
-    )
-
+    this._links.setHasMore(this.hasRemainingIds())
     return this._response.toResponse()
   }
 }
