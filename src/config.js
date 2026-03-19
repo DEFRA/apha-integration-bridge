@@ -349,6 +349,20 @@ const config = convict({
       default: !isProduction,
       env: 'COGNITO_TOKEN_ENDPOINT_ENABLED'
     }
+  },
+  rateLimit: {
+    ratePerSecond: {
+      doc: 'Rate limit in requests per second. Conservative: 25 req/sec for all environments',
+      format: Number,
+      default: 25,
+      env: 'RATE_LIMIT_RATE_PER_SECOND'
+    },
+    burstLimit: {
+      doc: 'Maximum burst capacity',
+      format: Number,
+      default: 50,
+      env: 'RATE_LIMIT_BURST_LIMIT'
+    }
   }
 })
 
