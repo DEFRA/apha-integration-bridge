@@ -370,10 +370,63 @@ describe('POST /customers/find', () => {
     })
   })
 
+  test('returns next page link when a missing id reduces first page result count', async () => {
+    const server = await createServer()
+
+    const firstQueryParams = new URLSearchParams({
+      page: '1',
+      pageSize: '2'
+    })
+
+    const firstUrl = `${path}?${firstQueryParams.toString()}`
+    const payload = {
+      ids: [customer1.id, 'NONEXISTENT123', customer2.id]
+    }
+
+    const firstResponse = await server.inject({
+      method: 'POST',
+      payload,
+      headers: authHeaders,
+      url: firstUrl
+    })
+
+    const secondQueryParams = new URLSearchParams(firstQueryParams.toString())
+
+    secondQueryParams.set('page', '2')
+
+    expect(firstResponse.statusCode).toBe(200)
+    expect(firstResponse.result).toEqual({
+      data: [customer1],
+      links: {
+        self: firstUrl,
+        next: `${path}?${secondQueryParams.toString()}`,
+        prev: null
+      }
+    })
+
+    const secondResponse = await server.inject({
+      method: 'POST',
+      payload,
+      headers: authHeaders,
+      // @ts-expect-error - test response typing is not strict enough
+      url: firstResponse.result.links.next
+    })
+
+    expect(secondResponse.statusCode).toBe(200)
+    expect(secondResponse.result).toEqual({
+      data: [customer2],
+      links: {
+        self: `${path}?${secondQueryParams.toString()}`,
+        next: null,
+        prev: firstUrl
+      }
+    })
+  })
+
   test('returns empty data and does not query DB or acquire connection when page is out of range', async () => {
     const server = await createServer()
     const executeSpy = jest.spyOn(executeOperation, 'execute')
-    const samSpy = jest.spyOn(server, 'oracledb.sam')
+    const samSpy = jest.spyOn(server, /** @type {any} */ ('oracledb.sam'))
     const queryParams = new URLSearchParams({
       page: '2',
       pageSize: '10'
