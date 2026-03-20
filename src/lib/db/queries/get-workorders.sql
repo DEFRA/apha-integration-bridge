@@ -16,9 +16,9 @@ WITH filtered_workorders AS (
   AND
   UPPER(ws.purposecountry) = :country
   AND
-  ac.wsactivationdate >= TO_DATE(:start_activation_date, 'yyyy-mm-dd')
+  ac.wsactivationdate >= TO_TIMESTAMP(:start_activation_date, 'yyyy-mm-dd hh24:mi:ss.ff3')
   AND
-  ac.wsactivationdate < TO_DATE(:end_activation_date, 'yyyy-mm-dd')
+  ac.wsactivationdate < TO_TIMESTAMP(:end_activation_date, 'yyyy-mm-dd hh24:mi:ss.ff3')
 ),
 ordered_workorders AS (
   SELECT
@@ -45,7 +45,6 @@ requested_workorders AS (
 SELECT
 DISTINCT rw.row_num page_order,
 ws.pyid work_order_id,
-TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
 ws.purposeworkarea work_area,
 ws.purposecountry country,
 ws.aimname aim,
@@ -53,7 +52,6 @@ ws.businessarea business_area,
 ws.purposename purpose,
 ws.speciesforpurpose purpose_species,
 ac.pystatuswork ws_status,
-ac.pysladeadline target_date,
 ws_loc.entityid location_id,
 ws_loc.cphid cph,
 ws_c.entityid customer_id,
@@ -61,13 +59,16 @@ ws_lu.entityid livestock_unit_id,
 ws_f.entityid facility_unit_id,
 wsa.wsa_id,
 wsa.activity_name,
-TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd') wsactivationdate,
-TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
-TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
-TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 ws.phase,
-TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
-wsa.activitysequencenumber
+wsa.activitysequencenumber,
+TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
+TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate
+-- Dates that don't seem to be used at the moment, but may be useful in the future:
+-- TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
+-- ac.pysladeadline target_date,
+-- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
+-- TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
+-- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
 
 FROM
 requested_workorders rw,

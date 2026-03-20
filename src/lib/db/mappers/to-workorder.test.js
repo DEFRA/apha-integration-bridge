@@ -41,7 +41,7 @@ test('toWorkorder maps a single row into one workorder resource', () => {
     country: 'GB',
     aim: 'Surveillance',
     purpose: 'Monitoring',
-    earliestActivityStartDate: null, // setting to null as it's not available in the current views
+    earliestActivityStartDate: '2024-02-01',
     species: 'Cattle',
     activities: [
       {

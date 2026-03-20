@@ -3,7 +3,6 @@
 exports[`returns the expected query for multiple ids 1`] = `
 "SELECT
 DISTINCT ws.pyid work_order_id,
-TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
 ws.purposeworkarea work_area,
 ws.purposecountry country,
 ws.aimname aim,
@@ -19,14 +18,16 @@ ws_lu.entityid livestock_unit_id,
 ws_f.entityid facility_unit_id,
 wsa.wsa_id,
 wsa.activity_name,
-TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd') wsactivationdate,
-TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
--- commenting out the earliest activity start date as it's currently not available in the views. We’ve submitted a request to IBM to expose it, as the information is currently stored as a blob in Pega. We’ll need to revisit this attribute once IBM makes it available in a view.
--- TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
-TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 ws.phase,
-TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
-wsa.activitysequencenumber
+wsa.activitysequencenumber,
+TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
+TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate
+-- Dates that don't seem to be used at the moment, but may be useful in the future:
+-- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
+-- TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
+-- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
+-- TO_CHAR(ac.wslatestactivitycompletiondate, 'yyyy-mm-dd"T"hh24:mi:ss') wslatestactivitycompletiondate,
+
 
 FROM
 pega_data.ahwork_ac ac,
@@ -118,7 +119,6 @@ ws.pyid IN ('WS-12345', 'WS-12346')
 exports[`returns the expected query for valid parameters 1`] = `
 "SELECT
 DISTINCT ws.pyid work_order_id,
-TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
 ws.purposeworkarea work_area,
 ws.purposecountry country,
 ws.aimname aim,
@@ -134,14 +134,16 @@ ws_lu.entityid livestock_unit_id,
 ws_f.entityid facility_unit_id,
 wsa.wsa_id,
 wsa.activity_name,
-TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd') wsactivationdate,
-TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
--- commenting out the earliest activity start date as it's currently not available in the views. We’ve submitted a request to IBM to expose it, as the information is currently stored as a blob in Pega. We’ll need to revisit this attribute once IBM makes it available in a view.
--- TO_CHAR(ac.wsearliestactivitystartdate, 'dd/mm/yyyy hh24:mi:ss') wsearliestactivitystartdate,
-TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 ws.phase,
-TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
-wsa.activitysequencenumber
+wsa.activitysequencenumber,
+TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
+TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate
+-- Dates that don't seem to be used at the moment, but may be useful in the future:
+-- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
+-- TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
+-- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
+-- TO_CHAR(ac.wslatestactivitycompletiondate, 'yyyy-mm-dd"T"hh24:mi:ss') wslatestactivitycompletiondate,
+
 
 FROM
 pega_data.ahwork_ac ac,

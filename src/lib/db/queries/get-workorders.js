@@ -2,6 +2,7 @@ import { toWorkorders } from '../mappers/to-workorders.js'
 import { execute } from '../operations/execute.js'
 import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
+import { toOracleTimestampString } from '../utils/to-oracle-timestamp-string.js'
 import { GetWorkordersSchema } from '../../../types/find/workorders-get.js'
 
 const sql = loadSQL(import.meta.filename)
@@ -43,8 +44,8 @@ export function getWorkordersQuery(params) {
   return {
     sql: query()
       .raw(sql, {
-        start_activation_date: value.startActivationDate.slice(0, 10),
-        end_activation_date: value.endActivationDate.slice(0, 10),
+        start_activation_date: toOracleTimestampString(startActivationDate),
+        end_activation_date: toOracleTimestampString(endActivationDate),
         country: normalizedCountry,
         offset_rows: offsetRows,
         fetch_rows: fetchRows

@@ -7,12 +7,28 @@ import { getWorkorders, getWorkordersQuery } from './get-workorders.js'
 test('returns the expected query for valid parameters', () => {
   const { sql } = getWorkordersQuery({
     startActivationDate: '2024-01-01T00:00:00.000Z',
-    endActivationDate: '2024-02-01T00:00:00.000Z',
+    endActivationDate: '2024-01-01T00:05:00.001Z',
     page: 1,
     pageSize: 10
   })
 
   expect(sql).toMatchSnapshot()
+})
+
+test('normalizes timezone-offset date strings before SQL timestamp comparison', () => {
+  const { sql } = getWorkordersQuery({
+    startActivationDate: '2024-01-01T00:00:00.000+01:00',
+    endActivationDate: '2024-01-01T00:05:00.000+01:00',
+    page: 1,
+    pageSize: 10
+  })
+
+  expect(sql).toContain(
+    "ac.wsactivationdate >= TO_TIMESTAMP('2023-12-31 23:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3')"
+  )
+  expect(sql).toContain(
+    "ac.wsactivationdate < TO_TIMESTAMP('2023-12-31 23:05:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3')"
+  )
 })
 
 test('defaults country filter to SCOTLAND in SQL', () => {
@@ -53,6 +69,17 @@ test('throws when endActivationDate is before startActivationDate', () => {
   expect(() =>
     getWorkordersQuery({
       startActivationDate: '2024-02-01T00:00:00.000Z',
+      endActivationDate: '2024-01-01T00:00:00.000Z',
+      page: 1,
+      pageSize: 10
+    })
+  ).toThrow(/end activation date must be after start activation date/i)
+})
+
+test('throws when endActivationDate is equal to startActivationDate', () => {
+  expect(() =>
+    getWorkordersQuery({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
       endActivationDate: '2024-01-01T00:00:00.000Z',
       page: 1,
       pageSize: 10

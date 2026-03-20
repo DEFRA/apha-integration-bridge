@@ -156,13 +156,13 @@ describe('workorders/find', () => {
       workorder1: {
         type: 'workorders',
         id: 'WS-76512',
-        activationDate: '2024-01-07',
+        activationDate: '2024-01-07T00:00:00',
         businessArea: 'Endemic Notifiable Disease',
         workArea: 'Tuberculosis',
         country: 'England',
         aim: 'Contain / Control / Eradicate Endemic Disease',
         purpose: 'Initiate Incident Premises Spread Tracing Action',
-        earliestActivityStartDate: null, // setting to null as it's not available in the current views
+        earliestActivityStartDate: '2024-01-01T09:00:00',
         species: 'Cattle',
         activities: [],
         phase: 'EXPOSURETRACKING',
@@ -201,13 +201,13 @@ describe('workorders/find', () => {
       workorder2: {
         type: 'workorders',
         id: 'WS-76513',
-        activationDate: '2024-01-06',
+        activationDate: '2024-01-06T00:00:00',
         businessArea: 'Endemic Notifiable Disease',
         workArea: 'Tuberculosis',
         country: 'Scotland',
         aim: 'Contain / Control / Eradicate Endemic Disease',
         purpose: 'Initiate Incident Premises Spread Tracing Action',
-        earliestActivityStartDate: null, // setting to null as it's not available in the current views
+        earliestActivityStartDate: '2024-01-03T09:00:00',
         species: 'Sheep',
         activities: [
           {
@@ -264,13 +264,13 @@ describe('workorders/find', () => {
       workorder3: {
         type: 'workorders',
         id: 'WS-76514',
-        activationDate: '2024-02-10',
+        activationDate: '2024-02-10T00:00:00',
         businessArea: 'Animal Health and Welfare',
         workArea: 'General Inspection',
         country: 'Wales',
         aim: 'Ensure Compliance with Animal Health Standards',
         purpose: 'Routine Inspection and Disease Monitoring',
-        earliestActivityStartDate: null, // setting to null as it's not available in the current views
+        earliestActivityStartDate: '2024-02-08T08:00:00',
         species: 'Cattle',
         activities: [
           {
