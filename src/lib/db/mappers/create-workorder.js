@@ -17,14 +17,14 @@ export const createWorkorder = (row, id) => {
     id,
     activationDate: asNullableString(row.wsactivationdate),
     businessArea: asNullableString(row.business_area),
-    workArea: asNullableString(row.work_area),
+    workArea: asNullableString('Brucellosis (Brucella abortus)'), //row.work_area),
     country: asNullableString(row.country),
     aim: asNullableString(row.aim),
     purpose: asNullableString(row.purpose),
     earliestActivityStartDate: asNullableString(
       row.wsearliestactivitystartdate
     ),
-    species: asNullableString(row.purpose_species),
+    species: asNullableString('Cattle'), //row.purpose_species),
     activities: [],
     phase: asNullableString(row.phase),
     relationships: {
