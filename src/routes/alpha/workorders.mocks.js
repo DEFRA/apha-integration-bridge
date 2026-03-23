@@ -5,7 +5,7 @@ export const workorder1 = {
   earliestActivityStartDate: '2024-01-01T09:00:00+00:00',
   activationDate: '2024-01-05T08:30:00+00:00',
   purpose: 'Initiate Incident Premises Spread Tracing Action',
-  workArea: 'Tuberculosis',
+  workArea: 'Brucellosis (Brucella abortus)',
   country: 'England',
   businessArea: 'Endemic Notifiable Disease',
   aim: 'Contain / Control / Eradicate Endemic Disease',
