@@ -464,6 +464,356 @@ VALUES ('activity-12', 'Generate Compliance Report');
 COMMIT;
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Seed AHBRP reference data for work order mapping lookups
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CONNECT ahbrp/password@FREEPDB1;
+
+BEGIN
+  INSERT INTO ref_data_set (ref_data_set_pk, ref_data_set_name, effective_to_date)
+  VALUES (5000, 'WORK_AREA', NULL);
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+/
+
+BEGIN
+  INSERT INTO ref_data_set (ref_data_set_pk, ref_data_set_name, effective_to_date)
+  VALUES (5001, 'BCF_ANIMAL_SPECIES', NULL);
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+/
+
+DECLARE
+  tuberculosis_work_area_pk NUMBER := 50001;
+  tuberculosis_short_code_pk NUMBER := 50002;
+  cattle_species_pk NUMBER := 50003;
+  general_inspection_work_area_pk NUMBER := 50004;
+  sheep_species_pk NUMBER := 50005;
+  movement_controls_work_area_pk NUMBER := 50006;
+  exotic_disease_work_area_pk NUMBER := 50007;
+  pigs_species_pk NUMBER := 50008;
+  disease_investigation_work_area_pk NUMBER := 50009;
+  biosecurity_audit_work_area_pk NUMBER := 50010;
+  mixed_species_pk NUMBER := 50011;
+  cattle_short_code_pk NUMBER := 50012;
+BEGIN
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      tuberculosis_work_area_pk,
+      'Tuberculosis',
+      5000,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      tuberculosis_work_area_pk,
+      'Tuberculosis',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      tuberculosis_short_code_pk,
+      'TB',
+      5000,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      tuberculosis_short_code_pk,
+      'Tuberculosis',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      cattle_species_pk,
+      'Cattle',
+      5001,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      cattle_species_pk,
+      'Cattle',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      cattle_short_code_pk,
+      'CTT',
+      5001,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      cattle_short_code_pk,
+      'Cattle',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      general_inspection_work_area_pk,
+      'General Inspection',
+      5000,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      general_inspection_work_area_pk,
+      'General Inspection',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      sheep_species_pk,
+      'Sheep',
+      5001,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      sheep_species_pk,
+      'Sheep',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      movement_controls_work_area_pk,
+      'Movement Controls',
+      5000,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      movement_controls_work_area_pk,
+      'Movement Controls',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      exotic_disease_work_area_pk,
+      'Exotic Disease',
+      5000,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      exotic_disease_work_area_pk,
+      'Exotic Disease',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      pigs_species_pk,
+      'Pigs',
+      5001,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      pigs_species_pk,
+      'Pigs',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      disease_investigation_work_area_pk,
+      'Disease Investigation',
+      5000,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      disease_investigation_work_area_pk,
+      'Disease Investigation',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      biosecurity_audit_work_area_pk,
+      'Biosecurity Audit',
+      5000,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      biosecurity_audit_work_area_pk,
+      'Biosecurity Audit',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code (
+      ref_data_code_pk,
+      code,
+      ref_data_set_pk,
+      effective_to_date
+    ) VALUES (
+      mixed_species_pk,
+      'Mixed',
+      5001,
+      DATE '9999-12-31'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+
+  BEGIN
+    INSERT INTO ref_data_code_desc (
+      ref_data_code_pk,
+      short_description,
+      language_code
+    ) VALUES (
+      mixed_species_pk,
+      'Mixed',
+      'ENG'
+    );
+  EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+END;
+/
+
+COMMIT;
+
+CONNECT pega_data/password@FREEPDB1;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Grant privileges
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.ahwork_ac TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;

@@ -2,17 +2,20 @@ import { asNullableString } from './as-nullable-string.js'
 import { createWorkorder } from './create-workorder.js'
 import { toActivity } from './to-activity.js'
 
+/** @import {WorkorderMappings} from '../../../types/find/workorders.js' */
+
 /**
  * @param {Record<string, unknown>} row
+ * @param {WorkorderMappings} mappings
  */
-export const toWorkorder = (row) => {
+export const toWorkorder = (row, mappings) => {
   const id = asNullableString(row.work_order_id)
 
   if (!id) {
     return null
   }
 
-  const workorder = createWorkorder(row, id)
+  const workorder = createWorkorder(row, id, mappings)
 
   const customerOrOrganisationId = asNullableString(row.customer_id)
   const holdingId = asNullableString(row.cph)

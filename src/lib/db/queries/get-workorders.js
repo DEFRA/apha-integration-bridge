@@ -4,6 +4,10 @@ import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { toOracleTimestampString } from '../utils/to-oracle-timestamp-string.js'
 import { GetWorkordersSchema } from '../../../types/find/workorders-get.js'
+import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
+import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
+
+/** @import { DBConnections } from '../../../types/connection.js' */
 
 const sql = loadSQL(import.meta.filename)
 
@@ -55,13 +59,26 @@ export function getWorkordersQuery(params) {
 }
 
 /**
- * @param {import('oracledb').Connection} connection
+ * @param {DBConnections} connections
  * @param {GetWorkordersParams} params
  */
-export async function getWorkorders(connection, params) {
+export async function getWorkorders(connections, params) {
   const queryToRun = getWorkordersQuery(params)
 
-  const rows = await execute(connection, queryToRun)
+  const rows = await execute(connections.pegadb, queryToRun)
+
+  let workAreaMapping = []
+  let speciesMapping = []
+
+  if (rows.length !== 0) {
+    workAreaMapping = await getWorkAreaCodeMapping(connections.samdb, [
+      ...new Set(rows.map((row) => row.work_area))
+    ])
+
+    speciesMapping = await getPurposeSpeciesCodeMapping(connections.samdb, [
+      ...new Set(rows.map((row) => row.purpose_species))
+    ])
+  }
 
   const orderedDistinctIds = [
     ...new Set(
@@ -76,6 +93,9 @@ export async function getWorkorders(connection, params) {
 
   return {
     hasMore,
-    workorders: toWorkorders(rows, pageIds)
+    workorders: toWorkorders(rows, pageIds, {
+      workAreaMapping,
+      speciesMapping
+    })
   }
 }

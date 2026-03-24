@@ -31,6 +31,19 @@ import { HoldingsRelationship } from './holdings.js'
  * }} Workorders
  */
 
+/**
+ * @typedef {{
+ * workAreaMapping: {
+ *   work_area_code: string,
+ *   work_area_desc: string
+ * }[],
+ * speciesMapping: {
+ *   purpose_species_code: string,
+ *   purpose_species_desc: string
+ * }[]
+ * }} WorkorderMappings
+ */
+
 const WorkordersData = baseData({
   plural: 'workorders',
   singular: 'workorder'

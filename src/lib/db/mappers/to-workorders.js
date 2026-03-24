@@ -1,17 +1,20 @@
 import { toWorkorder } from './to-workorder.js'
 
+/** @import { WorkorderMappings } from '../../../types/find/workorders.js' */
+
 /**
  * @param {Record<string, unknown>[]} rows
  * @param {string[]} ids
+ * @param {WorkorderMappings} mappings
  */
-export const toWorkorders = (rows, ids) => {
+export const toWorkorders = (rows, ids, mappings) => {
   const workorders = new Map()
   const activityKeys = new Map()
   const facilityKeys = new Map()
   const livestockUnitKeys = new Map()
 
   for (const row of rows) {
-    const mapped = toWorkorder(row)
+    const mapped = toWorkorder(row, mappings)
 
     if (!mapped) {
       continue
