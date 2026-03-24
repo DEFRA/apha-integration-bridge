@@ -2,42 +2,65 @@ import { expect, test } from '@jest/globals'
 
 import { toWorkorder } from './to-workorder.js'
 
+const validCodeMappings = {
+  workAreaMapping: [
+    {
+      work_area_code: 'DC',
+      work_area_desc: 'Disease Control'
+    }
+  ],
+  speciesMapping: [
+    {
+      purpose_species_code: 'CTT',
+      purpose_species_desc: 'Cattle'
+    }
+  ]
+}
+
+const emptyCodeMappings = { workAreaMapping: [], speciesMapping: [] }
+
 test('toWorkorder returns null when work_order_id is missing', () => {
   expect(
-    toWorkorder({
-      work_order_id: null
-    })
+    toWorkorder(
+      {
+        work_order_id: null
+      },
+      emptyCodeMappings
+    )
   ).toBeNull()
 })
 
-test('toWorkorder maps a single row into one workorder resource', () => {
-  const workorder = toWorkorder({
-    work_order_id: 'WO123456',
-    wsactivationdate: '2024-01-01',
-    business_area: 'Animal Health',
-    work_area: 'Disease Control',
-    country: 'GB',
-    aim: 'Surveillance',
-    purpose: 'Monitoring',
-    wsearliestactivitystartdate: '2024-02-01',
-    purpose_species: 'Cattle',
-    phase: 'Active',
-    wsa_id: 'ACT-001',
-    activity_name: 'Site Inspection',
-    activitysequencenumber: 1,
-    customer_id: 'C001',
-    cph: '11/111/1111',
-    facility_unit_id: 'F001',
-    location_id: 'L001',
-    livestock_unit_id: 'LU001'
-  })
+test('toWorkorder maps a single row into one workorder resource, replacing codes with descriptions for work area and species', () => {
+  const workorder = toWorkorder(
+    {
+      work_order_id: 'WO123456',
+      wsactivationdate: '2024-01-01',
+      business_area: 'Animal Health',
+      work_area: 'DC',
+      country: 'GB',
+      aim: 'Surveillance',
+      purpose: 'Monitoring',
+      wsearliestactivitystartdate: '2024-02-01',
+      purpose_species: 'CTT',
+      phase: 'Active',
+      wsa_id: 'ACT-001',
+      activity_name: 'Site Inspection',
+      activitysequencenumber: 1,
+      customer_id: 'C001',
+      cph: '11/111/1111',
+      facility_unit_id: 'F001',
+      location_id: 'L001',
+      livestock_unit_id: 'LU001'
+    },
+    validCodeMappings
+  )
 
   expect(workorder).toEqual({
     type: 'workorders',
     id: 'WO123456',
     activationDate: '2024-01-01',
     businessArea: 'Animal Health',
-    workArea: 'Brucellosis (Brucella abortus)',
+    workArea: 'Disease Control',
     country: 'GB',
     aim: 'Surveillance',
     purpose: 'Monitoring',
@@ -91,39 +114,71 @@ test('toWorkorder maps a single row into one workorder resource', () => {
   })
 })
 
+test('toWorkorder leaves code values in place when no mappings are found for the given codes', () => {
+  const workorder = toWorkorder(
+    {
+      work_order_id: 'WO123456',
+      wsactivationdate: '2024-01-01',
+      business_area: 'Animal Health',
+      work_area: 'DC',
+      country: 'GB',
+      aim: 'Surveillance',
+      purpose: 'Monitoring',
+      wsearliestactivitystartdate: '2024-02-01',
+      purpose_species: 'CTT',
+      phase: 'Active',
+      wsa_id: 'ACT-001',
+      activity_name: 'Site Inspection',
+      activitysequencenumber: 1,
+      customer_id: 'C001',
+      cph: '11/111/1111',
+      facility_unit_id: 'F001',
+      location_id: 'L001',
+      livestock_unit_id: 'LU001'
+    },
+    emptyCodeMappings
+  )
+
+  expect(workorder.workArea).toEqual('DC')
+  expect(workorder.species).toEqual('CTT')
+})
+
 test('toWorkorder handles rows with minimal data', () => {
-  const workorder = toWorkorder({
-    work_order_id: 'WO999999',
-    wsactivationdate: null,
-    business_area: null,
-    work_area: null,
-    country: null,
-    aim: null,
-    purpose: null,
-    wsearliestactivitystartdate: null,
-    purpose_species: null,
-    phase: null,
-    wsa_id: null,
-    activity_name: null,
-    activitysequencenumber: null,
-    customer_id: null,
-    cph: null,
-    facility_unit_id: null,
-    location_id: null,
-    livestock_unit_id: null
-  })
+  const workorder = toWorkorder(
+    {
+      work_order_id: 'WO999999',
+      wsactivationdate: null,
+      business_area: null,
+      work_area: null,
+      country: null,
+      aim: null,
+      purpose: null,
+      wsearliestactivitystartdate: null,
+      purpose_species: null,
+      phase: null,
+      wsa_id: null,
+      activity_name: null,
+      activitysequencenumber: null,
+      customer_id: null,
+      cph: null,
+      facility_unit_id: null,
+      location_id: null,
+      livestock_unit_id: null
+    },
+    emptyCodeMappings
+  )
 
   expect(workorder).toEqual({
     type: 'workorders',
     id: 'WO999999',
     activationDate: null,
     businessArea: null,
-    workArea: 'Brucellosis (Brucella abortus)',
+    workArea: null,
     country: null,
     aim: null,
     purpose: null,
     earliestActivityStartDate: null,
-    species: 'Cattle',
+    species: null,
     activities: [],
     phase: null,
     relationships: {

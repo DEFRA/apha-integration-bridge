@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`returns the expected query for multiple ids 1`] = `
+exports[`findWorkordersQuery returns the expected query for multiple ids 1`] = `
 "SELECT
 DISTINCT ws.pyid work_order_id,
 ws.purposeworkarea work_area,
@@ -116,7 +116,7 @@ ws.pyid IN ('WS-12345', 'WS-12346')
 "
 `;
 
-exports[`returns the expected query for valid parameters 1`] = `
+exports[`findWorkordersQuery returns the expected query for valid parameters 1`] = `
 "SELECT
 DISTINCT ws.pyid work_order_id,
 ws.purposeworkarea work_area,

@@ -6,12 +6,12 @@ const mockWorkorderRowBase = {
   work_order_id: 'WO123456',
   wsactivationdate: '2024-01-01',
   business_area: 'Animal Health',
-  work_area: 'Disease Control',
+  work_area: 'DC',
   country: 'GB',
   aim: 'Surveillance',
   purpose: 'Monitoring',
   wsearliestactivitystartdate: '2024-02-01',
-  purpose_species: 'Cattle',
+  purpose_species: 'CTT',
   phase: 'Active',
   activity_name: null,
   activitysequencenumber: null,
@@ -21,6 +21,11 @@ const mockWorkorderRowBase = {
   facility_unit_id: null,
   location_id: 'L001',
   livestock_unit_id: null
+}
+
+const emptyCodeMappings = {
+  workAreaMapping: [],
+  speciesMapping: []
 }
 
 test('toWorkorders aggregates multiple activities from rows with same work_order_id', () => {
@@ -45,7 +50,7 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     }
   ]
 
-  const workorders = toWorkorders(rows, ['WO123456'])
+  const workorders = toWorkorders(rows, ['WO123456'], emptyCodeMappings)
 
   expect(workorders).toHaveLength(1)
   expect(workorders[0].id).toBe('WO123456')
@@ -86,7 +91,7 @@ test('toWorkorders aggregates multiple facilities from rows with same work_order
     }
   ]
 
-  const workorders = toWorkorders(rows, ['WO123456'])
+  const workorders = toWorkorders(rows, ['WO123456'], emptyCodeMappings)
 
   expect(workorders).toHaveLength(1)
   expect(workorders[0].relationships.facilities.data).toHaveLength(3)
@@ -120,7 +125,7 @@ test('toWorkorders aggregates multiple livestockUnits from rows with same work_o
     }
   ]
 
-  const workorders = toWorkorders(rows, ['WO123456'])
+  const workorders = toWorkorders(rows, ['WO123456'], emptyCodeMappings)
 
   expect(workorders).toHaveLength(1)
   expect(workorders[0].relationships.livestockUnits.data).toHaveLength(3)
@@ -158,7 +163,7 @@ test('toWorkorders aggregates activities, facilities and livestockUnits together
     }
   ]
 
-  const workorders = toWorkorders(rows, ['WO123456'])
+  const workorders = toWorkorders(rows, ['WO123456'], emptyCodeMappings)
 
   expect(workorders).toHaveLength(1)
   expect(workorders[0].activities).toHaveLength(2)
@@ -203,7 +208,7 @@ test('toWorkorders deduplicates facilities, livestockUnits and activities', () =
     }
   ]
 
-  const workorders = toWorkorders(rows, ['WO123456'])
+  const workorders = toWorkorders(rows, ['WO123456'], emptyCodeMappings)
 
   expect(workorders).toHaveLength(1)
   // Activities, facilities and livestockUnits are deduplicated by ID
@@ -232,7 +237,11 @@ test('toWorkorders returns workorders ordered by requested ids', () => {
     }
   ]
 
-  const workorders = toWorkorders(rows, ['WO789012', 'WO123456'])
+  const workorders = toWorkorders(
+    rows,
+    ['WO789012', 'WO123456'],
+    emptyCodeMappings
+  )
 
   expect(workorders).toHaveLength(2)
   expect(workorders[0].id).toBe('WO789012')

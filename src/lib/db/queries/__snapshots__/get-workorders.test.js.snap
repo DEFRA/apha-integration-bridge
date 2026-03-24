@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`returns the expected query for valid parameters 1`] = `
+exports[`getWorkordersQuery returns the expected query for valid parameters 1`] = `
 "WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
