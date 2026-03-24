@@ -13,3 +13,9 @@ test('returns the expected query for multiple species codes', () => {
 
   expect(sql).toMatchSnapshot()
 })
+
+test('throws when species codes is empty', () => {
+  expect(() => getPurposeSpeciesCodeMappingQuery([])).toThrow(
+    'Invalid parameters'
+  )
+})

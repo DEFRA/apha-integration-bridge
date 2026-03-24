@@ -129,3 +129,8 @@ export const WorkordersSchema = WorkordersData.keys({
     ).description('Livestock units to be inspected during the workorder')
   }).required()
 })
+
+export const GetCodeMappingSchema = Joi.array()
+  .items(Joi.string().required())
+  .min(1)
+  .required()

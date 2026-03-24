@@ -13,3 +13,7 @@ test('returns the expected query for multiple work area codes', () => {
 
   expect(sql).toMatchSnapshot()
 })
+
+test('throws when work area codes is empty', () => {
+  expect(() => getWorkAreaCodeMappingQuery([])).toThrow('Invalid parameters')
+})
