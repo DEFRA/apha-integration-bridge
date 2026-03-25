@@ -48,6 +48,7 @@ test('toWorkorder maps a single row into one workorder resource, replacing codes
       activity_name: 'Site Inspection',
       activitysequencenumber: 1,
       customer_id: 'C001',
+      customer_type: 'PERSON',
       cph: '11/111/1111',
       facility_unit_id: 'F001',
       location_id: 'L001',
@@ -144,6 +145,69 @@ test('toWorkorder leaves code values in place when no mappings are found for the
 
   expect(workorder.workArea).toEqual('DC')
   expect(workorder.species).toEqual('CTT')
+})
+
+test('toWorkorder uses customer_type from the row to map relationship resource type', () => {
+  const workorder = toWorkorder(
+    {
+      work_order_id: 'WO123456',
+      wsactivationdate: '2024-01-01',
+      business_area: 'Animal Health',
+      work_area: 'DC',
+      country: 'GB',
+      aim: 'Surveillance',
+      purpose: 'Monitoring',
+      wsearliestactivitystartdate: '2024-02-01',
+      purpose_species: 'CTT',
+      phase: 'Active',
+      wsa_id: 'ACT-001',
+      activity_name: 'Site Inspection',
+      activitysequencenumber: 1,
+      customer_id: 'C001',
+      customer_type: 'ORGANISATION',
+      cph: '11/111/1111',
+      facility_unit_id: 'F001',
+      location_id: 'L001',
+      livestock_unit_id: 'LU001'
+    },
+    emptyCodeMappings
+  )
+
+  expect(workorder).not.toBeNull()
+  expect(workorder?.relationships.customerOrOrganisation.data).toEqual({
+    type: 'organisations',
+    id: 'C001'
+  })
+})
+
+test('toWorkorder does not infer customer relationship type when customer_type is missing', () => {
+  const workorder = toWorkorder(
+    {
+      work_order_id: 'WO123456',
+      wsactivationdate: '2024-01-01',
+      business_area: 'Animal Health',
+      work_area: 'DC',
+      country: 'GB',
+      aim: 'Surveillance',
+      purpose: 'Monitoring',
+      wsearliestactivitystartdate: '2024-02-01',
+      purpose_species: 'CTT',
+      phase: 'Active',
+      wsa_id: 'ACT-001',
+      activity_name: 'Site Inspection',
+      activitysequencenumber: 1,
+      customer_id: 'C001',
+      customer_type: null,
+      cph: '11/111/1111',
+      facility_unit_id: 'F001',
+      location_id: 'L001',
+      livestock_unit_id: 'LU001'
+    },
+    emptyCodeMappings
+  )
+
+  expect(workorder).not.toBeNull()
+  expect(workorder?.relationships.customerOrOrganisation.data).toBeNull()
 })
 
 test('toWorkorder handles rows with minimal data', () => {

@@ -6,6 +6,23 @@ import { toActivity } from './to-activity.js'
 
 /**
  * @param {Record<string, unknown>} row
+ */
+const toCustomerOrOrganisationType = (row) => {
+  const customerType = asNullableString(row.customer_type)?.toUpperCase()
+
+  if (customerType === 'PERSON') {
+    return 'customers'
+  }
+
+  if (customerType === 'ORGANISATION') {
+    return 'organisations'
+  }
+
+  return null
+}
+
+/**
+ * @param {Record<string, unknown>} row
  * @param {WorkorderMappings} mappings
  */
 export const toWorkorder = (row, mappings) => {
@@ -29,13 +46,13 @@ export const toWorkorder = (row, mappings) => {
   }
 
   if (customerOrOrganisationId) {
-    // Determine if it's a customer or organisation based on ID prefix
-    const type = customerOrOrganisationId.startsWith('C')
-      ? 'customers'
-      : 'organisations'
-    workorder.relationships.customerOrOrganisation.data = {
-      type,
-      id: customerOrOrganisationId
+    const type = toCustomerOrOrganisationType(row)
+
+    if (type) {
+      workorder.relationships.customerOrOrganisation.data = {
+        type,
+        id: customerOrOrganisationId
+      }
     }
   }
 

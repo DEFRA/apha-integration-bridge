@@ -58,6 +58,7 @@ ac.pystatuswork ws_status,
 ws_loc.entityid location_id,
 ws_loc.cphid cph,
 ws_c.entityid customer_id,
+ws_c.customer_type,
 ws_lu.entityid livestock_unit_id,
 ws_f.entityid facility_unit_id,
 wsa.wsa_id,
@@ -91,14 +92,23 @@ pega_Data.index_ac_workschedule ws,
 ) ws_loc,
 (
   SELECT
-  entityid,
-  pyid
+  wsl.entityid,
+  wsl.pyid,
+  pv.party_type customer_type
 
   FROM
-  pega_Data.index_ac_wsentities wsl
+  pega_Data.index_ac_wsentities wsl,
+  ahbrp.party p,
+  ahbrp.party_version pv
 
   WHERE
-  PXINDEXPURPOSE = 'workScheduleCustomers'
+  wsl.PXINDEXPURPOSE = 'workScheduleCustomers'
+  AND
+  wsl.entityid = p.party_id(+)
+  AND
+  p.party_pk = pv.party_pk(+)
+  AND
+  pv.party_version_to_datetime(+) = '31-DEC-9999'
 ) ws_c,
 (
   SELECT
