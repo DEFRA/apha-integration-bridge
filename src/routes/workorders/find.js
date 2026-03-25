@@ -15,6 +15,7 @@ import { findWorkorders } from '../../lib/db/queries/find-workorders.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
+import { WorkorderIdSchema } from '../../types/workorders.js'
 
 /**
  * @import {PaginatedLink} from '../../types/find/links.js'
@@ -37,12 +38,7 @@ const PostFindWorkordersResponseSchema = Joi.object({
 
 const PostFindPayloadSchema = Joi.object({
   ids: Joi.array()
-    .items(
-      Joi.string()
-        .trim()
-        .pattern(/^WS-[0-9]{5}$/i)
-        .required()
-    )
+    .items(WorkorderIdSchema)
     .min(1)
     .required()
     .description('Workorder ids')
