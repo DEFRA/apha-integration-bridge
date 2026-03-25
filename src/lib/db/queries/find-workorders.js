@@ -5,6 +5,7 @@ import { execute } from '../operations/execute.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
 import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
+import { WorkorderIdSchema } from '../../../types/workorders.js'
 
 /** @import { DBConnections } from '../../../types/connection.js' */
 
@@ -12,13 +13,8 @@ const sql = loadSQL(import.meta.filename)
 
 const FindWorkordersSchema = Joi.object({
   ids: Joi.array()
-    .items(
-      Joi.string()
-        .trim()
-        .pattern(/^WS-\d+$/i)
-        .min(1)
-        .required()
-    )
+    .items(WorkorderIdSchema)
+
     .min(1)
     .required()
     .description('Workorder ids')
