@@ -18,6 +18,15 @@ test('returns the expected query for multiple ids', () => {
   expect(sql).toMatchSnapshot()
 })
 
+test('uses optimized set operation and removes redundant table joins', () => {
+  const ids = ['L97339']
+  const { sql } = findLocationsQuery(ids)
+
+  expect(sql).toContain('UNION ALL')
+  expect(sql).not.toContain('AHBRP.FEATURE,')
+  expect(sql).not.toContain('AHBRP.COLL_REGSTRD_ANIMAL_GROUP')
+})
+
 test('throws when ids is empty', () => {
   expect(() => findLocationsQuery([])).toThrow('Invalid parameters')
 })
