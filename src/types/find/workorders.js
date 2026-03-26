@@ -12,6 +12,7 @@ import { HoldingsRelationship } from './holdings.js'
  *  type: 'workorders'
  *  id: string
  *  activationDate: string
+ *  targetDate: string
  *  businessArea: string
  *  workArea: string
  *  country: string
@@ -65,6 +66,7 @@ export const WorkordersSchema = WorkordersData.keys({
   type: Joi.string().valid('workorders').required().label('Type'),
   id: Joi.string().required().label('workorder'),
   activationDate: Joi.string().required().allow(null).label('Activation Date'),
+  targetDate: Joi.string().required().allow(null).label('Target Date'),
   businessArea: Joi.string()
     .required()
     .allow(null)
