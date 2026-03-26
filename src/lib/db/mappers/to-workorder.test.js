@@ -35,6 +35,7 @@ test('toWorkorder maps a single row into one workorder resource, replacing codes
     {
       work_order_id: 'WO123456',
       wsactivationdate: '2024-01-01',
+      target_date: '2024-03-01',
       business_area: 'Animal Health',
       work_area: 'DC',
       country: 'GB',
@@ -59,6 +60,7 @@ test('toWorkorder maps a single row into one workorder resource, replacing codes
     type: 'workorders',
     id: 'WO123456',
     activationDate: '2024-01-01',
+    targetDate: '2024-03-01',
     businessArea: 'Animal Health',
     workArea: 'Disease Control',
     country: 'GB',
@@ -119,6 +121,7 @@ test('toWorkorder leaves code values in place when no mappings are found for the
     {
       work_order_id: 'WO123456',
       wsactivationdate: '2024-01-01',
+      target_date: '2024-03-01',
       business_area: 'Animal Health',
       work_area: 'DC',
       country: 'GB',
@@ -148,6 +151,7 @@ test('toWorkorder handles rows with minimal data', () => {
     {
       work_order_id: 'WO999999',
       wsactivationdate: null,
+      target_date: null,
       business_area: null,
       work_area: null,
       country: null,
@@ -172,6 +176,7 @@ test('toWorkorder handles rows with minimal data', () => {
     type: 'workorders',
     id: 'WO999999',
     activationDate: null,
+    targetDate: null,
     businessArea: null,
     workArea: null,
     country: null,

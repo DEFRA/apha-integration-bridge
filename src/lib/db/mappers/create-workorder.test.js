@@ -22,6 +22,7 @@ describe('createWorkorder', () => {
     const workorder = createWorkorder(
       {
         wsactivationdate: '2024-01-15',
+        target_date: '2024-03-01',
         business_area: 'Animal Health',
         work_area: 'DC',
         country: 'GB',
@@ -39,6 +40,7 @@ describe('createWorkorder', () => {
       type: 'workorders',
       id: 'WS12345',
       activationDate: '2024-01-15',
+      targetDate: '2024-03-01',
       businessArea: 'Animal Health',
       workArea: 'Disease Control',
       country: 'GB',
@@ -72,6 +74,7 @@ describe('createWorkorder', () => {
     const workorder = createWorkorder(
       {
         wsactivationdate: null,
+        target_date: null,
         business_area: null,
         work_area: null,
         country: null,
@@ -89,6 +92,7 @@ describe('createWorkorder', () => {
       type: 'workorders',
       id: 'WS12345',
       activationDate: null,
+      targetDate: null,
       businessArea: null,
       workArea: null,
       country: null,
@@ -122,6 +126,7 @@ describe('createWorkorder', () => {
     const workorder = createWorkorder(
       {
         wsactivationdate: '2024-01-15',
+        target_date: '2024-03-01',
         business_area: 'Animal Health',
         work_area: 'UNKNOWN_CODE',
         country: 'GB',
