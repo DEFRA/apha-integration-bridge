@@ -10,6 +10,13 @@ test('returns the expected query for valid parameters', () => {
   expect(sql).toMatchSnapshot()
 })
 
+test('uses optimized set operation and removes redundant table joins', () => {
+  const { sql } = getLocation('L97339')
+
+  expect(sql).toContain('UNION ALL')
+  expect(sql).not.toContain('AHBRP.FEATURE,')
+})
+
 test('throws if the parameters are invalid', () => {
   expect(() => getLocation(null)).toThrow(/invalid/i)
 })

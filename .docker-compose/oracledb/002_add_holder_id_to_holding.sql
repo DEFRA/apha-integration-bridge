@@ -225,7 +225,8 @@ CONNECT ahbrp/password@FREEPDB1;
 DECLARE
   v_party_pk       NUMBER := 50030;
   v_party_role_pk  NUMBER := 51030;
-  v_feature_pk     NUMBER := 6409;           -- existing feature for 01/409/1111
+  v_feature_pk_1   NUMBER := 6409;           -- first feature for 01/409/1111
+  v_feature_pk_2   NUMBER := 6410;           -- second feature for 01/409/1111
 BEGIN
   -- Ensure the CPH exists in the base table (idempotent)
   BEGIN
@@ -263,31 +264,35 @@ BEGIN
   WHEN NOT MATCHED THEN INSERT (party_pk, party_status_code, party_state_to_dttm)
     VALUES (src.party_pk, src.party_status_code, src.party_state_to_dttm);
 
-  -- Wire FEATURE_INVOLVEMENT with PARTY_ROLE_PK (idempotent)
-  UPDATE feature_involvement fi
-     SET fi.party_role_pk = v_party_role_pk
-   WHERE fi.feature_pk = v_feature_pk
-     AND fi.cph = '01/409/1111'
-     AND fi.feature_involvement_type = 'CPHHOLDERSHIP'
-     AND (fi.party_role_pk IS NULL OR fi.party_role_pk <> v_party_role_pk);
+  -- Wire FEATURE_INVOLVEMENT and FEATURE_STATE for both feature nodes
+  FOR current_feature IN (
+    SELECT v_feature_pk_1 AS feature_pk FROM dual
+    UNION ALL
+    SELECT v_feature_pk_2 AS feature_pk FROM dual
+  ) LOOP
+    UPDATE feature_involvement fi
+       SET fi.party_role_pk = v_party_role_pk
+     WHERE fi.feature_pk = current_feature.feature_pk
+       AND fi.cph = '01/409/1111'
+       AND fi.feature_involvement_type = 'CPHHOLDERSHIP'
+       AND (fi.party_role_pk IS NULL OR fi.party_role_pk <> v_party_role_pk);
 
-  -- If the FI row didn’t exist (unexpected), insert it
-  IF SQL%ROWCOUNT = 0 THEN
-    BEGIN
-      INSERT INTO feature_involvement (
-        feature_pk, cph, feature_involvement_type, feature_involv_to_date, party_role_pk
-      ) VALUES (
-        v_feature_pk, '01/409/1111', 'CPHHOLDERSHIP', NULL, v_party_role_pk
-      );
-    EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
-    END;
-  END IF;
+    IF SQL%ROWCOUNT = 0 THEN
+      BEGIN
+        INSERT INTO feature_involvement (
+          feature_pk, cph, feature_involvement_type, feature_involv_to_date, party_role_pk
+        ) VALUES (
+          current_feature.feature_pk, '01/409/1111', 'CPHHOLDERSHIP', NULL, v_party_role_pk
+        );
+      EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
+      END;
+    END IF;
 
-  -- Keep FEATURE_STATE compliant (ACTIVE, to_dttm IS NULL)
-  UPDATE feature_state fs
-     SET fs.feature_status_code   = 'ACTIVE',
-         fs.feature_state_to_dttm = NULL
-   WHERE fs.feature_pk = v_feature_pk;
+    UPDATE feature_state fs
+       SET fs.feature_status_code   = 'ACTIVE',
+           fs.feature_state_to_dttm = NULL
+     WHERE fs.feature_pk = current_feature.feature_pk;
+  END LOOP;
 END;
 /
 
