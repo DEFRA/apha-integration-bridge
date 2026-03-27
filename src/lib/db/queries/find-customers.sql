@@ -27,12 +27,12 @@ administrative_area county,
 postcode,
 uk_internal_code,
 country_code,
-mobile.mobile_number,
-mobile.preferred_contact_method_ind mobile_preferred_ind,
-landline.telephone_number landline,
-landline.preferred_contact_method_ind landline_preferred_ind,
-email.internet_email_address email,
-email.preferred_contact_method_ind email_preferred_ind,
+telecom.mobile_number,
+telecom.mobile_preferred_ind,
+telecom.landline,
+telecom.landline_preferred_ind,
+telecom.email,
+telecom.email_preferred_ind,
 alt_party_identity_value srabpi_plantid,
 (
   CASE
@@ -99,93 +99,64 @@ ahbrp.alt_party_identity,
 
 (
   SELECT
-  mobile_number,
-  preferred_contact_method_ind,
-  party.party_pk
+  party.party_pk,
+  MAX(
+    CASE
+      WHEN telecom_address.telecom_address_type = 'MOBILE' THEN telecom_address.mobile_number
+    END
+  ) mobile_number,
+  MAX(
+    CASE
+      WHEN telecom_address.telecom_address_type = 'MOBILE' THEN telecom_usage.preferred_contact_method_ind
+    END
+  ) mobile_preferred_ind,
+  MAX(
+    CASE
+      WHEN telecom_address.telecom_address_type = 'LANDLINE' THEN telecom_address.telephone_number
+    END
+  ) landline,
+  MAX(
+    CASE
+      WHEN telecom_address.telecom_address_type = 'LANDLINE' THEN telecom_usage.preferred_contact_method_ind
+    END
+  ) landline_preferred_ind,
+  MAX(
+    CASE
+      WHEN telecom_address.telecom_address_type = 'EMAIL' THEN telecom_address.internet_email_address
+    END
+  ) email,
+  MAX(
+    CASE
+      WHEN telecom_address.telecom_address_type = 'EMAIL' THEN telecom_usage.preferred_contact_method_ind
+    END
+  ) email_preferred_ind
 
   FROM
-  ahbrp.party_contact_address pcam,
+  ahbrp.party_contact_address pcat,
   ahbrp.telecom_address,
-  ahbrp.address_usage mobile_usage,
+  ahbrp.address_usage telecom_usage,
   ahbrp.party
 
   WHERE
-  party.party_pk = pcam.party_pk(+)
+  party.party_pk = pcat.party_pk(+)
   AND
-  pcam.telecom_address_pk = telecom_address.telecom_address_pk(+)
+  pcat.telecom_address_pk = telecom_address.telecom_address_pk(+)
   AND
-  pcam.party_contact_address_pk = mobile_usage.party_contact_address_pk(+)
+  pcat.party_contact_address_pk = telecom_usage.party_contact_address_pk(+)
   AND
-  pcam.telecom_address_pk(+) IS NOT NULL
+  pcat.telecom_address_pk(+) IS NOT NULL
   AND
-  pcam.party_contact_to_date(+) IS NULL
+  pcat.party_contact_to_date(+) IS NULL
   AND
-  telecom_address.telecom_address_type = 'MOBILE'
+  telecom_address.telecom_address_type IN ('MOBILE', 'LANDLINE', 'EMAIL')
   AND
   telecom_address.telecom_address_to_date(+) IS NULL
   AND
-  mobile_usage.address_usage_to_date(+) IS NULL
-) mobile,
+  telecom_usage.address_usage_to_date(+) IS NULL
 
-(
-  SELECT
-  telephone_number,
-  preferred_contact_method_ind,
+  GROUP BY
   party.party_pk
-
-  FROM
-  ahbrp.party_contact_address pcal,
-  ahbrp.telecom_address,
-  ahbrp.address_usage landline_usage,
-  ahbrp.party
-
-  WHERE
-  party.party_pk = pcal.party_pk(+)
-  AND
-  pcal.telecom_address_pk = telecom_address.telecom_address_pk(+)
-  AND
-  pcal.party_contact_address_pk = landline_usage.party_contact_address_pk(+)
-  AND
-  pcal.telecom_address_pk(+) IS NOT NULL
-  AND
-  pcal.party_contact_to_date(+) IS NULL
-  AND
-  telecom_address.telecom_address_type = 'LANDLINE'
-  AND
-  telecom_address.telecom_address_to_date(+) IS NULL
-  AND
-  landline_usage.address_usage_to_date(+) IS NULL
-) landline,
-
-(
-  SELECT
-  internet_email_address,
-  preferred_contact_method_ind,
-  party.party_pk
-
-  FROM
-  ahbrp.party_contact_address pcae,
-  ahbrp.telecom_address,
-  ahbrp.address_usage email_usage,
-  ahbrp.party
-
-  WHERE
-  party.party_pk = pcae.party_pk(+)
-  AND
-  pcae.telecom_address_pk = telecom_address.telecom_address_pk(+)
-  AND
-  pcae.party_contact_address_pk = email_usage.party_contact_address_pk(+)
-  AND
-  pcae.telecom_address_pk(+) IS NOT NULL
-  AND
-  pcae.party_contact_to_date(+) IS NULL
-  AND
-  telecom_address.telecom_address_type = 'EMAIL'
-  AND
-  telecom_address.telecom_address_to_date(+) IS NULL
-  AND
-  email_usage.address_usage_to_date(+) IS NULL
-) email
+) telecom
 
 WHERE
 party.party_pk = party_state.party_pk
@@ -202,11 +173,7 @@ party.party_pk = per.party_pk(+)
 AND
 party.party_pk = org.party_pk(+)
 AND
-party.party_pk = mobile.party_pk(+)
-AND
-party.party_pk = landline.party_pk(+)
-AND
-party.party_pk = email.party_pk(+)
+party.party_pk = telecom.party_pk(+)
 AND
 party_state.party_status_code != 'INACTIVE'
 AND
@@ -224,10 +191,6 @@ party.party_pk = alt_party_identity.party_pk(+)
 AND
 alt_party_identity_type(+) = 'SRABPIPLANTID'
 AND
-(
-  (__CUSTOMER_TYPE__ = 'PERSON' AND per.party_pk IS NOT NULL)
-  OR
-  (__CUSTOMER_TYPE__ = 'ORGANISATION' AND org.party_pk IS NOT NULL)
-)
+__CUSTOMER_TYPE_FILTER__
 AND
 party.party_id IN (__CUSTOMER_IDS__)
