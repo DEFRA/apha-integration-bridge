@@ -14,6 +14,16 @@ describe('findWorkordersQuery', () => {
     expect(sql).toMatchSnapshot()
   })
 
+  test('uses a single ws_entities CTE scan for work schedule entities', () => {
+    const ids = ['WS-12345']
+
+    const { sql } = findWorkordersQuery(ids)
+
+    expect(sql).toContain('requested_workorders AS (')
+    expect(sql).toContain('ws_entities AS (')
+    expect(sql.match(/index_ac_wsentities wsl/g)?.length).toBe(1)
+  })
+
   test('returns the expected query for multiple ids', () => {
     const ids = ['WS-12345', 'WS-12346']
 
