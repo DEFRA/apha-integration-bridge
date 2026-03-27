@@ -12,12 +12,7 @@ const CUSTOMER_IDS_BIND_TOKEN = '__CUSTOMER_IDS__'
 const CUSTOMER_TYPES = ['PERSON', 'ORGANISATION']
 
 const GetCustomerTypesSchema = Joi.array()
-  .items(
-    Joi.string()
-      .regex(/^[A-Z0-9]+$/i)
-      .min(1)
-      .required()
-  )
+  .items(Joi.string().min(1).required())
   .min(1)
   .required()
 

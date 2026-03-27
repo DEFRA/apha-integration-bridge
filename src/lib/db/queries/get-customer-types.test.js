@@ -25,6 +25,12 @@ describe('getCustomerTypesQuery', () => {
     expect(sql).toContain("party.party_id IN ('O123456')")
   })
 
+  test('accepts ids containing hyphens', () => {
+    const { sql } = getCustomerTypesQuery(['C-123456'])
+
+    expect(sql).toContain("party.party_id IN ('C-123456')")
+  })
+
   test('throws when customer ids is empty', () => {
     expect(() => getCustomerTypesQuery([])).toThrow('Invalid parameters')
   })

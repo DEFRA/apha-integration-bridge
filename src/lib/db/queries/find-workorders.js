@@ -62,21 +62,19 @@ export async function findWorkorders(connections, ids) {
       ...new Set(rows.map((row) => row.purpose_species))
     ])
 
-    /**
-     * @type {Set<string>}
-     */
-    const customerIds = new Set()
+    const customerIds = [
+      ...new Set(
+        rows
+          .map((row) => row.customer_id)
+          .filter((customerId) => typeof customerId === 'string')
+      )
+    ]
 
-    for (const { customer_id: customerId } of rows) {
-      if (typeof customerId === 'string') {
-        customerIds.add(customerId)
-      }
-    }
-
-    if (customerIds.size > 0) {
-      customerTypeMapping = await getCustomerTypes(connections.samdb, [
-        ...customerIds
-      ])
+    if (customerIds.length !== 0) {
+      customerTypeMapping = await getCustomerTypes(
+        connections.samdb,
+        customerIds
+      )
     }
   }
 
