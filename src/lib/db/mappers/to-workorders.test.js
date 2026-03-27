@@ -25,7 +25,8 @@ const mockWorkorderRowBase = {
 
 const emptyCodeMappings = {
   workAreaMapping: [],
-  speciesMapping: []
+  speciesMapping: [],
+  customerTypeMapping: new Map()
 }
 
 test('toWorkorders aggregates multiple activities from rows with same work_order_id', () => {

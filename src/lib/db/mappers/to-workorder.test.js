@@ -14,10 +14,15 @@ const validCodeMappings = {
       purpose_species_code: 'CTT',
       purpose_species_desc: 'Cattle'
     }
-  ]
+  ],
+  customerTypeMapping: new Map([['C001', 'PERSON']])
 }
 
-const emptyCodeMappings = { workAreaMapping: [], speciesMapping: [] }
+const emptyCodeMappings = {
+  workAreaMapping: [],
+  speciesMapping: [],
+  customerTypeMapping: new Map()
+}
 
 test('toWorkorder returns null when work_order_id is missing', () => {
   expect(
@@ -144,6 +149,68 @@ test('toWorkorder leaves code values in place when no mappings are found for the
 
   expect(workorder.workArea).toEqual('DC')
   expect(workorder.species).toEqual('CTT')
+})
+
+test('toWorkorder maps customer relationship using resolved customer type mapping', () => {
+  const workorder = toWorkorder(
+    {
+      work_order_id: 'WO765432',
+      wsactivationdate: '2024-01-01',
+      target_date: '2024-03-01',
+      business_area: 'Animal Health',
+      work_area: 'DC',
+      country: 'GB',
+      aim: 'Surveillance',
+      purpose: 'Monitoring',
+      wsearliestactivitystartdate: '2024-02-01',
+      purpose_species: 'CTT',
+      phase: 'Active',
+      customer_id: 'CORG001'
+    },
+    {
+      ...emptyCodeMappings,
+      customerTypeMapping: new Map([['CORG001', 'ORGANISATION']])
+    }
+  )
+
+  expect(workorder?.relationships.customerOrOrganisation).toEqual({
+    data: {
+      type: 'organisations',
+      id: 'CORG001'
+    }
+  })
+})
+
+test('toWorkorder falls back to customer/organisation id prefixes when mapping is missing', () => {
+  const organisationWorkorder = toWorkorder(
+    {
+      work_order_id: 'WO765433',
+      customer_id: 'O123456'
+    },
+    emptyCodeMappings
+  )
+
+  const customerWorkorder = toWorkorder(
+    {
+      work_order_id: 'WO765434',
+      customer_id: 'C789012'
+    },
+    emptyCodeMappings
+  )
+
+  expect(organisationWorkorder?.relationships.customerOrOrganisation).toEqual({
+    data: {
+      type: 'organisations',
+      id: 'O123456'
+    }
+  })
+
+  expect(customerWorkorder?.relationships.customerOrOrganisation).toEqual({
+    data: {
+      type: 'customers',
+      id: 'C789012'
+    }
+  })
 })
 
 test('toWorkorder handles rows with minimal data', () => {
