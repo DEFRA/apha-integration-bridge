@@ -40,6 +40,94 @@ requested_workorders AS (
   row_num > :offset_rows
   AND
   row_num <= :offset_rows + :fetch_rows
+),
+ws_entities AS (
+  SELECT /*+ MATERIALIZE */
+  wsl.pyid,
+  wsl.pxindexpurpose,
+  wsl.entityid,
+  wsl.cphid
+
+  FROM
+  pega_Data.index_ac_wsentities wsl,
+  requested_workorders rw
+
+  WHERE
+  rw.work_order_id = wsl.pyid
+  AND
+  wsl.pxindexpurpose IN (
+    'workScheduleLocation',
+    'workScheduleCustomers',
+    'workScheduleLivestockUnits',
+    'workScheduleFacilities'
+  )
+),
+ws_loc AS (
+  SELECT
+  pyid,
+  entityid,
+  cphid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleLocation'
+),
+ws_c AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleCustomers'
+),
+ws_lu AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleLivestockUnits'
+),
+ws_f AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleFacilities'
+),
+wsa AS (
+  SELECT
+  SUBSTR(wsa_ac.pxcoverinskey, 7) ws_id,
+  wsa_ac.pyid wsa_id,
+  aca.actname activity_name,
+  wsa_ac.pystatuswork wsa_status,
+  wsa_ac.activitysequencenumber
+
+  FROM
+  pega_Data.ahwork_ac wsa_ac,
+  pega_data.index_ac_activity aca,
+  requested_workorders rw
+
+  WHERE
+  wsa_ac.pxinsname = aca.pyid
+  AND
+  wsa_ac.pydescription IS NULL
+  AND
+  SUBSTR(wsa_ac.pxcoverinskey, 6) IS NOT NULL
+  AND
+  rw.work_order_id = SUBSTR(wsa_ac.pxcoverinskey, 7)
 )
 
 SELECT
@@ -74,70 +162,11 @@ FROM
 requested_workorders rw,
 pega_data.ahwork_ac ac,
 pega_Data.index_ac_workschedule ws,
-(
-  SELECT
-  entityid,
-  pyid,
-  cphid
-
-  FROM
-  pega_Data.index_ac_wsentities wsl
-
-  WHERE
-  PXINDEXPURPOSE = 'workScheduleLocation'
-) ws_loc,
-(
-  SELECT
-  entityid,
-  pyid
-
-  FROM
-  pega_Data.index_ac_wsentities wsl
-
-  WHERE
-  PXINDEXPURPOSE = 'workScheduleCustomers'
-) ws_c,
-(
-  SELECT
-  entityid,
-  pyid
-
-  FROM
-  pega_Data.index_ac_wsentities wsl
-
-  WHERE
-  PXINDEXPURPOSE = 'workScheduleLivestockUnits'
-) ws_lu,
-(
-  SELECT
-  entityid,
-  pyid
-
-  FROM
-  pega_Data.index_ac_wsentities wsl
-
-  WHERE
-  PXINDEXPURPOSE = 'workScheduleFacilities'
-) ws_f,
-(
-  SELECT
-  SUBSTR(wsa.pxcoverinskey, 7) ws_id,
-  wsa.pyid wsa_id,
-  aca.actname activity_name,
-  wsa.pystatuswork wsa_status,
-  wsa.activitysequencenumber
-
-  FROM
-  pega_Data.ahwork_ac wsa,
-  pega_data.index_ac_activity aca
-
-  WHERE
-  wsa.pxinsname = aca.pyid
-  AND
-  wsa.pydescription IS NULL
-  AND
-  SUBSTR(wsa.pxcoverinskey, 6) IS NOT NULL
-) wsa
+ws_loc,
+ws_c,
+ws_lu,
+ws_f,
+wsa
 
 WHERE
 ac.pzinskey = ws.pxinsindexedkey

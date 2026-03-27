@@ -33,6 +33,17 @@ describe('getWorkordersQuery', () => {
     expect(sql).toMatchSnapshot()
   })
 
+  test('uses a single ws_entities CTE scan for work schedule entities', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      endActivationDate: '2024-01-01T00:05:00.001Z'
+    })
+
+    expect(sql).toContain('ws_entities AS (')
+    expect(sql).toContain('requested_workorders rw')
+    expect(sql.match(/index_ac_wsentities wsl/g)?.length).toBe(1)
+  })
+
   test('normalizes timezone-offset date strings before SQL timestamp comparison', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
