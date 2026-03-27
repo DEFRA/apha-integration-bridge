@@ -3,6 +3,7 @@ import { afterEach, describe, expect, jest, test } from '@jest/globals'
 import * as dbOperations from '../operations/execute.js'
 import * as workAreaMappingModule from './get-workarea-code-mapping.js'
 import * as speciesMappingModule from './get-purpose-species-code-mapping.js'
+import * as customerTypesModule from './get-customer-types.js'
 import { findWorkorders, findWorkordersQuery } from './find-workorders.js'
 
 describe('findWorkordersQuery', () => {
@@ -43,6 +44,7 @@ describe('findWorkorders', () => {
     speciesMappingModule,
     'getPurposeSpeciesCodeMapping'
   )
+  const customerTypesSpy = jest.spyOn(customerTypesModule, 'getCustomerTypes')
 
   afterEach(() => {
     jest.resetAllMocks()
@@ -55,14 +57,16 @@ describe('findWorkorders', () => {
 
     expect(workAreaMappingSpy).not.toHaveBeenCalled()
     expect(speciesMappingSpy).not.toHaveBeenCalled()
+    expect(customerTypesSpy).not.toHaveBeenCalled()
     expect(result).toEqual([])
   })
 
-  test('calls work area and species mapping functions when rows are returned', async () => {
+  test('calls work area, species, and customer type mapping functions when rows are returned', async () => {
     const row = {
       work_order_id: 'WS-12345',
       work_area: 'TB',
       purpose_species: 'CTT',
+      customer_id: 'C001',
       wsactivationdate: null,
       business_area: null,
       country: null,
@@ -80,18 +84,21 @@ describe('findWorkorders', () => {
     executeSpy.mockResolvedValue([row])
     workAreaMappingSpy.mockResolvedValue([])
     speciesMappingSpy.mockResolvedValue([])
+    customerTypesSpy.mockResolvedValue(new Map())
 
     await findWorkorders(/** @type {any} */ ({ samdb: {} }), ['WS-12345'])
 
     expect(workAreaMappingSpy).toHaveBeenCalledWith(expect.anything(), ['TB'])
     expect(speciesMappingSpy).toHaveBeenCalledWith(expect.anything(), ['CTT'])
+    expect(customerTypesSpy).toHaveBeenCalledWith(expect.anything(), ['C001'])
   })
 
-  test('returns workorders mapped using resolved work area and species descriptions', async () => {
+  test('returns workorders mapped using resolved work area, species, and customer type descriptions', async () => {
     const row = {
       work_order_id: 'WS-12345',
       work_area: 'TB',
       purpose_species: 'CTT',
+      customer_id: 'C001',
       wsactivationdate: null,
       business_area: null,
       country: null,
@@ -113,6 +120,7 @@ describe('findWorkorders', () => {
     speciesMappingSpy.mockResolvedValue([
       { purpose_species_code: 'CTT', purpose_species_desc: 'Cattle' }
     ])
+    customerTypesSpy.mockResolvedValue(new Map([['C001', 'ORGANISATION']]))
 
     const result = await findWorkorders(/** @type {any} */ ({ samdb: {} }), [
       'WS-12345'
@@ -121,5 +129,8 @@ describe('findWorkorders', () => {
     expect(result).toHaveLength(1)
     expect(result[0].workArea).toBe('Tuberculosis')
     expect(result[0].species).toBe('Cattle')
+    expect(result[0].relationships.customerOrOrganisation).toEqual({
+      data: { type: 'organisations', id: 'C001' }
+    })
   })
 })

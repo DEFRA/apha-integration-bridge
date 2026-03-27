@@ -41,7 +41,8 @@ import { HoldingsRelationship } from './holdings.js'
  * speciesMapping: {
  *   purpose_species_code: string,
  *   purpose_species_desc: string
- * }[]
+ * }[],
+ * customerTypeMapping: Map<string, 'PERSON' | 'ORGANISATION'>
  * }} WorkorderMappings
  */
 

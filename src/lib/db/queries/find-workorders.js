@@ -5,6 +5,7 @@ import { execute } from '../operations/execute.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
 import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
+import { getCustomerTypes } from './get-customer-types.js'
 import { WorkorderIdSchema } from '../../../types/workorders.js'
 
 /** @import { DBConnections } from '../../../types/connection.js' */
@@ -50,6 +51,7 @@ export async function findWorkorders(connections, ids) {
 
   let workAreaMapping = []
   let speciesMapping = []
+  let customerTypeMapping = new Map()
 
   if (rows.length !== 0) {
     workAreaMapping = await getWorkAreaCodeMapping(connections.samdb, [
@@ -59,7 +61,28 @@ export async function findWorkorders(connections, ids) {
     speciesMapping = await getPurposeSpeciesCodeMapping(connections.samdb, [
       ...new Set(rows.map((row) => row.purpose_species))
     ])
+
+    /**
+     * @type {Set<string>}
+     */
+    const customerIds = new Set()
+
+    for (const { customer_id: customerId } of rows) {
+      if (typeof customerId === 'string') {
+        customerIds.add(customerId)
+      }
+    }
+
+    if (customerIds.size > 0) {
+      customerTypeMapping = await getCustomerTypes(connections.samdb, [
+        ...customerIds
+      ])
+    }
   }
 
-  return toWorkorders(rows, ids, { workAreaMapping, speciesMapping })
+  return toWorkorders(rows, ids, {
+    workAreaMapping,
+    speciesMapping,
+    customerTypeMapping
+  })
 }

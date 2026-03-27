@@ -13,6 +13,7 @@ import { config } from '../../../config.js'
 import * as dbOperations from '../operations/execute.js'
 import * as workAreaMappingModule from './get-workarea-code-mapping.js'
 import * as speciesMappingModule from './get-purpose-species-code-mapping.js'
+import * as customerTypesModule from './get-customer-types.js'
 import { getWorkorders, getWorkordersQuery } from './get-workorders.js'
 
 const validParams = {
@@ -186,7 +187,7 @@ describe('getWorkorders', () => {
     expect(result.workorders[0].id).toBe('WS-1531')
   })
 
-  describe('mapping work area and species codes', () => {
+  describe('mapping work area, species, and customer types', () => {
     const executeSpy = jest.spyOn(dbOperations, 'execute')
     const workAreaMappingSpy = jest.spyOn(
       workAreaMappingModule,
@@ -196,6 +197,7 @@ describe('getWorkorders', () => {
       speciesMappingModule,
       'getPurposeSpeciesCodeMapping'
     )
+    const customerTypesSpy = jest.spyOn(customerTypesModule, 'getCustomerTypes')
 
     afterEach(() => {
       jest.resetAllMocks()
@@ -208,15 +210,17 @@ describe('getWorkorders', () => {
 
       expect(workAreaMappingSpy).not.toHaveBeenCalled()
       expect(speciesMappingSpy).not.toHaveBeenCalled()
+      expect(customerTypesSpy).not.toHaveBeenCalled()
       expect(result).toEqual({ hasMore: false, workorders: [] })
     })
 
-    test('calls mapping functions with deduplicated work area and species codes', async () => {
+    test('calls mapping functions with deduplicated work area, species and customer ids', async () => {
       const rows = [
         {
           work_order_id: 'WS-001',
           work_area: 'TB',
           purpose_species: 'CTT',
+          customer_id: 'C001',
           wsactivationdate: null,
           business_area: null,
           country: null,
@@ -234,6 +238,7 @@ describe('getWorkorders', () => {
           work_order_id: 'WS-002',
           work_area: 'TB',
           purpose_species: 'CTT',
+          customer_id: 'C001',
           wsactivationdate: null,
           business_area: null,
           country: null,
@@ -252,18 +257,21 @@ describe('getWorkorders', () => {
       executeSpy.mockResolvedValue(rows)
       workAreaMappingSpy.mockResolvedValue([])
       speciesMappingSpy.mockResolvedValue([])
+      customerTypesSpy.mockResolvedValue(new Map())
 
       await getWorkorders(/** @type {any} */ ({ samdb: {} }), validParams)
 
       expect(workAreaMappingSpy).toHaveBeenCalledWith(expect.anything(), ['TB'])
       expect(speciesMappingSpy).toHaveBeenCalledWith(expect.anything(), ['CTT'])
+      expect(customerTypesSpy).toHaveBeenCalledWith(expect.anything(), ['C001'])
     })
 
-    test('returns workorders mapped using resolved work area and species descriptions', async () => {
+    test('returns workorders mapped using resolved work area, species and customer type descriptions', async () => {
       const row = {
         work_order_id: 'WS-001',
         work_area: 'TB',
         purpose_species: 'CTT',
+        customer_id: 'C001',
         wsactivationdate: null,
         business_area: null,
         country: null,
@@ -285,6 +293,7 @@ describe('getWorkorders', () => {
       speciesMappingSpy.mockResolvedValue([
         { purpose_species_code: 'CTT', purpose_species_desc: 'Cattle' }
       ])
+      customerTypesSpy.mockResolvedValue(new Map([['C001', 'ORGANISATION']]))
 
       const result = await getWorkorders(
         /** @type {any} */ ({ samdb: {} }),
@@ -294,6 +303,11 @@ describe('getWorkorders', () => {
       expect(result.workorders).toHaveLength(1)
       expect(result.workorders[0].workArea).toBe('Tuberculosis')
       expect(result.workorders[0].species).toBe('Cattle')
+      expect(result.workorders[0].relationships.customerOrOrganisation).toEqual(
+        {
+          data: { type: 'organisations', id: 'C001' }
+        }
+      )
     })
   })
 })

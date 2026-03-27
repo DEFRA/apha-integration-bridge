@@ -4,6 +4,27 @@ import { toActivity } from './to-activity.js'
 
 /** @import {WorkorderMappings} from '../../../types/find/workorders.js' */
 
+const customerTypeToRelationshipType = {
+  PERSON: 'customers',
+  ORGANISATION: 'organisations'
+}
+
+/**
+ * @param {string} customerOrOrganisationId
+ * @returns {'customers' | 'organisations' | null}
+ */
+const relationshipTypeFromIdPrefix = (customerOrOrganisationId) => {
+  if (customerOrOrganisationId.startsWith('O')) {
+    return 'organisations'
+  }
+
+  if (customerOrOrganisationId.startsWith('C')) {
+    return 'customers'
+  }
+
+  return null
+}
+
 /**
  * @param {Record<string, unknown>} row
  * @param {WorkorderMappings} mappings
@@ -29,13 +50,18 @@ export const toWorkorder = (row, mappings) => {
   }
 
   if (customerOrOrganisationId) {
-    // Determine if it's a customer or organisation based on ID prefix
-    const type = customerOrOrganisationId.startsWith('C')
-      ? 'customers'
-      : 'organisations'
-    workorder.relationships.customerOrOrganisation.data = {
-      type,
-      id: customerOrOrganisationId
+    const customerType = mappings.customerTypeMapping?.get(
+      customerOrOrganisationId
+    )
+    const relationshipType = customerType
+      ? customerTypeToRelationshipType[customerType]
+      : relationshipTypeFromIdPrefix(customerOrOrganisationId)
+
+    if (relationshipType) {
+      workorder.relationships.customerOrOrganisation.data = {
+        type: relationshipType,
+        id: customerOrOrganisationId
+      }
     }
   }
 

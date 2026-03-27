@@ -1,0 +1,139 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getCustomerTypesQuery returns the expected query for a single customer id 1`] = `
+"SELECT
+party.party_id customer_id,
+(
+  CASE
+    WHEN per.customer_type IS NOT NULL THEN per.customer_type
+    ELSE org.customer_type
+  END
+) customer_type
+
+FROM
+ahbrp.party,
+ahbrp.party_state,
+(
+  SELECT
+  party.party_pk,
+  'PERSON' customer_type
+
+  FROM
+  ahbrp.party,
+  ahbrp.person,
+  ahbrp.party_version
+
+  WHERE
+  party.party_pk = person.party_pk
+  AND
+  party.party_pk = party_version.party_pk
+  AND
+  party_version.party_type = 'PERSON'
+  AND
+  party_version.party_version_to_datetime = '31-DEC-9999'
+) per,
+(
+  SELECT
+  party.party_pk,
+  'ORGANISATION' customer_type
+
+  FROM
+  ahbrp.party,
+  ahbrp.organisation,
+  ahbrp.party_version
+
+  WHERE
+  party.party_pk = organisation.party_pk
+  AND
+  party.party_pk = party_version.party_pk
+  AND
+  party_version.party_type = 'ORGANISATION'
+  AND
+  party_version.party_version_to_datetime = '31-DEC-9999'
+) org
+
+WHERE
+party.party_pk = party_state.party_pk
+AND
+party.party_pk = per.party_pk(+)
+AND
+party.party_pk = org.party_pk(+)
+AND
+party_state.party_status_code != 'INACTIVE'
+AND
+party_state.party_state_to_dttm IS NULL
+AND
+(per.party_pk IS NOT NULL OR org.party_pk IS NOT NULL)
+AND
+party.party_id IN ('C123456')
+"
+`;
+
+exports[`getCustomerTypesQuery returns the expected query for multiple customer ids 1`] = `
+"SELECT
+party.party_id customer_id,
+(
+  CASE
+    WHEN per.customer_type IS NOT NULL THEN per.customer_type
+    ELSE org.customer_type
+  END
+) customer_type
+
+FROM
+ahbrp.party,
+ahbrp.party_state,
+(
+  SELECT
+  party.party_pk,
+  'PERSON' customer_type
+
+  FROM
+  ahbrp.party,
+  ahbrp.person,
+  ahbrp.party_version
+
+  WHERE
+  party.party_pk = person.party_pk
+  AND
+  party.party_pk = party_version.party_pk
+  AND
+  party_version.party_type = 'PERSON'
+  AND
+  party_version.party_version_to_datetime = '31-DEC-9999'
+) per,
+(
+  SELECT
+  party.party_pk,
+  'ORGANISATION' customer_type
+
+  FROM
+  ahbrp.party,
+  ahbrp.organisation,
+  ahbrp.party_version
+
+  WHERE
+  party.party_pk = organisation.party_pk
+  AND
+  party.party_pk = party_version.party_pk
+  AND
+  party_version.party_type = 'ORGANISATION'
+  AND
+  party_version.party_version_to_datetime = '31-DEC-9999'
+) org
+
+WHERE
+party.party_pk = party_state.party_pk
+AND
+party.party_pk = per.party_pk(+)
+AND
+party.party_pk = org.party_pk(+)
+AND
+party_state.party_status_code != 'INACTIVE'
+AND
+party_state.party_state_to_dttm IS NULL
+AND
+(per.party_pk IS NOT NULL OR org.party_pk IS NOT NULL)
+AND
+party.party_id IN ('C123456', 'C234567')
+"
+`;

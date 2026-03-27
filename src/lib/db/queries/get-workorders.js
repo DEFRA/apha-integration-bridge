@@ -6,6 +6,7 @@ import { toOracleTimestampString } from '../utils/to-oracle-timestamp-string.js'
 import { GetWorkordersSchema } from '../../../types/find/workorders-get.js'
 import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
 import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
+import { getCustomerTypes } from './get-customer-types.js'
 
 /** @import { DBConnections } from '../../../types/connection.js' */
 
@@ -69,6 +70,7 @@ export async function getWorkorders(connections, params) {
 
   let workAreaMapping = []
   let speciesMapping = []
+  let customerTypeMapping = new Map()
 
   if (rows.length !== 0) {
     workAreaMapping = await getWorkAreaCodeMapping(connections.samdb, [
@@ -78,6 +80,21 @@ export async function getWorkorders(connections, params) {
     speciesMapping = await getPurposeSpeciesCodeMapping(connections.samdb, [
       ...new Set(rows.map((row) => row.purpose_species))
     ])
+
+    const customerIds = [
+      ...new Set(
+        rows
+          .map((row) => row.customer_id)
+          .filter((customerId) => typeof customerId === 'string')
+      )
+    ]
+
+    if (customerIds.length !== 0) {
+      customerTypeMapping = await getCustomerTypes(
+        connections.samdb,
+        customerIds
+      )
+    }
   }
 
   const orderedDistinctIds = [
@@ -95,7 +112,8 @@ export async function getWorkorders(connections, params) {
     hasMore,
     workorders: toWorkorders(rows, pageIds, {
       workAreaMapping,
-      speciesMapping
+      speciesMapping,
+      customerTypeMapping
     })
   }
 }
