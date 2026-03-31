@@ -74,6 +74,8 @@ export const oracleDb = {
           poolMax: config.poolMax,
           poolMin: config.poolMin,
           poolTimeout: config.poolTimeout,
+          poolPingInterval: config.poolPingInterval,
+          expireTime: config.expireTime,
           poolAlias: key
         }
 

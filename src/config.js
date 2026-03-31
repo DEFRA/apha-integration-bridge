@@ -64,6 +64,18 @@ const config = convict({
         format: Number,
         default: 0,
         env: 'ORACLEDB_PEGA_POOL_CLOSE_WAIT_TIME'
+      },
+      poolPingInterval: {
+        doc: 'PEGA Database pool ping interval in seconds. Connections idle for longer than this value are tested with a round-trip to the database before use. Set to 0 to always test.',
+        format: Number,
+        default: 60,
+        env: 'ORACLEDB_PEGA_POOL_PING_INTERVAL'
+      },
+      expireTime: {
+        doc: 'PEGA Database keepalive probe interval in minutes. Set to a value greater than 0 to enable Oracle Net keepalive probes for idle connections.',
+        format: Number,
+        default: 1,
+        env: 'ORACLEDB_PEGA_EXPIRE_TIME'
       }
     },
     sam: {
@@ -118,6 +130,18 @@ const config = convict({
         format: Number,
         default: 0,
         env: 'ORACLEDB_SAM_SMDB_POOL_CLOSE_WAIT_TIME'
+      },
+      poolPingInterval: {
+        doc: 'SAM Database pool ping interval in seconds. Connections idle for longer than this value are tested with a round-trip to the database before use. Set to 0 to always test.',
+        format: Number,
+        default: 60,
+        env: 'ORACLEDB_SAM_SMDB_POOL_PING_INTERVAL'
+      },
+      expireTime: {
+        doc: 'SAM Database keepalive probe interval in minutes. Set to a value greater than 0 to enable Oracle Net keepalive probes for idle connections.',
+        format: Number,
+        default: 1,
+        env: 'ORACLEDB_SAM_SMDB_EXPIRE_TIME'
       }
     }
   },
