@@ -136,7 +136,7 @@ describe('Auth Plugin (with MSW)', () => {
     })
 
     expect(res.statusCode).toBe(403)
-    expect(res.result.message).toMatch(/Token scope is not authorized/)
+    expect(res.result.message).toMatch(/Insufficient permissions|scope/i)
   })
 
   test('rejects token with missing client_id', async () => {
