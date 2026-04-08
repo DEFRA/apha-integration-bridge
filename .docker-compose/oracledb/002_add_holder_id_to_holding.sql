@@ -108,7 +108,7 @@ END;
 --    Required WHEREs to satisfy:
 --      - PR.PARTY_ROLE_TO_DATE IS NULL
 --      - PS.PARTY_STATUS_CODE <> 'INACTIVE'
---      - PS.PARTY_STATE_TO_DTTM IS NOT NULL    ← (set to a non-null date)
+--      - PS.PARTY_STATE_TO_DTTM IS NULL
 --      - FS.FEATURE_STATE_TO_DTTM IS NULL
 -- ─────────────────────────────────────────────────────────────────────────────
 DECLARE
@@ -128,7 +128,7 @@ BEGIN
 
   BEGIN
     INSERT INTO party_state (party_pk, party_status_code, party_state_to_dttm)
-    VALUES (v_party_pk, 'ACTIVE', DATE '2020-01-01');  -- NOT NULL to meet filter
+    VALUES (v_party_pk, 'ACTIVE', CAST(NULL AS DATE));
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 
   -- FEATURE graph for CPH 04/432/1234
@@ -182,12 +182,12 @@ BEGIN
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
   END;
 
-  -- PARTY_STATE: ensure one row with NOT NULL to_dttm and non-INACTIVE status
+  -- PARTY_STATE: ensure one row with NULL to_dttm and non-INACTIVE status
   MERGE INTO party_state ps
   USING (
     SELECT v_party_pk AS party_pk,
            'ACTIVE'   AS party_status_code,
-           DATE '2020-01-01' AS party_state_to_dttm
+           CAST(NULL AS DATE) AS party_state_to_dttm
     FROM dual
   ) src
   ON (ps.party_pk = src.party_pk)
@@ -249,12 +249,12 @@ BEGIN
   EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL;
   END;
 
-  -- PARTY_STATE: NOT NULL to_dttm and non-INACTIVE status
+  -- PARTY_STATE: NULL to_dttm and non-INACTIVE status
   MERGE INTO party_state ps
   USING (
     SELECT v_party_pk AS party_pk,
            'ACTIVE'   AS party_status_code,
-           DATE '2020-01-01' AS party_state_to_dttm
+           CAST(NULL AS DATE) AS party_state_to_dttm
     FROM dual
   ) src
   ON (ps.party_pk = src.party_pk)
