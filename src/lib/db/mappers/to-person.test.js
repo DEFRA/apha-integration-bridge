@@ -69,6 +69,7 @@ test('toPerson maps a single row into one customer resource', () => {
         street: 'Street',
         locality: null,
         town: 'Town',
+        county: null,
         postcode: '1AA A11',
         countryCode: null,
         isPreferred: false

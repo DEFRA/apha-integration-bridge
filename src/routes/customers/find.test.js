@@ -50,7 +50,8 @@ const customer1 = {
       locality: null,
       town: 'Town',
       postcode: '1AA A11',
-      countryCode: null,
+      countryCode: 'UKX001',
+      county: 'County',
       isPreferred: false
     }
   ],
@@ -83,6 +84,7 @@ const customer2 = {
   addresses: [
     {
       countryCode: null,
+      county: null,
       isPreferred: false,
       locality: null,
       postcode: null,

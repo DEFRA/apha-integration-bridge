@@ -30,7 +30,9 @@ test('toOrganisation maps a single row into one organisation resource', () => {
     street: 'Street',
     locality: null,
     town: 'Town',
+    county: 'Devon',
     postcode: '1AA A11',
+    uk_internal_code: 'ENG',
     country_code: 'GB',
     preferred_contact_method_ind: null,
     email: 'example@example.com',
@@ -61,8 +63,9 @@ test('toOrganisation maps a single row into one organisation resource', () => {
       street: 'Street',
       locality: null,
       town: 'Town',
+      county: 'Devon',
       postcode: '1AA A11',
-      countryCode: 'GB'
+      countryCode: 'ENG'
     },
     contactDetails: {
       primaryContact: {
@@ -140,6 +143,7 @@ test('toOrganisation emits a full address object when address fields are empty',
       street: null,
       locality: null,
       town: null,
+      county: null,
       postcode: null,
       countryCode: null
     },

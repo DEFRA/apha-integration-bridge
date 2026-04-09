@@ -39,6 +39,7 @@ test('toAddress still returns full address object even when no address fields ar
     street: null,
     locality: null,
     town: null,
+    county: null,
     postcode: null,
     countryCode: null,
     isPreferred: false
@@ -83,6 +84,7 @@ test('toAddress maps populated fields to API address shape', () => {
     street: 'Street',
     locality: null,
     town: 'Town',
+    county: null,
     postcode: '1AA A11',
     countryCode: null,
     isPreferred: false

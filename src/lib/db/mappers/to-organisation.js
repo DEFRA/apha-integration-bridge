@@ -20,6 +20,7 @@ const emptyAddress = () => ({
   street: null,
   locality: null,
   town: null,
+  county: null,
   postcode: null,
   countryCode: null
 })

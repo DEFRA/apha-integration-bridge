@@ -11,6 +11,8 @@ test('createLocation maps a location row into the location response skeleton', (
       town: 'London',
       postcode: 'SW1A 1AA',
       country_code: 'GB',
+      uk_internal_code: 'ENG',
+      county: 'County',
       os_map_reference: 'TQ123456'
     },
     'L97339'
@@ -39,7 +41,8 @@ test('createLocation maps a location row into the location response skeleton', (
       locality: null,
       town: 'London',
       postcode: 'SW1A 1AA',
-      countryCode: 'GB'
+      countryCode: 'ENG',
+      county: 'County'
     },
     osMapReference: 'TQ123456',
     livestockUnits: [],

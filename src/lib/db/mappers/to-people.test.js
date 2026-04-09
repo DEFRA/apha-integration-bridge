@@ -112,6 +112,7 @@ test('toPeople maps rows and preserves requested id order', () => {
       addresses: [
         {
           countryCode: null,
+          county: null,
           isPreferred: false,
           locality: null,
           postcode: null,
@@ -172,6 +173,7 @@ test('toPeople maps rows and preserves requested id order', () => {
           street: 'Street',
           locality: null,
           town: 'Town',
+          county: null,
           postcode: '1AA A11',
           countryCode: null,
           isPreferred: false
@@ -329,6 +331,7 @@ test('toPeople aggregates multiple srabpiPlants from rows with same party_id', (
           street: 'High Street',
           locality: null,
           town: 'London',
+          county: null,
           postcode: 'SW1A 1AA',
           countryCode: null,
           isPreferred: true

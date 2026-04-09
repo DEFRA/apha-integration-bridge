@@ -23,7 +23,9 @@ test('toOrganisations maps rows and preserves requested id order', () => {
       street: 'Street',
       locality: null,
       town: 'Town',
+      county: 'Devon',
       postcode: '1AA A11',
+      uk_internal_code: 'ENG',
       country_code: 'GB',
       preferred_contact_method_ind: null,
       email: 'example@example.com',
@@ -50,7 +52,9 @@ test('toOrganisations maps rows and preserves requested id order', () => {
       street: 'Street',
       locality: null,
       town: 'Town',
+      county: 'Devon',
       postcode: '1AA A11',
+      uk_internal_code: 'ENG',
       country_code: 'GB',
       preferred_contact_method_ind: null,
       email: 'example@example.com',
@@ -77,7 +81,9 @@ test('toOrganisations maps rows and preserves requested id order', () => {
       street: 'Street',
       locality: null,
       town: 'Town',
+      county: 'South Lanarkshire',
       postcode: '1AA A11',
+      uk_internal_code: 'SCT',
       country_code: 'GB',
       preferred_contact_method_ind: null,
       email: null,
@@ -112,8 +118,9 @@ test('toOrganisations maps rows and preserves requested id order', () => {
         street: 'Street',
         locality: null,
         town: 'Town',
+        county: 'South Lanarkshire',
         postcode: '1AA A11',
-        countryCode: 'GB'
+        countryCode: 'SCT'
       },
       contactDetails: {
         primaryContact: {
@@ -155,8 +162,9 @@ test('toOrganisations maps rows and preserves requested id order', () => {
         street: 'Street',
         locality: null,
         town: 'Town',
+        county: 'Devon',
         postcode: '1AA A11',
-        countryCode: 'GB'
+        countryCode: 'ENG'
       },
       contactDetails: {
         primaryContact: {

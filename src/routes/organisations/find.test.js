@@ -47,7 +47,8 @@ const organisation = {
     locality: null,
     town: 'Town',
     postcode: '2BB B22',
-    countryCode: 'GB'
+    countryCode: 'UKX002',
+    county: 'County'
   },
   contactDetails: {
     primaryContact: {

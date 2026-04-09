@@ -43,6 +43,7 @@ export const Address = Joi.object({
   street: Joi.string().allow(null).required(),
   locality: Joi.string().allow(null).required(),
   town: Joi.string().allow(null).required(),
+  county: Joi.string().allow(null),
   postcode: Joi.string().allow(null).required(),
   countryCode: Joi.string().allow(null).required()
 })

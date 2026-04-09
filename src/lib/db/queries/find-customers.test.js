@@ -119,6 +119,7 @@ describe('findCustomers', () => {
         addresses: [
           {
             countryCode: null,
+            county: null,
             isPreferred: false,
             locality: null,
             postcode: null,
@@ -179,6 +180,7 @@ describe('findCustomers', () => {
             street: 'Street',
             locality: null,
             town: 'Town',
+            county: null,
             postcode: '1AA A11',
             countryCode: null,
             isPreferred: false
@@ -305,7 +307,9 @@ describe('findCustomers', () => {
         street: 'Street',
         locality: null,
         town: 'Town',
+        county: 'Devon',
         postcode: '1AA A11',
+        uk_internal_code: 'ENG',
         country_code: 'GB',
         preferred_contact_method_ind: null,
         email: 'example@example.com',
@@ -339,7 +343,9 @@ describe('findCustomers', () => {
         street: 'Street',
         locality: null,
         town: 'Town',
+        county: 'Powys',
         postcode: '1AA A11',
+        uk_internal_code: 'WLS',
         country_code: 'GB',
         preferred_contact_method_ind: null,
         email: null,
@@ -382,8 +388,9 @@ describe('findCustomers', () => {
           street: 'Street',
           locality: null,
           town: 'Town',
+          county: 'Powys',
           postcode: '1AA A11',
-          countryCode: 'GB'
+          countryCode: 'WLS'
         },
         contactDetails: {
           primaryContact: {
@@ -430,8 +437,9 @@ describe('findCustomers', () => {
           street: 'Street',
           locality: null,
           town: 'Town',
+          county: 'Devon',
           postcode: '1AA A11',
-          countryCode: 'GB'
+          countryCode: 'ENG'
         },
         contactDetails: {
           primaryContact: {

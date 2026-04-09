@@ -24,8 +24,9 @@ export const toAddress = (row) => {
     street: asNullableString(row.street),
     locality: asNullableString(row.locality),
     town: asNullableString(row.town),
+    county: asNullableString(row.county),
     postcode: asNullableString(row.postcode),
-    countryCode: asNullableString(row.country_code),
+    countryCode: asNullableString(row.uk_internal_code),
     isPreferred: asPreferredFlag(row.preferred_contact_method_ind)
   }
 }
