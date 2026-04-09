@@ -155,7 +155,8 @@ describe('locations/find', () => {
           locality: 'Test Locality',
           town: 'Test Town',
           postcode: 'TE1 1ST',
-          countryCode: 'GB'
+          countryCode: 'UK123',
+          county: 'Test County'
         },
         osMapReference: 'SK123456',
         livestockUnits: [
@@ -209,7 +210,8 @@ describe('locations/find', () => {
           locality: 'Little Village',
           town: 'Bigtown',
           postcode: 'TE2 2ST',
-          countryCode: 'GB'
+          countryCode: 'UK456',
+          county: 'Shire'
         },
         osMapReference: 'SK789012',
         livestockUnits: [
