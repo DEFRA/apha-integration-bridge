@@ -82,8 +82,9 @@ Example:
         "street": "Test Street",
         "locality": "Test Locality",
         "town": "Test Town",
+        "county": "South Lanarkshire",
         "postcode": "TE1 1ST",
-        "countryCode": "GB"
+        "countryCode": "Scotland"
       },
       "osMapReference": "SK123456",
       "livestockUnits": [
