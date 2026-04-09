@@ -66,8 +66,9 @@ Example:
       "address": {
         "street": "Enterprise Way",
         "town": "Town",
+        "county": "South Lanarkshire",
         "postcode": "2BB B22",
-        "countryCode": "GB"
+        "countryCode": "Scotland"
       },
       "contactDetails": {
         "primaryContact": {
