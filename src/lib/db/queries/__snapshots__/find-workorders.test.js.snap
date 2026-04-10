@@ -79,7 +79,7 @@ ws_f AS (
 ),
 wsa AS (
   SELECT
-  SUBSTR(wsa_ac.pxcoverinskey, 7) ws_id,
+  rw.work_order_id ws_id,
   wsa_ac.pyid wsa_id,
   aca.actname activity_name,
   wsa_ac.pystatuswork wsa_status,
@@ -95,9 +95,7 @@ wsa AS (
   AND
   wsa_ac.pydescription IS NULL
   AND
-  SUBSTR(wsa_ac.pxcoverinskey, 6) IS NOT NULL
-  AND
-  rw.work_order_id = SUBSTR(wsa_ac.pxcoverinskey, 7)
+  wsa_ac.pxcoverinskey = 'AH-AC-' || rw.work_order_id
 )
 
 SELECT
@@ -235,7 +233,7 @@ ws_f AS (
 ),
 wsa AS (
   SELECT
-  SUBSTR(wsa_ac.pxcoverinskey, 7) ws_id,
+  rw.work_order_id ws_id,
   wsa_ac.pyid wsa_id,
   aca.actname activity_name,
   wsa_ac.pystatuswork wsa_status,
@@ -251,9 +249,7 @@ wsa AS (
   AND
   wsa_ac.pydescription IS NULL
   AND
-  SUBSTR(wsa_ac.pxcoverinskey, 6) IS NOT NULL
-  AND
-  rw.work_order_id = SUBSTR(wsa_ac.pxcoverinskey, 7)
+  wsa_ac.pxcoverinskey = 'AH-AC-' || rw.work_order_id
 )
 
 SELECT
