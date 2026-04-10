@@ -2,8 +2,10 @@ import { createRemoteJWKSet, jwtVerify } from 'jose'
 import Boom from '@hapi/boom'
 import { config } from '../../config.js'
 import { metricsCounter } from './metrics.js'
+import { createLogger } from './logging/logger.js'
 
 const expectedScope = config.get('auth.scope')
+const logger = createLogger()
 
 /**
  * @typedef {import('@hapi/hapi').Server} Server
@@ -32,8 +34,13 @@ export const authPlugin = {
             const authHeader = request.raw.req.headers.authorization
 
             if (!authHeader?.startsWith('Bearer ')) {
+              logger?.warn({
+                msg: 'Authentication failed: Missing or invalid Authorization header',
+                path: request.path,
+                method: request.method
+              })
               return Boom.unauthorized(
-                'Missing or invalid Authorization header'
+                'Missing or invalid Authorization header. Please provide a valid Bearer token.'
               )
             }
 
@@ -50,7 +57,14 @@ export const authPlugin = {
               const issuer = decoded.iss
 
               if (!issuer) {
-                return Boom.unauthorized('Missing `iss` claim in token')
+                logger?.warn({
+                  msg: 'Authentication failed: Missing issuer claim in token',
+                  path: request.path,
+                  method: request.method
+                })
+                return Boom.unauthorized(
+                  'Invalid token: Missing issuer (iss) claim'
+                )
               }
 
               const JWKS = createRemoteJWKSet(
@@ -63,15 +77,40 @@ export const authPlugin = {
               })
 
               if (payload.token_use !== 'access') {
-                return Boom.unauthorized('Token is not an access token')
+                logger?.warn({
+                  msg: 'Authentication failed: Token is not an access token',
+                  path: request.path,
+                  method: request.method,
+                  token_use: payload.token_use
+                })
+                return Boom.unauthorized(
+                  'Invalid token: Token is not an access token'
+                )
               }
 
               if (!payload.client_id || typeof payload.client_id !== 'string') {
-                return Boom.unauthorized('Missing `client_id` claim in token')
+                logger?.warn({
+                  msg: 'Authentication failed: Missing client_id claim',
+                  path: request.path,
+                  method: request.method
+                })
+                return Boom.unauthorized(
+                  'Invalid token: Missing client_id claim'
+                )
               }
 
               if (payload.scope !== expectedScope) {
-                return Boom.forbidden('Token scope is not authorized')
+                logger?.warn({
+                  msg: 'Authorization failed: Token scope not authorized',
+                  path: request.path,
+                  method: request.method,
+                  client_id: payload.client_id,
+                  expected_scope: expectedScope,
+                  actual_scope: payload.scope
+                })
+                return Boom.forbidden(
+                  `Insufficient permissions: Required scope '${expectedScope}' not present in token`
+                )
               }
 
               await metricsCounter('clientRequest', 1, {
@@ -83,7 +122,32 @@ export const authPlugin = {
                 artifacts: payload
               })
             } catch (err) {
-              return Boom.unauthorized('Token verification failed')
+              const error = err instanceof Error ? err : new Error(String(err))
+              const errorCode = 'code' in error ? error.code : undefined
+
+              logger?.warn({
+                msg: 'Authentication failed: Token verification failed',
+                path: request.path,
+                method: request.method,
+                error: error.message,
+                code: errorCode
+              })
+
+              if (errorCode === 'ERR_JWT_EXPIRED') {
+                return Boom.unauthorized('Token has expired')
+              }
+              if (errorCode === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') {
+                return Boom.unauthorized(
+                  'Token signature verification failed: Token has not been signed by Amazon Cognito'
+                )
+              }
+              if (errorCode === 'ERR_JWT_CLAIM_VALIDATION_FAILED') {
+                return Boom.unauthorized('Token claim validation failed')
+              }
+
+              return Boom.unauthorized(
+                'Token verification failed: Invalid or malformed token'
+              )
             }
           }
         }
