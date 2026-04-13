@@ -26,6 +26,16 @@ test('uses optimized set operation and removes redundant table joins', () => {
   expect(sql).not.toContain('AHBRP.FEATURE,')
 })
 
+test('joins county lookup to resolve county code to descriptive name', () => {
+  const ids = ['L97339']
+  const { sql } = findLocationsQuery(ids)
+
+  expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
+  expect(sql).toContain('COUNTY_LOOKUP.SHORT_DESCRIPTION county')
+  expect(sql).toContain('BA.ADMINISTRATIVE_AREA = COUNTY_LOOKUP.CODE(+)')
+  expect(sql).not.toContain('ADMINISTRATIVE_AREA county')
+})
+
 test('throws when ids is empty', () => {
   expect(() => findLocationsQuery([])).toThrow('Invalid parameters')
 })

@@ -23,7 +23,7 @@ saon_end_number_suffix,
 street,
 locality,
 town,
-administrative_area county,
+county_lookup.short_description county,
 postcode,
 uk_internal_code,
 country_code,
@@ -185,7 +185,31 @@ ahbrp.alt_party_identity,
   telecom_address.telecom_address_to_date(+) IS NULL
   AND
   email_usage.address_usage_to_date(+) IS NULL
-) email
+) email,
+
+(
+  SELECT DISTINCT
+  RDC.CODE,
+  RDCD.SHORT_DESCRIPTION
+
+  FROM
+  AHBRP.REF_DATA_SET RDS,
+  AHBRP.REF_DATA_CODE RDC,
+  AHBRP.REF_DATA_CODE_DESC RDCD
+
+  WHERE
+  RDS.REF_DATA_SET_NAME = 'COUNTY'
+  AND
+  RDS.EFFECTIVE_TO_DATE IS NULL
+  AND
+  RDS.REF_DATA_SET_PK = RDC.REF_DATA_SET_PK
+  AND
+  RDC.EFFECTIVE_TO_DATE = '31-DEC-9999'
+  AND
+  RDC.REF_DATA_CODE_PK = RDCD.REF_DATA_CODE_PK
+  AND
+  RDCD.LANGUAGE_CODE = 'ENG'
+) county_lookup
 
 WHERE
 party.party_pk = party_state.party_pk
@@ -207,6 +231,8 @@ AND
 party.party_pk = landline.party_pk(+)
 AND
 party.party_pk = email.party_pk(+)
+AND
+bs7666_address.administrative_area = county_lookup.code(+)
 AND
 party_state.party_status_code != 'INACTIVE'
 AND
