@@ -11,6 +11,28 @@ test('returns the expected query for valid ids', () => {
   expect(sql).toMatchSnapshot()
 })
 
+test('builds a PERSON-specific query with a single telecom lookup', () => {
+  const { sql } = findCustomersQuery(['C123456'], 'PERSON')
+
+  expect(sql).toMatch(
+    /telecom_address\.telecom_address_type IN \('MOBILE', 'LANDLINE', 'EMAIL'\)/
+  )
+  expect(sql).not.toMatch(
+    /\('PERSON' = 'ORGANISATION' AND org\.party_pk IS NOT NULL\)/
+  )
+  expect(sql).toContain('party.party_pk = telecom.party_pk(+)')
+  expect(sql).not.toContain('party.party_pk = landline.party_pk(+)')
+  expect(sql).not.toContain('party.party_pk = email.party_pk(+)')
+})
+
+test('builds an ORGANISATION-specific query without the PERSON branch', () => {
+  const { sql } = findCustomersQuery(['O123456'], 'ORGANISATION')
+
+  expect(sql).not.toMatch(
+    /\('ORGANISATION' = 'PERSON' AND per\.party_pk IS NOT NULL\)/
+  )
+})
+
 test('throws if the parameters are invalid', () => {
   expect(() => findCustomersQuery([], 'PERSON')).toThrow(/invalid/i)
 })

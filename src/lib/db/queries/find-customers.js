@@ -11,9 +11,17 @@ const sql = loadSQL(import.meta.filename)
 
 const CUSTOMER_IDS_BIND_TOKEN = '__CUSTOMER_IDS__'
 
-const CUSTOMER_TYPE_BIND_TOKEN = '__CUSTOMER_TYPE__'
+const CUSTOMER_TYPE_FILTER_TOKEN = '__CUSTOMER_TYPE_FILTER__'
 
 const CUSTOMER_TYPES = ['PERSON', 'ORGANISATION']
+
+/**
+ * Adjust the query content dependent on the customer type requested
+ */
+const CUSTOMER_TYPE_FILTERS = {
+  PERSON: 'per.party_pk IS NOT NULL',
+  ORGANISATION: 'org.party_pk IS NOT NULL'
+}
 
 export const FindCustomersSchema = Joi.object({
   ids: Joi.array()
@@ -45,15 +53,17 @@ export function findCustomersQuery(ids, customerType) {
   }
 
   const { placeholders, bindings } = createInClauseBindings(value.ids)
+
   const sqlWithIds = sql.replace(CUSTOMER_IDS_BIND_TOKEN, placeholders)
-  const sqlWithFilters = sqlWithIds.replaceAll(
-    CUSTOMER_TYPE_BIND_TOKEN,
-    ':customerType'
+
+  const sqlWithTypeFilter = sqlWithIds.replace(
+    CUSTOMER_TYPE_FILTER_TOKEN,
+    CUSTOMER_TYPE_FILTERS[value.customerType]
   )
 
   return {
     sql: query()
-      .raw(sqlWithFilters, { ...bindings, customerType: value.customerType })
+      .raw(sqlWithTypeFilter, { ...bindings })
       .toQuery()
   }
 }
