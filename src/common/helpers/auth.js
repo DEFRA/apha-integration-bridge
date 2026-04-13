@@ -14,8 +14,7 @@ const logger = createLogger()
  */
 
 /**
- * Creates a Hapi.js plugin for authenticating JWT using a remote JWK set.
- *
+ * Creates a Hapi.js plugin for JWT authentication with signature verification.
  * @returns {Object} a Hapi.js plugin for authentication
  */
 export const authPlugin = {
@@ -31,13 +30,24 @@ export const authPlugin = {
       server.auth.scheme('bearer', () => {
         return {
           authenticate: async (request, h) => {
+            // Debug log: Request received
+            logger?.info({
+              msg: 'AUTH PLUGIN: Authentication request received',
+              path: request.path,
+              method: request.method,
+              hasAuthHeader: !!request.raw.req.headers.authorization
+            })
+
             const authHeader = request.raw.req.headers.authorization
 
             if (!authHeader?.startsWith('Bearer ')) {
               logger?.warn({
-                msg: 'Authentication failed: Missing or invalid Authorization header',
+                msg: 'AUTH PLUGIN: Missing or invalid Authorization header',
                 path: request.path,
-                method: request.method
+                method: request.method,
+                authHeaderValue: authHeader
+                  ? 'present but invalid format'
+                  : 'missing'
               })
               return Boom.unauthorized(
                 'Missing or invalid Authorization header. Please provide a valid Bearer token.'
@@ -46,9 +56,17 @@ export const authPlugin = {
 
             const token = authHeader.slice('Bearer '.length)
 
+            // Debug log: Token extracted
+            logger?.info({
+              msg: 'AUTH PLUGIN: Bearer token extracted, starting validation',
+              path: request.path,
+              tokenLength: token.length
+            })
+
             try {
               /**
-               * Decode just the payload to extract `iss`
+               * Decode the JWT payload to extract the issuer
+               * We need the issuer to construct the JWKS endpoint URL
                */
               const decoded = JSON.parse(
                 Buffer.from(token.split('.')[1], 'base64url').toString('utf8')
@@ -56,9 +74,19 @@ export const authPlugin = {
 
               const issuer = decoded.iss
 
+              // Debug log: Token decoded
+              logger?.info({
+                msg: 'AUTH PLUGIN: Token decoded successfully',
+                path: request.path,
+                issuer,
+                client_id: decoded.client_id,
+                scope: decoded.scope,
+                token_use: decoded.token_use
+              })
+
               if (!issuer) {
                 logger?.warn({
-                  msg: 'Authentication failed: Missing issuer claim in token',
+                  msg: 'AUTH PLUGIN: Missing issuer claim in token',
                   path: request.path,
                   method: request.method
                 })
@@ -67,13 +95,32 @@ export const authPlugin = {
                 )
               }
 
-              const JWKS = createRemoteJWKSet(
-                new URL(`${issuer}/.well-known/jwks.json`)
-              )
+              const jwksUrl = `${issuer}/.well-known/jwks.json`
+
+              // Debug log: About to fetch JWKS
+              logger?.info({
+                msg: 'AUTH PLUGIN: Attempting to fetch JWKS for signature verification',
+                path: request.path,
+                jwksUrl
+              })
+
+              const JWKS = createRemoteJWKSet(new URL(jwksUrl))
+
+              logger?.info({
+                msg: 'AUTH PLUGIN: JWKS client created, now verifying JWT signature',
+                path: request.path
+              })
 
               const { payload } = await jwtVerify(token, JWKS, {
                 issuer,
                 audience: undefined
+              })
+
+              // Debug log: Signature verified!
+              logger?.info({
+                msg: 'AUTH PLUGIN: JWT signature verified successfully!',
+                path: request.path,
+                client_id: payload.client_id
               })
 
               if (payload.token_use !== 'access') {
@@ -113,6 +160,14 @@ export const authPlugin = {
                 )
               }
 
+              logger?.info({
+                msg: 'Token validated successfully with signature verification',
+                path: request.path,
+                method: request.method,
+                client_id: payload.client_id,
+                issuer: payload.iss
+              })
+
               await metricsCounter('clientRequest', 1, {
                 client_id: payload.client_id
               })
@@ -133,6 +188,7 @@ export const authPlugin = {
                 code: errorCode
               })
 
+              // Provide specific error messages based on error type
               if (errorCode === 'ERR_JWT_EXPIRED') {
                 return Boom.unauthorized('Token has expired')
               }
@@ -143,6 +199,11 @@ export const authPlugin = {
               }
               if (errorCode === 'ERR_JWT_CLAIM_VALIDATION_FAILED') {
                 return Boom.unauthorized('Token claim validation failed')
+              }
+              if (errorCode === 'ERR_JWKS_NO_MATCHING_KEY') {
+                return Boom.unauthorized(
+                  'Token signature verification failed: No matching key found in JWKS'
+                )
               }
 
               return Boom.unauthorized(
