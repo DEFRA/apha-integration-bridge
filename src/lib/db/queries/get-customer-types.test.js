@@ -22,13 +22,13 @@ describe('getCustomerTypesQuery', () => {
   test('accepts organisation-style ids that do not start with C', () => {
     const { sql } = getCustomerTypesQuery(['O123456'])
 
-    expect(sql).toContain("party.party_id IN ('O123456')")
+    expect(sql).toContain("p.party_id IN ('O123456')")
   })
 
   test('accepts ids containing hyphens', () => {
     const { sql } = getCustomerTypesQuery(['C-123456'])
 
-    expect(sql).toContain("party.party_id IN ('C-123456')")
+    expect(sql).toContain("p.party_id IN ('C-123456')")
   })
 
   test('throws when customer ids is empty', () => {
