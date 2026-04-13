@@ -2792,7 +2792,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-91', 'AH-AC-WS-ACT WSA-91', 'activity-wsa-91', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-43', 1
+    'WSA-91', 'AH-AC-WS-ACT WSA-91', 'activity-wsa-91', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-43', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2808,7 +2808,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-580', 'AH-AC-WS-ACT WSA-580', 'activity-wsa-580', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-299', 1
+    'WSA-580', 'AH-AC-WS-ACT WSA-580', 'activity-wsa-580', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-299', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2824,7 +2824,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-2118', 'AH-AC-WS-ACT WSA-2118', 'activity-wsa-2118', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-1027', 1
+    'WSA-2118', 'AH-AC-WS-ACT WSA-2118', 'activity-wsa-2118', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-1027', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2840,7 +2840,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-3124', 'AH-AC-WS-ACT WSA-3124', 'activity-wsa-3124', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-1531', 1
+    'WSA-3124', 'AH-AC-WS-ACT WSA-3124', 'activity-wsa-3124', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-1531', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2856,7 +2856,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-3115', 'AH-AC-WS-ACT WSA-3115', 'activity-wsa-3115', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-1526', 1
+    'WSA-3115', 'AH-AC-WS-ACT WSA-3115', 'activity-wsa-3115', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-1526', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2872,7 +2872,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-3278', 'AH-AC-WS-ACT WSA-3278', 'activity-wsa-3278', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-1583', 1
+    'WSA-3278', 'AH-AC-WS-ACT WSA-3278', 'activity-wsa-3278', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-1583', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2888,7 +2888,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-3710', 'AH-AC-WS-ACT WSA-3710', 'activity-wsa-3710', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-1811', 1
+    'WSA-3710', 'AH-AC-WS-ACT WSA-3710', 'activity-wsa-3710', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-1811', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2904,7 +2904,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-3711', 'AH-AC-WS-ACT WSA-3711', 'activity-wsa-3711', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-1811', 2
+    'WSA-3711', 'AH-AC-WS-ACT WSA-3711', 'activity-wsa-3711', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-1811', 2
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2920,7 +2920,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-5113', 'AH-AC-WS-ACT WSA-5113', 'activity-wsa-5113', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-2358', 1
+    'WSA-5113', 'AH-AC-WS-ACT WSA-5113', 'activity-wsa-5113', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-2358', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2936,7 +2936,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-5147', 'AH-AC-WS-ACT WSA-5147', 'activity-wsa-5147', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-2374', 1
+    'WSA-5147', 'AH-AC-WS-ACT WSA-5147', 'activity-wsa-5147', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-2374', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2952,7 +2952,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-7203', 'AH-AC-WS-ACT WSA-7203', 'activity-wsa-7203', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-3353', 1
+    'WSA-7203', 'AH-AC-WS-ACT WSA-7203', 'activity-wsa-7203', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-3353', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2968,7 +2968,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-11889', 'AH-AC-WS-ACT WSA-11889', 'activity-wsa-11889', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-5533', 1
+    'WSA-11889', 'AH-AC-WS-ACT WSA-11889', 'activity-wsa-11889', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-5533', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -2984,7 +2984,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-12735', 'AH-AC-WS-ACT WSA-12735', 'activity-wsa-12735', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-5900', 1
+    'WSA-12735', 'AH-AC-WS-ACT WSA-12735', 'activity-wsa-12735', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-5900', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3000,7 +3000,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-13005', 'AH-AC-WS-ACT WSA-13005', 'activity-wsa-13005', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-6031', 1
+    'WSA-13005', 'AH-AC-WS-ACT WSA-13005', 'activity-wsa-13005', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-6031', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3016,7 +3016,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-14379', 'AH-AC-WS-ACT WSA-14379', 'activity-wsa-14379', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-6666', 1
+    'WSA-14379', 'AH-AC-WS-ACT WSA-14379', 'activity-wsa-14379', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-6666', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3032,7 +3032,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-13680', 'AH-AC-WS-ACT WSA-13680', 'activity-wsa-13680', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-6334', 1
+    'WSA-13680', 'AH-AC-WS-ACT WSA-13680', 'activity-wsa-13680', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-6334', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3048,7 +3048,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18013', 'AH-AC-WS-ACT WSA-18013', 'activity-wsa-18013', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8480', 1
+    'WSA-18013', 'AH-AC-WS-ACT WSA-18013', 'activity-wsa-18013', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8480', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3064,7 +3064,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18015', 'AH-AC-WS-ACT WSA-18015', 'activity-wsa-18015', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8481', 1
+    'WSA-18015', 'AH-AC-WS-ACT WSA-18015', 'activity-wsa-18015', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8481', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3080,7 +3080,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18023', 'AH-AC-WS-ACT WSA-18023', 'activity-wsa-18023', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8485', 1
+    'WSA-18023', 'AH-AC-WS-ACT WSA-18023', 'activity-wsa-18023', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8485', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3096,7 +3096,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-16463', 'AH-AC-WS-ACT WSA-16463', 'activity-wsa-16463', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-7844', 1
+    'WSA-16463', 'AH-AC-WS-ACT WSA-16463', 'activity-wsa-16463', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-7844', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3112,7 +3112,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18053', 'AH-AC-WS-ACT WSA-18053', 'activity-wsa-18053', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8501', 1
+    'WSA-18053', 'AH-AC-WS-ACT WSA-18053', 'activity-wsa-18053', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8501', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3128,7 +3128,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18057', 'AH-AC-WS-ACT WSA-18057', 'activity-wsa-18057', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8503', 1
+    'WSA-18057', 'AH-AC-WS-ACT WSA-18057', 'activity-wsa-18057', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8503', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3144,7 +3144,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18059', 'AH-AC-WS-ACT WSA-18059', 'activity-wsa-18059', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8505', 1
+    'WSA-18059', 'AH-AC-WS-ACT WSA-18059', 'activity-wsa-18059', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8505', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3160,7 +3160,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17989', 'AH-AC-WS-ACT WSA-17989', 'activity-wsa-17989', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8468', 1
+    'WSA-17989', 'AH-AC-WS-ACT WSA-17989', 'activity-wsa-17989', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8468', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3176,7 +3176,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17992', 'AH-AC-WS-ACT WSA-17992', 'activity-wsa-17992', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8470', 1
+    'WSA-17992', 'AH-AC-WS-ACT WSA-17992', 'activity-wsa-17992', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8470', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3192,7 +3192,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18000', 'AH-AC-WS-ACT WSA-18000', 'activity-wsa-18000', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8474', 1
+    'WSA-18000', 'AH-AC-WS-ACT WSA-18000', 'activity-wsa-18000', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8474', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3208,7 +3208,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18004', 'AH-AC-WS-ACT WSA-18004', 'activity-wsa-18004', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8476', 1
+    'WSA-18004', 'AH-AC-WS-ACT WSA-18004', 'activity-wsa-18004', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8476', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3224,7 +3224,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17960', 'AH-AC-WS-ACT WSA-17960', 'activity-wsa-17960', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8453', 1
+    'WSA-17960', 'AH-AC-WS-ACT WSA-17960', 'activity-wsa-17960', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8453', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3240,7 +3240,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17692', 'AH-AC-WS-ACT WSA-17692', 'activity-wsa-17692', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8313', 1
+    'WSA-17692', 'AH-AC-WS-ACT WSA-17692', 'activity-wsa-17692', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8313', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3256,7 +3256,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17697', 'AH-AC-WS-ACT WSA-17697', 'activity-wsa-17697', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8318', 1
+    'WSA-17697', 'AH-AC-WS-ACT WSA-17697', 'activity-wsa-17697', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8318', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3272,7 +3272,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17713', 'AH-AC-WS-ACT WSA-17713', 'activity-wsa-17713', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8329', 1
+    'WSA-17713', 'AH-AC-WS-ACT WSA-17713', 'activity-wsa-17713', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8329', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3288,7 +3288,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17718', 'AH-AC-WS-ACT WSA-17718', 'activity-wsa-17718', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8331', 1
+    'WSA-17718', 'AH-AC-WS-ACT WSA-17718', 'activity-wsa-17718', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8331', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3304,7 +3304,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17983', 'AH-AC-WS-ACT WSA-17983', 'activity-wsa-17983', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8465', 1
+    'WSA-17983', 'AH-AC-WS-ACT WSA-17983', 'activity-wsa-17983', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8465', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3320,7 +3320,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17984', 'AH-AC-WS-ACT WSA-17984', 'activity-wsa-17984', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8466', 1
+    'WSA-17984', 'AH-AC-WS-ACT WSA-17984', 'activity-wsa-17984', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8466', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3336,7 +3336,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17659', 'AH-AC-WS-ACT WSA-17659', 'activity-wsa-17659', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8290', 1
+    'WSA-17659', 'AH-AC-WS-ACT WSA-17659', 'activity-wsa-17659', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8290', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3352,7 +3352,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17729', 'AH-AC-WS-ACT WSA-17729', 'activity-wsa-17729', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8339', 1
+    'WSA-17729', 'AH-AC-WS-ACT WSA-17729', 'activity-wsa-17729', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8339', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3368,7 +3368,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17732', 'AH-AC-WS-ACT WSA-17732', 'activity-wsa-17732', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8341', 1
+    'WSA-17732', 'AH-AC-WS-ACT WSA-17732', 'activity-wsa-17732', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8341', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3384,7 +3384,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17733', 'AH-AC-WS-ACT WSA-17733', 'activity-wsa-17733', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8341', 2
+    'WSA-17733', 'AH-AC-WS-ACT WSA-17733', 'activity-wsa-17733', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8341', 2
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3400,7 +3400,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17737', 'AH-AC-WS-ACT WSA-17737', 'activity-wsa-17737', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8343', 1
+    'WSA-17737', 'AH-AC-WS-ACT WSA-17737', 'activity-wsa-17737', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8343', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3416,7 +3416,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17750', 'AH-AC-WS-ACT WSA-17750', 'activity-wsa-17750', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8354', 1
+    'WSA-17750', 'AH-AC-WS-ACT WSA-17750', 'activity-wsa-17750', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8354', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3432,7 +3432,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-16327', 'AH-AC-WS-ACT WSA-16327', 'activity-wsa-16327', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-7727', 1
+    'WSA-16327', 'AH-AC-WS-ACT WSA-16327', 'activity-wsa-16327', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-7727', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3448,7 +3448,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17624', 'AH-AC-WS-ACT WSA-17624', 'activity-wsa-17624', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8272', 1
+    'WSA-17624', 'AH-AC-WS-ACT WSA-17624', 'activity-wsa-17624', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8272', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3464,7 +3464,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17783', 'AH-AC-WS-ACT WSA-17783', 'activity-wsa-17783', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8367', 1
+    'WSA-17783', 'AH-AC-WS-ACT WSA-17783', 'activity-wsa-17783', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8367', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3480,7 +3480,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-17922', 'AH-AC-WS-ACT WSA-17922', 'activity-wsa-17922', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8431', 1
+    'WSA-17922', 'AH-AC-WS-ACT WSA-17922', 'activity-wsa-17922', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8431', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3496,7 +3496,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-20703', 'AH-AC-WS-ACT WSA-20703', 'activity-wsa-20703', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-9539', 1
+    'WSA-20703', 'AH-AC-WS-ACT WSA-20703', 'activity-wsa-20703', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-9539', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3512,7 +3512,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-20704', 'AH-AC-WS-ACT WSA-20704', 'activity-wsa-20704', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-9540', 1
+    'WSA-20704', 'AH-AC-WS-ACT WSA-20704', 'activity-wsa-20704', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-9540', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3528,7 +3528,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18310', 'AH-AC-WS-ACT WSA-18310', 'activity-wsa-18310', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8617', 1
+    'WSA-18310', 'AH-AC-WS-ACT WSA-18310', 'activity-wsa-18310', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8617', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3544,7 +3544,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18298', 'AH-AC-WS-ACT WSA-18298', 'activity-wsa-18298', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8613', 1
+    'WSA-18298', 'AH-AC-WS-ACT WSA-18298', 'activity-wsa-18298', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8613', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3560,7 +3560,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18299', 'AH-AC-WS-ACT WSA-18299', 'activity-wsa-18299', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8613', 2
+    'WSA-18299', 'AH-AC-WS-ACT WSA-18299', 'activity-wsa-18299', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8613', 2
   );
 
 MERGE INTO pega_data.index_ac_activity t
@@ -3576,7 +3576,7 @@ ON (t.pyid = s.pyid)
 WHEN NOT MATCHED THEN
   INSERT (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
   VALUES (
-    'WSA-18144', 'AH-AC-WS-ACT WSA-18144', 'activity-wsa-18144', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-8547', 1
+    'WSA-18144', 'AH-AC-WS-ACT WSA-18144', 'activity-wsa-18144', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-8547', 1
   );
 
 MERGE INTO pega_data.index_ac_activity t

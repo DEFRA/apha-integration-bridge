@@ -125,7 +125,7 @@ wsa AS (
   AND
   wsa_ac.pydescription IS NULL
   AND
-  wsa_ac.pxcoverinskey = 'AH-AC-' || rw.work_order_id
+  wsa_ac.pxcoverinskey = 'AH-AC ' || rw.work_order_id
 )
 
 SELECT
