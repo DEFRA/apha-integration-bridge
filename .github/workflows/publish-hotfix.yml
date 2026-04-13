@@ -34,12 +34,18 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           password: ${{ secrets.ORACLE_SECRET_KEY }}
 
+      - name: Install Oracle Instant Client
+        id: oracle
+        run: ./.github/scripts/oracle-instant-client.sh
+
       - name: Docker pull Oracle DB
         run: docker pull container-registry.oracle.com/database/free:latest
 
       - run: npm ci
 
       - run: npm test
+        env:
+          ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
 
       - name: Publish Hot Fix
         uses: DEFRA/cdp-build-action/build-hotfix@main
