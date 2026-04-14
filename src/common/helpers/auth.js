@@ -3,6 +3,7 @@ import Boom from '@hapi/boom'
 import { config } from '../../config.js'
 import { metricsCounter } from './metrics.js'
 import { createLogger } from './logging/logger.js'
+import { proxyFetch } from './proxy/proxy-fetch.js'
 
 const expectedScope = config.get('auth.scope')
 const logger = createLogger()
@@ -87,9 +88,11 @@ export const authPlugin = {
 
               let JWKS
               try {
-                JWKS = createRemoteJWKSet(new URL(jwksUrl))
+                JWKS = createRemoteJWKSet(new URL(jwksUrl), {
+                  [Symbol.for('undici.fetch')]: proxyFetch
+                })
                 logger?.info(
-                  `AUTH PLUGIN: JWKS client created successfully - ${request.path}`
+                  `AUTH PLUGIN: JWKS client created successfully with proxyFetch - ${request.path}`
                 )
               } catch (jwksError) {
                 const jwksErrMsg =
@@ -158,9 +161,10 @@ export const authPlugin = {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err))
               const errorCode = 'code' in error ? error.code : undefined
+              const errorCause = 'cause' in error ? error.cause : undefined
 
               logger?.error(
-                `AUTH PLUGIN: Token verification failed - ${request.method} ${request.path} - Error: ${error.message} - Code: ${errorCode || 'none'}`
+                `AUTH PLUGIN: Token verification failed - ${request.method} ${request.path} - Error: ${error.message} - Code: ${errorCode || 'none'} - Cause: ${errorCause ? JSON.stringify(errorCause) : 'none'} - Stack: ${error.stack?.substring(0, 500)}`
               )
 
               // Provide specific error messages based on error type
