@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { jwtVerify, createLocalJWKSet } from 'jose'
 import Boom from '@hapi/boom'
 import { config } from '../../config.js'
 import { metricsCounter } from './metrics.js'
@@ -87,24 +87,26 @@ export const authPlugin = {
                 `AUTH PLUGIN: Attempting to fetch JWKS - ${request.path} - URL: ${jwksUrl} - HTTP_PROXY: ${httpProxy || 'NOT SET'}`
               )
 
-              let JWKS
-              try {
-                JWKS = createRemoteJWKSet(new URL(jwksUrl), {
-                  [Symbol.for('undici.fetch')]: proxyFetch
-                })
-                logger?.info(
-                  `AUTH PLUGIN: JWKS client created successfully with proxyFetch - ${request.path}`
-                )
-              } catch (jwksError) {
-                const jwksErrMsg =
-                  jwksError instanceof Error
-                    ? jwksError.message
-                    : String(jwksError)
+              // Fetch JWKS using proxyFetch to ensure proxy is used
+              const jwksResponse = await proxyFetch(jwksUrl)
+
+              if (!jwksResponse.ok) {
                 logger?.error(
-                  `AUTH PLUGIN: Failed to create JWKS client - ${request.path} - Error: ${jwksErrMsg}`
+                  `AUTH PLUGIN: Failed to fetch JWKS - ${request.path} - Status: ${jwksResponse.status} - ${jwksResponse.statusText}`
                 )
-                throw jwksError
+                throw new Error(
+                  `Failed to fetch JWKS: ${jwksResponse.status} ${jwksResponse.statusText}`
+                )
               }
+
+              const jwks = await jwksResponse.json()
+
+              logger?.info(
+                `AUTH PLUGIN: JWKS fetched successfully via proxyFetch - ${request.path} - Keys count: ${jwks.keys?.length || 0}`
+              )
+
+              // Create local JWKS for verification
+              const JWKS = createLocalJWKSet(jwks)
 
               logger?.info(
                 `AUTH PLUGIN: Starting JWT signature verification - ${request.path}`
