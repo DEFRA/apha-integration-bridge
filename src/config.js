@@ -234,11 +234,11 @@ const config = convict({
     }
   },
   httpProxy: {
-    doc: 'HTTP/HTTPS Proxy URL for outbound requests',
+    doc: 'HTTP Proxy URL',
     format: String,
     nullable: true,
     default: null,
-    env: 'HTTPS_PROXY'
+    env: 'HTTP_PROXY'
   },
   isSecureContextEnabled: {
     doc: 'Enable Secure Context',
