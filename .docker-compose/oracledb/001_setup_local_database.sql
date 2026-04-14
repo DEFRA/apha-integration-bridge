@@ -279,6 +279,44 @@ BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_rdcm_from_pk     ON ref_data_code_map 
 /
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- COUNTY reference data set — maps ADMINISTRATIVE_AREA codes to descriptions
+-- ─────────────────────────────────────────────────────────────────────────────
+
+BEGIN
+  INSERT INTO ref_data_set (ref_data_set_pk, ref_data_set_name, effective_to_date)
+  VALUES (6000, 'COUNTY', NULL);
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+/
+
+BEGIN
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (6001, 'Devon', 6000, DATE '9999-12-31');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (6001, 'Devon', 'ENG');
+
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (6002, 'Somerset', 6000, DATE '9999-12-31');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (6002, 'Somerset', 'ENG');
+
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (6003, 'Test County', 6000, DATE '9999-12-31');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (6003, 'Test County', 'ENG');
+
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (6004, 'Shire', 6000, DATE '9999-12-31');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (6004, 'Shire', 'ENG');
+
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (6005, 'County', 6000, DATE '9999-12-31');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (6005, 'County', 'ENG');
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+/
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- NEW: /locations endpoint structures (BS7666 + assets) + seed data
 -- ─────────────────────────────────────────────────────────────────────────────
 

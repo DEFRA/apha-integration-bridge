@@ -62,6 +62,7 @@ test('toAddress maps populated fields to API address shape', () => {
       street: 'Street',
       locality: null,
       town: 'Town',
+      county: 'Devon',
       postcode: '1AA A11',
       country_code: null,
       preferred_contact_method_ind: 'N'
@@ -84,7 +85,7 @@ test('toAddress maps populated fields to API address shape', () => {
     street: 'Street',
     locality: null,
     town: 'Town',
-    county: null,
+    county: 'Devon',
     postcode: '1AA A11',
     countryCode: null,
     isPreferred: false
