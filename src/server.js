@@ -9,8 +9,7 @@ import { openApi } from './common/helpers/swagger.js'
 import { config } from './config.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { routingPlugin } from './common/helpers/routing.js'
-import { bearerTokenPlugin } from './common/helpers/bearer-token.js'
-// import { authPlugin } from './common/helpers/auth.js'
+// import { bearerTokenPlugin } from './common/helpers/bearer-token.js'
 // import { mongoDb } from './common/helpers/mongodb.js'
 import { oracleDb } from './common/helpers/oracledb.js'
 import { failAction } from './common/helpers/fail-action.js'
@@ -21,6 +20,7 @@ import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { versionPlugin } from './common/helpers/versioning.js'
 import { opentelemetryPlugin } from './common/helpers/telemetry.js'
 import { HTTPException } from './lib/http/http-exception.js'
+import { authPlugin } from './common/helpers/auth.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -94,11 +94,11 @@ async function createServer() {
     /**
      * authenticates incoming requests using JWT tokens with signature verification
      */
-    // authPlugin,
+    authPlugin,
     /**
      * check for the presence of a bearer token in the request
      */
-    bearerTokenPlugin,
+    // bearerTokenPlugin,
     /**
      * sets up opentelemetry tracing and metrics
      */
