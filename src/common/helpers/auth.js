@@ -80,10 +80,11 @@ export const authPlugin = {
               }
 
               const jwksUrl = `${issuer}/.well-known/jwks.json`
+              const httpProxy = config.get('httpProxy')
 
               // Debug log: About to fetch JWKS
               logger?.info(
-                `AUTH PLUGIN: Attempting to fetch JWKS - ${request.path} - URL: ${jwksUrl}`
+                `AUTH PLUGIN: Attempting to fetch JWKS - ${request.path} - URL: ${jwksUrl} - HTTP_PROXY: ${httpProxy || 'NOT SET'}`
               )
 
               let JWKS
