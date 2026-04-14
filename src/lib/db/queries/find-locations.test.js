@@ -32,8 +32,21 @@ test('joins county lookup to resolve county code to descriptive name', () => {
 
   expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
   expect(sql).toContain('COUNTY_LOOKUP.SHORT_DESCRIPTION county')
-  expect(sql).toContain('BA.ADMINISTRATIVE_AREA = COUNTY_LOOKUP.CODE(+)')
+  expect(sql).toContain('COUNTY_LOOKUP.CODE = BA.ADMINISTRATIVE_AREA')
   expect(sql).not.toContain('ADMINISTRATIVE_AREA county')
+})
+
+test('uses unit ids from livestock and facility tables rather than asset', () => {
+  const ids = ['L97339']
+  const { sql } = findLocationsQuery(ids)
+
+  expect(sql).toContain(
+    "CASE WHEN LU.UNIT_ID IS NULL THEN 'N/A' ELSE LU.UNIT_ID END unit_id"
+  )
+  expect(sql).toContain(
+    "CASE WHEN FACILITY.UNIT_ID IS NULL THEN 'N/A' ELSE FACILITY.UNIT_ID END unit_id"
+  )
+  expect(sql).not.toContain('ASSET.UNIT_ID')
 })
 
 test('throws when ids is empty', () => {

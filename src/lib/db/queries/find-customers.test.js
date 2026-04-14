@@ -26,10 +26,16 @@ test('joins county lookup to resolve county code to descriptive name', () => {
 
   expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
   expect(sql).toContain('county_lookup.short_description county')
-  expect(sql).toContain(
-    'bs7666_address.administrative_area = county_lookup.code(+)'
-  )
+  expect(sql).toContain('county_lookup.code = ba.administrative_area')
   expect(sql).not.toContain('administrative_area county')
+})
+
+test('keeps telecom address usage optional when resolving contact details', () => {
+  const { sql } = findCustomersQuery(['C123456'], 'PERSON')
+
+  expect(sql).toMatch(
+    /telecom_contacts AS \([\s\S]*LEFT JOIN ahbrp\.address_usage au/
+  )
 })
 
 test('throws if customerType is missing', () => {

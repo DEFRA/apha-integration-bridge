@@ -31,6 +31,13 @@ describe('getCustomerTypesQuery', () => {
     expect(sql).toContain("p.party_id IN ('C-123456')")
   })
 
+  test('retains subtype joins when resolving customer types', () => {
+    const { sql } = getCustomerTypesQuery(['C123456'])
+
+    expect(sql).toContain('JOIN ahbrp.person pe')
+    expect(sql).toContain('JOIN ahbrp.organisation o')
+  })
+
   test('throws when customer ids is empty', () => {
     expect(() => getCustomerTypesQuery([])).toThrow('Invalid parameters')
   })
