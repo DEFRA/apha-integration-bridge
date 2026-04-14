@@ -21,6 +21,17 @@ test('throws when ids contain invalid characters', () => {
   )
 })
 
+test('joins county lookup to resolve county code to descriptive name', () => {
+  const { sql } = findCustomersQuery(['C123456'], 'PERSON')
+
+  expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
+  expect(sql).toContain('county_lookup.short_description county')
+  expect(sql).toContain(
+    'bs7666_address.administrative_area = county_lookup.code(+)'
+  )
+  expect(sql).not.toContain('administrative_area county')
+})
+
 test('throws if customerType is missing', () => {
   expect(() =>
     // @ts-expect-error - explicitly testing missing required parameter
@@ -55,7 +66,9 @@ describe('findCustomers', () => {
         street: 'Street',
         locality: null,
         town: 'Town',
+        county: 'Devon',
         postcode: '1AA A11',
+        uk_internal_code: 'ENG',
         country_code: null,
         preferred_contact_method_ind: 'N',
         email: 'example@example.com',
@@ -88,6 +101,7 @@ describe('findCustomers', () => {
         street: null,
         locality: null,
         town: null,
+        county: null,
         postcode: null,
         country_code: null,
         preferred_contact_method_ind: null,
@@ -180,9 +194,9 @@ describe('findCustomers', () => {
             street: 'Street',
             locality: null,
             town: 'Town',
-            county: null,
+            county: 'Devon',
             postcode: '1AA A11',
-            countryCode: null,
+            countryCode: 'ENG',
             isPreferred: false
           }
         ],

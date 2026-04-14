@@ -31,7 +31,9 @@ test('toPerson maps a single row into one customer resource', () => {
     street: 'Street',
     locality: null,
     town: 'Town',
+    county: 'Devon',
     postcode: '1AA A11',
+    uk_internal_code: 'ENG',
     country_code: null,
     preferred_contact_method_ind: 'N',
     email: 'example@example.com',
@@ -69,9 +71,9 @@ test('toPerson maps a single row into one customer resource', () => {
         street: 'Street',
         locality: null,
         town: 'Town',
-        county: null,
+        county: 'Devon',
         postcode: '1AA A11',
-        countryCode: null,
+        countryCode: 'ENG',
         isPreferred: false
       }
     ],
