@@ -31,24 +31,16 @@ export const authPlugin = {
         return {
           authenticate: async (request, h) => {
             // Debug log: Request received
-            logger?.info({
-              msg: 'AUTH PLUGIN: Authentication request received',
-              path: request.path,
-              method: request.method,
-              hasAuthHeader: !!request.raw.req.headers.authorization
-            })
+            logger?.info(
+              `AUTH PLUGIN: Authentication request received - ${request.method} ${request.path} - Auth header present: ${!!request.raw.req.headers.authorization}`
+            )
 
             const authHeader = request.raw.req.headers.authorization
 
             if (!authHeader?.startsWith('Bearer ')) {
-              logger?.warn({
-                msg: 'AUTH PLUGIN: Missing or invalid Authorization header',
-                path: request.path,
-                method: request.method,
-                authHeaderValue: authHeader
-                  ? 'present but invalid format'
-                  : 'missing'
-              })
+              logger?.warn(
+                `AUTH PLUGIN: Missing or invalid Authorization header - ${request.method} ${request.path} - Header: ${authHeader ? 'present but invalid format' : 'missing'}`
+              )
               return Boom.unauthorized(
                 'Missing or invalid Authorization header. Please provide a valid Bearer token.'
               )
@@ -57,11 +49,9 @@ export const authPlugin = {
             const token = authHeader.slice('Bearer '.length)
 
             // Debug log: Token extracted
-            logger?.info({
-              msg: 'AUTH PLUGIN: Bearer token extracted, starting validation',
-              path: request.path,
-              tokenLength: token.length
-            })
+            logger?.info(
+              `AUTH PLUGIN: Bearer token extracted - ${request.path} - Token length: ${token.length}`
+            )
 
             try {
               /**
@@ -75,21 +65,14 @@ export const authPlugin = {
               const issuer = decoded.iss
 
               // Debug log: Token decoded
-              logger?.info({
-                msg: 'AUTH PLUGIN: Token decoded successfully',
-                path: request.path,
-                issuer,
-                client_id: decoded.client_id,
-                scope: decoded.scope,
-                token_use: decoded.token_use
-              })
+              logger?.info(
+                `AUTH PLUGIN: Token decoded - ${request.path} - Issuer: ${issuer} - Client: ${decoded.client_id} - Scope: ${decoded.scope} - Token use: ${decoded.token_use}`
+              )
 
               if (!issuer) {
-                logger?.warn({
-                  msg: 'AUTH PLUGIN: Missing issuer claim in token',
-                  path: request.path,
-                  method: request.method
-                })
+                logger?.warn(
+                  `AUTH PLUGIN: Missing issuer claim in token - ${request.method} ${request.path}`
+                )
                 return Boom.unauthorized(
                   'Invalid token: Missing issuer (iss) claim'
                 )
@@ -98,18 +81,30 @@ export const authPlugin = {
               const jwksUrl = `${issuer}/.well-known/jwks.json`
 
               // Debug log: About to fetch JWKS
-              logger?.info({
-                msg: 'AUTH PLUGIN: Attempting to fetch JWKS for signature verification',
-                path: request.path,
-                jwksUrl
-              })
+              logger?.info(
+                `AUTH PLUGIN: Attempting to fetch JWKS - ${request.path} - URL: ${jwksUrl}`
+              )
 
-              const JWKS = createRemoteJWKSet(new URL(jwksUrl))
+              let JWKS
+              try {
+                JWKS = createRemoteJWKSet(new URL(jwksUrl))
+                logger?.info(
+                  `AUTH PLUGIN: JWKS client created successfully - ${request.path}`
+                )
+              } catch (jwksError) {
+                const jwksErrMsg =
+                  jwksError instanceof Error
+                    ? jwksError.message
+                    : String(jwksError)
+                logger?.error(
+                  `AUTH PLUGIN: Failed to create JWKS client - ${request.path} - Error: ${jwksErrMsg}`
+                )
+                throw jwksError
+              }
 
-              logger?.info({
-                msg: 'AUTH PLUGIN: JWKS client created, now verifying JWT signature',
-                path: request.path
-              })
+              logger?.info(
+                `AUTH PLUGIN: Starting JWT signature verification - ${request.path}`
+              )
 
               const { payload } = await jwtVerify(token, JWKS, {
                 issuer,
@@ -117,56 +112,40 @@ export const authPlugin = {
               })
 
               // Debug log: Signature verified!
-              logger?.info({
-                msg: 'AUTH PLUGIN: JWT signature verified successfully!',
-                path: request.path,
-                client_id: payload.client_id
-              })
+              logger?.info(
+                `AUTH PLUGIN: JWT signature verified successfully! - ${request.path} - Client: ${payload.client_id}`
+              )
 
               if (payload.token_use !== 'access') {
-                logger?.warn({
-                  msg: 'Authentication failed: Token is not an access token',
-                  path: request.path,
-                  method: request.method,
-                  token_use: payload.token_use
-                })
+                logger?.warn(
+                  `AUTH PLUGIN: Token is not an access token - ${request.method} ${request.path} - Token use: ${payload.token_use}`
+                )
                 return Boom.unauthorized(
                   'Invalid token: Token is not an access token'
                 )
               }
 
               if (!payload.client_id || typeof payload.client_id !== 'string') {
-                logger?.warn({
-                  msg: 'Authentication failed: Missing client_id claim',
-                  path: request.path,
-                  method: request.method
-                })
+                logger?.warn(
+                  `AUTH PLUGIN: Missing client_id claim - ${request.method} ${request.path}`
+                )
                 return Boom.unauthorized(
                   'Invalid token: Missing client_id claim'
                 )
               }
 
               if (payload.scope !== expectedScope) {
-                logger?.warn({
-                  msg: 'Authorization failed: Token scope not authorized',
-                  path: request.path,
-                  method: request.method,
-                  client_id: payload.client_id,
-                  expected_scope: expectedScope,
-                  actual_scope: payload.scope
-                })
+                logger?.warn(
+                  `AUTH PLUGIN: Token scope not authorized - ${request.method} ${request.path} - Client: ${payload.client_id} - Expected: ${expectedScope} - Actual: ${payload.scope}`
+                )
                 return Boom.forbidden(
                   `Insufficient permissions: Required scope '${expectedScope}' not present in token`
                 )
               }
 
-              logger?.info({
-                msg: 'Token validated successfully with signature verification',
-                path: request.path,
-                method: request.method,
-                client_id: payload.client_id,
-                issuer: payload.iss
-              })
+              logger?.info(
+                `AUTH PLUGIN: Token validated successfully - ${request.method} ${request.path} - Client: ${payload.client_id} - Issuer: ${payload.iss}`
+              )
 
               await metricsCounter('clientRequest', 1, {
                 client_id: payload.client_id
@@ -180,13 +159,9 @@ export const authPlugin = {
               const error = err instanceof Error ? err : new Error(String(err))
               const errorCode = 'code' in error ? error.code : undefined
 
-              logger?.warn({
-                msg: 'Authentication failed: Token verification failed',
-                path: request.path,
-                method: request.method,
-                error: error.message,
-                code: errorCode
-              })
+              logger?.error(
+                `AUTH PLUGIN: Token verification failed - ${request.method} ${request.path} - Error: ${error.message} - Code: ${errorCode || 'none'}`
+              )
 
               // Provide specific error messages based on error type
               if (errorCode === 'ERR_JWT_EXPIRED') {
@@ -214,9 +189,13 @@ export const authPlugin = {
         }
       })
 
-      server.auth.strategy('simple', 'bearer', {})
+      server.auth.strategy('jwt-auth', 'bearer', {})
 
-      server.auth.default('simple')
+      server.auth.default('jwt-auth')
+
+      logger?.info(
+        'AUTH PLUGIN: JWT authentication strategy registered as default'
+      )
     }
   }
 }
