@@ -180,7 +180,7 @@ INSERT INTO pega_data.ahwork_ac (
   activitysequencenumber
 ) VALUES (
   'WS-76513-ACT1', 'AH-AC-WS-ACT WS-76513-ACT1', 'activity-1',
-  'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76513', 1
+  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 1
 );
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
@@ -191,7 +191,7 @@ INSERT INTO pega_data.ahwork_ac (
   activitysequencenumber
 ) VALUES (
   'WS-76513-ACT2', 'AH-AC-WS-ACT WS-76513-ACT2', 'activity-2',
-  'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76513', 2
+  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 2
 );
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
@@ -236,19 +236,19 @@ VALUES ('U000020', 'WS-76514', 'workScheduleLivestockUnits', NULL);
 
 -- Activities for WS-76514 (3 activities)
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76514-ACT1', 'AH-AC-WS-ACT WS-76514-ACT1', 'activity-3', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514', 1);
+VALUES ('WS-76514-ACT1', 'AH-AC-WS-ACT WS-76514-ACT1', 'activity-3', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 1);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-3', 'Initial Farm Assessment');
 
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514', 2);
+VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 2);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-4', 'Livestock Document Review');
 
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76514', 3);
+VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 3);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-5', 'Physical Animal Inspection');
@@ -294,13 +294,13 @@ VALUES ('U000030', 'WS-76515', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76515
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76515-ACT1', 'AH-AC-WS-ACT WS-76515-ACT1', 'activity-6', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76515', 1);
+VALUES ('WS-76515-ACT1', 'AH-AC-WS-ACT WS-76515-ACT1', 'activity-6', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76515', 1);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-6', 'Verify Movement Documentation');
 
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76515-ACT2', 'AH-AC-WS-ACT WS-76515-ACT2', 'activity-7', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76515', 2);
+VALUES ('WS-76515-ACT2', 'AH-AC-WS-ACT WS-76515-ACT2', 'activity-7', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76515', 2);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-7', 'Inspect Holding Facilities');
@@ -333,7 +333,7 @@ INSERT INTO pega_data.index_ac_workschedule (
 
 -- Activity for WS-76516
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76516-ACT1', 'AH-AC-WS-ACT WS-76516-ACT1', 'activity-8', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76516', 1);
+VALUES ('WS-76516-ACT1', 'AH-AC-WS-ACT WS-76516-ACT1', 'activity-8', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76516', 1);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-8', 'Emergency Site Assessment');
@@ -438,25 +438,25 @@ VALUES ('U000030', 'WS-76519', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76519 (4 activities)
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76519-ACT1', 'AH-AC-WS-ACT WS-76519-ACT1', 'activity-9', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 1);
+VALUES ('WS-76519-ACT1', 'AH-AC-WS-ACT WS-76519-ACT1', 'activity-9', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 1);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-9', 'Comprehensive Site Audit');
 
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76519-ACT2', 'AH-AC-WS-ACT WS-76519-ACT2', 'activity-10', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 2);
+VALUES ('WS-76519-ACT2', 'AH-AC-WS-ACT WS-76519-ACT2', 'activity-10', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 2);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-10', 'Review All Livestock Units');
 
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76519-ACT3', 'AH-AC-WS-ACT WS-76519-ACT3', 'activity-11', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 3);
+VALUES ('WS-76519-ACT3', 'AH-AC-WS-ACT WS-76519-ACT3', 'activity-11', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 3);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-11', 'Inspect All Facilities');
 
 INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber)
-VALUES ('WS-76519-ACT4', 'AH-AC-WS-ACT WS-76519-ACT4', 'activity-12', 'AH-AC-WS-ACT', 'Open', 'AH-AC-WS-76519', 4);
+VALUES ('WS-76519-ACT4', 'AH-AC-WS-ACT WS-76519-ACT4', 'activity-12', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 4);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-12', 'Generate Compliance Report');
