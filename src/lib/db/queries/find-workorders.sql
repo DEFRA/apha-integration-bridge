@@ -148,3 +148,7 @@ AND
 ws.pyid = wsa.ws_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
+
+ORDER BY
+ws.pyid ASC,
+wsa.activitysequencenumber ASC
