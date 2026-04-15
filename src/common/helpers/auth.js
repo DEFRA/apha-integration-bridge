@@ -1,8 +1,9 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { jwtVerify, createLocalJWKSet } from 'jose'
 import Boom from '@hapi/boom'
 import { config } from '../../config.js'
 import { metricsCounter } from './metrics.js'
 import { createLogger } from './logging/logger.js'
+import { proxyFetch } from './proxy/proxy-fetch.js'
 
 const expectedScope = config.get('auth.scope')
 const logger = createLogger()
@@ -14,8 +15,7 @@ const logger = createLogger()
  */
 
 /**
- * Creates a Hapi.js plugin for authenticating JWT using a remote JWK set.
- *
+ * Creates a Hapi.js plugin for JWT authentication with signature verification.
  * @returns {Object} a Hapi.js plugin for authentication
  */
 export const authPlugin = {
@@ -34,21 +34,18 @@ export const authPlugin = {
             const authHeader = request.raw.req.headers.authorization
 
             if (!authHeader?.startsWith('Bearer ')) {
-              logger?.warn({
-                msg: 'Authentication failed: Missing or invalid Authorization header',
-                path: request.path,
-                method: request.method
-              })
-              return Boom.unauthorized(
-                'Missing or invalid Authorization header. Please provide a valid Bearer token.'
+              logger?.warn(
+                'Authentication failed: Missing or invalid Authorization header'
               )
+              return Boom.unauthorized('Authentication failed')
             }
 
             const token = authHeader.slice('Bearer '.length)
 
             try {
               /**
-               * Decode just the payload to extract `iss`
+               * Decode the JWT payload to extract the issuer
+               * We need the issuer to construct the JWKS endpoint URL
                */
               const decoded = JSON.parse(
                 Buffer.from(token.split('.')[1], 'base64url').toString('utf8')
@@ -57,19 +54,28 @@ export const authPlugin = {
               const issuer = decoded.iss
 
               if (!issuer) {
-                logger?.warn({
-                  msg: 'Authentication failed: Missing issuer claim in token',
-                  path: request.path,
-                  method: request.method
-                })
-                return Boom.unauthorized(
-                  'Invalid token: Missing issuer (iss) claim'
+                logger?.warn(
+                  'Authentication failed: Missing issuer claim in token'
+                )
+                return Boom.unauthorized('Authentication failed')
+              }
+
+              const jwksUrl = `${issuer}/.well-known/jwks.json`
+
+              // Fetch JWKS using proxyFetch to ensure proxy is used
+              const jwksResponse = await proxyFetch(jwksUrl)
+
+              if (!jwksResponse.ok) {
+                logger?.error('Failed to fetch JWKS from Cognito')
+                throw new Error(
+                  `Failed to fetch JWKS: ${jwksResponse.status} ${jwksResponse.statusText}`
                 )
               }
 
-              const JWKS = createRemoteJWKSet(
-                new URL(`${issuer}/.well-known/jwks.json`)
-              )
+              const jwks = await jwksResponse.json()
+
+              // Create local JWKS for verification
+              const JWKS = createLocalJWKSet(jwks)
 
               const { payload } = await jwtVerify(token, JWKS, {
                 issuer,
@@ -77,41 +83,25 @@ export const authPlugin = {
               })
 
               if (payload.token_use !== 'access') {
-                logger?.warn({
-                  msg: 'Authentication failed: Token is not an access token',
-                  path: request.path,
-                  method: request.method,
-                  token_use: payload.token_use
-                })
-                return Boom.unauthorized(
-                  'Invalid token: Token is not an access token'
+                logger?.warn(
+                  'Authentication failed: Token is not an access token'
                 )
+                return Boom.unauthorized('Authentication failed')
               }
 
               if (!payload.client_id || typeof payload.client_id !== 'string') {
-                logger?.warn({
-                  msg: 'Authentication failed: Missing client_id claim',
-                  path: request.path,
-                  method: request.method
-                })
-                return Boom.unauthorized(
-                  'Invalid token: Missing client_id claim'
-                )
+                logger?.warn('Authentication failed: Missing client_id claim')
+                return Boom.unauthorized('Authentication failed')
               }
 
               if (payload.scope !== expectedScope) {
-                logger?.warn({
-                  msg: 'Authorization failed: Token scope not authorized',
-                  path: request.path,
-                  method: request.method,
-                  client_id: payload.client_id,
-                  expected_scope: expectedScope,
-                  actual_scope: payload.scope
-                })
-                return Boom.forbidden(
-                  `Insufficient permissions: Required scope '${expectedScope}' not present in token`
+                logger?.warn(
+                  'Authorization failed: Required scope not present in token'
                 )
+                return Boom.forbidden('Insufficient permissions')
               }
+
+              logger?.info('Token validated successfully')
 
               await metricsCounter('clientRequest', 1, {
                 client_id: payload.client_id
@@ -125,37 +115,40 @@ export const authPlugin = {
               const error = err instanceof Error ? err : new Error(String(err))
               const errorCode = 'code' in error ? error.code : undefined
 
-              logger?.warn({
-                msg: 'Authentication failed: Token verification failed',
-                path: request.path,
-                method: request.method,
-                error: error.message,
-                code: errorCode
-              })
-
+              // Provide specific error messages based on error type
               if (errorCode === 'ERR_JWT_EXPIRED') {
+                logger?.warn('Authentication failed: Token has expired')
                 return Boom.unauthorized('Token has expired')
               }
               if (errorCode === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') {
-                return Boom.unauthorized(
-                  'Token signature verification failed: Token has not been signed by Amazon Cognito'
+                logger?.warn(
+                  'Authentication failed: Token signature verification failed'
                 )
+                return Boom.unauthorized('Authentication failed')
               }
               if (errorCode === 'ERR_JWT_CLAIM_VALIDATION_FAILED') {
-                return Boom.unauthorized('Token claim validation failed')
+                logger?.warn(
+                  'Authentication failed: Token claim validation failed'
+                )
+                return Boom.unauthorized('Authentication failed')
+              }
+              if (errorCode === 'ERR_JWKS_NO_MATCHING_KEY') {
+                logger?.warn(
+                  'Authentication failed: No matching key found in JWKS'
+                )
+                return Boom.unauthorized('Authentication failed')
               }
 
-              return Boom.unauthorized(
-                'Token verification failed: Invalid or malformed token'
-              )
+              logger?.warn('Authentication failed: Invalid or malformed token')
+              return Boom.unauthorized('Authentication failed')
             }
           }
         }
       })
 
-      server.auth.strategy('simple', 'bearer', {})
+      server.auth.strategy('jwt-auth', 'bearer', {})
 
-      server.auth.default('simple')
+      server.auth.default('jwt-auth')
     }
   }
 }

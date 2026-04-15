@@ -1,44 +1,47 @@
 import Hapi from '@hapi/hapi'
 import { describe, beforeAll, afterAll, test, expect } from '@jest/globals'
-import { generateKeyPair, exportJWK, SignJWT } from 'jose'
+import { SignJWT, generateKeyPair, exportJWK } from 'jose'
 import { setupServer } from 'msw/node'
-import { http } from 'msw'
+import { http, HttpResponse } from 'msw'
 
 import { authPlugin } from './auth.js'
 
 // Constants
-const ISSUER = 'https://mock-cognito'
+const ISSUER = 'https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_TEST'
 const CLIENT_ID = 'test-client-id'
 const JWKS_PATH = '/.well-known/jwks.json'
 
-// MSW server setup
+// MSW server for mocking JWKS endpoint
 const msw = setupServer()
 
-describe('Auth Plugin (with MSW)', () => {
+describe('Auth Plugin (Full JWT Signature Verification)', () => {
   let server
   let token
-  let publicJwk
   let privateKey
+  let publicJwk
 
   beforeAll(async () => {
-    // Generate key pair
+    // Generate key pair for signing test tokens
     const keypair = await generateKeyPair('RS256')
-
     privateKey = keypair.privateKey
 
+    // Export public key as JWK for JWKS endpoint
     publicJwk = await exportJWK(keypair.publicKey)
     publicJwk.kid = 'mock-key-id'
+    publicJwk.use = 'sig'
+    publicJwk.alg = 'RS256'
 
     // Set env
-    process.env.EXPECTED_SCOPE = 'alpha-integration-bridge-resource-srv/access'
+    process.env.AUTH_SCOPE = 'apha-integration-bridge-resource-srv/access'
 
+    // Mock JWKS endpoint
     msw.use(
       http.get(`${ISSUER}${JWKS_PATH}`, () => {
-        return Response.json({ keys: [publicJwk] })
+        return HttpResponse.json({ keys: [publicJwk] })
       })
     )
 
-    msw.listen()
+    msw.listen({ onUnhandledRequest: 'bypass' })
 
     // Generate valid token
     const now = Math.floor(Date.now() / 1000)
@@ -52,7 +55,7 @@ describe('Auth Plugin (with MSW)', () => {
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuedAt(now)
-      .setExpirationTime(now + 60)
+      .setExpirationTime(now + 3600)
       .sign(privateKey)
 
     // Set up HAPI server
@@ -108,10 +111,7 @@ describe('Auth Plugin (with MSW)', () => {
     const res = await server.inject({ method: 'GET', url: '/secure' })
 
     expect(res.statusCode).toBe(401)
-
-    expect(res.result.message).toMatch(
-      /Missing or invalid Authorization header/
-    )
+    expect(res.result.message).toBe('Authentication failed')
   })
 
   test('rejects token with invalid scope', async () => {
@@ -126,7 +126,7 @@ describe('Auth Plugin (with MSW)', () => {
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuedAt(now)
-      .setExpirationTime(now + 60)
+      .setExpirationTime(now + 3600)
       .sign(privateKey)
 
     const res = await server.inject({
@@ -136,7 +136,7 @@ describe('Auth Plugin (with MSW)', () => {
     })
 
     expect(res.statusCode).toBe(403)
-    expect(res.result.message).toMatch(/Insufficient permissions|scope/i)
+    expect(res.result.message).toBe('Insufficient permissions')
   })
 
   test('rejects token with missing client_id', async () => {
@@ -150,7 +150,7 @@ describe('Auth Plugin (with MSW)', () => {
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuedAt(now)
-      .setExpirationTime(now + 60)
+      .setExpirationTime(now + 3600)
       .sign(privateKey)
 
     const res = await server.inject({
@@ -160,7 +160,32 @@ describe('Auth Plugin (with MSW)', () => {
     })
 
     expect(res.statusCode).toBe(401)
-    expect(res.result.message).toMatch(/missing.+client_id.+claim/i)
+    expect(res.result.message).toBe('Authentication failed')
+  })
+
+  test('rejects expired token', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const expiredToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access',
+      scope: 'apha-integration-bridge-resource-srv/access',
+      client_id: CLIENT_ID
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now - 3660)
+      .setExpirationTime(now - 60) // Expired 60 seconds ago
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${expiredToken}` }
+    })
+
+    expect(res.statusCode).toBe(401)
+    expect(res.result.message).toMatch(/expired/i)
   })
 
   test('allows valid token on secure route', async () => {
