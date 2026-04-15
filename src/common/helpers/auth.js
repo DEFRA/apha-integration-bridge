@@ -31,16 +31,11 @@ export const authPlugin = {
       server.auth.scheme('bearer', () => {
         return {
           authenticate: async (request, h) => {
-            // Debug log: Request received
-            logger?.info(
-              `AUTH PLUGIN: Authentication request received - ${request.method} ${request.path} - Auth header present: ${!!request.raw.req.headers.authorization}`
-            )
-
             const authHeader = request.raw.req.headers.authorization
 
             if (!authHeader?.startsWith('Bearer ')) {
               logger?.warn(
-                `AUTH PLUGIN: Missing or invalid Authorization header - ${request.method} ${request.path} - Header: ${authHeader ? 'present but invalid format' : 'missing'}`
+                'Authentication failed: Missing or invalid Authorization header'
               )
               return Boom.unauthorized(
                 'Missing or invalid Authorization header. Please provide a valid Bearer token.'
@@ -48,11 +43,6 @@ export const authPlugin = {
             }
 
             const token = authHeader.slice('Bearer '.length)
-
-            // Debug log: Token extracted
-            logger?.info(
-              `AUTH PLUGIN: Bearer token extracted - ${request.path} - Token length: ${token.length}`
-            )
 
             try {
               /**
@@ -65,14 +55,9 @@ export const authPlugin = {
 
               const issuer = decoded.iss
 
-              // Debug log: Token decoded
-              logger?.info(
-                `AUTH PLUGIN: Token decoded - ${request.path} - Issuer: ${issuer} - Client: ${decoded.client_id} - Scope: ${decoded.scope} - Token use: ${decoded.token_use}`
-              )
-
               if (!issuer) {
                 logger?.warn(
-                  `AUTH PLUGIN: Missing issuer claim in token - ${request.method} ${request.path}`
+                  'Authentication failed: Missing issuer claim in token'
                 )
                 return Boom.unauthorized(
                   'Invalid token: Missing issuer (iss) claim'
@@ -80,20 +65,12 @@ export const authPlugin = {
               }
 
               const jwksUrl = `${issuer}/.well-known/jwks.json`
-              const httpProxy = config.get('httpProxy')
-
-              // Debug log: About to fetch JWKS
-              logger?.info(
-                `AUTH PLUGIN: Attempting to fetch JWKS - ${request.path} - URL: ${jwksUrl} - HTTP_PROXY: ${httpProxy || 'NOT SET'}`
-              )
 
               // Fetch JWKS using proxyFetch to ensure proxy is used
               const jwksResponse = await proxyFetch(jwksUrl)
 
               if (!jwksResponse.ok) {
-                logger?.error(
-                  `AUTH PLUGIN: Failed to fetch JWKS - ${request.path} - Status: ${jwksResponse.status} - ${jwksResponse.statusText}`
-                )
+                logger?.error('Failed to fetch JWKS from Cognito')
                 throw new Error(
                   `Failed to fetch JWKS: ${jwksResponse.status} ${jwksResponse.statusText}`
                 )
@@ -101,30 +78,17 @@ export const authPlugin = {
 
               const jwks = await jwksResponse.json()
 
-              logger?.info(
-                `AUTH PLUGIN: JWKS fetched successfully via proxyFetch - ${request.path} - Keys count: ${jwks.keys?.length || 0}`
-              )
-
               // Create local JWKS for verification
               const JWKS = createLocalJWKSet(jwks)
-
-              logger?.info(
-                `AUTH PLUGIN: Starting JWT signature verification - ${request.path}`
-              )
 
               const { payload } = await jwtVerify(token, JWKS, {
                 issuer,
                 audience: undefined
               })
 
-              // Debug log: Signature verified!
-              logger?.info(
-                `AUTH PLUGIN: JWT signature verified successfully! - ${request.path} - Client: ${payload.client_id}`
-              )
-
               if (payload.token_use !== 'access') {
                 logger?.warn(
-                  `AUTH PLUGIN: Token is not an access token - ${request.method} ${request.path} - Token use: ${payload.token_use}`
+                  'Authentication failed: Token is not an access token'
                 )
                 return Boom.unauthorized(
                   'Invalid token: Token is not an access token'
@@ -132,9 +96,7 @@ export const authPlugin = {
               }
 
               if (!payload.client_id || typeof payload.client_id !== 'string') {
-                logger?.warn(
-                  `AUTH PLUGIN: Missing client_id claim - ${request.method} ${request.path}`
-                )
+                logger?.warn('Authentication failed: Missing client_id claim')
                 return Boom.unauthorized(
                   'Invalid token: Missing client_id claim'
                 )
@@ -142,16 +104,14 @@ export const authPlugin = {
 
               if (payload.scope !== expectedScope) {
                 logger?.warn(
-                  `AUTH PLUGIN: Token scope not authorized - ${request.method} ${request.path} - Client: ${payload.client_id} - Expected: ${expectedScope} - Actual: ${payload.scope}`
+                  'Authorization failed: Required scope not present in token'
                 )
                 return Boom.forbidden(
                   `Insufficient permissions: Required scope '${expectedScope}' not present in token`
                 )
               }
 
-              logger?.info(
-                `AUTH PLUGIN: Token validated successfully - ${request.method} ${request.path} - Client: ${payload.client_id} - Issuer: ${payload.iss}`
-              )
+              logger?.info('Token validated successfully')
 
               await metricsCounter('clientRequest', 1, {
                 client_id: payload.client_id
@@ -164,30 +124,36 @@ export const authPlugin = {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err))
               const errorCode = 'code' in error ? error.code : undefined
-              const errorCause = 'cause' in error ? error.cause : undefined
-
-              logger?.error(
-                `AUTH PLUGIN: Token verification failed - ${request.method} ${request.path} - Error: ${error.message} - Code: ${errorCode || 'none'} - Cause: ${errorCause ? JSON.stringify(errorCause) : 'none'} - Stack: ${error.stack?.substring(0, 500)}`
-              )
 
               // Provide specific error messages based on error type
               if (errorCode === 'ERR_JWT_EXPIRED') {
+                logger?.warn('Authentication failed: Token has expired')
                 return Boom.unauthorized('Token has expired')
               }
               if (errorCode === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') {
+                logger?.warn(
+                  'Authentication failed: Token signature verification failed'
+                )
                 return Boom.unauthorized(
                   'Token signature verification failed: Token has not been signed by Amazon Cognito'
                 )
               }
               if (errorCode === 'ERR_JWT_CLAIM_VALIDATION_FAILED') {
+                logger?.warn(
+                  'Authentication failed: Token claim validation failed'
+                )
                 return Boom.unauthorized('Token claim validation failed')
               }
               if (errorCode === 'ERR_JWKS_NO_MATCHING_KEY') {
+                logger?.warn(
+                  'Authentication failed: No matching key found in JWKS'
+                )
                 return Boom.unauthorized(
                   'Token signature verification failed: No matching key found in JWKS'
                 )
               }
 
+              logger?.warn('Authentication failed: Invalid or malformed token')
               return Boom.unauthorized(
                 'Token verification failed: Invalid or malformed token'
               )
@@ -199,10 +165,6 @@ export const authPlugin = {
       server.auth.strategy('jwt-auth', 'bearer', {})
 
       server.auth.default('jwt-auth')
-
-      logger?.info(
-        'AUTH PLUGIN: JWT authentication strategy registered as default'
-      )
     }
   }
 }
