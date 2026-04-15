@@ -37,9 +37,7 @@ export const authPlugin = {
               logger?.warn(
                 'Authentication failed: Missing or invalid Authorization header'
               )
-              return Boom.unauthorized(
-                'Missing or invalid Authorization header. Please provide a valid Bearer token.'
-              )
+              return Boom.unauthorized('Authentication failed')
             }
 
             const token = authHeader.slice('Bearer '.length)
@@ -59,9 +57,7 @@ export const authPlugin = {
                 logger?.warn(
                   'Authentication failed: Missing issuer claim in token'
                 )
-                return Boom.unauthorized(
-                  'Invalid token: Missing issuer (iss) claim'
-                )
+                return Boom.unauthorized('Authentication failed')
               }
 
               const jwksUrl = `${issuer}/.well-known/jwks.json`
@@ -90,25 +86,19 @@ export const authPlugin = {
                 logger?.warn(
                   'Authentication failed: Token is not an access token'
                 )
-                return Boom.unauthorized(
-                  'Invalid token: Token is not an access token'
-                )
+                return Boom.unauthorized('Authentication failed')
               }
 
               if (!payload.client_id || typeof payload.client_id !== 'string') {
                 logger?.warn('Authentication failed: Missing client_id claim')
-                return Boom.unauthorized(
-                  'Invalid token: Missing client_id claim'
-                )
+                return Boom.unauthorized('Authentication failed')
               }
 
               if (payload.scope !== expectedScope) {
                 logger?.warn(
                   'Authorization failed: Required scope not present in token'
                 )
-                return Boom.forbidden(
-                  `Insufficient permissions: Required scope '${expectedScope}' not present in token`
-                )
+                return Boom.forbidden('Insufficient permissions')
               }
 
               logger?.info('Token validated successfully')
@@ -134,29 +124,23 @@ export const authPlugin = {
                 logger?.warn(
                   'Authentication failed: Token signature verification failed'
                 )
-                return Boom.unauthorized(
-                  'Token signature verification failed: Token has not been signed by Amazon Cognito'
-                )
+                return Boom.unauthorized('Authentication failed')
               }
               if (errorCode === 'ERR_JWT_CLAIM_VALIDATION_FAILED') {
                 logger?.warn(
                   'Authentication failed: Token claim validation failed'
                 )
-                return Boom.unauthorized('Token claim validation failed')
+                return Boom.unauthorized('Authentication failed')
               }
               if (errorCode === 'ERR_JWKS_NO_MATCHING_KEY') {
                 logger?.warn(
                   'Authentication failed: No matching key found in JWKS'
                 )
-                return Boom.unauthorized(
-                  'Token signature verification failed: No matching key found in JWKS'
-                )
+                return Boom.unauthorized('Authentication failed')
               }
 
               logger?.warn('Authentication failed: Invalid or malformed token')
-              return Boom.unauthorized(
-                'Token verification failed: Invalid or malformed token'
-              )
+              return Boom.unauthorized('Authentication failed')
             }
           }
         }

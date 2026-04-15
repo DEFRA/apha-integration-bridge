@@ -111,10 +111,7 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
     const res = await server.inject({ method: 'GET', url: '/secure' })
 
     expect(res.statusCode).toBe(401)
-
-    expect(res.result.message).toMatch(
-      /Missing or invalid Authorization header/
-    )
+    expect(res.result.message).toBe('Authentication failed')
   })
 
   test('rejects token with invalid scope', async () => {
@@ -139,7 +136,7 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
     })
 
     expect(res.statusCode).toBe(403)
-    expect(res.result.message).toMatch(/Insufficient permissions|scope/i)
+    expect(res.result.message).toBe('Insufficient permissions')
   })
 
   test('rejects token with missing client_id', async () => {
@@ -163,7 +160,7 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
     })
 
     expect(res.statusCode).toBe(401)
-    expect(res.result.message).toMatch(/missing.+client_id.+claim/i)
+    expect(res.result.message).toBe('Authentication failed')
   })
 
   test('rejects expired token', async () => {
