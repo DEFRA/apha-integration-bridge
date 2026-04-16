@@ -8,6 +8,10 @@ import { proxyFetch } from './proxy/proxy-fetch.js'
 const expectedScope = config.get('auth.scope')
 const logger = createLogger()
 
+// JWKS cache to avoid fetching on every request
+const jwksCache = new Map()
+const JWKS_CACHE_TTL_MS = 3600000
+
 /**
  * @typedef {import('@hapi/hapi').Server} Server
  * @typedef {import('@hapi/hapi').Request} Request
@@ -62,20 +66,34 @@ export const authPlugin = {
 
               const jwksUrl = `${issuer}/.well-known/jwks.json`
 
-              // Fetch JWKS using proxyFetch to ensure proxy is used
-              const jwksResponse = await proxyFetch(jwksUrl)
+              // Check cache first
+              const cached = jwksCache.get(jwksUrl)
+              let JWKS
 
-              if (!jwksResponse.ok) {
-                logger?.error('Failed to fetch JWKS from Cognito')
-                throw new Error(
-                  `Failed to fetch JWKS: ${jwksResponse.status} ${jwksResponse.statusText}`
-                )
+              if (cached && Date.now() - cached.timestamp < JWKS_CACHE_TTL_MS) {
+                JWKS = cached.jwks
+              } else {
+                // Fetch JWKS using proxyFetch to ensure proxy is used
+                const jwksResponse = await proxyFetch(jwksUrl)
+
+                if (!jwksResponse.ok) {
+                  logger?.error('Failed to fetch JWKS from Cognito')
+                  throw new Error(
+                    `Failed to fetch JWKS: ${jwksResponse.status} ${jwksResponse.statusText}`
+                  )
+                }
+
+                const jwks = await jwksResponse.json()
+
+                // Create local JWKS for verification
+                JWKS = createLocalJWKSet(jwks)
+
+                // Cache the JWKS
+                jwksCache.set(jwksUrl, {
+                  jwks: JWKS,
+                  timestamp: Date.now()
+                })
               }
-
-              const jwks = await jwksResponse.json()
-
-              // Create local JWKS for verification
-              const JWKS = createLocalJWKSet(jwks)
 
               const { payload } = await jwtVerify(token, JWKS, {
                 issuer,
