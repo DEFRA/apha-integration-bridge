@@ -78,7 +78,9 @@ test('toWorkorder maps a single row into one workorder resource, replacing codes
         type: 'activities',
         id: 'ACT-001',
         activityName: 'Site Inspection',
-        sequenceNumber: 1
+        sequenceNumber: 1,
+        performActivity: false,
+        workbasket: null
       }
     ],
     phase: 'Active',

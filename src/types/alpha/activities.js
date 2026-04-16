@@ -17,5 +17,11 @@ export const Activities = baseData({
     .required()
     .description(
       'The sequence in which this activity is expected to be performed'
-    )
+    ),
+  performActivity: Joi.boolean()
+    .required()
+    .description('Whether this activity is required to be performed'),
+  workbasket: Joi.string()
+    .allow(null)
+    .description('The workbasket that this activity relates to')
 })
