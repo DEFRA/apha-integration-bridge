@@ -66,14 +66,18 @@ export const workorder2 = {
       id: 'activity-1',
       activityName: 'Arrange Visit',
       sequenceNumber: 1,
-      default: true
+      default: true,
+      performActivity: true,
+      workbasket: 'Tech'
     },
     {
       type: 'activities',
       id: 'activity-2',
       activityName: 'Perform TB Skin Test',
       sequenceNumber: 2,
-      default: false
+      default: false,
+      performActivity: true,
+      workbasket: 'Vet'
     }
   ],
   relationships: {
