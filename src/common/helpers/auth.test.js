@@ -202,4 +202,36 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
       user: 'test-user'
     })
   })
+
+  test('uses cached JWKS on subsequent requests', async () => {
+    let jwksCallCount = 0
+
+    msw.use(
+      http.get(`${ISSUER}${JWKS_PATH}`, () => {
+        jwksCallCount++
+        return HttpResponse.json({ keys: [publicJwk] })
+      })
+    )
+
+    // Make first request - should fetch JWKS
+    const res1 = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${token}` }
+    })
+
+    expect(res1.statusCode).toBe(200)
+    const callsAfterFirst = jwksCallCount
+
+    // Make second request - should use cached JWKS
+    const res2 = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${token}` }
+    })
+
+    expect(res2.statusCode).toBe(200)
+
+    expect(jwksCallCount).toBe(callsAfterFirst)
+  })
 })
