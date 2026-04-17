@@ -216,13 +216,17 @@ describe('workorders/find', () => {
             type: 'activities',
             id: 'WS-76513-ACT1',
             activityName: 'Arrange Visit',
-            sequenceNumber: 1
+            sequenceNumber: 1,
+            performActivity: true,
+            workbasket: 'Tech'
           },
           {
             type: 'activities',
             id: 'WS-76513-ACT2',
             activityName: 'Perform TB Skin Test',
-            sequenceNumber: 2
+            sequenceNumber: 2,
+            performActivity: true,
+            workbasket: 'Vet'
           }
         ],
         phase: 'EXPOSURETRACKING',
@@ -280,19 +284,25 @@ describe('workorders/find', () => {
             activityName: 'Initial Farm Assessment',
             id: 'WS-76514-ACT1',
             sequenceNumber: 1,
-            type: 'activities'
+            type: 'activities',
+            performActivity: false,
+            workbasket: 'Admin'
           },
           {
             activityName: 'Livestock Document Review',
             id: 'WS-76514-ACT2',
             sequenceNumber: 2,
-            type: 'activities'
+            type: 'activities',
+            performActivity: true,
+            workbasket: 'Tech'
           },
           {
             activityName: 'Physical Animal Inspection',
             id: 'WS-76514-ACT3',
             sequenceNumber: 3,
-            type: 'activities'
+            type: 'activities',
+            performActivity: true,
+            workbasket: 'Vet'
           }
         ],
         phase: 'INSPECTION',

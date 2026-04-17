@@ -80,7 +80,9 @@ wsa AS (
   wsa_ac.pyid wsa_id,
   aca.actname activity_name,
   wsa_ac.pystatuswork wsa_status,
-  wsa_ac.activitysequencenumber
+  wsa_ac.activitysequencenumber,
+  wsa_ac.activityrequiredflag,
+  wsa_ac.workbasketname
 
   FROM
   pega_Data.ahwork_ac wsa_ac,
@@ -113,6 +115,8 @@ wsa.wsa_id,
 wsa.activity_name,
 ws.phase,
 wsa.activitysequencenumber,
+wsa.activityrequiredflag,
+wsa.workbasketname,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
 TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
 TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date
@@ -152,4 +156,6 @@ ac.pxobjclass = 'AH-AC-WS'
 ORDER BY
 ws.pyid ASC,
 wsa.activitysequencenumber ASC,
-wsa.wsa_id ASC
+wsa.wsa_id ASC,
+ws_lu.entityid ASC,
+ws_f.entityid ASC

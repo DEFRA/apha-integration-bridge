@@ -7,13 +7,17 @@ test('toActivity maps populated fields to API activity shape', () => {
     toActivity({
       wsa_id: 'ACT-001',
       activity_name: 'Site inspection',
-      activitysequencenumber: '12'
+      activitysequencenumber: '12',
+      activityrequiredflag: 'true',
+      workbasketname: 'Tech'
     })
   ).toEqual({
     type: 'activities',
     id: 'ACT-001',
     activityName: 'Site inspection',
-    sequenceNumber: 12
+    sequenceNumber: 12,
+    performActivity: true,
+    workbasket: 'Tech'
   })
 })
 
@@ -22,12 +26,16 @@ test('toActivity maps missing and blank values to nullable fields', () => {
     toActivity({
       wsa_id: '   ',
       activity_name: null,
-      activitysequencenumber: 'abc'
+      activitysequencenumber: 'abc',
+      activityrequiredflag: null,
+      workbasketname: '   '
     })
   ).toEqual({
     type: 'activities',
     id: null,
     activityName: null,
-    sequenceNumber: null
+    sequenceNumber: null,
+    performActivity: false,
+    workbasket: null
   })
 })

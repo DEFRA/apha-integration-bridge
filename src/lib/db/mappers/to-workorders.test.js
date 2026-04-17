@@ -60,19 +60,25 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     type: 'activities',
     id: 'WSA-A',
     activityName: 'Site Visit',
-    sequenceNumber: 1
+    sequenceNumber: 1,
+    performActivity: false,
+    workbasket: null
   })
   expect(workorders[0].activities[1]).toEqual({
     type: 'activities',
     id: 'WSA-B',
     activityName: 'Sample Collection',
-    sequenceNumber: 2
+    sequenceNumber: 2,
+    performActivity: false,
+    workbasket: null
   })
   expect(workorders[0].activities[2]).toEqual({
     type: 'activities',
     id: 'WSA-C',
     activityName: 'Lab Testing',
-    sequenceNumber: 3
+    sequenceNumber: 3,
+    performActivity: false,
+    workbasket: null
   })
 })
 
