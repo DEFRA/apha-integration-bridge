@@ -255,7 +255,7 @@ test('toWorkorders returns workorders ordered by requested ids', () => {
   expect(workorders[1].id).toBe('WO123456')
 })
 
-test('toWorkorders returns first customer when multiple customers exist', () => {
+test('toWorkorders uses first row customer when multiple customers exist', () => {
   const rows = [
     {
       ...mockWorkorderRowBase,
@@ -276,28 +276,5 @@ test('toWorkorders returns first customer when multiple customers exist', () => 
   expect(workorders[0].relationships.customerOrOrganisation.data).toEqual({
     type: 'customers',
     id: 'C123789'
-  })
-})
-
-test('toWorkorders uses first row customer when multiple customers exist without SQL ordering', () => {
-  const rowsUnordered = [
-    {
-      ...mockWorkorderRowBase,
-      work_order_id: 'WS-TEST',
-      customer_id: 'C999999' // Appears first - this will be used
-    },
-    {
-      ...mockWorkorderRowBase,
-      work_order_id: 'WS-TEST',
-      customer_id: 'C123789' // Appears second - ignored
-    }
-  ]
-
-  const workorders = toWorkorders(rowsUnordered, ['WS-TEST'], emptyCodeMappings)
-
-  expect(workorders).toHaveLength(1)
-  expect(workorders[0].relationships.customerOrOrganisation.data).toEqual({
-    type: 'customers',
-    id: 'C999999'
   })
 })

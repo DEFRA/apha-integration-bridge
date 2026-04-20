@@ -393,7 +393,7 @@ describe('GET /workorders', () => {
     )
   })
 
-  test('returns first customer alphabetically when workorder has multiple customers', async () => {
+  test('returns first customer alphabetically for WS-76515', async () => {
     const server = await createServer()
 
     const query = new URLSearchParams({

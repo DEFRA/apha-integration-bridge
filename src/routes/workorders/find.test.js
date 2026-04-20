@@ -612,7 +612,7 @@ describe('workorders/find', () => {
   })
 
   describe('Multiple customers per workorder', () => {
-    test('returns first customer alphabetically when workorder has multiple customers', async () => {
+    test('returns first customer alphabetically', async () => {
       const server = await createServer()
 
       const queryParams = new URLSearchParams({
