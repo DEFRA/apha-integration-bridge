@@ -255,7 +255,7 @@ test('toWorkorders returns workorders ordered by requested ids', () => {
   expect(workorders[1].id).toBe('WO123456')
 })
 
-test('toWorkorders returns first customer when multiple customers exist (DSFAAP-2421)', () => {
+test('toWorkorders returns first customer when multiple customers exist', () => {
   const rows = [
     {
       ...mockWorkorderRowBase,

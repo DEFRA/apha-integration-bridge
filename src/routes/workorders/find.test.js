@@ -611,7 +611,7 @@ describe('workorders/find', () => {
     })
   })
 
-  describe('Multiple customers per workorder (DSFAAP-2421)', () => {
+  describe('Multiple customers per workorder', () => {
     test('returns first customer alphabetically when workorder has multiple customers', async () => {
       const server = await createServer()
 
