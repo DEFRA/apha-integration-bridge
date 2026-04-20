@@ -192,5 +192,5 @@ ac.pystatuswork IN ('Open')
 ORDER BY
 rw.row_num ASC,
 wsa.activitysequencenumber ASC,
-wsa.wsa_id ASC
+wsa.wsa_id ASC,
 ws_c.entityid ASC
