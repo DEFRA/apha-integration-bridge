@@ -611,6 +611,42 @@ describe('workorders/find', () => {
     })
   })
 
+  describe('Multiple customers per workorder (DSFAAP-2421)', () => {
+    test('returns first customer alphabetically when workorder has multiple customers', async () => {
+      const server = await createServer()
+
+      const queryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '10'
+      })
+
+      const url = `${path}?${queryParams.toString()}`
+
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: ['WS-76515']
+        },
+        url
+      })
+
+      expect(response.statusCode).toBe(200)
+
+      const responseBody = /** @type {PostFindWorkordersResponse} */ (
+        response.result
+      )
+
+      expect(responseBody.data).toHaveLength(1)
+      expect(responseBody.data[0].id).toBe('WS-76515')
+      expect(
+        responseBody.data[0].relationships.customerOrOrganisation.data
+      ).toEqual({
+        type: 'customers',
+        id: 'C123789'
+      })
+    })
+  })
+
   describe('Error handling', () => {
     const queryParams = new URLSearchParams({
       page: '1',
