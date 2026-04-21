@@ -254,3 +254,27 @@ test('toWorkorders returns workorders ordered by requested ids', () => {
   expect(workorders[0].id).toBe('WO789012')
   expect(workorders[1].id).toBe('WO123456')
 })
+
+test('toWorkorders uses first row customer when multiple customers exist', () => {
+  const rows = [
+    {
+      ...mockWorkorderRowBase,
+      work_order_id: 'WS-76515',
+      customer_id: 'C123789'
+    },
+    {
+      ...mockWorkorderRowBase,
+      work_order_id: 'WS-76515',
+      customer_id: 'O456789'
+    }
+  ]
+
+  const workorders = toWorkorders(rows, ['WS-76515'], emptyCodeMappings)
+
+  expect(workorders).toHaveLength(1)
+  expect(workorders[0].id).toBe('WS-76515')
+  expect(workorders[0].relationships.customerOrOrganisation.data).toEqual({
+    type: 'customers',
+    id: 'C123789'
+  })
+})

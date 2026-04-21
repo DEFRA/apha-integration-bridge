@@ -392,4 +392,36 @@ describe('GET /workorders', () => {
       'Deliberate HTTP exception from mocked execute'
     )
   })
+
+  test('returns first customer alphabetically for WS-76515', async () => {
+    const server = await createServer()
+
+    const query = new URLSearchParams({
+      startActivationDate: '2024-03-01T00:00:00.000Z',
+      endActivationDate: '2024-04-01T00:00:00.000Z',
+      country: 'England',
+      page: '1',
+      pageSize: '10'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: `${path}?${query.toString()}`
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    const responseBody = /** @type {Record<string, any>} */ (response.result)
+
+    const ws76515 = responseBody.data.find(
+      /** @param {Record<string, any>} workorder */
+      (workorder) => workorder.id === 'WS-76515'
+    )
+
+    expect(ws76515).toBeDefined()
+    expect(ws76515.relationships.customerOrOrganisation.data).toEqual({
+      type: 'customers',
+      id: 'C123789'
+    })
+  })
 })
