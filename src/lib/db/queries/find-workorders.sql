@@ -158,4 +158,5 @@ ws.pyid ASC,
 wsa.activitysequencenumber ASC,
 wsa.wsa_id ASC,
 ws_lu.entityid ASC,
-ws_f.entityid ASC
+ws_f.entityid ASC,
+ws_c.entityid ASC

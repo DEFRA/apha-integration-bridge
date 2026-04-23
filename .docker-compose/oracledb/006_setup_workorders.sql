@@ -282,6 +282,10 @@ INSERT INTO pega_data.index_ac_workschedule (
 INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('O456789', 'WS-76515', 'workScheduleCustomers', NULL);
 
+-- Add second customer to test multiple customers per workorder (DSFAAP-2421)
+INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
+VALUES ('C123789', 'WS-76515', 'workScheduleCustomers', NULL);
+
 INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid)
 VALUES ('LOC-ALPHA', 'WS-76515', 'workScheduleLocation', '01/001/0001');
 
