@@ -145,6 +145,26 @@ const config = convict({
       }
     }
   },
+  oracledbHealthcheck: {
+    enabled: {
+      doc: 'Enable the periodic OracleDB healthcheck',
+      format: Boolean,
+      default: true,
+      env: 'ORACLEDB_HEALTHCHECK_ENABLED'
+    },
+    intervalMs: {
+      doc: 'Interval between OracleDB healthcheck probes',
+      format: 'nat',
+      default: 30_000,
+      env: 'ORACLEDB_HEALTHCHECK_INTERVAL_MS'
+    },
+    timeoutMs: {
+      doc: 'Per-probe timeout; exceeding this is recorded as a failure',
+      format: 'nat',
+      default: 5_000,
+      env: 'ORACLEDB_HEALTHCHECK_TIMEOUT_MS'
+    }
+  },
   serviceVersion: {
     doc: 'The service version, this variable is injected into your docker container in CDP environments',
     format: String,

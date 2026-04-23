@@ -20,3 +20,5 @@ globalConfig.json
 *.pem
 *.crt
 salesforce-jwt-*
+
+.schema
