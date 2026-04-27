@@ -1,10 +1,20 @@
 import Hapi from '@hapi/hapi'
-import { test, expect, describe, jest, beforeEach } from '@jest/globals'
+import {
+  test,
+  expect,
+  describe,
+  jest,
+  beforeEach,
+  beforeAll
+} from '@jest/globals'
 import hapiPino from 'hapi-pino'
-import * as route from './{caseId}.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
+import { spyOnConfigMany } from '../../../common/helpers/test-helpers/config.js'
+
+/** @type {typeof import('./{caseId}.js')} */
+let route
 
 const ENDPOINT_PATH_TEMPLATE = '/case-management/case/{caseId}'
 const ENDPOINT_METHOD = 'GET'
@@ -19,6 +29,13 @@ const mockGetUserAccessToken = jest.spyOn(
 const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 
 const MOCK_SALESFORCE_TOKEN = 'mock-salesforce-access-token-12345'
+
+beforeAll(async () => {
+  spyOnConfigMany({
+    'featureFlags.isCaseManagementEnabled': true
+  })
+  route = await import('./{caseId}.js')
+})
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -56,6 +73,10 @@ async function createTestServer() {
 
   server.auth.strategy('simple', 'simple', {})
   server.auth.default('simple')
+
+  if (!route.default) {
+    throw new Error('Route is not available - feature flag may be disabled')
+  }
 
   server.route({
     handler: route.default.handler,
