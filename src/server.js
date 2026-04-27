@@ -19,6 +19,7 @@ import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { versionPlugin } from './common/helpers/versioning.js'
 import { opentelemetryPlugin } from './common/helpers/telemetry.js'
+import { rateLimitPlugin } from './common/helpers/rate-limit.js'
 import { HTTPException } from './lib/http/http-exception.js'
 import { authPlugin } from './common/helpers/auth.js'
 
@@ -99,6 +100,10 @@ async function createServer() {
      * check for the presence of a bearer token in the request
      */
     // bearerTokenPlugin,
+    /**
+     * rate limiting middleware - protects downstream resources (OracleDB)
+     */
+    rateLimitPlugin,
     /**
      * sets up opentelemetry tracing and metrics
      */
