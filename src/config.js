@@ -169,21 +169,6 @@ const config = convict({
     format: String,
     default: 'apha-integration-bridge'
   },
-  cdpEnvironment: {
-    doc: 'The CDP environment the app is running in. With the addition of "local" for local development',
-    format: [
-      'local',
-      'infra-dev',
-      'management',
-      'dev',
-      'test',
-      'perf-test',
-      'ext-test',
-      'prod'
-    ],
-    default: 'local',
-    env: 'ENVIRONMENT'
-  },
   auth: {
     scope: {
       doc: 'The authentication scope required for the service',
@@ -326,18 +311,6 @@ const config = convict({
       format: String,
       default: 'eu-west-2',
       env: 'AWS_REGION'
-    },
-    accessKeyId: {
-      doc: 'AWS access key ID',
-      format: String,
-      default: 'test',
-      env: 'AWS_ACCESS_KEY_ID'
-    },
-    secretAccessKey: {
-      doc: 'AWS secret access key',
-      format: String,
-      default: 'test',
-      env: 'AWS_SECRET'
     },
     s3Endpoint: {
       doc: 'AWS S3 endpoint',
