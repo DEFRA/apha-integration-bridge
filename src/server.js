@@ -12,6 +12,7 @@ import { routingPlugin } from './common/helpers/routing.js'
 // import { bearerTokenPlugin } from './common/helpers/bearer-token.js'
 // import { mongoDb } from './common/helpers/mongodb.js'
 import { oracleDb } from './common/helpers/oracledb.js'
+import { oracleDbHealthcheck } from './common/helpers/oracledb-healthcheck.js'
 import { failAction } from './common/helpers/fail-action.js'
 import { secureContext } from './common/helpers/secure-context/index.js'
 import { pulse } from './common/helpers/pulse.js'
@@ -128,6 +129,10 @@ async function createServer() {
      * sets up OracleDB connection pool(s) and attaches to `server` and `request` objects
      */
     oracleDb,
+    /**
+     * periodically probes each OracleDB pool and emits a SUCCESS/FAIL metric
+     */
+    oracleDbHealthcheck,
     /**
      * sets up header-based api versioning for the API
      */
