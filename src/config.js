@@ -345,6 +345,12 @@ const config = convict({
       format: Boolean,
       default: !isProduction,
       env: 'COGNITO_TOKEN_ENDPOINT_ENABLED'
+    },
+    isCaseManagementEnabled: {
+      doc: 'Enable case management (Salesforce) endpoints',
+      format: Boolean,
+      default: false,
+      env: 'CASE_MANAGEMENT_ENABLED'
     }
   }
 })

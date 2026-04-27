@@ -16,6 +16,7 @@ import {
   GetCaseResponseSchema,
   Case
 } from '../../../types/case-management/case.js'
+import { config } from '../../../config.js'
 
 /**
  * @import {Request} from '@hapi/hapi'
@@ -177,9 +178,13 @@ function buildCaseQuery(caseId) {
   `.trim()
 }
 
-export default {
-  method: 'GET',
-  path: '/case-management/case/{caseId}',
-  handler,
-  options
-}
+const isEnabled = config.get('featureFlags.isCaseManagementEnabled')
+
+export default isEnabled
+  ? {
+      method: 'GET',
+      path: '/case-management/case/{caseId}',
+      handler,
+      options
+    }
+  : null
