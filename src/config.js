@@ -346,6 +346,14 @@ const config = convict({
       default: !isProduction,
       env: 'COGNITO_TOKEN_ENDPOINT_ENABLED'
     }
+  },
+  pagination: {
+    maxPageSize: {
+      doc: 'Maximum page size allowed for paginated endpoints',
+      format: Number,
+      default: 50,
+      env: 'PAGINATION_MAX_PAGE_SIZE'
+    }
   }
 })
 
