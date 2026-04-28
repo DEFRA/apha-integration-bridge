@@ -10,7 +10,7 @@ import {
 } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
-import { spyOnConfigMany } from '../../../common/helpers/test-helpers/config.js'
+import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 
 /** @type {typeof import('./find.js')} */
 let route
@@ -21,13 +21,10 @@ const TEST_USER_ID = '005ABC123456789'
 const MOCK_SALESFORCE_TOKEN = 'mock-salesforce-m2m-token-12345'
 
 const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
-/** @type {ReturnType<typeof jest.spyOn>} */
 const mockGetAccessToken = jest.spyOn(salesforceClient, 'getAccessToken')
 
 beforeAll(async () => {
-  spyOnConfigMany({
-    'featureFlags.isCaseManagementEnabled': true
-  })
+  spyOnConfig('featureFlags.isCaseManagementEnabled', true)
 
   // Import route after config is mocked
   route = await import('./find.js')

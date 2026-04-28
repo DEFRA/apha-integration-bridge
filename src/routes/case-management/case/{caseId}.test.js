@@ -11,7 +11,7 @@ import hapiPino from 'hapi-pino'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
-import { spyOnConfigMany } from '../../../common/helpers/test-helpers/config.js'
+import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 
 /** @type {typeof import('./{caseId}.js')} */
 let route
@@ -31,9 +31,7 @@ const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 const MOCK_SALESFORCE_TOKEN = 'mock-salesforce-access-token-12345'
 
 beforeAll(async () => {
-  spyOnConfigMany({
-    'featureFlags.isCaseManagementEnabled': true
-  })
+  spyOnConfig('featureFlags.isCaseManagementEnabled', true)
   route = await import('./{caseId}.js')
 })
 

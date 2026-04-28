@@ -18,7 +18,7 @@ import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-bu
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
-import { spyOnConfigMany } from '../../../common/helpers/test-helpers/config.js'
+import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 
 /** @import { CreateCasePayload} from '../../../types/case-management/case.js' */
 
@@ -132,9 +132,7 @@ const mockApplicantDetaisls = {
 }
 
 beforeAll(async () => {
-  spyOnConfigMany({
-    'featureFlags.isCaseManagementEnabled': true
-  })
+  spyOnConfig('featureFlags.isCaseManagementEnabled', true)
 
   route = await import('./case.js')
 })

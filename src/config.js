@@ -349,7 +349,7 @@ const config = convict({
     isCaseManagementEnabled: {
       doc: 'Enable case management (Salesforce) endpoints',
       format: Boolean,
-      default: false,
+      default: !isProduction,
       env: 'CASE_MANAGEMENT_ENABLED'
     }
   }
