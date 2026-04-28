@@ -19,10 +19,10 @@ If you already have location IDs and want full location records in one call, thi
 
 ### Query parameters
 
-| Parameter  | Type    | Required | Default | Rules                     |
-| ---------- | ------- | -------- | ------- | ------------------------- |
-| `page`     | integer | No       | `1`     | Minimum `1`               |
-| `pageSize` | integer | No       | `50`    | Minimum `1`, maximum `50` |
+| Parameter  | Type    | Required | Default | Rules                                               |
+| ---------- | ------- | -------- | ------- | --------------------------------------------------- |
+| `page`     | integer | No       | `1`     | Minimum `1`                                         |
+| `pageSize` | integer | No       | `50`    | Minimum `1`, maximum `{{PAGINATION_MAX_PAGE_SIZE}}` |
 
 ### JSON body
 

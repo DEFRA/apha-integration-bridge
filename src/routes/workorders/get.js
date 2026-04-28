@@ -1,8 +1,7 @@
 import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import Joi from 'joi'
-import fs from 'node:fs'
-import path from 'node:path'
 
+import { loadDocumentation } from '../../common/helpers/documentation.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -16,6 +15,8 @@ import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { GetWorkordersSchema } from '../../types/find/workorders-get.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
+
+const documentationNotes = loadDocumentation(__dirname, 'get.md')
 
 const GetWorkordersResponseSchema = Joi.object({
   data: Joi.array().items(WorkordersSchema).required(),
@@ -33,10 +34,7 @@ const options = {
   },
   tags: ['api', 'workorders'],
   description: 'Retrieve workorders by activation date range',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'get.md'),
-    'utf8'
-  ),
+  notes: documentationNotes,
   plugins: {
     'hapi-swagger': {
       id: 'workorders-get',

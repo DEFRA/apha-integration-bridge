@@ -1,7 +1,6 @@
 import Joi from 'joi'
-import fs from 'node:fs'
-import path from 'node:path'
 
+import { loadDocumentation } from '../../common/helpers/documentation.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -46,6 +45,8 @@ const PostFindPayloadSchema = Joi.object({
 
 const __dirname = new URL('.', import.meta.url).pathname
 
+const documentationNotes = loadDocumentation(__dirname, 'find.md')
+
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -55,10 +56,7 @@ const options = {
   },
   tags: ['api', 'workorders'],
   description: 'Retrieve workorders by ids',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'find.md'),
-    'utf8'
-  ),
+  notes: documentationNotes,
   plugins: {
     'hapi-swagger': {
       id: 'workorders-find',

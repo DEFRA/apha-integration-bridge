@@ -24,7 +24,7 @@ Use this endpoint when you want work orders by activation-date window rather tha
 | `endActivationDate`   | ISO 8601 date/datetime string | Yes      | -          | Exclusive upper date bound; must be later than `startActivationDate`; only `YYYY-MM-DD` is used         |
 | `country`             | string                        | No       | `Scotland` | Filters against work order `purposecountry`; matching is case-insensitive                               |
 | `page`                | integer                       | No       | `1`        | Minimum `1`                                                                                             |
-| `pageSize`            | integer                       | No       | `50`       | Minimum `1`, maximum `50`                                                                               |
+| `pageSize`            | integer                       | No       | `50`       | Minimum `1`, maximum `{{PAGINATION_MAX_PAGE_SIZE}}`                                                     |
 
 Date handling:
 
