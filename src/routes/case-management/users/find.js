@@ -13,6 +13,7 @@ import { HTTPArrayResponse } from '../../../lib/http/http-response.js'
 import { TopLevelLinksReferenceSchema } from '../../../types/links.js'
 import { CaseManagementUser } from '../../../types/case-management-users.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
+import { config } from '../../../config.js'
 
 const PostFindUsersResponseSchema = Joi.object({
   data: Joi.array().items(CaseManagementUser).required(),
@@ -153,9 +154,13 @@ async function handler(request, h) {
   }
 }
 
-export default {
-  method: 'POST',
-  path: '/case-management/users/find',
-  handler,
-  options
-}
+const isEnabled = config.get('featureFlags.isCaseManagementEnabled')
+
+export default isEnabled
+  ? {
+      method: 'POST',
+      path: '/case-management/users/find',
+      handler,
+      options
+    }
+  : null

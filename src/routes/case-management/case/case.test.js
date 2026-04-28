@@ -10,7 +10,6 @@ import {
   afterAll
 } from '@jest/globals'
 import hapiPino from 'hapi-pino'
-import * as route from './case.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
 import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
@@ -19,8 +18,12 @@ import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-bu
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
+import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 
-/** @import { CreateCasePayload } from '../../../types/case-management/case.js' */
+/** @import { CreateCasePayload} from '../../../types/case-management/case.js' */
+
+/** @type {typeof import('./case.js')} */
+let route
 
 jest.mock(
   '../../../lib/salesforce/request-builders/application-creation-request-builder.js',
@@ -128,6 +131,12 @@ const mockApplicantDetaisls = {
   lastName: 'Doe'
 }
 
+beforeAll(async () => {
+  spyOnConfig('featureFlags.isCaseManagementEnabled', true)
+
+  route = await import('./case.js')
+})
+
 beforeEach(() => {
   mockSendComposite.mockReset()
   mockCreateCustomer.mockReset()
@@ -187,6 +196,10 @@ async function createTestServer() {
     })
     return h.continue
   })
+
+  if (!route.default) {
+    throw new Error('Route is not available - feature flag may be disabled')
+  }
 
   server.route({
     handler: route.default.handler,

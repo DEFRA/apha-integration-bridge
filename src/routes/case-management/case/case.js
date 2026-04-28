@@ -18,6 +18,7 @@ import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/fi
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
+import { config } from '../../../config.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
@@ -391,9 +392,13 @@ function handleCaseCreationError(error, request) {
   ).boomify()
 }
 
-export default {
-  method: 'POST',
-  path: '/case-management/case',
-  handler,
-  options
-}
+const isEnabled = config.get('featureFlags.isCaseManagementEnabled')
+
+export default isEnabled
+  ? {
+      method: 'POST',
+      path: '/case-management/case',
+      handler,
+      options
+    }
+  : null
