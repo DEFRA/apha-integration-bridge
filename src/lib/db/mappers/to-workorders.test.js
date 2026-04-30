@@ -14,6 +14,7 @@ const mockWorkorderRowBase = {
   purpose_species: 'CTT',
   phase: 'Active',
   activity_name: null,
+  activity_status: null,
   activitysequencenumber: null,
   wsa_id: null,
   customer_id: 'C001',
@@ -60,6 +61,7 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     type: 'activities',
     id: 'WSA-A',
     activityName: 'Site Visit',
+    status: null,
     sequenceNumber: 1,
     performActivity: false,
     workbasket: null
@@ -68,6 +70,7 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     type: 'activities',
     id: 'WSA-B',
     activityName: 'Sample Collection',
+    status: null,
     sequenceNumber: 2,
     performActivity: false,
     workbasket: null
@@ -76,6 +79,7 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     type: 'activities',
     id: 'WSA-C',
     activityName: 'Lab Testing',
+    status: null,
     sequenceNumber: 3,
     performActivity: false,
     workbasket: null
