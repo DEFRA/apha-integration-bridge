@@ -1,7 +1,10 @@
 WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
-    ac.wsactivationdate activation_date
+    CASE
+      WHEN :date_type = 'activation' THEN ac.wsactivationdate
+      WHEN :date_type = 'updated' THEN ac.pxupdatedatetime
+    END filter_date
 
   FROM
   pega_data.ahwork_ac ac,
@@ -16,14 +19,16 @@ WITH filtered_workorders AS (
   AND
   UPPER(ws.purposecountry) = :country
   AND
-  ac.wsactivationdate >= TO_TIMESTAMP(:start_activation_date, 'yyyy-mm-dd hh24:mi:ss.ff3')
-  AND
-  ac.wsactivationdate < TO_TIMESTAMP(:end_activation_date, 'yyyy-mm-dd hh24:mi:ss.ff3')
+  (
+    (:date_type = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    OR
+    (:date_type = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
+  )
 ),
 ordered_workorders AS (
   SELECT
   work_order_id,
-  ROW_NUMBER() OVER (ORDER BY activation_date ASC, work_order_id ASC) row_num
+  ROW_NUMBER() OVER (ORDER BY filter_date ASC, work_order_id ASC) row_num
 
   FROM
   filtered_workorders

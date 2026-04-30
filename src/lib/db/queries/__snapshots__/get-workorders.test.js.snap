@@ -4,7 +4,10 @@ exports[`getWorkordersQuery returns the expected query for valid parameters 1`] 
 "WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
-    ac.wsactivationdate activation_date
+    CASE
+      WHEN 'activation' = 'activation' THEN ac.wsactivationdate
+      WHEN 'activation' = 'updated' THEN ac.pxupdatedatetime
+    END filter_date
 
   FROM
   pega_data.ahwork_ac ac,
@@ -19,14 +22,16 @@ exports[`getWorkordersQuery returns the expected query for valid parameters 1`] 
   AND
   UPPER(ws.purposecountry) = 'SCOTLAND'
   AND
-  ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3')
-  AND
-  ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3')
+  (
+    ('activation' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    OR
+    ('activation' = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+  )
 ),
 ordered_workorders AS (
   SELECT
   work_order_id,
-  ROW_NUMBER() OVER (ORDER BY activation_date ASC, work_order_id ASC) row_num
+  ROW_NUMBER() OVER (ORDER BY filter_date ASC, work_order_id ASC) row_num
 
   FROM
   filtered_workorders

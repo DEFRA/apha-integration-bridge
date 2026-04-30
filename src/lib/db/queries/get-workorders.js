@@ -14,8 +14,10 @@ const sql = loadSQL(import.meta.filename)
 
 /**
  * @typedef {{
- *   startActivationDate: string
- *   endActivationDate: string
+ *   startActivationDate?: string
+ *   endActivationDate?: string
+ *   startUpdatedDate?: string
+ *   endUpdatedDate?: string
  *   country?: string
  *   page?: number
  *   pageSize?: number
@@ -33,13 +35,32 @@ export function getWorkordersQuery(params) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const startActivationDate = new Date(value.startActivationDate)
-  const endActivationDate = new Date(value.endActivationDate)
+  // Determine which date filter is being used
+  const isActivationDateFilter = value.startActivationDate !== undefined
+  const isUpdatedDateFilter = value.startUpdatedDate !== undefined
 
-  if (endActivationDate <= startActivationDate) {
-    throw new Error(
-      'Invalid parameters: End activation date must be after start activation date'
-    )
+  let startDate, endDate, dateType
+
+  if (isActivationDateFilter) {
+    startDate = new Date(value.startActivationDate)
+    endDate = new Date(value.endActivationDate)
+    dateType = 'activation'
+
+    if (endDate <= startDate) {
+      throw new Error(
+        'Invalid parameters: End activation date must be after start activation date'
+      )
+    }
+  } else if (isUpdatedDateFilter) {
+    startDate = new Date(value.startUpdatedDate)
+    endDate = new Date(value.endUpdatedDate)
+    dateType = 'updated'
+
+    if (endDate <= startDate) {
+      throw new Error(
+        'Invalid parameters: End updated date must be after start updated date'
+      )
+    }
   }
 
   const offsetRows = (value.page - 1) * value.pageSize
@@ -49,8 +70,9 @@ export function getWorkordersQuery(params) {
   return {
     sql: query()
       .raw(sql, {
-        start_activation_date: toOracleTimestampString(startActivationDate),
-        end_activation_date: toOracleTimestampString(endActivationDate),
+        start_date: toOracleTimestampString(startDate),
+        end_date: toOracleTimestampString(endDate),
+        date_type: dateType,
         country: normalizedCountry,
         offset_rows: offsetRows,
         fetch_rows: fetchRows

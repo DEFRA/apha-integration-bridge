@@ -424,4 +424,45 @@ describe('GET /workorders', () => {
       id: 'C123789'
     })
   })
+
+  describe('Update date filtering', () => {
+    test('returns workorders filtered by update date range', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams({
+        startUpdatedDate: '2024-01-01T00:00:00.000Z',
+        endUpdatedDate: '2024-03-01T00:00:00.000Z',
+        page: '1',
+        pageSize: '10'
+      })
+
+      const response = await server.inject({
+        method: 'GET',
+        url: `${path}?${query.toString()}`
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.result).toHaveProperty('data')
+      expect(response.result).toHaveProperty('links')
+    })
+
+    test('returns BAD_REQUEST when endUpdatedDate is not after startUpdatedDate', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams({
+        startUpdatedDate: '2024-02-01T00:00:00.000Z',
+        endUpdatedDate: '2024-01-01T00:00:00.000Z',
+        page: '1',
+        pageSize: '10'
+      })
+
+      const response = await server.inject({
+        method: 'GET',
+        url: `${path}?${query.toString()}`
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(response.result).toHaveProperty('code', 'BAD_REQUEST')
+    })
+  })
 })

@@ -64,38 +64,67 @@ const metrics = createMetricsLogger()
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 export async function handler(request, h) {
-  const startActivationDate = new Date(request.query.startActivationDate)
-  const endActivationDate = new Date(request.query.endActivationDate)
+  const isActivationDateFilter = request.query.startActivationDate !== undefined
+  const isUpdatedDateFilter = request.query.startUpdatedDate !== undefined
 
-  if (endActivationDate <= startActivationDate) {
-    return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
-      new HTTPError(
-        'VALIDATION_ERROR',
-        'End activation date must be after start activation date',
-        {
-          startActivationDate: request.query.startActivationDate,
-          endActivationDate: request.query.endActivationDate
-        }
-      )
-    ]).boomify()
+  if (isActivationDateFilter) {
+    const startActivationDate = new Date(request.query.startActivationDate)
+    const endActivationDate = new Date(request.query.endActivationDate)
+
+    if (endActivationDate <= startActivationDate) {
+      return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
+        new HTTPError(
+          'VALIDATION_ERROR',
+          'End activation date must be after start activation date',
+          {
+            startActivationDate: request.query.startActivationDate,
+            endActivationDate: request.query.endActivationDate
+          }
+        )
+      ]).boomify()
+    }
+  } else if (isUpdatedDateFilter) {
+    const startUpdatedDate = new Date(request.query.startUpdatedDate)
+    const endUpdatedDate = new Date(request.query.endUpdatedDate)
+
+    if (endUpdatedDate <= startUpdatedDate) {
+      return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
+        new HTTPError(
+          'VALIDATION_ERROR',
+          'End updated date must be after start updated date',
+          {
+            startUpdatedDate: request.query.startUpdatedDate,
+            endUpdatedDate: request.query.endUpdatedDate
+          }
+        )
+      ]).boomify()
+    }
   }
 
   try {
     metrics.putMetric('workordersGetRequest', 1, Unit.Count)
 
     /** @type {{
-     *   startActivationDate: string
-     *   endActivationDate: string
+     *   startActivationDate?: string
+     *   endActivationDate?: string
+     *   startUpdatedDate?: string
+     *   endUpdatedDate?: string
      *   country: string
      *   page: number
      *   pageSize: number
      * }} */
     const parameters = {
-      startActivationDate: request.query.startActivationDate,
-      endActivationDate: request.query.endActivationDate,
       country: request.query.country,
       page: request.query.page,
       pageSize: request.query.pageSize
+    }
+
+    if (isActivationDateFilter) {
+      parameters.startActivationDate = request.query.startActivationDate
+      parameters.endActivationDate = request.query.endActivationDate
+    } else if (isUpdatedDateFilter) {
+      parameters.startUpdatedDate = request.query.startUpdatedDate
+      parameters.endUpdatedDate = request.query.endUpdatedDate
     }
 
     await using pegadb = await request.server['oracledb.pega']()
