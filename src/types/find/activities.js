@@ -9,6 +9,10 @@ export const Activities = baseData({
   activityName: Joi.string()
     .required()
     .description('The activity to be performed'),
+  status: Joi.string()
+    .required()
+    .allow(null)
+    .description('The status of the activity'),
   sequenceNumber: Joi.number()
     .required()
     .description(

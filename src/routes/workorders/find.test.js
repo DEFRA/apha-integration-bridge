@@ -156,6 +156,7 @@ describe('workorders/find', () => {
       workorder1: {
         type: 'workorders',
         id: 'WS-76512',
+        status: 'Open',
         activationDate: '2024-01-07T00:00:00',
         targetDate: '2024-01-15T00:00:00',
         businessArea: 'Endemic Notifiable Disease',
@@ -202,6 +203,7 @@ describe('workorders/find', () => {
       workorder2: {
         type: 'workorders',
         id: 'WS-76513',
+        status: 'Open',
         activationDate: '2024-01-06T00:00:00',
         targetDate: '2024-01-16T00:00:00',
         businessArea: 'Endemic Notifiable Disease',
@@ -216,6 +218,7 @@ describe('workorders/find', () => {
             type: 'activities',
             id: 'WS-76513-ACT1',
             activityName: 'Arrange Visit',
+            status: 'Open',
             sequenceNumber: 1,
             performActivity: true,
             workbasket: 'Tech'
@@ -224,6 +227,7 @@ describe('workorders/find', () => {
             type: 'activities',
             id: 'WS-76513-ACT2',
             activityName: 'Perform TB Skin Test',
+            status: 'Open',
             sequenceNumber: 2,
             performActivity: true,
             workbasket: 'Vet'
@@ -270,6 +274,7 @@ describe('workorders/find', () => {
       workorder3: {
         type: 'workorders',
         id: 'WS-76514',
+        status: 'Open',
         activationDate: '2024-02-10T00:00:00',
         targetDate: '2024-02-20T00:00:00',
         businessArea: 'Animal Health and Welfare',
@@ -283,6 +288,7 @@ describe('workorders/find', () => {
           {
             activityName: 'Initial Farm Assessment',
             id: 'WS-76514-ACT1',
+            status: 'Open',
             sequenceNumber: 1,
             type: 'activities',
             performActivity: false,
@@ -291,6 +297,7 @@ describe('workorders/find', () => {
           {
             activityName: 'Livestock Document Review',
             id: 'WS-76514-ACT2',
+            status: 'Open',
             sequenceNumber: 2,
             type: 'activities',
             performActivity: true,
@@ -299,6 +306,7 @@ describe('workorders/find', () => {
           {
             activityName: 'Physical Animal Inspection',
             id: 'WS-76514-ACT3',
+            status: 'Open',
             sequenceNumber: 3,
             type: 'activities',
             performActivity: true,
