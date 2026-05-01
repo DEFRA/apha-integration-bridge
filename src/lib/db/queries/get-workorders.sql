@@ -16,9 +16,11 @@ WITH filtered_workorders AS (
   AND
   UPPER(ws.purposecountry) = :country
   AND
-  ac.wsactivationdate >= TO_TIMESTAMP(:start_activation_date, 'yyyy-mm-dd hh24:mi:ss.ff3')
-  AND
-  ac.wsactivationdate < TO_TIMESTAMP(:end_activation_date, 'yyyy-mm-dd hh24:mi:ss.ff3')
+  (
+    (:date_type = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    OR
+    (:date_type = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
+  )
 ),
 ordered_workorders AS (
   SELECT
@@ -154,9 +156,9 @@ wsa.activityrequiredflag,
 wsa.workbasketname,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
 TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
-TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date
+TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
+TO_CHAR(ac.pxupdatedatetime, 'yyyy-mm-dd"T"hh24:mi:ss') updated_date
 -- Dates that don't seem to be used at the moment, but may be useful in the future:
--- TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
 -- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
 -- TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 -- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,

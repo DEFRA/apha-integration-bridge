@@ -120,9 +120,9 @@ wsa.activityrequiredflag,
 wsa.workbasketname,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
 TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
-TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date
+TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
+TO_CHAR(ac.pxupdatedatetime, 'yyyy-mm-dd"T"hh24:mi:ss') updated_date
 -- Dates that don't seem to be used at the moment, but may be useful in the future:
--- TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
 -- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
 -- TO_CHAR(ac.wslatestactivitycompletiondate, 'yyyy-mm-dd"T"hh24:mi:ss') wslatestactivitycompletiondate,
 

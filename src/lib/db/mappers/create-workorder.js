@@ -18,6 +18,7 @@ export const createWorkorder = (row, id, mappings) => {
     id,
     status: asNullableString(row.ws_status),
     activationDate: asNullableString(row.wsactivationdate),
+    updatedDate: asNullableString(row.updated_date),
     targetDate: asNullableString(row.target_date),
     businessArea: asNullableString(row.business_area),
     workArea: asNullableString(

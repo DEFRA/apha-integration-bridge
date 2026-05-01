@@ -64,46 +64,15 @@ const metrics = createMetricsLogger()
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 export async function handler(request, h) {
-  const startActivationDate = new Date(request.query.startActivationDate)
-  const endActivationDate = new Date(request.query.endActivationDate)
-
-  if (endActivationDate <= startActivationDate) {
-    return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
-      new HTTPError(
-        'VALIDATION_ERROR',
-        'End activation date must be after start activation date',
-        {
-          startActivationDate: request.query.startActivationDate,
-          endActivationDate: request.query.endActivationDate
-        }
-      )
-    ]).boomify()
-  }
-
   try {
     metrics.putMetric('workordersGetRequest', 1, Unit.Count)
-
-    /** @type {{
-     *   startActivationDate: string
-     *   endActivationDate: string
-     *   country: string
-     *   page: number
-     *   pageSize: number
-     * }} */
-    const parameters = {
-      startActivationDate: request.query.startActivationDate,
-      endActivationDate: request.query.endActivationDate,
-      country: request.query.country,
-      page: request.query.page,
-      pageSize: request.query.pageSize
-    }
 
     await using pegadb = await request.server['oracledb.pega']()
     await using samdb = await request.server['oracledb.sam']()
 
     const { workorders, hasMore } = await getWorkorders(
       { pegadb: pegadb.connection, samdb: samdb.connection },
-      parameters
+      request.query
     )
 
     request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)

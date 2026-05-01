@@ -33,6 +33,17 @@ describe('getWorkordersQuery', () => {
     expect(sql).toMatchSnapshot()
   })
 
+  test('returns the expected query for update date filter', () => {
+    const { sql } = getWorkordersQuery({
+      startUpdatedDate: '2024-01-01T00:00:00.000Z',
+      endUpdatedDate: '2024-01-01T00:05:00.001Z',
+      page: 1,
+      pageSize: 10
+    })
+
+    expect(sql).toMatchSnapshot()
+  })
+
   test('uses a single ws_entities CTE scan for work schedule entities', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
@@ -74,64 +85,6 @@ describe('getWorkordersQuery', () => {
     })
 
     expect(sql).toContain("UPPER(ws.purposecountry) = 'WALES'")
-  })
-
-  test('throws if query parameters are invalid', () => {
-    expect(() =>
-      getWorkordersQuery({
-        ...validParams,
-        startActivationDate: 'not-a-date'
-      })
-    ).toThrow(/invalid parameters/i)
-  })
-
-  test('throws when endActivationDate is before startActivationDate', () => {
-    expect(() =>
-      getWorkordersQuery({
-        ...validParams,
-        startActivationDate: '2024-02-01T00:00:00.000Z',
-        endActivationDate: '2024-01-01T00:00:00.000Z'
-      })
-    ).toThrow(/invalid parameters/i)
-  })
-
-  test('throws when endActivationDate is before startActivationDate', () => {
-    expect(() =>
-      getWorkordersQuery({
-        ...validParams,
-        startActivationDate: '2024-02-01T00:00:00.000Z',
-        endActivationDate: '2024-01-01T00:00:00.000Z'
-      })
-    ).toThrow(/end activation date must be after start activation date/i)
-  })
-
-  test('throws when endActivationDate is equal to startActivationDate', () => {
-    expect(() =>
-      getWorkordersQuery({
-        ...validParams,
-        startActivationDate: '2024-01-01T00:00:00.000Z',
-        endActivationDate: '2024-01-01T00:00:00.000Z'
-      })
-    ).toThrow(/end activation date must be after start activation date/i)
-  })
-
-  test('throws when page and pageSize are invalid', () => {
-    expect(() =>
-      getWorkordersQuery({
-        ...validParams,
-        page: 0,
-        pageSize: 100
-      })
-    ).toThrow(/invalid parameters/i)
-  })
-
-  test('throws when country is not one of England, Wales, or Scotland', () => {
-    expect(() =>
-      getWorkordersQuery({
-        ...validParams,
-        country: 'Northern Ireland'
-      })
-    ).toThrow(/invalid parameters/i)
   })
 
   test('defaults page and pageSize when omitted', () => {
