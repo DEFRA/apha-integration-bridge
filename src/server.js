@@ -22,6 +22,9 @@ import { versionPlugin } from './common/helpers/versioning.js'
 import { opentelemetryPlugin } from './common/helpers/telemetry.js'
 import { HTTPException } from './lib/http/http-exception.js'
 import { authPlugin } from './common/helpers/auth.js'
+import { piiContextPlugin } from './common/helpers/pii-context.js'
+import { clientScopesPlugin } from './common/helpers/client-scopes.js'
+import { loadClients } from './lib/clients/load.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -36,6 +39,8 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname)
  */
 async function createServer() {
   setupProxy()
+
+  const clients = loadClients(config.get('clients.path'))
 
   const server = Hapi.server({
     host: config.get('host'),
@@ -104,6 +109,18 @@ async function createServer() {
      * sets up opentelemetry tracing and metrics
      */
     opentelemetryPlugin,
+    /**
+     * populates `request.app.scopes` with the scopes granted to the
+     * authenticated client, used by downstream extensions (e.g. PII masking)
+     */
+    {
+      plugin: clientScopesPlugin,
+      options: { clients }
+    },
+    /**
+     * establishes the per-request PII masking context
+     */
+    piiContextPlugin,
     /**
      * automatically logs incoming requests
      */

@@ -1,3 +1,4 @@
+import { mask } from '../../pii/index.js'
 import { asNullableString } from './as-nullable-string.js'
 import { toAddress } from './to-address.js'
 
@@ -16,7 +17,7 @@ export const createLocation = (row, id) => {
   const location = {
     type: 'locations',
     id,
-    name: asNullableString(row.feature_name),
+    name: mask(asNullableString(row.feature_name)),
     address,
     osMapReference: asNullableString(row.os_map_reference),
     livestockUnits: [],
