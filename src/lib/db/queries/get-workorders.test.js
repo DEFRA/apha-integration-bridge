@@ -102,7 +102,7 @@ describe('getWorkordersQuery', () => {
         startActivationDate: '2024-02-01T00:00:00.000Z',
         endActivationDate: '2024-01-01T00:00:00.000Z'
       })
-    ).toThrow(/end activation date must be after start activation date/i)
+    ).toThrow(/invalid parameters/i)
   })
 
   test('throws when endActivationDate is equal to startActivationDate', () => {
@@ -112,7 +112,7 @@ describe('getWorkordersQuery', () => {
         startActivationDate: '2024-01-01T00:00:00.000Z',
         endActivationDate: '2024-01-01T00:00:00.000Z'
       })
-    ).toThrow(/end activation date must be after start activation date/i)
+    ).toThrow(/invalid parameters/i)
   })
 
   test('throws when page and pageSize are invalid', () => {

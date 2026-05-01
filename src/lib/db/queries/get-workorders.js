@@ -45,22 +45,10 @@ export function getWorkordersQuery(params) {
     startDate = new Date(value.startActivationDate)
     endDate = new Date(value.endActivationDate)
     dateType = 'activation'
-
-    if (endDate <= startDate) {
-      throw new Error(
-        'Invalid parameters: End activation date must be after start activation date'
-      )
-    }
   } else if (isUpdatedDateFilter) {
     startDate = new Date(value.startUpdatedDate)
     endDate = new Date(value.endUpdatedDate)
     dateType = 'updated'
-
-    if (endDate <= startDate) {
-      throw new Error(
-        'Invalid parameters: End updated date must be after start updated date'
-      )
-    }
   }
 
   const offsetRows = (value.page - 1) * value.pageSize

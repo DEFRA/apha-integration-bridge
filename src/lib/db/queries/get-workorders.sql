@@ -1,10 +1,7 @@
 WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
-    CASE
-      WHEN :date_type = 'activation' THEN ac.wsactivationdate
-      WHEN :date_type = 'updated' THEN ac.pxupdatedatetime
-    END filter_date
+    ac.wsactivationdate activation_date
 
   FROM
   pega_data.ahwork_ac ac,
@@ -28,7 +25,7 @@ WITH filtered_workorders AS (
 ordered_workorders AS (
   SELECT
   work_order_id,
-  ROW_NUMBER() OVER (ORDER BY filter_date ASC, work_order_id ASC) row_num
+  ROW_NUMBER() OVER (ORDER BY activation_date ASC, work_order_id ASC) row_num
 
   FROM
   filtered_workorders
@@ -158,9 +155,9 @@ wsa.activityrequiredflag,
 wsa.workbasketname,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
 TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
-TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date
+TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
+TO_CHAR(ac.pxupdatedatetime, 'yyyy-mm-dd"T"hh24:mi:ss') updated_date
 -- Dates that don't seem to be used at the moment, but may be useful in the future:
--- TO_CHAR(ac.pxupdatedatetime, 'dd/mm/yyyy hh24:mi:ss') updated_date,
 -- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
 -- TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
 -- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,

@@ -64,45 +64,12 @@ const metrics = createMetricsLogger()
  * @type {import('@hapi/hapi').Lifecycle.Method}
  */
 export async function handler(request, h) {
-  const isActivationDateFilter = request.query.startActivationDate !== undefined
-  const isUpdatedDateFilter = request.query.startUpdatedDate !== undefined
-
-  if (isActivationDateFilter) {
-    const startActivationDate = new Date(request.query.startActivationDate)
-    const endActivationDate = new Date(request.query.endActivationDate)
-
-    if (endActivationDate <= startActivationDate) {
-      return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
-        new HTTPError(
-          'VALIDATION_ERROR',
-          'End activation date must be after start activation date',
-          {
-            startActivationDate: request.query.startActivationDate,
-            endActivationDate: request.query.endActivationDate
-          }
-        )
-      ]).boomify()
-    }
-  } else if (isUpdatedDateFilter) {
-    const startUpdatedDate = new Date(request.query.startUpdatedDate)
-    const endUpdatedDate = new Date(request.query.endUpdatedDate)
-
-    if (endUpdatedDate <= startUpdatedDate) {
-      return new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
-        new HTTPError(
-          'VALIDATION_ERROR',
-          'End updated date must be after start updated date',
-          {
-            startUpdatedDate: request.query.startUpdatedDate,
-            endUpdatedDate: request.query.endUpdatedDate
-          }
-        )
-      ]).boomify()
-    }
-  }
-
   try {
     metrics.putMetric('workordersGetRequest', 1, Unit.Count)
+
+    const isActivationDateFilter =
+      request.query.startActivationDate !== undefined
+    const isUpdatedDateFilter = request.query.startUpdatedDate !== undefined
 
     /** @type {{
      *   startActivationDate?: string

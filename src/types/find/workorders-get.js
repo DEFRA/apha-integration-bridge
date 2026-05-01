@@ -58,6 +58,15 @@ export const GetWorkordersSchema = PaginationSchema.keys({
           'Both startActivationDate and endActivationDate must be provided together'
       })
     }
+
+    // Validate activation date range
+    const startActivationDate = new Date(value.startActivationDate)
+    const endActivationDate = new Date(value.endActivationDate)
+    if (endActivationDate <= startActivationDate) {
+      return helpers.error('any.invalid', {
+        message: 'End activation date must be after start activation date'
+      })
+    }
   }
 
   if (hasUpdatedDates) {
@@ -68,6 +77,15 @@ export const GetWorkordersSchema = PaginationSchema.keys({
       return helpers.error('any.invalid', {
         message:
           'Both startUpdatedDate and endUpdatedDate must be provided together'
+      })
+    }
+
+    // Validate update date range
+    const startUpdatedDate = new Date(value.startUpdatedDate)
+    const endUpdatedDate = new Date(value.endUpdatedDate)
+    if (endUpdatedDate <= startUpdatedDate) {
+      return helpers.error('any.invalid', {
+        message: 'End updated date must be after start updated date'
       })
     }
   }

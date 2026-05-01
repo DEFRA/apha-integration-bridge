@@ -464,5 +464,26 @@ describe('GET /workorders', () => {
       expect(response.statusCode).toBe(400)
       expect(response.result).toHaveProperty('code', 'BAD_REQUEST')
     })
+
+    test('returns BAD_REQUEST when mixing activation and update date filters', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams({
+        startActivationDate: '2024-01-01T00:00:00.000Z',
+        endActivationDate: '2024-02-01T00:00:00.000Z',
+        startUpdatedDate: '2024-01-01T00:00:00.000Z',
+        endUpdatedDate: '2024-02-01T00:00:00.000Z',
+        page: '1',
+        pageSize: '10'
+      })
+
+      const response = await server.inject({
+        method: 'GET',
+        url: `${path}?${query.toString()}`
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(response.result).toHaveProperty('code', 'BAD_REQUEST')
+    })
   })
 })
