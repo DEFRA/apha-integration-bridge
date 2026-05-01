@@ -30,7 +30,8 @@ describe('createWorkorder', () => {
         purpose: 'Monitoring',
         wsearliestactivitystartdate: '2024-02-01',
         purpose_species: 'CTT',
-        phase: 'Active'
+        phase: 'Active',
+        ws_status: 'Open'
       },
       'WS12345',
       validCodeMappings
@@ -39,6 +40,7 @@ describe('createWorkorder', () => {
     expect(workorder).toEqual({
       type: 'workorders',
       id: 'WS12345',
+      status: 'Open',
       activationDate: '2024-01-15',
       updatedDate: null,
       targetDate: '2024-03-01',
@@ -83,7 +85,8 @@ describe('createWorkorder', () => {
         purpose: null,
         wsearliestactivitystartdate: null,
         purpose_species: null,
-        phase: null
+        phase: null,
+        ws_status: null
       },
       'WS12345',
       validCodeMappings
@@ -92,6 +95,7 @@ describe('createWorkorder', () => {
     expect(workorder).toEqual({
       type: 'workorders',
       id: 'WS12345',
+      status: null,
       activationDate: null,
       updatedDate: null,
       targetDate: null,

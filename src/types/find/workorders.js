@@ -67,6 +67,7 @@ const CustomerOrOrganisationRelationship = Joi.object({
 export const WorkordersSchema = WorkordersData.keys({
   type: Joi.string().valid('workorders').required().label('Type'),
   id: Joi.string().required().label('workorder'),
+  status: Joi.string().required().allow(null).label('Status'),
   activationDate: Joi.string().required().allow(null).label('Activation Date'),
   updatedDate: Joi.string().required().allow(null).label('Updated Date'),
   targetDate: Joi.string().required().allow(null).label('Target Date'),

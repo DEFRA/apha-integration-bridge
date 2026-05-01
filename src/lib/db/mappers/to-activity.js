@@ -10,6 +10,7 @@ export const toActivity = (row) => {
     type: 'activities',
     id: asNullableString(row.wsa_id),
     activityName: asNullableString(row.activity_name),
+    status: asNullableString(row.activity_status),
     sequenceNumber: asNullableNumber(row.activitysequencenumber),
     performActivity: asPreferredFlag(row.activityrequiredflag),
     workbasket: asNullableString(row.workbasketname)
