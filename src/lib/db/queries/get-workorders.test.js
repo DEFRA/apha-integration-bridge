@@ -33,6 +33,17 @@ describe('getWorkordersQuery', () => {
     expect(sql).toMatchSnapshot()
   })
 
+  test('returns the expected query for update date filter', () => {
+    const { sql } = getWorkordersQuery({
+      startUpdatedDate: '2024-01-01T00:00:00.000Z',
+      endUpdatedDate: '2024-01-01T00:05:00.001Z',
+      page: 1,
+      pageSize: 10
+    })
+
+    expect(sql).toMatchSnapshot()
+  })
+
   test('uses a single ws_entities CTE scan for work schedule entities', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,

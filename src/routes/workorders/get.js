@@ -67,39 +67,12 @@ export async function handler(request, h) {
   try {
     metrics.putMetric('workordersGetRequest', 1, Unit.Count)
 
-    const isActivationDateFilter =
-      request.query.startActivationDate !== undefined
-    const isUpdatedDateFilter = request.query.startUpdatedDate !== undefined
-
-    /** @type {{
-     *   startActivationDate?: string
-     *   endActivationDate?: string
-     *   startUpdatedDate?: string
-     *   endUpdatedDate?: string
-     *   country: string
-     *   page: number
-     *   pageSize: number
-     * }} */
-    const parameters = {
-      country: request.query.country,
-      page: request.query.page,
-      pageSize: request.query.pageSize
-    }
-
-    if (isActivationDateFilter) {
-      parameters.startActivationDate = request.query.startActivationDate
-      parameters.endActivationDate = request.query.endActivationDate
-    } else if (isUpdatedDateFilter) {
-      parameters.startUpdatedDate = request.query.startUpdatedDate
-      parameters.endUpdatedDate = request.query.endUpdatedDate
-    }
-
     await using pegadb = await request.server['oracledb.pega']()
     await using samdb = await request.server['oracledb.sam']()
 
     const { workorders, hasMore } = await getWorkorders(
       { pegadb: pegadb.connection, samdb: samdb.connection },
-      parameters
+      request.query
     )
 
     request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)

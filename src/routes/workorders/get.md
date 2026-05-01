@@ -107,7 +107,7 @@ Example:
 
 Example error responses:
 
-**Date-window error (activation dates):**
+**Validation error:**
 
 ```json
 {
@@ -116,56 +116,20 @@ Example error responses:
   "errors": [
     {
       "code": "VALIDATION_ERROR",
-      "message": "End activation date must be after start activation date"
+      "message": "\"value\" contains an invalid value"
     }
   ]
 }
 ```
 
-**Date-window error (update dates):**
+Common validation failures include:
 
-```json
-{
-  "message": "Invalid request parameters",
-  "code": "BAD_REQUEST",
-  "errors": [
-    {
-      "code": "VALIDATION_ERROR",
-      "message": "End updated date must be after start updated date"
-    }
-  ]
-}
-```
-
-**Mixed date filter error:**
-
-```json
-{
-  "message": "Invalid request parameters",
-  "code": "BAD_REQUEST",
-  "errors": [
-    {
-      "code": "VALIDATION_ERROR",
-      "message": "Cannot use both activation date and update date filters in the same request"
-    }
-  ]
-}
-```
-
-**Missing date parameters error:**
-
-```json
-{
-  "message": "Invalid request parameters",
-  "code": "BAD_REQUEST",
-  "errors": [
-    {
-      "code": "VALIDATION_ERROR",
-      "message": "Either activation date range (startActivationDate and endActivationDate) or update date range (startUpdatedDate and endUpdatedDate) must be provided"
-    }
-  ]
-}
-```
+- End date not after start date
+- Missing one of the paired date parameters (e.g., `startActivationDate` without `endActivationDate`)
+- Mixing activation and update date filters in the same request
+- Missing both date filter types entirely
+- Invalid date format
+- Invalid pagination parameters
 
 ## Practical tips
 

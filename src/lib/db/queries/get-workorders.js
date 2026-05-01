@@ -4,11 +4,13 @@ import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { toOracleTimestampString } from '../utils/to-oracle-timestamp-string.js'
 import { GetWorkordersSchema } from '../../../types/find/workorders-get.js'
+import { WorkorderDateFilterType } from '../../../types/workorder-date-filter.js'
 import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
 import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
 import { getCustomerTypes } from './get-customer-types.js'
 
 /** @import { DBConnections } from '../../../types/connection.js' */
+/** @import { WorkorderDateFilterType as DateFilterType } from '../../../types/workorder-date-filter.js' */
 
 const sql = loadSQL(import.meta.filename)
 
@@ -39,16 +41,21 @@ export function getWorkordersQuery(params) {
   const isActivationDateFilter = value.startActivationDate !== undefined
   const isUpdatedDateFilter = value.startUpdatedDate !== undefined
 
-  let startDate, endDate, dateType
+  /** @type {Date} */
+  let startDate
+  /** @type {Date} */
+  let endDate
+  /** @type {DateFilterType} */
+  let dateType
 
   if (isActivationDateFilter) {
     startDate = new Date(value.startActivationDate)
     endDate = new Date(value.endActivationDate)
-    dateType = 'activation'
+    dateType = WorkorderDateFilterType.ACTIVATION
   } else if (isUpdatedDateFilter) {
     startDate = new Date(value.startUpdatedDate)
     endDate = new Date(value.endUpdatedDate)
-    dateType = 'updated'
+    dateType = WorkorderDateFilterType.UPDATED
   }
 
   const offsetRows = (value.page - 1) * value.pageSize

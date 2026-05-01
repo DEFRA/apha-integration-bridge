@@ -1,5 +1,207 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`getWorkordersQuery returns the expected query for update date filter 1`] = `
+"WITH filtered_workorders AS (
+  SELECT DISTINCT
+    ws.pyid work_order_id,
+    ac.wsactivationdate activation_date
+
+  FROM
+  pega_data.ahwork_ac ac,
+  pega_Data.index_ac_workschedule ws
+
+  WHERE
+  ac.pzinskey = ws.pxinsindexedkey
+  AND
+  ac.pxobjclass = 'AH-AC-WS'
+  AND
+  ac.pystatuswork IN ('Open')
+  AND
+  UPPER(ws.purposecountry) = 'SCOTLAND'
+  AND
+  (
+    ('updated' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    OR
+    ('updated' = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+  )
+),
+ordered_workorders AS (
+  SELECT
+  work_order_id,
+  ROW_NUMBER() OVER (ORDER BY activation_date ASC, work_order_id ASC) row_num
+
+  FROM
+  filtered_workorders
+),
+requested_workorders AS (
+  SELECT
+  work_order_id,
+  row_num
+
+  FROM
+  ordered_workorders
+
+  WHERE
+  row_num > 0
+  AND
+  row_num <= 0 + 11
+),
+ws_entities AS (
+  SELECT /*+ MATERIALIZE */
+  wsl.pyid,
+  wsl.pxindexpurpose,
+  wsl.entityid,
+  wsl.cphid
+
+  FROM
+  pega_Data.index_ac_wsentities wsl,
+  requested_workorders rw
+
+  WHERE
+  rw.work_order_id = wsl.pyid
+  AND
+  wsl.pxindexpurpose IN (
+    'workScheduleLocation',
+    'workScheduleCustomers',
+    'workScheduleLivestockUnits',
+    'workScheduleFacilities'
+  )
+),
+ws_loc AS (
+  SELECT
+  pyid,
+  entityid,
+  cphid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleLocation'
+),
+ws_c AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleCustomers'
+),
+ws_lu AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleLivestockUnits'
+),
+ws_f AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleFacilities'
+),
+wsa AS (
+  SELECT
+  rw.work_order_id ws_id,
+  wsa_ac.pyid wsa_id,
+  aca.actname activity_name,
+  wsa_ac.pystatuswork wsa_status,
+  wsa_ac.activitysequencenumber,
+  wsa_ac.activityrequiredflag,
+  wsa_ac.workbasketname
+
+  FROM
+  pega_Data.ahwork_ac wsa_ac,
+  pega_data.index_ac_activity aca,
+  requested_workorders rw
+
+  WHERE
+  wsa_ac.pxinsname = aca.pyid
+  AND
+  wsa_ac.pydescription IS NULL
+  AND
+  wsa_ac.pxcoverinskey = 'AH-AC ' || rw.work_order_id
+)
+
+SELECT
+DISTINCT rw.row_num page_order,
+ws.pyid work_order_id,
+ws.purposeworkarea work_area,
+ws.purposecountry country,
+ws.aimname aim,
+ws.businessarea business_area,
+ws.purposename purpose,
+ws.speciesforpurpose purpose_species,
+ac.pystatuswork ws_status,
+ws_loc.entityid location_id,
+ws_loc.cphid cph,
+ws_c.entityid customer_id,
+ws_lu.entityid livestock_unit_id,
+ws_f.entityid facility_unit_id,
+wsa.wsa_id,
+wsa.activity_name,
+ws.phase,
+wsa.activitysequencenumber,
+wsa.activityrequiredflag,
+wsa.workbasketname,
+TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
+TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
+TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
+TO_CHAR(ac.pxupdatedatetime, 'yyyy-mm-dd"T"hh24:mi:ss') updated_date
+-- Dates that don't seem to be used at the moment, but may be useful in the future:
+-- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
+-- TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
+-- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
+
+FROM
+requested_workorders rw,
+pega_data.ahwork_ac ac,
+pega_Data.index_ac_workschedule ws,
+ws_loc,
+ws_c,
+ws_lu,
+ws_f,
+wsa
+
+WHERE
+ac.pzinskey = ws.pxinsindexedkey
+AND
+ws.pyid = rw.work_order_id
+AND
+ac.pyid = ws_loc.pyid (+)
+AND
+ac.pyid = ws_c.pyid(+)
+AND
+ac.pyid = ws_lu.pyid(+)
+AND
+ac.pyid = ws_f.pyid(+)
+AND
+ws.pyid = wsa.ws_id(+)
+AND
+ac.pxobjclass = 'AH-AC-WS'
+AND
+ac.pystatuswork IN ('Open')
+
+ORDER BY
+rw.row_num ASC,
+wsa.activitysequencenumber ASC,
+wsa.wsa_id ASC,
+ws_c.entityid ASC
+"
+`;
+
 exports[`getWorkordersQuery returns the expected query for valid parameters 1`] = `
 "WITH filtered_workorders AS (
   SELECT DISTINCT
