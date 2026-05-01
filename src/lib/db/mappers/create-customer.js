@@ -1,3 +1,4 @@
+import { mask } from '../../pii/index.js'
 import { asNullableString } from './as-nullable-string.js'
 
 /**
@@ -22,10 +23,10 @@ export const createCustomer = (row, id) => {
   return {
     type: 'customers',
     id,
-    title,
-    firstName,
-    middleName,
-    lastName,
+    title: mask(title),
+    firstName: mask(firstName),
+    middleName: mask(middleName),
+    lastName: mask(lastName),
     addresses: [],
     contactDetails: [],
     relationships: {

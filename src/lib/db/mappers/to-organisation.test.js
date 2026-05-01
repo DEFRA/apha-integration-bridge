@@ -1,5 +1,6 @@
 import { expect, test } from '@jest/globals'
 
+import { runWithMaskingContext } from '../../pii/index.js'
 import { toOrganisation } from './to-organisation.js'
 
 test('toOrganisation returns null when party id is missing', () => {
@@ -164,6 +165,60 @@ test('toOrganisation emits a full address object when address fields are empty',
         data: []
       }
     }
+  })
+})
+
+test('toOrganisation masks names, address, primary phone and secondary email when masking context is active', () => {
+  runWithMaskingContext({ shouldMask: true }, () => {
+    const organisation = toOrganisation({
+      party_id: 'O123456',
+      customer_type: 'ORGANISATION',
+      organisation_name: 'Farming Ltd',
+      primary_contact_full_name: 'Bob Farmer',
+      secondary_contact_full_name: 'Roberta Farmer',
+      paon_start_number: null,
+      paon_start_number_suffix: null,
+      paon_end_number: null,
+      paon_end_number_suffix: null,
+      paon_description: null,
+      saon_start_number: null,
+      saon_start_number_suffix: null,
+      saon_end_number: null,
+      saon_end_number_suffix: null,
+      saon_description: null,
+      street: 'Acacia Avenue',
+      locality: null,
+      town: 'Town',
+      county: 'Devon',
+      postcode: 'SW1A 1AA',
+      uk_internal_code: 'GB',
+      preferred_contact_method_ind: null,
+      email: 'org@example.com',
+      mobile_number: null,
+      landline: '02012345678',
+      srabpi_plantid: null
+    })
+
+    expect(organisation.organisationName).toBe('F*********d')
+    expect(organisation.contactDetails.primaryContact.fullName).toBe(
+      'B********r'
+    )
+    expect(organisation.contactDetails.secondaryContact.fullName).toBe(
+      'R************r'
+    )
+    expect(organisation.contactDetails.primaryContact.phoneNumber).toBe(
+      '0*********8'
+    )
+    expect(organisation.contactDetails.secondaryContact.emailAddress).toBe(
+      'o*************m'
+    )
+    expect(organisation.address).toMatchObject({
+      street: 'A***********e',
+      town: '****',
+      county: '*****',
+      postcode: 'S******A',
+      countryCode: 'GB'
+    })
   })
 })
 

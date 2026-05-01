@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Clients config",
+  "description": "Maps a logical client name to the OAuth client_ids that should be granted the listed scopes. Consumed by src/lib/clients/load.js to gate PII unmasking.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path or URL to this JSON Schema. Used by editors for validation; stripped at load time."
+    }
+  },
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "client_ids": {
+        "type": "array",
+        "description": "OAuth client_ids that should be granted the listed scopes.",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "scopes": {
+        "type": "array",
+        "description": "Scopes granted to each client_id (e.g. \"pii\" to unmask PII fields).",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "required": ["client_ids", "scopes"],
+    "additionalProperties": false
+  },
+  "propertyNames": {
+    "minLength": 1
+  }
+}

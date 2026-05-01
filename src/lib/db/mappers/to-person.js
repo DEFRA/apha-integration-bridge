@@ -1,3 +1,4 @@
+import { mask } from '../../pii/index.js'
 import { asNullableString } from './as-nullable-string.js'
 import { asPreferredFlag } from './as-preferred-flag.js'
 import { createCustomer } from './create-customer.js'
@@ -50,13 +51,13 @@ export const toPerson = (row) => {
     if (detail.type === 'email') {
       customer.contactDetails.push({
         type: detail.type,
-        emailAddress: detail.value,
+        emailAddress: mask(detail.value),
         isPreferred: asPreferredFlag(detail.preferred)
       })
     } else {
       customer.contactDetails.push({
         type: detail.type,
-        phoneNumber: detail.value,
+        phoneNumber: mask(detail.value),
         isPreferred: asPreferredFlag(detail.preferred)
       })
     }
