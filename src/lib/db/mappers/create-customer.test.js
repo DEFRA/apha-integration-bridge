@@ -1,5 +1,6 @@
 import { expect, test } from '@jest/globals'
 
+import { runWithMaskingContext } from '../../pii/index.js'
 import { createCustomer } from './create-customer.js'
 
 test('createCustomer maps a person row into the customer response skeleton', () => {
@@ -29,6 +30,29 @@ test('createCustomer maps a person row into the customer response skeleton', () 
         data: []
       }
     }
+  })
+})
+
+test('createCustomer masks name fields when masking context is active', () => {
+  runWithMaskingContext({ shouldMask: true }, () => {
+    const customer = createCustomer(
+      {
+        title: 'Mr',
+        first_name: 'Bert',
+        second_name: 'Albert',
+        last_name: 'Farmer',
+        organisation_name: null,
+        primary_contact_full_name: null
+      },
+      'C123456'
+    )
+
+    expect(customer).toMatchObject({
+      title: '**',
+      firstName: '****',
+      middleName: 'A****t',
+      lastName: 'F****r'
+    })
   })
 })
 

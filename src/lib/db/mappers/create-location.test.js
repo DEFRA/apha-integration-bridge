@@ -1,5 +1,6 @@
 import { expect, test } from '@jest/globals'
 
+import { runWithMaskingContext } from '../../pii/index.js'
 import { createLocation } from './create-location.js'
 
 test('createLocation maps a location row into the location response skeleton', () => {
@@ -52,5 +53,35 @@ test('createLocation maps a location row into the location response skeleton', (
         data: []
       }
     }
+  })
+})
+
+test('createLocation masks premises name and address line fields when masking context is active', () => {
+  runWithMaskingContext({ shouldMask: true }, () => {
+    const location = createLocation(
+      {
+        paon_start_number: 123,
+        paon_start_number_suffix: 'A',
+        street: 'Main Street',
+        town: 'London',
+        postcode: 'SW1A 1AA',
+        country_code: 'GB',
+        uk_internal_code: 'GB',
+        county: 'County',
+        feature_name: 'Smith Farm',
+        os_map_reference: 'TQ123456'
+      },
+      'L97339'
+    )
+
+    expect(location.name).toBe('S********m')
+    expect(location.address).toMatchObject({
+      street: 'M*********t',
+      town: 'L****n',
+      postcode: 'S******A',
+      county: 'C****y',
+      countryCode: 'GB'
+    })
+    expect(location.osMapReference).toBe('TQ123456')
   })
 })

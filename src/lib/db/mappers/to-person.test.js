@@ -1,5 +1,6 @@
 import { expect, test } from '@jest/globals'
 
+import { runWithMaskingContext } from '../../pii/index.js'
 import { toPerson } from './to-person.js'
 
 test('toPerson returns null when party id is missing', () => {
@@ -99,6 +100,63 @@ test('toPerson maps a single row into one customer resource', () => {
         ]
       }
     }
+  })
+})
+
+test('toPerson masks names, address and contact details when masking context is active', () => {
+  runWithMaskingContext({ shouldMask: true }, () => {
+    const customer = toPerson({
+      party_id: 'C123456',
+      customer_type: 'PERSON',
+      title: 'Mr',
+      first_name: 'Bert',
+      second_name: null,
+      last_name: 'Farmer',
+      paon_start_number: 12,
+      paon_start_number_suffix: null,
+      paon_end_number: null,
+      paon_end_number_suffix: null,
+      paon_description: 'Rose cottage',
+      saon_start_number: null,
+      saon_start_number_suffix: null,
+      saon_end_number: null,
+      saon_end_number_suffix: null,
+      saon_description: null,
+      street: 'Acacia Avenue',
+      locality: null,
+      town: 'Town',
+      county: 'Devon',
+      postcode: 'SW1A 1AA',
+      uk_internal_code: 'GB',
+      preferred_contact_method_ind: 'N',
+      email: 'bert@example.com',
+      email_preferred_ind: 'N',
+      mobile_number: '07700900123',
+      mobile_preferred_ind: 'Y',
+      landline: null,
+      landline_preferred_ind: null,
+      srabpi_plantid: null
+    })
+
+    expect(customer).toMatchObject({
+      title: '**',
+      firstName: '****',
+      lastName: 'F****r',
+      addresses: [
+        expect.objectContaining({
+          street: 'A***********e',
+          town: '****',
+          county: '*****',
+          postcode: 'S******A',
+          countryCode: 'GB'
+        })
+      ]
+    })
+
+    const email = customer.contactDetails.find((c) => c.type === 'email')
+    const mobile = customer.contactDetails.find((c) => c.type === 'mobile')
+    expect(email.emailAddress).toBe('b**************m')
+    expect(mobile.phoneNumber).toBe('0*********3')
   })
 })
 

@@ -1,5 +1,6 @@
 import { expect, test } from '@jest/globals'
 
+import { runWithMaskingContext } from '../../pii/index.js'
 import { createOrganisation } from './create-organisation.js'
 
 test('createOrganisation maps an organisation row into the response skeleton', () => {
@@ -34,6 +35,27 @@ test('createOrganisation maps an organisation row into the response skeleton', (
         data: []
       }
     }
+  })
+})
+
+test('createOrganisation masks organisation name and contact full names when masking context is active', () => {
+  runWithMaskingContext({ shouldMask: true }, () => {
+    const organisation = createOrganisation(
+      {
+        organisation_name: 'Acme Farms Ltd',
+        primary_contact_full_name: 'Jane Contact',
+        secondary_contact_full_name: 'John Contact'
+      },
+      'O123456'
+    )
+
+    expect(organisation.organisationName).toBe('A************d')
+    expect(organisation.contactDetails.primaryContact.fullName).toBe(
+      'J**********t'
+    )
+    expect(organisation.contactDetails.secondaryContact.fullName).toBe(
+      'J**********t'
+    )
   })
 })
 

@@ -380,6 +380,14 @@ const config = convict({
       default: 50,
       env: 'PAGINATION_MAX_PAGE_SIZE'
     }
+  },
+  clients: {
+    path: {
+      doc: 'Path to the clients config (JSONC)',
+      format: String,
+      default: './clients.jsonc',
+      env: 'CLIENTS_PATH'
+    }
   }
 })
 

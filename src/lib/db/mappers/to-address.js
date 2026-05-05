@@ -1,3 +1,4 @@
+import { mask } from '../../pii/index.js'
 import { asNullableNumber } from './as-nullable-number.js'
 import { asNullableString } from './as-nullable-string.js'
 import { asPreferredFlag } from './as-preferred-flag.js'
@@ -21,11 +22,11 @@ export const toAddress = (row) => {
       endNumberSuffix: asNullableString(row.saon_end_number_suffix),
       description: asNullableString(row.saon_description)
     },
-    street: asNullableString(row.street),
-    locality: asNullableString(row.locality),
-    town: asNullableString(row.town),
-    county: asNullableString(row.county),
-    postcode: asNullableString(row.postcode),
+    street: mask(asNullableString(row.street)),
+    locality: mask(asNullableString(row.locality)),
+    town: mask(asNullableString(row.town)),
+    county: mask(asNullableString(row.county)),
+    postcode: mask(asNullableString(row.postcode)),
     countryCode: asNullableString(row.uk_internal_code),
     isPreferred: asPreferredFlag(row.preferred_contact_method_ind)
   }

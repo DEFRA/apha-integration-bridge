@@ -1,0 +1,26 @@
+{
+  "$schema": "./clients.schema.json",
+  "wfm": {
+    "client_ids": [
+      // dev
+      "2suk0m543adsrt1vnm89hch765",
+      // test
+      "3bb2845q8hbmob4ahmd53r7s16",
+      // perf-test
+      "7pthm7vegv8c3q652gmpcrjco4",
+      // prod
+      "2nq42e5je49ffdt9f16t874laj"
+    ],
+    "scopes": ["pii"]
+  },
+  // teams app
+  "apha-integration-bridge-05112025": {
+    "client_ids": [
+      // test
+      "2ltodsaoa5rt37pff96t0721bn",
+      // perf-test
+      "49m7soe26q8ugh80sv31fp6g8g"
+    ],
+    "scopes": ["pii"]
+  }
+}

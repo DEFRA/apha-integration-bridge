@@ -1,3 +1,4 @@
+import { mask } from '../../pii/index.js'
 import { asNullableString } from './as-nullable-string.js'
 
 /**
@@ -16,16 +17,16 @@ export const createOrganisation = (row, id) => {
   return {
     type: 'organisations',
     id,
-    organisationName,
+    organisationName: mask(organisationName),
     address: null,
     contactDetails: {
       primaryContact: {
-        fullName: asNullableString(row.primary_contact_full_name),
+        fullName: mask(asNullableString(row.primary_contact_full_name)),
         emailAddress: null,
         phoneNumber: null
       },
       secondaryContact: {
-        fullName: asNullableString(row.secondary_contact_full_name),
+        fullName: mask(asNullableString(row.secondary_contact_full_name)),
         emailAddress: null,
         phoneNumber: null
       }

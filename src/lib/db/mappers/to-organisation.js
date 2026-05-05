@@ -1,3 +1,4 @@
+import { mask } from '../../pii/index.js'
 import { asNullableString } from './as-nullable-string.js'
 import { createOrganisation } from './create-organisation.js'
 import { toAddress } from './to-address.js'
@@ -56,13 +57,14 @@ export const toOrganisation = (row) => {
     asNullableString(row.mobile_number) ?? asNullableString(row.landline)
 
   if (phoneNumber) {
-    organisation.contactDetails.primaryContact.phoneNumber = phoneNumber
+    organisation.contactDetails.primaryContact.phoneNumber = mask(phoneNumber)
   }
 
   const secondaryEmail = asNullableString(row.email)
 
   if (secondaryEmail) {
-    organisation.contactDetails.secondaryContact.emailAddress = secondaryEmail
+    organisation.contactDetails.secondaryContact.emailAddress =
+      mask(secondaryEmail)
   }
 
   const plantId = asNullableString(row.srabpi_plantid)

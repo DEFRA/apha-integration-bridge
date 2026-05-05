@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import { execute } from '../../lib/db/operations/execute.js'
+import { mask } from '../../lib/pii/index.js'
 import {
   HTTPExceptionSchema,
   HTTPException,
@@ -92,11 +93,11 @@ function toAddress(row) {
       saonStartNumberSuffix: row.saon_start_number_suffix ?? null,
       saonEndNumber: row.saon_end_number ?? null,
       saonEndNumberSuffix: row.saon_end_number_suffix ?? null,
-      street: row.street ?? null,
+      street: mask(row.street ?? null),
       locality: row.locality ?? null,
-      town: row.town ?? null,
+      town: mask(row.town ?? null),
       administrativeAreaCounty: row.county ?? null,
-      postcode: row.postcode ?? null,
+      postcode: mask(row.postcode ?? null),
       ukInternalCode: row.uk_internal_code ?? null,
       countryCode: row.country_code ?? null
     }
