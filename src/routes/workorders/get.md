@@ -23,17 +23,17 @@ You must provide **either** activation date parameters **or** update date parame
 
 #### Activation Date Filtering
 
-| Parameter             | Type                          | Required | Default | Rules                                                                                                   |
-| --------------------- | ----------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| `startActivationDate` | ISO 8601 date/datetime string | Yes\*    | -       | Inclusive lower date bound; only the `YYYY-MM-DD` portion is used (time-of-day, if present, is ignored) |
-| `endActivationDate`   | ISO 8601 date/datetime string | Yes\*    | -       | Exclusive upper date bound; must be later than `startActivationDate`; only `YYYY-MM-DD` is used         |
+| Parameter             | Type                          | Required | Default | Rules                                                                           |
+| --------------------- | ----------------------------- | -------- | ------- | ------------------------------------------------------------------------------- |
+| `startActivationDate` | ISO 8601 date/datetime string | Yes\*    | -       | Inclusive lower timestamp bound (`>=`)                                          |
+| `endActivationDate`   | ISO 8601 date/datetime string | Yes\*    | -       | Exclusive upper timestamp bound (`<`); must be later than `startActivationDate` |
 
 #### Update Date Filtering
 
-| Parameter          | Type                          | Required | Default | Rules                                                                                                   |
-| ------------------ | ----------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| `startUpdatedDate` | ISO 8601 date/datetime string | Yes\*    | -       | Inclusive lower date bound; only the `YYYY-MM-DD` portion is used (time-of-day, if present, is ignored) |
-| `endUpdatedDate`   | ISO 8601 date/datetime string | Yes\*    | -       | Exclusive upper date bound; must be later than `startUpdatedDate`; only `YYYY-MM-DD` is used            |
+| Parameter          | Type                          | Required | Default | Rules                                                                        |
+| ------------------ | ----------------------------- | -------- | ------- | ---------------------------------------------------------------------------- |
+| `startUpdatedDate` | ISO 8601 date/datetime string | Yes\*    | -       | Inclusive lower timestamp bound (`>=`)                                       |
+| `endUpdatedDate`   | ISO 8601 date/datetime string | Yes\*    | -       | Exclusive upper timestamp bound (`<`); must be later than `startUpdatedDate` |
 
 #### Common Parameters
 
@@ -47,8 +47,9 @@ You must provide **either** activation date parameters **or** update date parame
 
 Date handling:
 
-- Filtering is applied at calendar-date boundaries (`[startDate, endDate)`).
-- If a datetime is provided, its time component is ignored.
+- Filtering is applied as a timestamp range (`[startDate, endDate)`), meaning start is inclusive and end is exclusive.
+- If a datetime is provided, the full timestamp is used for filtering.
+- Timestamps are normalized to UTC when converted for Oracle query execution.
 - Activation date filtering uses the `wsactivationdate` field from the database.
 - Update date filtering uses the `pxupdatedatetime` field from the database.
 
@@ -107,7 +108,7 @@ Example:
 
 Example error responses:
 
-**Validation error:**
+**Date-window error (activation dates):**
 
 ```json
 {
@@ -116,20 +117,56 @@ Example error responses:
   "errors": [
     {
       "code": "VALIDATION_ERROR",
-      "message": "\"value\" contains an invalid value"
+      "message": "End activation date must be after start activation date"
     }
   ]
 }
 ```
 
-Common validation failures include:
+**Date-window error (update dates):**
 
-- End date not after start date
-- Missing one of the paired date parameters (e.g., `startActivationDate` without `endActivationDate`)
-- Mixing activation and update date filters in the same request
-- Missing both date filter types entirely
-- Invalid date format
-- Invalid pagination parameters
+```json
+{
+  "message": "Invalid request parameters",
+  "code": "BAD_REQUEST",
+  "errors": [
+    {
+      "code": "VALIDATION_ERROR",
+      "message": "End updated date must be after start updated date"
+    }
+  ]
+}
+```
+
+**Mixed date filter error:**
+
+```json
+{
+  "message": "Invalid request parameters",
+  "code": "BAD_REQUEST",
+  "errors": [
+    {
+      "code": "VALIDATION_ERROR",
+      "message": "Cannot use both activation date and update date filters in the same request"
+    }
+  ]
+}
+```
+
+**Missing date parameters error:**
+
+```json
+{
+  "message": "Invalid request parameters",
+  "code": "BAD_REQUEST",
+  "errors": [
+    {
+      "code": "VALIDATION_ERROR",
+      "message": "Either activation date range (startActivationDate and endActivationDate) or update date range (startUpdatedDate and endUpdatedDate) must be provided"
+    }
+  ]
+}
+```
 
 ## Practical tips
 

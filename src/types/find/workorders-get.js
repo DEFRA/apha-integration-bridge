@@ -24,71 +24,75 @@ export const GetWorkordersSchema = PaginationSchema.keys({
     .description(
       'Filter workorders by country (allowed: England, Wales, Scotland; default: Scotland)'
     )
-}).custom((value, helpers) => {
-  const hasActivationDates =
-    value.startActivationDate !== undefined ||
-    value.endActivationDate !== undefined
-  const hasUpdatedDates =
-    value.startUpdatedDate !== undefined || value.endUpdatedDate !== undefined
-
-  // Check for mixed date filter types
-  if (hasActivationDates && hasUpdatedDates) {
-    return helpers.error('any.invalid', {
-      message:
-        'Cannot use both activation date and update date filters in the same request'
-    })
-  }
-
-  // Ensure one set of dates is provided
-  if (!hasActivationDates && !hasUpdatedDates) {
-    return helpers.error('any.invalid', {
-      message:
-        'Either activation date range (startActivationDate and endActivationDate) or update date range (startUpdatedDate and endUpdatedDate) must be provided'
-    })
-  }
-
-  // Ensure both dates in a pair are provided
-  if (hasActivationDates) {
-    if (
-      value.startActivationDate === undefined ||
-      value.endActivationDate === undefined
-    ) {
-      return helpers.error('any.invalid', {
-        message:
-          'Both startActivationDate and endActivationDate must be provided together'
-      })
-    }
-
-    // Validate activation date range
-    const startActivationDate = new Date(value.startActivationDate)
-    const endActivationDate = new Date(value.endActivationDate)
-    if (endActivationDate <= startActivationDate) {
-      return helpers.error('any.invalid', {
-        message: 'End activation date must be after start activation date'
-      })
-    }
-  }
-
-  if (hasUpdatedDates) {
-    if (
-      value.startUpdatedDate === undefined ||
-      value.endUpdatedDate === undefined
-    ) {
-      return helpers.error('any.invalid', {
-        message:
-          'Both startUpdatedDate and endUpdatedDate must be provided together'
-      })
-    }
-
-    // Validate update date range
-    const startUpdatedDate = new Date(value.startUpdatedDate)
-    const endUpdatedDate = new Date(value.endUpdatedDate)
-    if (endUpdatedDate <= startUpdatedDate) {
-      return helpers.error('any.invalid', {
-        message: 'End updated date must be after start updated date'
-      })
-    }
-  }
-
-  return value
 })
+  .custom((value, helpers) => {
+    const hasActivationDates =
+      value.startActivationDate !== undefined ||
+      value.endActivationDate !== undefined
+    const hasUpdatedDates =
+      value.startUpdatedDate !== undefined || value.endUpdatedDate !== undefined
+
+    // Check for mixed date filter types
+    if (hasActivationDates && hasUpdatedDates) {
+      return helpers.error('any.custom', {
+        message:
+          'Cannot use both activation date and update date filters in the same request'
+      })
+    }
+
+    // Ensure one set of dates is provided
+    if (!hasActivationDates && !hasUpdatedDates) {
+      return helpers.error('any.custom', {
+        message:
+          'Either activation date range (startActivationDate and endActivationDate) or update date range (startUpdatedDate and endUpdatedDate) must be provided'
+      })
+    }
+
+    // Ensure both dates in a pair are provided
+    if (hasActivationDates) {
+      if (
+        value.startActivationDate === undefined ||
+        value.endActivationDate === undefined
+      ) {
+        return helpers.error('any.custom', {
+          message:
+            'Both startActivationDate and endActivationDate must be provided together'
+        })
+      }
+
+      // Validate activation date range
+      const startActivationDate = new Date(value.startActivationDate)
+      const endActivationDate = new Date(value.endActivationDate)
+      if (endActivationDate <= startActivationDate) {
+        return helpers.error('any.custom', {
+          message: 'End activation date must be after start activation date'
+        })
+      }
+    }
+
+    if (hasUpdatedDates) {
+      if (
+        value.startUpdatedDate === undefined ||
+        value.endUpdatedDate === undefined
+      ) {
+        return helpers.error('any.custom', {
+          message:
+            'Both startUpdatedDate and endUpdatedDate must be provided together'
+        })
+      }
+
+      // Validate update date range
+      const startUpdatedDate = new Date(value.startUpdatedDate)
+      const endUpdatedDate = new Date(value.endUpdatedDate)
+      if (endUpdatedDate <= startUpdatedDate) {
+        return helpers.error('any.custom', {
+          message: 'End updated date must be after start updated date'
+        })
+      }
+    }
+
+    return value
+  })
+  .messages({
+    'any.custom': '{{#message}}'
+  })
