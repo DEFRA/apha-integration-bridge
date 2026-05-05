@@ -33,7 +33,7 @@ const options = {
     mode: 'required'
   },
   tags: ['api', 'workorders'],
-  description: 'Retrieve workorders by activation date range',
+  description: 'Retrieve workorders by activation or updated date range',
   notes: documentationNotes,
   plugins: {
     'hapi-swagger': {

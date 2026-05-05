@@ -1,6 +1,18 @@
 import { describe, expect, test } from '@jest/globals'
 import { GetWorkordersSchema } from './workorders-get.js'
 
+/**
+ * Assert the expected Joi validation message for invalid requests.
+ *
+ * @param {{ error?: import('joi').ValidationError }} result
+ * @param {string} expectedMessage
+ */
+function expectValidationErrorMessage(result, expectedMessage) {
+  expect(result.error).toBeDefined()
+  expect(result.error?.message).toBe(expectedMessage)
+  expect(result.error?.details[0]?.type).toBe('any.custom')
+}
+
 describe('GetWorkordersSchema', () => {
   test('accepts valid activation date range', () => {
     const result = GetWorkordersSchema.validate({
@@ -31,8 +43,8 @@ describe('GetWorkordersSchema', () => {
       page: 1,
       pageSize: 10
     })
-    expect(result.error).toBeDefined()
-    expect(result.error.details[0].context.message).toBe(
+    expectValidationErrorMessage(
+      result,
       'Cannot use both activation date and update date filters in the same request'
     )
   })
@@ -43,8 +55,8 @@ describe('GetWorkordersSchema', () => {
       page: 1,
       pageSize: 10
     })
-    expect(result.error).toBeDefined()
-    expect(result.error.details[0].context.message).toBe(
+    expectValidationErrorMessage(
+      result,
       'Both startActivationDate and endActivationDate must be provided together'
     )
   })
@@ -56,8 +68,8 @@ describe('GetWorkordersSchema', () => {
       page: 1,
       pageSize: 10
     })
-    expect(result.error).toBeDefined()
-    expect(result.error.details[0].context.message).toBe(
+    expectValidationErrorMessage(
+      result,
       'End activation date must be after start activation date'
     )
   })
@@ -67,8 +79,8 @@ describe('GetWorkordersSchema', () => {
       page: 1,
       pageSize: 10
     })
-    expect(result.error).toBeDefined()
-    expect(result.error.details[0].context.message).toBe(
+    expectValidationErrorMessage(
+      result,
       'Either activation date range (startActivationDate and endActivationDate) or update date range (startUpdatedDate and endUpdatedDate) must be provided'
     )
   })
