@@ -26,6 +26,8 @@ CONNECT pega_data/password@FREEPDB1;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Drop existing tables if they exist (idempotent)
 -- ─────────────────────────────────────────────────────────────────────────────
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.pr_operators PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.index_ac_activity PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.index_ac_wsentities PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
@@ -56,7 +58,8 @@ CREATE TABLE pega_data.ahwork_ac (
   pydescription                     VARCHAR2(500),              -- Description
   activitysequencenumber            NUMBER,                     -- Sequence number
   activityrequiredflag              VARCHAR2(5),                -- Activity required flag (true/false)
-  workbasketname                    VARCHAR2(100)               -- Workbasket name (e.g., Tech, Vet, Admin)
+  workbasketname                    VARCHAR2(100),              -- Workbasket name (e.g., Tech, Vet, Admin)
+  pyassignedoperator                VARCHAR2(128)               -- Assigned operator (username for join with pr_operators)
 );
 
 -- Work schedule index table (denormalized Pega structure)
@@ -87,6 +90,12 @@ CREATE TABLE pega_data.index_ac_activity (
   actname                   VARCHAR2(255) NOT NULL     -- Activity name
 );
 
+-- Operators table (for operator assignments)
+CREATE TABLE pega_data.pr_operators (
+  pyuseridentifier          VARCHAR2(128) PRIMARY KEY,  -- Operator ID (unique identifier)
+  pyusername                VARCHAR2(128)               -- Username of the operator
+);
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Create indexes for performance
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -102,6 +111,36 @@ BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_pyid ON pega_data.index_ac_wsentit
 /
 BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_purpose ON pega_data.index_ac_wsentities (pxindexpurpose)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Seed data: Operators (subset for testing)
+-- ─────────────────────────────────────────────────────────────────────────────
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator123', 'jsmith');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator456', 'jdoe');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator789', 'bjohnson');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator101', 'awilliams');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator202', 'cbrown');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator303', 'dprince');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator404', 'edavis');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator505', 'fmiller');
+
+INSERT INTO pega_data.pr_operators (pyuseridentifier, pyusername)
+VALUES ('operator606', 'ghopper');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Seed data: Work Orders (matching the 9 work orders from original seed)
@@ -179,10 +218,10 @@ VALUES ('U000030', 'WS-76513', 'workScheduleFacilities', NULL);
 -- Activities for WS-76513
 INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey,
-  activitysequencenumber, activityrequiredflag, workbasketname
+  activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator
 ) VALUES (
   'WS-76513-ACT1', 'AH-AC-WS-ACT WS-76513-ACT1', 'activity-1',
-  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 1, 'true', 'Tech'
+  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 1, 'true', 'Tech', 'operator123'
 );
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
@@ -190,10 +229,10 @@ VALUES ('activity-1', 'Arrange Visit');
 
 INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey,
-  activitysequencenumber, activityrequiredflag, workbasketname
+  activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator
 ) VALUES (
   'WS-76513-ACT2', 'AH-AC-WS-ACT WS-76513-ACT2', 'activity-2',
-  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 2, 'true', 'Vet'
+  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 2, 'true', 'Vet', 'operator456'
 );
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
@@ -237,20 +276,20 @@ INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid
 VALUES ('U000020', 'WS-76514', 'workScheduleLivestockUnits', NULL);
 
 -- Activities for WS-76514 (3 activities)
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76514-ACT1', 'AH-AC-WS-ACT WS-76514-ACT1', 'activity-3', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 1, 'false', 'Admin');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76514-ACT1', 'AH-AC-WS-ACT WS-76514-ACT1', 'activity-3', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 1, 'false', 'Admin', NULL);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-3', 'Initial Farm Assessment');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 2, 'true', 'Tech');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 2, 'true', 'Tech', 'operator789');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-4', 'Livestock Document Review');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 3, 'true', 'Vet');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 3, 'true', 'Vet', 'operator101');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-5', 'Physical Animal Inspection');
@@ -299,14 +338,14 @@ INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid
 VALUES ('U000030', 'WS-76515', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76515
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76515-ACT1', 'AH-AC-WS-ACT WS-76515-ACT1', 'activity-6', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76515', 1, 'true', 'Admin');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76515-ACT1', 'AH-AC-WS-ACT WS-76515-ACT1', 'activity-6', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76515', 1, 'true', 'Admin', 'operator202');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-6', 'Verify Movement Documentation');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76515-ACT2', 'AH-AC-WS-ACT WS-76515-ACT2', 'activity-7', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76515', 2, 'false', 'Tech');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76515-ACT2', 'AH-AC-WS-ACT WS-76515-ACT2', 'activity-7', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76515', 2, 'false', 'Tech', NULL);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-7', 'Inspect Holding Facilities');
@@ -338,8 +377,8 @@ INSERT INTO pega_data.index_ac_workschedule (
 -- No entities for WS-76516 (NULL relationships test)
 
 -- Activity for WS-76516
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76516-ACT1', 'AH-AC-WS-ACT WS-76516-ACT1', 'activity-8', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76516', 1, 'true', 'Vet');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76516-ACT1', 'AH-AC-WS-ACT WS-76516-ACT1', 'activity-8', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76516', 1, 'true', 'Vet', 'operator303');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-8', 'Emergency Site Assessment');
@@ -443,26 +482,26 @@ INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid
 VALUES ('U000030', 'WS-76519', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76519 (4 activities)
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76519-ACT1', 'AH-AC-WS-ACT WS-76519-ACT1', 'activity-9', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 1, 'true', 'Tech');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76519-ACT1', 'AH-AC-WS-ACT WS-76519-ACT1', 'activity-9', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 1, 'true', 'Tech', 'operator404');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-9', 'Comprehensive Site Audit');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76519-ACT2', 'AH-AC-WS-ACT WS-76519-ACT2', 'activity-10', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 2, 'true', 'Vet');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76519-ACT2', 'AH-AC-WS-ACT WS-76519-ACT2', 'activity-10', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 2, 'true', 'Vet', 'operator505');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-10', 'Review All Livestock Units');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76519-ACT3', 'AH-AC-WS-ACT WS-76519-ACT3', 'activity-11', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 3, 'false', 'Admin');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76519-ACT3', 'AH-AC-WS-ACT WS-76519-ACT3', 'activity-11', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 3, 'false', 'Admin', NULL);
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-11', 'Inspect All Facilities');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname)
-VALUES ('WS-76519-ACT4', 'AH-AC-WS-ACT WS-76519-ACT4', 'activity-12', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 4, 'true', 'Tech');
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
+VALUES ('WS-76519-ACT4', 'AH-AC-WS-ACT WS-76519-ACT4', 'activity-12', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76519', 4, 'true', 'Tech', 'operator606');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-12', 'Generate Compliance Report');
@@ -829,4 +868,6 @@ BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_workschedule TO sam'
 BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_wsentities TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_activity TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.pr_operators TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /

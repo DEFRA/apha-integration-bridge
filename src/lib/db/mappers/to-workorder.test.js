@@ -85,7 +85,8 @@ test('toWorkorder maps a single row into one workorder resource, replacing codes
         status: 'Pending',
         sequenceNumber: 1,
         performActivity: false,
-        workbasket: null
+        workbasket: null,
+        assignedTo: null
       }
     ],
     phase: 'Active',

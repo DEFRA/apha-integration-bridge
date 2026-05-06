@@ -13,6 +13,7 @@ export const toActivity = (row) => {
     status: asNullableString(row.activity_status),
     sequenceNumber: asNullableNumber(row.activitysequencenumber),
     performActivity: asPreferredFlag(row.activityrequiredflag),
-    workbasket: asNullableString(row.workbasketname)
+    workbasket: asNullableString(row.workbasketname),
+    assignedTo: asNullableString(row.assigned_to)
   }
 }

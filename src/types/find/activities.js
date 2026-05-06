@@ -23,5 +23,8 @@ export const Activities = baseData({
     .description('Whether this activity is required to be performed'),
   workbasket: Joi.string()
     .allow(null)
-    .description('The workbasket that this activity relates to')
+    .description('The workbasket that this activity relates to'),
+  assignedTo: Joi.string()
+    .allow(null)
+    .description('The operator assigned to this activity')
 })
