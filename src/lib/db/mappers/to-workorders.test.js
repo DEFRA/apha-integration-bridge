@@ -64,7 +64,8 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     status: null,
     sequenceNumber: 1,
     performActivity: false,
-    workbasket: null
+    workbasket: null,
+    assignedTo: null
   })
   expect(workorders[0].activities[1]).toEqual({
     type: 'activities',
@@ -73,7 +74,8 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     status: null,
     sequenceNumber: 2,
     performActivity: false,
-    workbasket: null
+    workbasket: null,
+    assignedTo: null
   })
   expect(workorders[0].activities[2]).toEqual({
     type: 'activities',
@@ -82,7 +84,8 @@ test('toWorkorders aggregates multiple activities from rows with same work_order
     status: null,
     sequenceNumber: 3,
     performActivity: false,
-    workbasket: null
+    workbasket: null,
+    assignedTo: null
   })
 })
 
