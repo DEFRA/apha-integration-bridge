@@ -223,7 +223,8 @@ describe('workorders/find', () => {
             status: 'Open',
             sequenceNumber: 1,
             performActivity: true,
-            workbasket: 'Tech'
+            workbasket: 'Tech',
+            assignedTo: 'jsmith'
           },
           {
             type: 'activities',
@@ -232,7 +233,8 @@ describe('workorders/find', () => {
             status: 'Open',
             sequenceNumber: 2,
             performActivity: true,
-            workbasket: 'Vet'
+            workbasket: 'Vet',
+            assignedTo: 'jdoe'
           }
         ],
         phase: 'EXPOSURETRACKING',
@@ -295,7 +297,8 @@ describe('workorders/find', () => {
             sequenceNumber: 1,
             type: 'activities',
             performActivity: false,
-            workbasket: 'Admin'
+            workbasket: 'Admin',
+            assignedTo: null
           },
           {
             activityName: 'Livestock Document Review',
@@ -304,7 +307,8 @@ describe('workorders/find', () => {
             sequenceNumber: 2,
             type: 'activities',
             performActivity: true,
-            workbasket: 'Tech'
+            workbasket: 'Tech',
+            assignedTo: 'bjohnson'
           },
           {
             activityName: 'Physical Animal Inspection',
@@ -313,7 +317,8 @@ describe('workorders/find', () => {
             sequenceNumber: 3,
             type: 'activities',
             performActivity: true,
-            workbasket: 'Vet'
+            workbasket: 'Vet',
+            assignedTo: 'awilliams'
           }
         ],
         phase: 'INSPECTION',
