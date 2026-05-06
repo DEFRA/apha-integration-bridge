@@ -82,11 +82,13 @@ wsa AS (
   wsa_ac.pystatuswork wsa_status,
   wsa_ac.activitysequencenumber,
   wsa_ac.activityrequiredflag,
-  wsa_ac.workbasketname
+  wsa_ac.workbasketname,
+  op.pyusername assigned_to
 
   FROM
   pega_Data.ahwork_ac wsa_ac,
   pega_data.index_ac_activity aca,
+  pega_data.pr_operators op,
   requested_workorders rw
 
   WHERE
@@ -95,6 +97,8 @@ wsa AS (
   wsa_ac.pydescription IS NULL
   AND
   wsa_ac.pxcoverinskey = 'AH-AC ' || rw.work_order_id
+  AND
+  wsa_ac.pyassignedoperator = op.pyuseridentifier(+)
 )
 
 SELECT
@@ -118,6 +122,7 @@ ws.phase,
 wsa.activitysequencenumber,
 wsa.activityrequiredflag,
 wsa.workbasketname,
+wsa.assigned_to,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
 TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
 TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
