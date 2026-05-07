@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
+import { createLogger } from '../../common/helpers/logging/logger.js'
 
 const storage = new AsyncLocalStorage()
 
@@ -32,6 +33,9 @@ export const enterMaskingContext = (context) => storage.enterWith(context)
  * @param {string | null | undefined} value
  */
 export const mask = (value) => {
+  const logger = createLogger()
+  logger.info(`masking value: ${storage.getStore()?.shouldMask}`)
+
   if (storage.getStore()?.shouldMask !== true) {
     return value
   }
