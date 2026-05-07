@@ -1,4 +1,5 @@
 import { enterMaskingContext } from '../../lib/pii/index.js'
+import { createLogger } from './logging/logger.js'
 
 const PII_SCOPE = 'pii'
 
@@ -30,13 +31,13 @@ export const piiContextPlugin = {
         method: (request, h) => {
           const scopes = request.app.scopes ?? []
 
-          request.logger.info(`scopes: ${JSON.stringify(scopes)}`)
+          const logger = createLogger()
+
+          logger.info(`scopes: ${JSON.stringify(scopes)}`)
 
           const shouldMask = !scopes.includes(PII_SCOPE)
 
-          request.logger.info(
-            `PII masking ${shouldMask ? 'enabled' : 'disabled'}`
-          )
+          logger.info(`PII masking ${shouldMask ? 'enabled' : 'disabled'}`)
 
           enterMaskingContext({ shouldMask })
 
