@@ -81,6 +81,8 @@ export const loadClients = (filePath) => {
     clientIds: Object.keys(parsed)
   })
 
+  logger.info(JSON.stringify(parsed))
+
   // `$schema` is a tooling hint for editor validation; it is not part of the
   // runtime config and would be rejected by the entry pattern below.
   if (parsed && typeof parsed === 'object' && '$schema' in parsed) {
@@ -88,6 +90,10 @@ export const loadClients = (filePath) => {
   }
 
   const { error, value } = clientsSchema.validate(parsed, { abortEarly: false })
+
+  logger.info(JSON.stringify(error))
+
+  logger.info(JSON.stringify(value))
 
   if (error) {
     throw new Error(`Invalid clients config at ${filePath}: ${error.message}`)
