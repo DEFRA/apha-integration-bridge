@@ -25,7 +25,6 @@ import { authPlugin } from './common/helpers/auth.js'
 import { piiContextPlugin } from './common/helpers/pii-context.js'
 import { clientScopesPlugin } from './common/helpers/client-scopes.js'
 import { loadClients } from './lib/clients/load.js'
-import { createLogger } from './common/helpers/logging/logger.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -42,9 +41,6 @@ async function createServer() {
   setupProxy()
 
   const clients = loadClients(config.get('clients.path'))
-
-  const logger = createLogger()
-  logger.info(`Loaded clients config: ${JSON.stringify(clients)}`)
 
   const server = Hapi.server({
     host: config.get('host'),
