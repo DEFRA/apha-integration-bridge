@@ -30,7 +30,13 @@ export const piiContextPlugin = {
         method: (request, h) => {
           const scopes = request.app.scopes ?? []
 
+          request.logger.info(`scopes: ${JSON.stringify(scopes)}`)
+
           const shouldMask = !scopes.includes(PII_SCOPE)
+
+          request.logger.info(
+            `PII masking ${shouldMask ? 'enabled' : 'disabled'}`
+          )
 
           enterMaskingContext({ shouldMask })
 

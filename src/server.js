@@ -43,9 +43,8 @@ async function createServer() {
 
   const clients = loadClients(config.get('clients.path'))
 
-  createLogger().info('Loaded clients config', {
-    clientIds: Object.keys(clients)
-  })
+  const logger = createLogger()
+  logger.info(`Loaded clients config: ${JSON.stringify(clients)}`)
 
   const server = Hapi.server({
     host: config.get('host'),
