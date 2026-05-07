@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import Joi from 'joi'
 import { parse, printParseErrorCode } from 'jsonc-parser'
+import { createLogger } from '../../common/helpers/logging/logger.js'
 
 /**
  * @typedef {Object} ClientEntry
@@ -70,7 +71,15 @@ const parseClients = (raw, filePath) => {
 export const loadClients = (filePath) => {
   const file = loadFile(filePath)
 
+  const logger = createLogger()
+
+  logger.info('Loaded file', { filePath })
+
   const parsed = parseClients(file, filePath)
+
+  logger.info('Parsed clients config', {
+    clientIds: Object.keys(parsed)
+  })
 
   // `$schema` is a tooling hint for editor validation; it is not part of the
   // runtime config and would be rejected by the entry pattern below.
@@ -83,6 +92,10 @@ export const loadClients = (filePath) => {
   if (error) {
     throw new Error(`Invalid clients config at ${filePath}: ${error.message}`)
   }
+
+  logger.info('Validated clients config', {
+    clientIds: Object.keys(value)
+  })
 
   return value
 }
