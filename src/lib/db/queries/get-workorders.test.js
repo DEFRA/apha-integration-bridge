@@ -44,6 +44,16 @@ describe('getWorkordersQuery', () => {
     expect(sql).toMatchSnapshot()
   })
 
+  test('returns the expected query with country filter', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      endActivationDate: '2024-01-01T00:05:00.001Z',
+      country: 'Wales'
+    })
+
+    expect(sql).toMatchSnapshot()
+  })
+
   test('uses a single ws_entities CTE scan for work schedule entities', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
