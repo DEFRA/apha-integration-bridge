@@ -70,21 +70,23 @@ describe('getWorkordersQuery', () => {
     )
   })
 
-  test('defaults country filter to SCOTLAND in SQL', () => {
+  test('includes all countries when country filter is omitted', () => {
     const { sql } = getWorkordersQuery({
       ...validParams
     })
 
-    expect(sql).toContain("UPPER(ws.purposecountry) = 'SCOTLAND'")
+    expect(sql).toContain('(NULL IS NULL OR UPPER(ws.purposecountry) = NULL)')
   })
 
-  test('normalizes provided country to uppercase in SQL', () => {
+  test('filters by specific country when provided', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
       country: 'wales'
     })
 
-    expect(sql).toContain("UPPER(ws.purposecountry) = 'WALES'")
+    expect(sql).toContain(
+      "('WALES' IS NULL OR UPPER(ws.purposecountry) = 'WALES')"
+    )
   })
 
   test('defaults page and pageSize when omitted', () => {

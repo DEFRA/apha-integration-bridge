@@ -85,7 +85,7 @@ describe('GetWorkordersSchema', () => {
     )
   })
 
-  test('defaults country to Scotland when omitted', () => {
+  test('accepts valid request without country filter', () => {
     const result = GetWorkordersSchema.validate({
       startActivationDate: '2024-01-01T00:00:00.000Z',
       endActivationDate: '2024-02-01T00:00:00.000Z',
@@ -93,6 +93,18 @@ describe('GetWorkordersSchema', () => {
       pageSize: 10
     })
     expect(result.error).toBeUndefined()
-    expect(result.value.country).toBe('Scotland')
+    expect(result.value.country).toBeUndefined()
+  })
+
+  test('accepts valid request with country filter', () => {
+    const result = GetWorkordersSchema.validate({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
+      endActivationDate: '2024-02-01T00:00:00.000Z',
+      country: 'wales',
+      page: 1,
+      pageSize: 10
+    })
+    expect(result.error).toBeUndefined()
+    expect(result.value.country).toBe('wales')
   })
 })

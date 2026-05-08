@@ -60,7 +60,9 @@ export function getWorkordersQuery(params) {
 
   const offsetRows = (value.page - 1) * value.pageSize
   const fetchRows = value.pageSize + 1
-  const normalizedCountry = value.country.trim().toUpperCase()
+  const normalizedCountry = value.country
+    ? value.country.trim().toUpperCase()
+    : null
 
   return {
     sql: query()
