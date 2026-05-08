@@ -14,7 +14,7 @@ WITH filtered_workorders AS (
   AND
   ac.pystatuswork IN ('Open')
   AND
-  UPPER(ws.purposecountry) = :country
+  (:country IS NULL OR UPPER(ws.purposecountry) = :country)
   AND
   (
     (:date_type = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))

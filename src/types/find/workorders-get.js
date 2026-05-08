@@ -20,9 +20,8 @@ export const GetWorkordersSchema = PaginationSchema.keys({
     .min(1)
     .valid('england', 'wales', 'scotland')
     .insensitive()
-    .default('Scotland')
     .description(
-      'Filter workorders by country (allowed: England, Wales, Scotland; default: Scotland)'
+      'Filter workorders by country (allowed: England, Wales, Scotland)'
     )
 })
   .custom((value, helpers) => {

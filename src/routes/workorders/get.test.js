@@ -178,7 +178,7 @@ describe('GET /workorders', () => {
     }
   )
 
-  test('defaults country filter to Scotland when country is omitted', async () => {
+  test('does not include country filter when country is omitted', async () => {
     const server = await createServer()
     const getWorkordersSpy = jest
       .spyOn(getWorkordersOperation, 'getWorkorders')
@@ -205,11 +205,13 @@ describe('GET /workorders', () => {
       expect.objectContaining({
         startActivationDate: '2024-01-01T00:00:00.000Z',
         endActivationDate: '2024-02-01T00:00:00.000Z',
-        country: 'Scotland',
         page: 1,
         pageSize: 10
       })
     )
+    // Verify country is not in the call
+    const callArgs = getWorkordersSpy.mock.calls[0][1]
+    expect(callArgs).not.toHaveProperty('country')
   })
 
   test('filters by explicit country using case-insensitive input', async () => {

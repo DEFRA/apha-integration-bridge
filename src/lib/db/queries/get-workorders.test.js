@@ -44,6 +44,16 @@ describe('getWorkordersQuery', () => {
     expect(sql).toMatchSnapshot()
   })
 
+  test('returns the expected query with country filter', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      endActivationDate: '2024-01-01T00:05:00.001Z',
+      country: 'Wales'
+    })
+
+    expect(sql).toMatchSnapshot()
+  })
+
   test('uses a single ws_entities CTE scan for work schedule entities', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
@@ -70,21 +80,23 @@ describe('getWorkordersQuery', () => {
     )
   })
 
-  test('defaults country filter to SCOTLAND in SQL', () => {
+  test('includes all countries when country filter is omitted', () => {
     const { sql } = getWorkordersQuery({
       ...validParams
     })
 
-    expect(sql).toContain("UPPER(ws.purposecountry) = 'SCOTLAND'")
+    expect(sql).toContain('(NULL IS NULL OR UPPER(ws.purposecountry) = NULL)')
   })
 
-  test('normalizes provided country to uppercase in SQL', () => {
+  test('filters by specific country when provided', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
       country: 'wales'
     })
 
-    expect(sql).toContain("UPPER(ws.purposecountry) = 'WALES'")
+    expect(sql).toContain(
+      "('WALES' IS NULL OR UPPER(ws.purposecountry) = 'WALES')"
+    )
   })
 
   test('defaults page and pageSize when omitted', () => {
