@@ -5,7 +5,7 @@ import { mask } from '../../lib/pii/index.js'
 import { piiContextPlugin } from './pii-context.js'
 
 /**
- * @typedef {import('@hapi/hapi').Request & { app: { scopes?: string[] }}} HapiRequestWithScopes
+ * @typedef {import('../../types/api.js').HapiRequestWithScopes} HapiRequestWithScopes
  */
 
 const buildServer = async () => {

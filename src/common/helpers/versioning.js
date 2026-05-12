@@ -1,9 +1,9 @@
 'use strict'
 
 /**
- * @typedef {import('@hapi/hapi').Server} Server
- * @typedef {import('@hapi/hapi').Request} Request
- * @typedef {import('@hapi/hapi').ResponseToolkit} ResponseToolkit
+ * @typedef {import('../../types/api.js').Server} Server
+ * @typedef {import('../../types/api.js').Request} Request
+ * @typedef {import('../../types/api.js').ResponseToolkit} ResponseToolkit
  */
 
 /**

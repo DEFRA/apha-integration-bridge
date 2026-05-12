@@ -1,10 +1,21 @@
 import Hapi from '@hapi/hapi'
-import { describe, test, expect, jest, afterEach } from '@jest/globals'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  jest,
+  test
+} from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
 import route from './find.js'
 import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
+import { clientScopesPlugin } from '../../common/helpers/client-scopes.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
+import { opentelemetryPlugin } from '../../common/helpers/telemetry.js'
+import { piiContextPlugin } from '../../common/helpers/pii-context.js'
 import * as executeOperation from '../../lib/db/operations/execute.js'
 
 const path = '/customers/find'
@@ -506,5 +517,113 @@ describe('POST /customers/find', () => {
         prev: null
       }
     })
+  })
+})
+
+/**
+ * End-to-end masking tests. These mirror the production plugin set
+ * (`opentelemetryPlugin` + `clientScopesPlugin` + `piiContextPlugin`) and
+ * exercise the real DB path. The OTel plugin is included on purpose: its
+ * handler wrapper was previously incompatible with our masking context, and
+ * registering it here proves the fix in [pii-context.js](../../common/helpers/pii-context.js)
+ * holds up under the same conditions that broke it in production.
+ */
+describe('POST /customers/find — PII masking integration', () => {
+  const PII_CLIENT_ID = 'pii-allowed-client'
+  const UNKNOWN_CLIENT_ID = 'unknown-client'
+
+  const clients = {
+    wfm: { client_ids: [PII_CLIENT_ID], scopes: ['pii'] }
+  }
+
+  /** @param {string} clientId */
+  const makeToken = (clientId) => {
+    const header = Buffer.from(
+      JSON.stringify({ alg: 'none', typ: 'JWT' })
+    ).toString('base64url')
+    const body = Buffer.from(
+      JSON.stringify({ iss: 'https://mock-cognito', client_id: clientId })
+    ).toString('base64url')
+    return `${header}.${body}.sig`
+  }
+
+  /** @type {import('@hapi/hapi').Server} */
+  let server
+
+  beforeAll(async () => {
+    server = Hapi.server({ port: 0 })
+
+    await server.register([
+      { plugin: hapiPino, options: { enabled: false } },
+      bearerTokenPlugin,
+      opentelemetryPlugin,
+      { plugin: clientScopesPlugin, options: { clients } },
+      piiContextPlugin,
+      oracleDb
+    ])
+
+    server.route({ ...route, path, method: 'POST' })
+  })
+
+  afterAll(async () => {
+    await server.stop()
+  })
+
+  /** @param {string} clientId */
+  const inject = (clientId) =>
+    server.inject({
+      method: 'POST',
+      url: `${path}?page=1&pageSize=10`,
+      payload: { ids: [customer1.id] },
+      headers: { authorization: `Bearer ${makeToken(clientId)}` }
+    })
+
+  test('returns unmasked PII when the client_id has the pii scope', async () => {
+    const response = await inject(PII_CLIENT_ID)
+
+    expect(response.statusCode).toBe(200)
+
+    const result = /** @type {Record<string, any>} */ (response.result)
+
+    expect(result.data[0]).toEqual(customer1)
+  })
+
+  test('masks every PII field when the client_id is not in the clients config', async () => {
+    const response = await inject(UNKNOWN_CLIENT_ID)
+
+    expect(response.statusCode).toBe(200)
+
+    const result = /** @type {Record<string, any>} */ (response.result)
+
+    const [customer] = result.data
+
+    expect(customer.id).toBe(customer1.id)
+    // mask rule: <=5 chars fully masked; >5 chars keep first/last, mask middle
+    expect(customer.title).toBe('**') // Mr
+    expect(customer.firstName).toBe('****') // Bert
+    expect(customer.lastName).toBe('F****r') // Farmer
+    expect(customer.addresses[0].street).toBe('S****t') // Street
+    expect(customer.addresses[0].town).toBe('****') // Town
+    expect(customer.addresses[0].county).toBe('C****y') // County
+    expect(customer.addresses[0].postcode).toBe('1*****1') // 1AA A11
+
+    const email = customer.contactDetails.find((c) => c.type === 'email')
+    const mobile = customer.contactDetails.find((c) => c.type === 'mobile')
+
+    expect(email.emailAddress).toBe('e*****************m') // example@example.com
+    expect(mobile.phoneNumber).toBe('+*************1') // +44 11111 11111
+  })
+
+  test('does not leak masking state between concurrent requests', async () => {
+    const [unmaskedRes, maskedRes] = await Promise.all([
+      inject(PII_CLIENT_ID),
+      inject(UNKNOWN_CLIENT_ID)
+    ])
+
+    const unmasked = /** @type {Record<string, any>} */ (unmaskedRes.result)
+    const masked = /** @type {Record<string, any>} */ (maskedRes.result)
+
+    expect(unmasked.data[0].firstName).toBe('Bert')
+    expect(masked.data[0].firstName).toBe('****')
   })
 })

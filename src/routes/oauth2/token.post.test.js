@@ -13,7 +13,7 @@ import { http, HttpResponse } from 'msw'
 import { spyOnConfigMany } from '../../common/helpers/test-helpers/config.js'
 
 /**
- * @typedef {import('@hapi/hapi').Server} Server
+ * @typedef {import('../../types/api.js').Server} Server
  * @typedef {import('@hapi/hapi').ServerInjectResponse} ServerInjectResponse
  * @typedef {{message: string}} ErrorResult
  */

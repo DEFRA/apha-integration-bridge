@@ -1,17 +1,5 @@
 /**
- * Decoded JWT artifacts attached to the request by `authPlugin`. The auth
- * plugin enforces that `client_id` is a non-empty string before the request
- * reaches any extension, so consumers may treat it as guaranteed once auth
- * has run. `client_id` is marked optional only because `auth: false` routes
- * never populate artifacts.
- *
- * @typedef {Object} JwtArtifacts
- * @property {string} [client_id]
- *
- * @typedef {import('@hapi/hapi').Request & {
- *   app: { scopes?: string[] },
- *   auth: { artifacts: JwtArtifacts }
- * }} HapiRequestWithScopes
+ * @typedef {import('../../types/api.js').HapiRequestWithScopes} HapiRequestWithScopes
  *
  * @typedef {Object} ClientScopesOptions
  * @property {import('../../lib/clients/load.js').ClientsConfig} clients

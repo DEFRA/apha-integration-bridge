@@ -6,9 +6,9 @@ import { config } from '../../config.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
- * @typedef {import('@hapi/hapi').Request} Request
- * @typedef {import('@hapi/hapi').ResponseObject} ResponseObject
- * @typedef {import('@hapi/hapi').ResponseToolkit} ResponseToolkit
+ * @typedef {import('../../types/api.js').Request} Request
+ * @typedef {import('../../types/api.js').ResponseObject} ResponseObject
+ * @typedef {import('../../types/api.js').ResponseToolkit} ResponseToolkit
  */
 
 /**

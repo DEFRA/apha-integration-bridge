@@ -23,10 +23,7 @@ const requestLatency5XX = meter.createGauge('request.latency.5XX', {
 })
 
 /**
- * @typedef {import('@hapi/hapi').Request} Hapi.Request
- * @typedef {import('@opentelemetry/api').Span} OpenTelemetry.Span
- *
- * @typedef {Hapi.Request & { app: { startTime: number; span: OpenTelemetry.Span }}} HapiRequestWithSpan
+ * @typedef {import('../../types/api.js').HapiRequestWithSpan} HapiRequestWithSpan
  */
 
 /**
