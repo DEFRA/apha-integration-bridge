@@ -1,6 +1,6 @@
 export class HTTPPaginationLinks {
   /**
-   * @typedef {import('@hapi/hapi').Request} Request
+   * @typedef {import('../../types/api.js').Request} Request
    * @param {Request} request
    */
   constructor(request) {

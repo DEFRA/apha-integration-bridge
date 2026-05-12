@@ -3,7 +3,7 @@ import { HTTPArrayResponse } from './http-response.js'
 
 export class HTTPFindRequest {
   /**
-   * @typedef {import('@hapi/hapi').Request} Request
+   * @typedef {import('../../types/api.js').Request} Request
    * @param {Request} request
    * @param {import('joi').Schema} schema
    */
