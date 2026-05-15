@@ -14,12 +14,16 @@
     "scopes": ["pii"]
   },
   // teams app
-  "apha-integration-bridge-05112025": {
+  "apha-integration-bridge-internal-unmasked": {
     "client_ids": [
+      // dev
+      "42vj57of4neou791bgj337k4bf",
       // test
-      "2ltodsaoa5rt37pff96t0721bn",
+      "1h3ioh7j5cja62sh0c9pbiotpr",
       // perf-test
-      "49m7soe26q8ugh80sv31fp6g8g"
+      "39djhoe48ivmnecrkpbpc2ursp",
+      // prod
+      "685i446tccrc4ku7fpm80vi45h"
     ],
     "scopes": ["pii"]
   }
