@@ -5,11 +5,11 @@
       // dev
       "2suk0m543adsrt1vnm89hch765",
       // test
-      "3bb2845q8hbmob4ahmd53r7s16",
-      // perf-test
-      "7pthm7vegv8c3q652gmpcrjco4",
+      "2ltodsaoa5rt37pff96t0721bn",
+      // ext-test
+      "3flpso32cnu2cc9fbnes0olprb",
       // prod
-      "2nq42e5je49ffdt9f16t874laj"
+      "2840190bi6lfdlkd9de5slbg8i"
     ],
     "scopes": ["pii"]
   },
