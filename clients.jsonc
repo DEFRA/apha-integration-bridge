@@ -6,10 +6,13 @@
       "2suk0m543adsrt1vnm89hch765",
       // test
       "3bb2845q8hbmob4ahmd53r7s16",
-      // ext-test
+      // perf-test
       "7pthm7vegv8c3q652gmpcrjco4",
+      // ext-test
+      "65mu94mp0k20r3phdk0370a8rb",
       // prod
       "2nq42e5je49ffdt9f16t874laj",
+      // TODO remove these below when WFM has made the changes to their creds
       // adding temporary client ids below as WFM are using these
       // test
       "2ltodsaoa5rt37pff96t0721bn",
