@@ -139,6 +139,137 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
     expect(res.result.message).toBe('Insufficient permissions')
   })
 
+  test('allows token holding the required scope among several', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const multiScopeToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access',
+      scope:
+        'other-srv/access apha-integration-bridge-resource-srv/access extra-srv/read',
+      client_id: CLIENT_ID
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now)
+      .setExpirationTime(now + 3600)
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${multiScopeToken}` }
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.result).toEqual({
+      message: 'auth required',
+      user: 'test-user'
+    })
+  })
+
+  test('rejects token with related but non-matching scopes', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const badToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access',
+      scope: 'other-srv/access extra-srv/read',
+      client_id: CLIENT_ID
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now)
+      .setExpirationTime(now + 3600)
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${badToken}` }
+    })
+
+    expect(res.statusCode).toBe(403)
+    expect(res.result.message).toBe('Insufficient permissions')
+  })
+
+  test('rejects token with missing scope claim', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const badToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access',
+      client_id: CLIENT_ID
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now)
+      .setExpirationTime(now + 3600)
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${badToken}` }
+    })
+
+    expect(res.statusCode).toBe(403)
+    expect(res.result.message).toBe('Insufficient permissions')
+  })
+
+  test('rejects token whose scope only contains the required scope as a prefix', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const badToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access',
+      // Membership check is exact per token, so a longer scope sharing the
+      // expected scope as a prefix must not be admitted.
+      scope: 'apha-integration-bridge-resource-srv/access-admin',
+      client_id: CLIENT_ID
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now)
+      .setExpirationTime(now + 3600)
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${badToken}` }
+    })
+
+    expect(res.statusCode).toBe(403)
+    expect(res.result.message).toBe('Insufficient permissions')
+  })
+
+  test('rejects token with a non-string scope claim', async () => {
+    const now = Math.floor(Date.now() / 1000)
+
+    const badToken = await new SignJWT({
+      sub: 'test-user',
+      iss: ISSUER,
+      token_use: 'access',
+      // A malformed (array) scope claim must fail closed rather than match.
+      scope: ['apha-integration-bridge-resource-srv/access'],
+      client_id: CLIENT_ID
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
+      .setIssuedAt(now)
+      .setExpirationTime(now + 3600)
+      .sign(privateKey)
+
+    const res = await server.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${badToken}` }
+    })
+
+    expect(res.statusCode).toBe(403)
+    expect(res.result.message).toBe('Insufficient permissions')
+  })
+
   test('rejects token with missing client_id', async () => {
     const now = Math.floor(Date.now() / 1000)
 

@@ -112,7 +112,19 @@ export const authPlugin = {
                 return Boom.unauthorized('Authentication failed')
               }
 
-              if (payload.scope !== expectedScope) {
+              /**
+               * @type {string[]}
+               */
+              let grantedScopes = []
+
+              if (typeof payload.scope === 'string') {
+                // cognito returns granted scopes as a space-delimited string
+                // (RFC 6749 §3.3). Split on whitespace and check membership so
+                // that clients granted additional scopes are not rejected.
+                grantedScopes = payload.scope.split(/\s+/).filter(Boolean)
+              }
+
+              if (!grantedScopes.includes(expectedScope)) {
                 logger?.warn(
                   'Authorization failed: Required scope not present in token'
                 )
