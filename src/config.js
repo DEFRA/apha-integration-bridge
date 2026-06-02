@@ -195,6 +195,12 @@ const config = convict({
       format: String,
       default: 'apha-integration-bridge-resource-srv/access',
       env: 'AUTH_SCOPE'
+    },
+    allowedIssuers: {
+      doc: 'Comma-separated allowlist of exact trusted token issuer (iss) URLs. Each entry should be the full Cognito issuer including the pool id, e.g. https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_xxxxxxxxx (a trailing slash, if present, is stripped). Tokens whose iss is not an exact match are rejected before any JWKS fetch. MUST be set per environment; empty causes the server to refuse to start (deployed) or reject all tokens (local development).',
+      format: Array,
+      default: [],
+      env: 'AUTH_ALLOWED_ISSUERS'
     }
   },
   log: {
