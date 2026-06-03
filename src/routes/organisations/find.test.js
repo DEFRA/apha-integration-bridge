@@ -3,7 +3,7 @@ import { describe, test, expect } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
 import route from './find.js'
-import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
+import { registerBearerAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 
 const path = '/organisations/find'
@@ -82,7 +82,7 @@ async function createServer() {
     oracleDb
   ])
 
-  registerSimpleAuthStrategy(server)
+  registerBearerAuthStrategy(server)
 
   server.route({
     ...route,
