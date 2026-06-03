@@ -11,7 +11,7 @@ import {
 import hapiPino from 'hapi-pino'
 
 import route from './find.js'
-import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
+import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { clientScopesPlugin } from '../../common/helpers/client-scopes.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { opentelemetryPlugin } from '../../common/helpers/telemetry.js'
@@ -141,11 +141,10 @@ async function createServer() {
         enabled: false
       }
     },
-    {
-      plugin: bearerTokenPlugin
-    },
     oracleDb
   ])
+
+  registerSimpleAuthStrategy(server)
 
   server.route({
     ...route,
@@ -555,12 +554,13 @@ describe('POST /customers/find — PII masking integration', () => {
 
     await server.register([
       { plugin: hapiPino, options: { enabled: false } },
-      bearerTokenPlugin,
       opentelemetryPlugin,
       { plugin: clientScopesPlugin, options: { clients } },
       piiContextPlugin,
       oracleDb
     ])
+
+    registerSimpleAuthStrategy(server)
 
     server.route({ ...route, path, method: 'POST' })
   })

@@ -3,7 +3,7 @@ import { describe, test, expect } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
 import route from './find.js'
-import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
+import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 
 const path = '/organisations/find'
@@ -79,11 +79,10 @@ async function createServer() {
         enabled: false
       }
     },
-    {
-      plugin: bearerTokenPlugin
-    },
     oracleDb
   ])
+
+  registerSimpleAuthStrategy(server)
 
   server.route({
     ...route,

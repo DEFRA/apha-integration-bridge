@@ -9,7 +9,6 @@ import { openApi } from './common/helpers/swagger.js'
 import { config } from './config.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { routingPlugin } from './common/helpers/routing.js'
-// import { bearerTokenPlugin } from './common/helpers/bearer-token.js'
 // import { mongoDb } from './common/helpers/mongodb.js'
 import { oracleDb } from './common/helpers/oracledb.js'
 import { oracleDbHealthcheck } from './common/helpers/oracledb-healthcheck.js'
@@ -101,10 +100,6 @@ async function createServer() {
      * authenticates incoming requests using JWT tokens with signature verification
      */
     authPlugin,
-    /**
-     * check for the presence of a bearer token in the request
-     */
-    // bearerTokenPlugin,
     /**
      * sets up opentelemetry tracing and metrics
      */
