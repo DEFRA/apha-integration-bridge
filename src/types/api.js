@@ -14,11 +14,10 @@
  */
 
 /**
- * Decoded JWT artifacts that the auth plugin (`authPlugin` /
- * `bearerTokenPlugin`) attaches to the request after a successful
- * authentication. `client_id` is optional only because routes with
- * `auth: false` never populate artifacts; when auth has run, the plugin
- * guarantees it is a non-empty string.
+ * Decoded JWT artifacts that the auth plugin (`authPlugin`) attaches to the
+ * request after a successful authentication. `client_id` is optional only
+ * because routes with `auth: false` never populate artifacts; when auth has
+ * run, the plugin guarantees it is a non-empty string.
  *
  * @typedef {Object} JwtArtifacts
  * @property {string} [client_id]

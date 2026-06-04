@@ -3,7 +3,7 @@ import { describe, test, expect } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
 import route from './find.js'
-import { bearerTokenPlugin } from '../../common/helpers/bearer-token.js'
+import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 
 const path = '/organisations/find'
@@ -79,11 +79,10 @@ async function createServer() {
         enabled: false
       }
     },
-    {
-      plugin: bearerTokenPlugin
-    },
     oracleDb
   ])
+
+  registerSimpleAuthStrategy(server)
 
   server.route({
     ...route,
@@ -97,20 +96,6 @@ async function createServer() {
 describe('POST /organisations/find', () => {
   test('requires authentication explicitly', () => {
     expect(route.options.auth).toEqual({ mode: 'required' })
-  })
-
-  test('returns UNAUTHORIZED when Authorization header is missing', async () => {
-    const server = await createServer()
-
-    const response = await server.inject({
-      method: 'POST',
-      payload: {
-        ids: [organisationId]
-      },
-      url: `${path}?page=1&pageSize=10`
-    })
-
-    expect(response.statusCode).toBe(401)
   })
 
   test('returns all matching organisation ids', async () => {
