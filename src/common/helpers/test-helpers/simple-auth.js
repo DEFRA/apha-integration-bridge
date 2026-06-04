@@ -2,27 +2,21 @@ import Boom from '@hapi/boom'
 
 /**
  * Registers a simple authentication strategy on a Hapi server for route tests.
+ *
  * @param {import('@hapi/hapi').Server} server - The Hapi server used in the test.
+ * @param {Object} [options] - Optional configuration.
+ * @param {boolean} [options.validateToken=false]
  */
-export const registerSimpleAuthStrategy = (server) => {
+export const registerSimpleAuthStrategy = (server, options = {}) => {
+  const { validateToken = false } = options
+
   server.auth.scheme('simple', () => {
     return {
-      authenticate: (request, h) => h.authenticated({ credentials: {} })
-    }
-  })
-
-  server.auth.strategy('simple', 'simple', {})
-  server.auth.default('simple')
-}
-
-/**
- * Registers a bearer token authentication strategy for route tests.
- * @param {import('@hapi/hapi').Server} server - The Hapi server used in the test.
- */
-export const registerBearerAuthStrategy = (server) => {
-  server.auth.scheme('bearer', () => {
-    return {
       authenticate: async (request, h) => {
+        if (!validateToken) {
+          return h.authenticated({ credentials: {} })
+        }
+
         const authHeader = request.raw.req.headers.authorization
 
         if (!authHeader?.startsWith('Bearer ')) {
@@ -36,9 +30,7 @@ export const registerBearerAuthStrategy = (server) => {
             Buffer.from(token.split('.')[1], 'base64url').toString('utf8')
           )
 
-          const issuer = decoded.iss
-
-          if (!issuer) {
+          if (!decoded.iss) {
             return Boom.unauthorized('Missing `iss` claim in token')
           }
 
@@ -57,6 +49,6 @@ export const registerBearerAuthStrategy = (server) => {
     }
   })
 
-  server.auth.strategy('simple', 'bearer', {})
+  server.auth.strategy('simple', 'simple', {})
   server.auth.default('simple')
 }
