@@ -516,9 +516,9 @@ describe('POST /customers/find — PII masking integration', () => {
   let otelRegistered = false
 
   /**
-   * @param {string} clientId
+   * Creates base server with plugins for PII masking tests
    */
-  const createServerWithClient = async (clientId) => {
+  const createBaseServer = async () => {
     const server = Hapi.server({ port: 0 })
 
     const plugins = [
@@ -534,6 +534,16 @@ describe('POST /customers/find — PII masking integration', () => {
     }
 
     await server.register(plugins)
+
+    return server
+  }
+
+  /**
+   * Creates a test server with a specific client ID for PII masking tests
+   * @param {string} clientId
+   */
+  const createServerWithClient = async (clientId) => {
+    const server = await createBaseServer()
 
     registerSimpleAuthStrategy(server, { clientId })
 
@@ -591,18 +601,27 @@ describe('POST /customers/find — PII masking integration', () => {
   })
 
   test('does not leak masking state between concurrent requests', async () => {
-    const unmaskedServer = await createServerWithClient(PII_CLIENT_ID)
-    const maskedServer = await createServerWithClient(UNKNOWN_CLIENT_ID)
+    const server = await createBaseServer()
 
+    // Use getClientId to extract client_id from a custom test header
+    registerSimpleAuthStrategy(server, {
+      getClientId: (request) => request.headers['x-test-client-id']
+    })
+
+    server.route({ ...route, path, method: 'POST' })
+
+    // Make concurrent requests with different client IDs to the same server
     const [unmaskedRes, maskedRes] = await Promise.all([
-      unmaskedServer.inject({
+      server.inject({
         method: 'POST',
         url: `${path}?page=1&pageSize=10`,
+        headers: { 'x-test-client-id': PII_CLIENT_ID },
         payload: { ids: [customer1.id] }
       }),
-      maskedServer.inject({
+      server.inject({
         method: 'POST',
         url: `${path}?page=1&pageSize=10`,
+        headers: { 'x-test-client-id': UNKNOWN_CLIENT_ID },
         payload: { ids: [customer1.id] }
       })
     ])
