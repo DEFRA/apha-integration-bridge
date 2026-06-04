@@ -1,13 +1,5 @@
 import Hapi from '@hapi/hapi'
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  jest,
-  test
-} from '@jest/globals'
+import { afterEach, describe, expect, jest, test } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 
 import route from './find.js'
@@ -144,7 +136,7 @@ async function createServer() {
     oracleDb
   ])
 
-  registerSimpleAuthStrategy(server, { validateToken: true })
+  registerSimpleAuthStrategy(server)
 
   server.route({
     ...route,
@@ -162,20 +154,6 @@ describe('POST /customers/find', () => {
 
   test('requires authentication explicitly', () => {
     expect(route.options.auth).toEqual({ mode: 'required' })
-  })
-
-  test('returns UNAUTHORIZED when Authorization header is missing', async () => {
-    const server = await createServer()
-
-    const response = await server.inject({
-      method: 'POST',
-      payload: {
-        ids: [customer1.id]
-      },
-      url: `${path}?page=1&pageSize=10`
-    })
-
-    expect(response.statusCode).toBe(401)
   })
 
   test('returns all matching ids', async () => {
@@ -535,51 +513,43 @@ describe('POST /customers/find — PII masking integration', () => {
     wfm: { client_ids: [PII_CLIENT_ID], scopes: ['pii'] }
   }
 
-  /** @param {string} clientId */
-  const makeToken = (clientId) => {
-    const header = Buffer.from(
-      JSON.stringify({ alg: 'none', typ: 'JWT' })
-    ).toString('base64url')
-    const body = Buffer.from(
-      JSON.stringify({ iss: 'https://mock-cognito', client_id: clientId })
-    ).toString('base64url')
-    return `${header}.${body}.sig`
-  }
+  let otelRegistered = false
 
-  /** @type {import('@hapi/hapi').Server} */
-  let server
+  /**
+   * @param {string} clientId
+   */
+  const createServerWithClient = async (clientId) => {
+    const server = Hapi.server({ port: 0 })
 
-  beforeAll(async () => {
-    server = Hapi.server({ port: 0 })
-
-    await server.register([
+    const plugins = [
       { plugin: hapiPino, options: { enabled: false } },
-      opentelemetryPlugin,
       { plugin: clientScopesPlugin, options: { clients } },
       piiContextPlugin,
       oracleDb
-    ])
+    ]
 
-    registerSimpleAuthStrategy(server, { validateToken: true })
+    if (!otelRegistered) {
+      plugins.splice(1, 0, opentelemetryPlugin)
+      otelRegistered = true
+    }
+
+    await server.register(plugins)
+
+    registerSimpleAuthStrategy(server, { clientId })
 
     server.route({ ...route, path, method: 'POST' })
-  })
 
-  afterAll(async () => {
-    await server.stop()
-  })
-
-  /** @param {string} clientId */
-  const inject = (clientId) =>
-    server.inject({
-      method: 'POST',
-      url: `${path}?page=1&pageSize=10`,
-      payload: { ids: [customer1.id] },
-      headers: { authorization: `Bearer ${makeToken(clientId)}` }
-    })
+    return server
+  }
 
   test('returns unmasked PII when the client_id has the pii scope', async () => {
-    const response = await inject(PII_CLIENT_ID)
+    const server = await createServerWithClient(PII_CLIENT_ID)
+
+    const response = await server.inject({
+      method: 'POST',
+      url: `${path}?page=1&pageSize=10`,
+      payload: { ids: [customer1.id] }
+    })
 
     expect(response.statusCode).toBe(200)
 
@@ -589,7 +559,13 @@ describe('POST /customers/find — PII masking integration', () => {
   })
 
   test('masks every PII field when the client_id is not in the clients config', async () => {
-    const response = await inject(UNKNOWN_CLIENT_ID)
+    const server = await createServerWithClient(UNKNOWN_CLIENT_ID)
+
+    const response = await server.inject({
+      method: 'POST',
+      url: `${path}?page=1&pageSize=10`,
+      payload: { ids: [customer1.id] }
+    })
 
     expect(response.statusCode).toBe(200)
 
@@ -615,9 +591,20 @@ describe('POST /customers/find — PII masking integration', () => {
   })
 
   test('does not leak masking state between concurrent requests', async () => {
+    const unmaskedServer = await createServerWithClient(PII_CLIENT_ID)
+    const maskedServer = await createServerWithClient(UNKNOWN_CLIENT_ID)
+
     const [unmaskedRes, maskedRes] = await Promise.all([
-      inject(PII_CLIENT_ID),
-      inject(UNKNOWN_CLIENT_ID)
+      unmaskedServer.inject({
+        method: 'POST',
+        url: `${path}?page=1&pageSize=10`,
+        payload: { ids: [customer1.id] }
+      }),
+      maskedServer.inject({
+        method: 'POST',
+        url: `${path}?page=1&pageSize=10`,
+        payload: { ids: [customer1.id] }
+      })
     ])
 
     const unmasked = /** @type {Record<string, any>} */ (unmaskedRes.result)

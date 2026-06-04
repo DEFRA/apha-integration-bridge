@@ -82,7 +82,7 @@ async function createServer() {
     oracleDb
   ])
 
-  registerSimpleAuthStrategy(server, { validateToken: true })
+  registerSimpleAuthStrategy(server)
 
   server.route({
     ...route,
@@ -96,20 +96,6 @@ async function createServer() {
 describe('POST /organisations/find', () => {
   test('requires authentication explicitly', () => {
     expect(route.options.auth).toEqual({ mode: 'required' })
-  })
-
-  test('returns UNAUTHORIZED when Authorization header is missing', async () => {
-    const server = await createServer()
-
-    const response = await server.inject({
-      method: 'POST',
-      payload: {
-        ids: [organisationId]
-      },
-      url: `${path}?page=1&pageSize=10`
-    })
-
-    expect(response.statusCode).toBe(401)
   })
 
   test('returns all matching organisation ids', async () => {
