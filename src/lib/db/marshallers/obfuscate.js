@@ -14,7 +14,14 @@ export const obfuscate = (value) => {
     visible = 4
   }
 
-  const asterisks = '*'.repeat(value.length - visible)
+  /**
+   * mask short values in full instead.
+   */
+  if (value.length <= visible) {
+    return '*'.repeat(value.length)
+  }
+
+  const asterisks = '*'.repeat(Math.max(0, value.length - visible))
 
   const part = value.slice(-visible)
 

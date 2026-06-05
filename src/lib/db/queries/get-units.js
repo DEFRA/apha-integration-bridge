@@ -76,7 +76,7 @@ export function getUnitsQuery(parameters) {
     marshallers: {
       person_family_name: [obfuscate],
       person_given_name: [obfuscate],
-      oraganisation_name: [obfuscate],
+      organisation_name: [obfuscate],
       property_number: [obfuscate]
     }
   }

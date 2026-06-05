@@ -25,21 +25,31 @@ describe('obfuscate()', () => {
     })
   })
 
-  describe('string inputs shorter than 2 characters', () => {
-    test('throws RangeError for empty string', () => {
-      expect(() => obfuscate('')).toThrow(RangeError)
+  describe('short strings (length ≤ visible window) are fully masked', () => {
+    test('empty string returns empty string without throwing', () => {
+      expect(obfuscate('')).toBe('')
     })
 
-    test('throws RangeError for 1-character string', () => {
-      expect(() => obfuscate('A')).toThrow(RangeError)
+    test('length=1 is fully masked (no RangeError, no leak)', () => {
+      expect(obfuscate('A')).toBe('*')
+    })
+
+    test('whitespace 1-character string is fully masked', () => {
+      expect(obfuscate(' ')).toBe('*')
+    })
+
+    test('length=2 is fully masked rather than returned in clear', () => {
+      expect(obfuscate('ab')).toBe('**')
+    })
+
+    test('fully-masked output never contains any original character', () => {
+      for (const value of ['', 'A', ' ', 'ab', 'Z9']) {
+        expect(obfuscate(value)).toBe('*'.repeat(value.length))
+      }
     })
   })
 
-  describe('string inputs of length 2–4 (visible=2)', () => {
-    test('length=2 returns the same string (no asterisks)', () => {
-      expect(obfuscate('ab')).toBe('ab')
-    })
-
+  describe('string inputs of length 3–4 (visible=2)', () => {
     test('length=3 replaces first char with asterisk', () => {
       // '*' + last 2 chars
       expect(obfuscate('abc')).toBe('*bc')
