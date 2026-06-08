@@ -2,10 +2,14 @@ import Joi from 'joi'
 
 import { toHoldings } from '../mappers/to-holdings.js'
 import { execute } from '../operations/execute.js'
+import { query } from '../operations/query.js'
+import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { HoldingIdSchema } from '../../../types/holdings.js'
 
 const sql = loadSQL(import.meta.filename)
+
+const CPH_IDS_BIND_TOKEN = '__CPH_IDS__'
 
 const FindHoldingsSchema = Joi.object({
   ids: Joi.array()
@@ -26,11 +30,13 @@ export function findHoldingsQuery(ids) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const quotedCphIds = value.ids.map((cphId) => `'${cphId}'`)
-  const query = sql.replace(':cphIds', quotedCphIds.join(', '))
+  const { placeholders, bindings } = createInClauseBindings(value.ids)
+  const sqlWithIds = sql.replace(CPH_IDS_BIND_TOKEN, placeholders)
 
   return {
-    sql: query
+    sql: query()
+      .raw(sqlWithIds, { ...bindings })
+      .toQuery()
   }
 }
 

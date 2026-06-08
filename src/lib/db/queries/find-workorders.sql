@@ -6,7 +6,7 @@ WITH requested_workorders AS (
   pega_Data.index_ac_workschedule ws
 
   WHERE
-  ws.pyid IN (:workorder_ids)
+  ws.pyid IN (__WORKORDER_IDS__)
 ),
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
