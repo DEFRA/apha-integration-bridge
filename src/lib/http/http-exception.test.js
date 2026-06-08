@@ -3,7 +3,8 @@ import {
   HTTPException,
   HTTPExceptionCode,
   HTTPError,
-  HTTPErrorCode
+  HTTPErrorCode,
+  httpExceptionCodeForStatus
 } from './http-exception.js'
 
 describe('HTTPExceptionCode constants', () => {
@@ -12,6 +13,29 @@ describe('HTTPExceptionCode constants', () => {
     expect(HTTPExceptionCode.NOT_FOUND).toBe(404)
     expect(HTTPExceptionCode.UNSUPPORTED_VERSION).toBe(404)
     expect(HTTPExceptionCode.INTERNAL_SERVER_ERROR).toBe(500)
+  })
+})
+
+describe('httpExceptionCodeForStatus', () => {
+  it('maps well-known statuses to their code', () => {
+    expect(httpExceptionCodeForStatus(400)).toBe('BAD_REQUEST')
+    expect(httpExceptionCodeForStatus(401)).toBe('UNAUTHORIZED')
+    expect(httpExceptionCodeForStatus(403)).toBe('FORBIDDEN')
+    expect(httpExceptionCodeForStatus(404)).toBe('NOT_FOUND')
+    expect(httpExceptionCodeForStatus(409)).toBe('CONFLICT')
+    expect(httpExceptionCodeForStatus(500)).toBe('INTERNAL_SERVER_ERROR')
+    expect(httpExceptionCodeForStatus(503)).toBe('SERVICE_UNAVAILABLE')
+  })
+
+  it('falls back by status class for unmapped statuses', () => {
+    expect(httpExceptionCodeForStatus(418)).toBe('BAD_REQUEST')
+    expect(httpExceptionCodeForStatus(451)).toBe('BAD_REQUEST')
+    expect(httpExceptionCodeForStatus(599)).toBe('INTERNAL_SERVER_ERROR')
+  })
+
+  it('returns UNKNOWN for non-error statuses', () => {
+    expect(httpExceptionCodeForStatus(200)).toBe('UNKNOWN')
+    expect(httpExceptionCodeForStatus(302)).toBe('UNKNOWN')
   })
 })
 

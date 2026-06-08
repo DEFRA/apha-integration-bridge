@@ -9,6 +9,61 @@ export const HTTPExceptionCode = {
   INTERNAL_SERVER_ERROR: 500
 }
 
+/**
+ * Reverse lookup used to normalise arbitrary Boom errors (framework, parser and
+ * auth failures) into the HTTPException envelope. Maps an HTTP status code onto
+ * a stable `code` string so that every error response shares the same
+ * vocabulary regardless of where the failure originated.
+ */
+const STATUS_CODE_TO_HTTP_EXCEPTION_CODE = {
+  400: 'BAD_REQUEST',
+  401: 'UNAUTHORIZED',
+  403: 'FORBIDDEN',
+  404: 'NOT_FOUND',
+  405: 'METHOD_NOT_ALLOWED',
+  406: 'NOT_ACCEPTABLE',
+  408: 'REQUEST_TIMEOUT',
+  409: 'CONFLICT',
+  410: 'GONE',
+  413: 'PAYLOAD_TOO_LARGE',
+  415: 'UNSUPPORTED_MEDIA_TYPE',
+  422: 'UNPROCESSABLE_ENTITY',
+  429: 'TOO_MANY_REQUESTS',
+  500: 'INTERNAL_SERVER_ERROR',
+  501: 'NOT_IMPLEMENTED',
+  502: 'BAD_GATEWAY',
+  503: 'SERVICE_UNAVAILABLE',
+  504: 'GATEWAY_TIMEOUT'
+}
+
+/**
+ * Maps an HTTP status code onto the closest HTTPException `code` string.
+ *
+ * Unlisted statuses fall back by class: any other 5xx becomes
+ * `INTERNAL_SERVER_ERROR`, any other 4xx becomes `BAD_REQUEST`, and anything
+ * else becomes `UNKNOWN`.
+ *
+ * @param {number} statusCode
+ * @returns {string}
+ */
+export function httpExceptionCodeForStatus(statusCode) {
+  const mapped = STATUS_CODE_TO_HTTP_EXCEPTION_CODE[statusCode]
+
+  if (mapped) {
+    return mapped
+  }
+
+  if (statusCode >= 500) {
+    return 'INTERNAL_SERVER_ERROR'
+  }
+
+  if (statusCode >= 400) {
+    return 'BAD_REQUEST'
+  }
+
+  return 'UNKNOWN'
+}
+
 export const HTTPExceptionSchema = Joi.object({
   message: Joi.string()
     .required()

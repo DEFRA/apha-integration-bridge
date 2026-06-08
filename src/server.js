@@ -20,6 +20,7 @@ import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { versionPlugin } from './common/helpers/versioning.js'
 import { opentelemetryPlugin } from './common/helpers/telemetry.js'
 import { HTTPException } from './lib/http/http-exception.js'
+import { errorEnvelope } from './common/helpers/error-envelope.js'
 import { authPlugin } from './common/helpers/auth.js'
 import { piiContextPlugin } from './common/helpers/pii-context.js'
 import { clientScopesPlugin } from './common/helpers/client-scopes.js'
@@ -96,6 +97,13 @@ async function createServer() {
      * @see https://hapi.dev/module/vision/
      */
     vision,
+    /**
+     * normalises every error response (application, framework/parser and
+     * auth/authorization errors) into the single HTTPException envelope.
+     * registered before the telemetry plugin so its onPreResponse runs first
+     * and downstream extensions observe the normalised status code.
+     */
+    errorEnvelope,
     /**
      * authenticates incoming requests using JWT tokens with signature verification
      */
