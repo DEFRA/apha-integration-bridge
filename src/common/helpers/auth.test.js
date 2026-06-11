@@ -600,4 +600,27 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
 
     await freshServer.stop()
   })
+
+  test('rejects token when JWKS fetch times out (slow/blackhole endpoint)', async () => {
+    // A malicious or unreachable JWKS endpoint that never responds is aborted by the 5-second timeout in proxyFetch, preventing indefinite hangs.
+    const freshServer = await buildSecureServer()
+
+    msw.use(
+      http.get(`${ISSUER}${JWKS_PATH}`, async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10000)) // 10s delay
+        return HttpResponse.json({ keys: [publicJwk] })
+      })
+    )
+
+    const res = await freshServer.inject({
+      method: 'GET',
+      url: '/secure',
+      headers: { authorization: `Bearer ${token}` }
+    })
+
+    expect(res.statusCode).toBe(401)
+    expect(res.result.message).toBe('Authentication failed')
+
+    await freshServer.stop()
+  })
 })
