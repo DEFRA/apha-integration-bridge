@@ -2,10 +2,14 @@ import Joi from 'joi'
 
 import { toLocations } from '../mappers/to-locations.js'
 import { execute } from '../operations/execute.js'
+import { query } from '../operations/query.js'
+import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { LocationIdSchema } from '../../../types/locations.js'
 
 const sql = loadSQL(import.meta.filename)
+
+const LOCATION_IDS_BIND_TOKEN = '__LOCATION_IDS__'
 
 const FindLocationsSchema = Joi.object({
   ids: Joi.array()
@@ -26,11 +30,13 @@ export function findLocationsQuery(ids) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const quotedLocationIds = value.ids.map((locationId) => `'${locationId}'`)
-  const query = sql.replaceAll(':locationIds', quotedLocationIds.join(', '))
+  const { placeholders, bindings } = createInClauseBindings(value.ids)
+  const sqlWithIds = sql.replace(LOCATION_IDS_BIND_TOKEN, placeholders)
 
   return {
-    sql: query
+    sql: query()
+      .raw(sqlWithIds, { ...bindings })
+      .toQuery()
   }
 }
 

@@ -2,6 +2,8 @@ import Joi from 'joi'
 
 import { toWorkorders } from '../mappers/to-workorders.js'
 import { execute } from '../operations/execute.js'
+import { query } from '../operations/query.js'
+import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
 import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
@@ -11,6 +13,8 @@ import { WorkorderIdSchema } from '../../../types/workorders.js'
 /** @import { DBConnections } from '../../../types/connection.js' */
 
 const sql = loadSQL(import.meta.filename)
+
+const WORKORDER_IDS_BIND_TOKEN = '__WORKORDER_IDS__'
 
 const FindWorkordersSchema = Joi.object({
   ids: Joi.array()
@@ -32,11 +36,13 @@ export function findWorkordersQuery(ids) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const quotedWorkorderIds = value.ids.map((workorderId) => `'${workorderId}'`)
-  const query = sql.replace(':workorder_ids', quotedWorkorderIds.join(', '))
+  const { placeholders, bindings } = createInClauseBindings(value.ids)
+  const sqlWithIds = sql.replace(WORKORDER_IDS_BIND_TOKEN, placeholders)
 
   return {
-    sql: query
+    sql: query()
+      .raw(sqlWithIds, { ...bindings })
+      .toQuery()
   }
 }
 
