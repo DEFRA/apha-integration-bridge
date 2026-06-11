@@ -10,14 +10,6 @@ const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
 const isDevelopment = process.env.NODE_ENV === 'development'
 
-/**
- * The CDP environment the service is deployed to is distinct from NODE_ENV,
- * which is "production" in *every* deployed CDP environment. CDP_ENV identifies
- * the specific environment (dev, test, ext-test, perf-test, prod) so behaviour
- * can differ between real production and the lower environments.
- */
-const isCDPProduction = (process.env.CDP_ENV ?? 'local') === 'prod'
-
 const config = convict({
   oracledb: {
     pega: {
@@ -181,15 +173,21 @@ const config = convict({
     env: 'SERVICE_VERSION'
   },
   cdpEnv: {
-    doc: 'The CDP environment the service is deployed to (e.g. dev, test, ext-test, perf-test, prod). "prod" is real production; every other value is treated as non-production. Defaults to "local" when unset (local development and tests).',
+    doc: 'The CDP environment the service is deployed to (e.g. dev, test, ext-test, perf-test, prod). "prod" is real production; every other value is a lower environment. Defaults to "local" when unset (local development and tests).',
     format: String,
     default: 'local',
     env: 'CDP_ENV'
   },
-  isCDPProduction: {
-    doc: 'Whether the service is running in the production CDP environment (CDP_ENV === "prod"). Distinct from NODE_ENV, which is "production" in all deployed CDP environments.',
+  /**
+   * The CDP environment the service is deployed to is distinct from NODE_ENV,
+   * which is "production" in *every* deployed CDP environment. CDP_ENV identifies
+   * the specific environment (dev, test, ext-test, perf-test, prod) so behaviour
+   * can differ between real production and the lower environments.
+   */
+  isLowerEnvironment: {
+    doc: 'Whether the service is running in a lower (non-production) CDP environment',
     format: Boolean,
-    default: isCDPProduction
+    default: process.env.CDP_ENV !== 'prod'
   },
   host: {
     doc: 'The IP address to bind',

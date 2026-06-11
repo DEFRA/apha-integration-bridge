@@ -4,16 +4,16 @@ import { config } from '../../config.js'
 import { applyNonProductionMetricName } from './metric-naming.js'
 
 const original = {
-  isCDPProduction: config.get('isCDPProduction')
+  isLowerEnvironment: config.get('isLowerEnvironment')
 }
 
 afterEach(() => {
-  config.set('isCDPProduction', original.isCDPProduction)
+  config.set('isLowerEnvironment', original.isLowerEnvironment)
 })
 
 describe('applyNonProductionMetricName', () => {
-  test('returns names unchanged in the production CDP environment', () => {
-    config.set('isCDPProduction', true)
+  test('defaults to production naming when CDP_ENV is unset, protecting production alerts from a missing or misconfigured variable', () => {
+    expect(config.default('isLowerEnvironment')).toBe(false)
 
     expect(applyNonProductionMetricName('oracledb.healthcheck.status')).toBe(
       'oracledb.healthcheck.status'
@@ -23,9 +23,20 @@ describe('applyNonProductionMetricName', () => {
     )
   })
 
-  describe('in a non-production CDP environment', () => {
+  test('returns names unchanged when not flagged as a lower environment', () => {
+    config.set('isLowerEnvironment', false)
+
+    expect(applyNonProductionMetricName('oracledb.healthcheck.status')).toBe(
+      'oracledb.healthcheck.status'
+    )
+    expect(applyNonProductionMetricName('request.latency.5XX')).toBe(
+      'request.latency.5XX'
+    )
+  })
+
+  describe('in a lower (non-production) environment', () => {
     test('suffixes metrics whose name begins with a configured prefix', () => {
-      config.set('isCDPProduction', false)
+      config.set('isLowerEnvironment', true)
 
       expect(applyNonProductionMetricName('oracledb.healthcheck.status')).toBe(
         'oracledb.healthcheck.status.nonprod'
@@ -36,7 +47,7 @@ describe('applyNonProductionMetricName', () => {
     })
 
     test('suffixes metrics whose name exactly matches a configured entry', () => {
-      config.set('isCDPProduction', false)
+      config.set('isLowerEnvironment', true)
 
       expect(applyNonProductionMetricName('oracledb.execution.time')).toBe(
         'oracledb.execution.time.nonprod'
@@ -47,7 +58,7 @@ describe('applyNonProductionMetricName', () => {
     })
 
     test('leaves non-targeted metrics unchanged', () => {
-      config.set('isCDPProduction', false)
+      config.set('isLowerEnvironment', true)
 
       expect(applyNonProductionMetricName('request.latency.2XX')).toBe(
         'request.latency.2XX'
