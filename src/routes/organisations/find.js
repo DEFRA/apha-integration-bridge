@@ -16,6 +16,7 @@ import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { Organisation } from '../../types/find/organisations.js'
 import { PaginationSchema } from '../../types/find/pagination.js'
+import { config } from '../../config.js'
 
 const PostFindOrganisationsSchema = Joi.object({
   data: Joi.array().items(Organisation).required(),
@@ -90,7 +91,15 @@ const handler = async (request, h) => {
         'ORGANISATION'
       )
 
-      request.logger?.debug(`organisations: ${JSON.stringify(organisations)}`)
+      const isDevelopment = config.get('isDevelopment')
+      if (isDevelopment) {
+        request.logger?.debug(`organisations: ${JSON.stringify(organisations)}`)
+      } else {
+        const organisationIds = organisations.map((o) => o.id).join(', ')
+        request.logger?.debug(
+          `Retrieved ${organisations.length} organisation(s): ${organisationIds}`
+        )
+      }
 
       for (const organisation of organisations) {
         const organisationResponse = new HTTPObjectResponse(
