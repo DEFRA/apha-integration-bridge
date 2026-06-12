@@ -15,6 +15,7 @@ import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
 import { WorkorderIdSchema } from '../../types/workorders.js'
+import { config } from '../../config.js'
 
 /**
  * @import {PaginatedLink} from '../../types/find/links.js'
@@ -102,7 +103,15 @@ export async function handler(request, h) {
         findRequest.ids
       )
 
-      request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)
+      const isDevelopment = config.get('isDevelopment')
+      if (isDevelopment) {
+        request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)
+      } else {
+        const workorderIds = workorders.map((w) => w.id).join(', ')
+        request.logger?.debug(
+          `Retrieved ${workorders.length} workorder(s): ${workorderIds}`
+        )
+      }
 
       for (const workorder of workorders) {
         const workorderResponse = new HTTPObjectResponse(
