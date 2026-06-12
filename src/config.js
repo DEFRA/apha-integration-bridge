@@ -185,7 +185,7 @@ const config = convict({
    * can differ between real production and the lower environments.
    */
   isLowerEnvironment: {
-    doc: 'Whether the service is running in a lower (non-production) CDP environment',
+    doc: 'Whether the service is running in a lower (non-production) CDP environment. True whenever CDP_ENV is anything other than "prod", including when it is absent.',
     format: Boolean,
     default: process.env.CDP_ENV !== 'prod'
   },

@@ -10,12 +10,10 @@ const RENAMED_METRICS = [
 /**
  * Applies the non-production metric naming policy.
  *
- * Production naming is the default: metric names are returned unchanged unless
- * the service is explicitly flagged as running in a lower environment (CDP_ENV
- * set to a value other than "prod"), in which case the targeted metrics
- * receive a .nonprod suffix. An unset or misconfigured CDP_ENV in production
- * therefore leaves the metric names — and the alerts that target them —
- * untouched.
+ * Metric names are returned unchanged only in the production CDP environment
+ * (CDP_ENV === "prod"). Everywhere else — the lower environments, local
+ * development, and when CDP_ENV is absent — the targeted metrics receive a
+ * .nonprod suffix.
  *
  * @param {string} name The metric name as recorded against the meter.
  * @returns {string} The name to emit for the current environment.

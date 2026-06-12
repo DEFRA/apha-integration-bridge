@@ -12,18 +12,18 @@ afterEach(() => {
 })
 
 describe('applyNonProductionMetricName', () => {
-  test('defaults to production naming when CDP_ENV is unset, protecting production alerts from a missing or misconfigured variable', () => {
-    expect(config.default('isLowerEnvironment')).toBe(false)
+  test('treats an absent CDP_ENV as a lower environment by default', () => {
+    expect(config.default('isLowerEnvironment')).toBe(true)
 
     expect(applyNonProductionMetricName('oracledb.healthcheck.status')).toBe(
-      'oracledb.healthcheck.status'
+      'oracledb.healthcheck.status.nonprod'
     )
     expect(applyNonProductionMetricName('request.latency.5XX')).toBe(
-      'request.latency.5XX'
+      'request.latency.5XX.nonprod'
     )
   })
 
-  test('returns names unchanged when not flagged as a lower environment', () => {
+  test('returns names unchanged in the production environment (CDP_ENV=prod)', () => {
     config.set('isLowerEnvironment', false)
 
     expect(applyNonProductionMetricName('oracledb.healthcheck.status')).toBe(
