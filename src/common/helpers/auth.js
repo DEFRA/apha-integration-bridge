@@ -181,6 +181,8 @@ export const authPlugin = {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err))
 
+              logger?.debug(`Token validation error details: ${error.stack}`)
+
               const errorCode = 'code' in error ? error.code : undefined
 
               // Provide specific error messages based on error type
