@@ -1,11 +1,15 @@
-import { jwtVerify, createRemoteJWKSet, customFetch, decodeJwt } from 'jose'
+import { jwtVerify, createRemoteJWKSet, decodeJwt } from 'jose'
 import Boom from '@hapi/boom'
 import { config } from '../../config.js'
 import { metricsCounter } from './metrics.js'
 import { createLogger } from './logging/logger.js'
-import { proxyFetch } from './proxy/proxy-fetch.js'
 
 const logger = createLogger()
+
+/**
+ * Timeout (ms) applied to each remote JWKS fetch.
+ */
+const JWKS_FETCH_TIMEOUT_MS = 5000
 
 /**
  * @typedef {import('../../types/api.js').Server} Server
@@ -66,9 +70,9 @@ export const authPlugin = {
       /**
        * 1 remote JWKS resolver per trusted issuer, keyed by the exact issuer
        * string. createRemoteJWKSet is lazy (no network here) and owns its own
-       * caching, cooldown and key-rotation handling. The JWKS fetch is routed
-       * through proxyFetch so the egress proxy is still used in deployed
-       * environments.
+       * caching, cooldown and key-rotation handling. jose fetches the JWKS with
+       * its own global fetch, bounded by timeoutDuration; no custom fetch is
+       * injected.
        */
       const jwksByIssuer = new Map(
         allowedIssuers.map((issuer) => {
@@ -82,7 +86,9 @@ export const authPlugin = {
           }
           return [
             issuer,
-            createRemoteJWKSet(jwksUrl, { [customFetch]: proxyFetch })
+            createRemoteJWKSet(jwksUrl, {
+              timeoutDuration: JWKS_FETCH_TIMEOUT_MS
+            })
           ]
         })
       )
@@ -181,7 +187,23 @@ export const authPlugin = {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err))
 
-              logger?.debug(`Token validation error details: ${error.stack}`)
+              let cause = ''
+
+              if (error.cause) {
+                cause = '\ncause: '
+
+                if (error.cause.code) {
+                  cause += `${error.cause.code} `
+                }
+
+                if (error.cause.message) {
+                  cause += error.cause.message
+                }
+              }
+
+              logger?.debug(
+                `Token validation error details: ${error.stack}` + cause
+              )
 
               const errorCode = 'code' in error ? error.code : undefined
 
