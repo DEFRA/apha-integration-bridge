@@ -9,7 +9,7 @@ const logger = createLogger()
 /**
  * Timeout (ms) applied to each remote JWKS fetch.
  */
-const JWKS_FETCH_TIMEOUT_MS = 5000
+const JWKS_FETCH_TIMEOUT_MS = 15_000
 
 /**
  * @typedef {import('../../types/api.js').Server} Server

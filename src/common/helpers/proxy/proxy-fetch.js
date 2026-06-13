@@ -1,15 +1,24 @@
 import { EnvHttpProxyAgent } from 'undici'
 
 /**
- * Default timeout for JWKS fetch operations (in milliseconds)
+ * Default timeout for fetch operations (in milliseconds)
  */
-const JWKS_FETCH_TIMEOUT_MS = 5000
+const FETCH_TIMEOUT_MS = 20_000
 
 export function proxyFetch(url, options) {
-  const timeoutSignal = AbortSignal.timeout(JWKS_FETCH_TIMEOUT_MS)
-  const signal = options?.signal
-    ? AbortSignal.any([options.signal, timeoutSignal])
-    : timeoutSignal
+  const timeoutSignal = AbortSignal.timeout(FETCH_TIMEOUT_MS)
 
-  return fetch(url, { ...options, signal, dispatcher: new EnvHttpProxyAgent() })
+  const signals = [timeoutSignal]
+
+  if (options?.signal) {
+    signals.push(options.signal)
+  }
+
+  const abortSignal = AbortSignal.any(signals)
+
+  return fetch(url, {
+    ...options,
+    signal: abortSignal,
+    dispatcher: new EnvHttpProxyAgent()
+  })
 }
