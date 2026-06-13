@@ -607,7 +607,7 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
 
     msw.use(
       http.get(`${ISSUER}${JWKS_PATH}`, async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10000)) // 10s delay
+        await new Promise((resolve) => setTimeout(resolve, 20000)) // 10s delay
         return HttpResponse.json({ keys: [publicJwk] })
       })
     )
