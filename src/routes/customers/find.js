@@ -16,6 +16,7 @@ import { Customer } from '../../types/find/customers.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { PaginationSchema } from '../../types/find/pagination.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
+import { config } from '../../config.js'
 
 const PostFindCustomersSchema = Joi.object({
   data: Joi.array().items(Customer).required(),
@@ -93,7 +94,15 @@ const handler = async (request, h) => {
       'PERSON'
     )
 
-    request.logger?.debug(`customers: ${JSON.stringify(customers)}`)
+    const isDevelopment = config.get('isDevelopment')
+    if (isDevelopment) {
+      request.logger?.debug(`customers: ${JSON.stringify(customers)}`)
+    } else {
+      const customerIds = customers.map((c) => c.id).join(', ')
+      request.logger?.debug(
+        `Retrieved ${customers.length} customer(s): ${customerIds}`
+      )
+    }
 
     for (const customer of customers) {
       const customerResponse = new HTTPObjectResponse(

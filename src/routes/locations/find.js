@@ -15,6 +15,7 @@ import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
 import { LocationIdSchema } from '../../types/locations.js'
+import { config } from '../../config.js'
 
 /**
  * @import {PaginatedLink} from '../../types/find/links.js'
@@ -101,7 +102,15 @@ export async function handler(request, h) {
 
     const locations = await findLocations(oracledb.connection, findRequest.ids)
 
-    request.logger?.debug(`locations: ${JSON.stringify(locations)}`)
+    const isDevelopment = config.get('isDevelopment')
+    if (isDevelopment) {
+      request.logger?.debug(`locations: ${JSON.stringify(locations)}`)
+    } else {
+      const locationIds = locations.map((l) => l.id).join(', ')
+      request.logger?.debug(
+        `Retrieved ${locations.length} location(s): ${locationIds}`
+      )
+    }
 
     for (const location of locations) {
       const locationResponse = new HTTPObjectResponse(

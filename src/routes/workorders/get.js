@@ -13,6 +13,7 @@ import { HTTPPaginationLinks } from '../../lib/http/http-pagination-links.js'
 import { WorkordersSchema } from '../../types/find/workorders.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { GetWorkordersSchema } from '../../types/find/workorders-get.js'
+import { config } from '../../config.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -75,7 +76,15 @@ export async function handler(request, h) {
       request.query
     )
 
-    request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)
+    const isDevelopment = config.get('isDevelopment')
+    if (isDevelopment) {
+      request.logger?.debug(`workorders: ${JSON.stringify(workorders)}`)
+    } else {
+      const workorderIds = workorders.map((w) => w.id).join(', ')
+      request.logger?.debug(
+        `Retrieved ${workorders.length} workorder(s): ${workorderIds}`
+      )
+    }
 
     const response = new HTTPArrayResponse(WorkordersSchema)
     const links = new HTTPPaginationLinks(request)

@@ -15,6 +15,7 @@ import { execute } from '../../../../lib/db/operations/execute.js'
 import { findHoldingQuery } from '../../../../lib/db/queries/find-holding.js'
 import { HTTPObjectResponse } from '../../../../lib/http/http-response.js'
 import { TopLevelLinksReferenceSchema } from '../../../../types/links.js'
+import { config } from '../../../../config.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -111,7 +112,10 @@ export async function handler(request, h) {
       cph: `${countyId}/${parishId}/${holdingId}`
     })
 
-    request.logger?.debug(`query: ${JSON.stringify(query)}`)
+    const isDevelopment = config.get('isDevelopment')
+    if (isDevelopment) {
+      request.logger?.debug(`query: ${JSON.stringify(query)}`)
+    }
 
     /**
      * execute the query and determine if any rows were returned
@@ -128,7 +132,11 @@ export async function handler(request, h) {
      */
     const rows = await execute(oracledb.connection, query)
 
-    request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
+    if (isDevelopment) {
+      request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
+    } else {
+      request.logger?.debug(`Retrieved ${rows.length} row(s) for CPH lookup`)
+    }
 
     if (rows.length < 1) {
       /**
