@@ -7,11 +7,6 @@ import { createLogger } from './logging/logger.js'
 const logger = createLogger()
 
 /**
- * Timeout (ms) applied to each remote JWKS fetch.
- */
-const JWKS_FETCH_TIMEOUT_MS = 15_000
-
-/**
  * @typedef {import('../../types/api.js').Server} Server
  * @typedef {import('../../types/api.js').Request} Request
  * @typedef {import('../../types/api.js').ResponseToolkit} ResponseToolkit
@@ -84,12 +79,7 @@ export const authPlugin = {
               `authPlugin: invalid issuer URL in AUTH_ALLOWED_ISSUERS: "${issuer}"`
             )
           }
-          return [
-            issuer,
-            createRemoteJWKSet(jwksUrl, {
-              timeoutDuration: JWKS_FETCH_TIMEOUT_MS
-            })
-          ]
+          return [issuer, createRemoteJWKSet(jwksUrl)]
         })
       )
 

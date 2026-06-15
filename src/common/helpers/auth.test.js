@@ -602,12 +602,15 @@ describe('Auth Plugin (Full JWT Signature Verification)', () => {
   })
 
   test('rejects token when JWKS fetch times out (slow/blackhole endpoint)', async () => {
-    // A malicious or unreachable JWKS endpoint that never responds is aborted by the 5-second timeout in proxyFetch, preventing indefinite hangs.
+    // A malicious or unreachable JWKS endpoint that never responds is aborted
+    // by jose's default timeoutDuration (5s) on createRemoteJWKSet, preventing
+    // indefinite hangs. No custom fetch or timeout is configured.
     const freshServer = await buildSecureServer()
 
     msw.use(
       http.get(`${ISSUER}${JWKS_PATH}`, async () => {
-        await new Promise((resolve) => setTimeout(resolve, 20000)) // 10s delay
+        // Outlast jose's 5s default timeout so the abort fires first.
+        await new Promise((resolve) => setTimeout(resolve, 20000))
         return HttpResponse.json({ keys: [publicJwk] })
       })
     )
