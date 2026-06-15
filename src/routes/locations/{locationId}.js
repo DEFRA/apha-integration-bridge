@@ -19,6 +19,7 @@ import { CommoditiesData } from '../../types/commodities.js'
 import { FacilitiesData } from '../../types/facilities.js'
 import { TopLevelLinksReferenceSchema } from '../../types/links.js'
 import { Locations } from '../../types/locations.js'
+import { config } from '../../config.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -130,7 +131,10 @@ export async function handler(request, h) {
      */
     const query = getLocation(locationId)
 
-    request.logger?.debug(`query: ${JSON.stringify(query)}`)
+    const isDevelopment = config.get('isDevelopment')
+    if (isDevelopment) {
+      request.logger?.debug(`query: ${JSON.stringify(query)}`)
+    }
 
     /**
      * @type {Array<Record<string, any>>}
@@ -140,7 +144,13 @@ export async function handler(request, h) {
      */
     const rows = await execute(oracledb.connection, query)
 
-    request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
+    if (isDevelopment) {
+      request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
+    } else {
+      request.logger?.debug(
+        `Retrieved ${rows.length} row(s) for location ${locationId}`
+      )
+    }
 
     if (rows.length < 1) {
       /**
