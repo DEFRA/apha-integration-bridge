@@ -25,6 +25,7 @@ import { authPlugin } from './common/helpers/auth.js'
 import { piiContextPlugin } from './common/helpers/pii-context.js'
 import { clientScopesPlugin } from './common/helpers/client-scopes.js'
 import { loadClients } from './lib/clients/load.js'
+import { securityHeaders } from './common/helpers/security-headers.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -56,9 +57,9 @@ async function createServer() {
         hsts: {
           maxAge: 31536000,
           includeSubDomains: true,
-          preload: false
+          preload: true
         },
-        xss: 'enabled',
+        xss: 'disabled',
         noSniff: true,
         xframe: true
       }
@@ -104,6 +105,11 @@ async function createServer() {
      * and downstream extensions observe the normalised status code.
      */
     errorEnvelope,
+    /**
+     * adds comprehensive security headers to all responses (both successful
+     * and error responses) via onPreResponse extension
+     */
+    securityHeaders,
     /**
      * authenticates incoming requests using JWT tokens with signature verification
      */
