@@ -14,6 +14,11 @@ const logger = createLogger()
  */
 
 /**
+ * Default timeout for JWKS fetch operations (in milliseconds)
+ */
+const JWKS_FETCH_TIMEOUT_MS = 20_000
+
+/**
  * Creates a Hapi.js plugin for JWT authentication with signature verification.
  * @returns {Object} a Hapi.js plugin for authentication
  */
@@ -82,7 +87,10 @@ export const authPlugin = {
           }
           return [
             issuer,
-            createRemoteJWKSet(jwksUrl, { [customFetch]: proxyFetch })
+            createRemoteJWKSet(jwksUrl, {
+              [customFetch]: proxyFetch,
+              timeoutDuration: JWKS_FETCH_TIMEOUT_MS
+            })
           ]
         })
       )
