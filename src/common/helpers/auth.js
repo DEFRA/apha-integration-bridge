@@ -181,7 +181,23 @@ export const authPlugin = {
             } catch (err) {
               const error = err instanceof Error ? err : new Error(String(err))
 
-              logger?.debug(`Token validation error details: ${error.stack}`)
+              let cause = ''
+
+              if (error.cause) {
+                cause = '\ncause: '
+
+                if (error.cause.code) {
+                  cause += `${error.cause.code} `
+                }
+
+                if (error.cause.message) {
+                  cause += error.cause.message
+                }
+              }
+
+              logger?.debug(
+                `Token validation error details: ${error.stack}` + cause
+              )
 
               const errorCode = 'code' in error ? error.code : undefined
 

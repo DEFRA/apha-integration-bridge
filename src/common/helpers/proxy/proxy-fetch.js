@@ -4,12 +4,13 @@ import { config } from '../../../config.js'
 /**
  * Default timeout for JWKS fetch operations (in milliseconds)
  */
-const JWKS_FETCH_TIMEOUT_MS = 5000
+const JWKS_FETCH_TIMEOUT_MS = 20_000
 
 export function proxyFetch(url, options) {
   const proxyUrlConfig = config.get('httpProxy') // bound to HTTP_PROXY
 
   const timeoutSignal = AbortSignal.timeout(JWKS_FETCH_TIMEOUT_MS)
+
   const signal = options?.signal
     ? AbortSignal.any([options.signal, timeoutSignal])
     : timeoutSignal
