@@ -10,11 +10,59 @@ import {
 import oracledb from 'oracledb'
 
 import { config } from '../../../config.js'
-import * as dbOperations from '../operations/execute.js'
-import * as workAreaMappingModule from './get-workarea-code-mapping.js'
-import * as speciesMappingModule from './get-purpose-species-code-mapping.js'
-import * as customerTypesModule from './get-customer-types.js'
+import { execute } from '../operations/execute.js'
+import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
+import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
+import { getCustomerTypes } from './get-customer-types.js'
 import { getWorkorders, getWorkordersQuery } from './get-workorders.js'
+
+// Mock the spied modules so per-test overrides reliably intercept the calls
+// made by get-workorders.js. A `jest.spyOn(import * as ns, fn)` does NOT
+// reliably intercept under babel's interop: the spy targets the `import *`
+// namespace object while the SUT reads the raw module export, so the spy
+// silently no-ops and the real implementation (and DB) is hit. A
+// module-factory mock replaces the module for every importer. The default
+// delegates to the real implementation so the seeded-DB integration tests
+// above are unaffected; individual tests override per call.
+jest.mock('../operations/execute.js', () => {
+  const actual = jest.requireActual('../operations/execute.js')
+  return {
+    __esModule: true,
+    ...actual,
+    execute: jest.fn((...args) => actual.execute(...args))
+  }
+})
+
+jest.mock('./get-workarea-code-mapping.js', () => {
+  const actual = jest.requireActual('./get-workarea-code-mapping.js')
+  return {
+    __esModule: true,
+    ...actual,
+    getWorkAreaCodeMapping: jest.fn((...args) =>
+      actual.getWorkAreaCodeMapping(...args)
+    )
+  }
+})
+
+jest.mock('./get-purpose-species-code-mapping.js', () => {
+  const actual = jest.requireActual('./get-purpose-species-code-mapping.js')
+  return {
+    __esModule: true,
+    ...actual,
+    getPurposeSpeciesCodeMapping: jest.fn((...args) =>
+      actual.getPurposeSpeciesCodeMapping(...args)
+    )
+  }
+})
+
+jest.mock('./get-customer-types.js', () => {
+  const actual = jest.requireActual('./get-customer-types.js')
+  return {
+    __esModule: true,
+    ...actual,
+    getCustomerTypes: jest.fn((...args) => actual.getCustomerTypes(...args))
+  }
+})
 
 const validParams = {
   startActivationDate: '2024-01-01T00:00:00.000Z',
@@ -164,19 +212,31 @@ describe('getWorkorders', () => {
   })
 
   describe('mapping work area, species, and customer types', () => {
-    const executeSpy = jest.spyOn(dbOperations, 'execute')
-    const workAreaMappingSpy = jest.spyOn(
-      workAreaMappingModule,
-      'getWorkAreaCodeMapping'
-    )
-    const speciesMappingSpy = jest.spyOn(
-      speciesMappingModule,
-      'getPurposeSpeciesCodeMapping'
-    )
-    const customerTypesSpy = jest.spyOn(customerTypesModule, 'getCustomerTypes')
+    const executeSpy = jest.mocked(execute)
+    const workAreaMappingSpy = jest.mocked(getWorkAreaCodeMapping)
+    const speciesMappingSpy = jest.mocked(getPurposeSpeciesCodeMapping)
+    const customerTypesSpy = jest.mocked(getCustomerTypes)
 
     afterEach(() => {
-      jest.resetAllMocks()
+      // clearMocks:true clears call history each test, but these tests set
+      // persistent mockResolvedValue overrides. Re-establish the delegating
+      // defaults so any later test (or integration test) sees the real impl.
+      executeSpy.mockImplementation((...args) =>
+        jest.requireActual('../operations/execute.js').execute(...args)
+      )
+      workAreaMappingSpy.mockImplementation((...args) =>
+        jest
+          .requireActual('./get-workarea-code-mapping.js')
+          .getWorkAreaCodeMapping(...args)
+      )
+      speciesMappingSpy.mockImplementation((...args) =>
+        jest
+          .requireActual('./get-purpose-species-code-mapping.js')
+          .getPurposeSpeciesCodeMapping(...args)
+      )
+      customerTypesSpy.mockImplementation((...args) =>
+        jest.requireActual('./get-customer-types.js').getCustomerTypes(...args)
+      )
     })
 
     test('does not call mapping functions when no rows are returned', async () => {

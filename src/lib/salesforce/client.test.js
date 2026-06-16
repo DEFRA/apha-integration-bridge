@@ -9,9 +9,18 @@ import {
 
 import { salesforceClient } from './client.js'
 import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
-import * as jwtBearer from './jwt-bearer.js'
+import { buildJWTAssertion } from './jwt-bearer.js'
 import { HTTPMethods } from '../http/http-methods.js'
 import { CaseStatus } from '../../types/salesforce/case-status.js'
+
+jest.mock('./jwt-bearer.js', () => {
+  const actual = jest.requireActual('./jwt-bearer.js')
+  return {
+    __esModule: true,
+    ...actual,
+    buildJWTAssertion: jest.fn((...args) => actual.buildJWTAssertion(...args))
+  }
+})
 
 const mockLogger = /** @type {any} */ ({
   debug: jest.fn(),
@@ -557,9 +566,7 @@ describe('salesforce client', () => {
     beforeEach(() => {
       salesforceClient.userTokenCache.clear()
 
-      jest
-        .spyOn(jwtBearer, 'buildJWTAssertion')
-        .mockResolvedValue(mockJWTAssertion)
+      jest.mocked(buildJWTAssertion).mockResolvedValue(mockJWTAssertion)
 
       mockFetch.mockResolvedValueOnce(
         /** @type {any}*/ (mockJsonResponse(200, mockJWTTokenResponse))
@@ -580,7 +587,7 @@ describe('salesforce client', () => {
 
       expect(first).toBe('user-token-123')
       expect(second).toBe('user-token-123')
-      expect(jwtBearer.buildJWTAssertion).toHaveBeenCalledTimes(1)
+      expect(buildJWTAssertion).toHaveBeenCalledTimes(1)
     })
 
     test('getUserAccessToken caches different tokens for different users', async () => {
@@ -607,7 +614,7 @@ describe('salesforce client', () => {
 
       expect(token1).toBe('user-token-123') // First user gets the default token
       expect(token2).toBe('token-user2') // Second user gets the custom token
-      expect(jwtBearer.buildJWTAssertion).toHaveBeenCalledTimes(2)
+      expect(buildJWTAssertion).toHaveBeenCalledTimes(2)
     })
 
     test('getUserAccessToken throws when userEmail is missing', async () => {
@@ -618,7 +625,7 @@ describe('salesforce client', () => {
 
     test('getUserAccessToken logs error on JWT authentication failure', async () => {
       const error = new Error('JWT authentication failed')
-      jest.spyOn(jwtBearer, 'buildJWTAssertion').mockRejectedValueOnce(error)
+      jest.mocked(buildJWTAssertion).mockRejectedValueOnce(error)
 
       await expect(
         salesforceClient.getUserAccessToken(userEmail, mockLogger)
@@ -655,10 +662,7 @@ describe('salesforce client', () => {
         mockLogger
       )
 
-      expect(jwtBearer.buildJWTAssertion).toHaveBeenCalledWith(
-        userEmail,
-        mockLogger
-      )
+      expect(buildJWTAssertion).toHaveBeenCalledWith(userEmail, mockLogger)
       expect(mockFetch).toHaveBeenLastCalledWith(
         expect.stringContaining('/query'),
         expect.objectContaining({
