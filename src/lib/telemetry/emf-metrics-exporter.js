@@ -2,6 +2,7 @@ import { ConsoleMetricExporter } from '@opentelemetry/sdk-metrics'
 import { StorageResolution, Unit } from 'aws-embedded-metrics'
 
 import { createLogger } from '../../common/helpers/logging/logger.js'
+import { applyNonProductionMetricName } from './metric-naming.js'
 
 const logger = createLogger()
 
@@ -77,10 +78,11 @@ export class EMFMetricExporter extends ConsoleMetricExporter {
             for (const datapoint of metric.dataPoints) {
               /**
                * push the metric that has been recorded inside
-               * opentelemetry to EMF
+               * opentelemetry to EMF, applying the non-production naming
+               * policy so prod and non-prod can be alerted on separately
                */
               emf.putMetric(
-                metric.descriptor.name,
+                applyNonProductionMetricName(metric.descriptor.name),
                 Number(datapoint.value),
                 resolveUnit(metric.descriptor.unit),
                 StorageResolution.Standard

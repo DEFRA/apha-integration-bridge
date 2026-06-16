@@ -172,6 +172,23 @@ const config = convict({
     default: null,
     env: 'SERVICE_VERSION'
   },
+  cdpEnv: {
+    doc: 'The CDP environment the service is deployed to (e.g. dev, test, ext-test, perf-test, prod). "prod" is real production; every other value is a lower environment. Defaults to "local" when unset (local development and tests).',
+    format: String,
+    default: 'local',
+    env: 'CDP_ENV'
+  },
+  /**
+   * The CDP environment the service is deployed to is distinct from NODE_ENV,
+   * which is "production" in *every* deployed CDP environment. CDP_ENV identifies
+   * the specific environment (dev, test, ext-test, perf-test, prod) so behaviour
+   * can differ between real production and the lower environments.
+   */
+  isLowerEnvironment: {
+    doc: 'Whether the service is running in a lower (non-production) CDP environment. True whenever CDP_ENV is anything other than "prod", including when it is absent.',
+    format: Boolean,
+    default: process.env.CDP_ENV !== 'prod'
+  },
   host: {
     doc: 'The IP address to bind',
     format: 'ipaddress',
