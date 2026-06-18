@@ -13,4 +13,13 @@ describe('openApi swagger plugin config', () => {
       '/.well-known/openapi/v1/openapi.json'
     )
   })
+
+  test('patches OpenAPI servers to current HTTPS origin in Swagger UI', () => {
+    expect(openApi.options.uiCompleteScript).toContain(
+      "currentOrigin.startsWith('https://')"
+    )
+    expect(openApi.options.uiCompleteScript).toContain(
+      'window.ui.specActions.updateJsonSpec(updatedSpecification)'
+    )
+  })
 })
