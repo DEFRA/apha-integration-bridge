@@ -13,4 +13,8 @@ describe('openApi swagger plugin config', () => {
       '/.well-known/openapi/v1/openapi.json'
     )
   })
+
+  test('uses relative OpenAPI server URL', () => {
+    expect(openApi.options.servers).toEqual([{ url: '/' }])
+  })
 })
