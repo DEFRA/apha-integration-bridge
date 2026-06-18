@@ -1,10 +1,27 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals'
 
-import * as dbOperations from '../operations/execute.js'
+import { execute } from '../operations/execute.js'
 import {
   getCustomerTypes,
   getCustomerTypesQuery
 } from './get-customer-types.js'
+
+// Mock the execute operation so tests can force specific results.
+// A `jest.spyOn(import * as dbOperations, 'execute')` does NOT reliably
+// intercept the call made by get-customer-types.js: under babel's interop the
+// spy targets the `import *` namespace object while the query module reads the
+// raw module export, so the spy silently no-ops and the real DB is hit. A
+// module-factory mock replaces the module for every importer. The default
+// delegates to the real implementation so any real composition still works;
+// individual tests override per call.
+jest.mock('../operations/execute.js', () => {
+  const actual = jest.requireActual('../operations/execute.js')
+  return {
+    __esModule: true,
+    ...actual,
+    execute: jest.fn((...args) => actual.execute(...args))
+  }
+})
 
 describe('getCustomerTypesQuery', () => {
   test('returns the expected query for a single customer id', () => {
@@ -44,14 +61,12 @@ describe('getCustomerTypesQuery', () => {
 })
 
 describe('getCustomerTypes', () => {
-  const executeSpy = jest.spyOn(dbOperations, 'execute')
-
   afterEach(() => {
-    jest.resetAllMocks()
+    jest.restoreAllMocks()
   })
 
   test('returns a map of customer ids to customer types', async () => {
-    executeSpy.mockResolvedValue([
+    jest.mocked(execute).mockResolvedValueOnce([
       { customer_id: 'C123456', customer_type: 'PERSON' },
       { customer_id: 'C234567', customer_type: 'ORGANISATION' }
     ])
