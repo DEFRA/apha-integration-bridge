@@ -26,6 +26,37 @@ const authDescription = config.get('featureFlags.isTokenEndpointEnabled')
 **Note:** This endpoint is disabled in production environments.`
   : 'Authentication endpoints for obtaining access tokens. Available in lower environments only.'
 
+const swaggerUiSchemePatchScript = `
+try {
+  const currentSpecification = window.ui.specSelectors.specJson().toJS()
+  const currentOrigin = window.location.origin
+
+  if (currentOrigin.startsWith('https://') && currentSpecification) {
+    const updatedSpecification = {
+      ...currentSpecification,
+      servers: [{ url: currentOrigin }]
+    }
+
+    window.ui.specActions.updateJsonSpec(updatedSpecification)
+  }
+} catch (error) {
+  console.warn('[Swagger UI] Unable to apply HTTPS server patch', error)
+}
+`
+
+const cognitoAuthScriptLoader = config.get(
+  'featureFlags.isTokenEndpointEnabled'
+)
+  ? `
+const scriptElement = document.createElement('script')
+scriptElement.src = '/swaggerui/cognito-auth'
+scriptElement.type = 'text/javascript'
+document.body.appendChild(scriptElement)
+`
+  : ''
+
+const uiCompleteScript = `${swaggerUiSchemePatchScript}\n${cognitoAuthScriptLoader}`
+
 export const openApi = {
   plugin: swagger,
   options: {
@@ -36,9 +67,7 @@ export const openApi = {
       version: '1.0.0',
       description
     },
-    uiCompleteScript: config.get('featureFlags.isTokenEndpointEnabled')
-      ? { src: '/swaggerui/cognito-auth' }
-      : null,
+    uiCompleteScript,
     tags: [
       {
         name: 'auth',

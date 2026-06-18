@@ -50,6 +50,7 @@ describe('securityHeaders plugin', () => {
     const res = await server.inject({ method: 'GET', url: '/api/test' })
 
     expect(res.statusCode).toBe(200)
+    expect(res.headers['referrer-policy']).toBe('no-referrer')
     expect(res.headers['cross-origin-opener-policy']).toBe('same-origin')
     expect(res.headers['cross-origin-resource-policy']).toBe('same-origin')
     expect(res.headers['permissions-policy']).toBe(
@@ -80,6 +81,7 @@ describe('securityHeaders plugin', () => {
     })
 
     expect(res.statusCode).toBe(200)
+    expect(res.headers['referrer-policy']).toBe('no-referrer')
     expect(res.headers['cross-origin-opener-policy']).toBe('same-origin')
     expect(res.headers['content-security-policy']).toBeUndefined()
     expect(res.headers['pragma']).toBeUndefined()
