@@ -51,6 +51,8 @@ describe('securityHeaders plugin', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.headers['referrer-policy']).toBe('no-referrer')
+    expect(res.headers['cross-origin-opener-policy']).toBe('same-origin')
+    expect(res.headers['cross-origin-resource-policy']).toBe('same-origin')
     expect(res.headers['permissions-policy']).toBe(
       'camera=(), microphone=(), geolocation=(), browsing-topics=()'
     )
@@ -80,6 +82,7 @@ describe('securityHeaders plugin', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.headers['referrer-policy']).toBe('no-referrer')
+    expect(res.headers['cross-origin-opener-policy']).toBe('same-origin')
     expect(res.headers['content-security-policy']).toBeUndefined()
     expect(res.headers['pragma']).toBeUndefined()
     expect(res.headers['cache-control']).not.toBe('no-store')

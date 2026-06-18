@@ -44,6 +44,8 @@ export const securityHeaders = {
 
         // Headers applied to all routes
         set('Referrer-Policy', 'no-referrer')
+        set('Cross-Origin-Opener-Policy', 'same-origin')
+        set('Cross-Origin-Resource-Policy', 'same-origin')
         set(
           'Permissions-Policy',
           'camera=(), microphone=(), geolocation=(), browsing-topics=()'
