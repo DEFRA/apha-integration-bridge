@@ -6,7 +6,7 @@
 
 /**
  * Hapi plugin that adds comprehensive security headers to all responses.
- 
+
  * Headers added:
  * - Content-Security-Policy: Strict policy for API routes only
  * - Cache-Control: no-store (API routes only, to prevent caching of PII)
@@ -43,7 +43,6 @@ export const securityHeaders = {
         }
 
         // Headers applied to all routes
-        set('Referrer-Policy', 'no-referrer')
         set('Cross-Origin-Opener-Policy', 'same-origin')
         set('Cross-Origin-Resource-Policy', 'same-origin')
         set(
