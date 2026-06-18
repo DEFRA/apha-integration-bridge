@@ -57,7 +57,7 @@ async function createServer() {
         hsts: {
           maxAge: 31536000,
           includeSubDomains: true,
-          preload: true
+          preload: false
         },
         xss: 'disabled',
         noSniff: true,
