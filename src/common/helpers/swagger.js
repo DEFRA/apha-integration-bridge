@@ -30,9 +30,6 @@ export const openApi = {
   plugin: swagger,
   options: {
     jsonPath: OPENAPI_JSON_PATH,
-    // Use a relative server URL so Swagger UI always uses the current origin
-    // (including https behind TLS-terminating proxies) instead of inferred headers.
-    servers: [{ url: '/' }],
     OAS: 'v3.0',
     info: {
       title: 'APHA Integration Bridge API',
