@@ -24,9 +24,18 @@ services:
 
   redis:
     image: redis:7.2.3-alpine3.18
+    command: --save 60 1 --loglevel warning
     ports:
       - '6379:6379'
-    restart: always
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping | grep PONG']
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis-data:/data
     networks:
       - cdp-tenant
 
@@ -74,11 +83,14 @@ services:
     links:
       - 'localstack:localstack'
       - 'mongodb:mongodb'
+      - 'redis:redis'
     depends_on:
       localstack:
         condition: service_healthy
       mongodb:
         condition: service_started
+      redis:
+        condition: service_healthy
     env_file:
       - 'compose/aws.env'
     environment:
@@ -86,6 +98,7 @@ services:
       NODE_ENV: development
       LOCALSTACK_ENDPOINT: http://localstack:4566
       MONGO_URI: mongodb://mongodb:27017/
+      REDIS_HOST: redis
     networks:
       - cdp-tenant
     volumes:
@@ -95,6 +108,7 @@ services:
 ################################################################################
 
 volumes:
+  redis-data:
   mongodb-data:
 
 networks:

@@ -411,6 +411,77 @@ const config = convict({
       default: './clients.jsonc',
       env: 'CLIENTS_PATH'
     }
+  },
+  redis: {
+    host: {
+      doc: 'Redis host',
+      format: String,
+      default: '127.0.0.1',
+      env: 'REDIS_HOST'
+    },
+    port: {
+      doc: 'Redis port',
+      format: 'port',
+      default: 6379,
+      env: 'REDIS_PORT'
+    },
+    username: {
+      doc: 'Redis username (for Redis 6+ ACL)',
+      format: String,
+      default: '',
+      env: 'REDIS_USERNAME'
+    },
+    password: {
+      doc: 'Redis password',
+      format: '*',
+      default: '',
+      sensitive: true,
+      env: 'REDIS_PASSWORD'
+    },
+    keyPrefix: {
+      doc: 'Redis cache key prefix name used to isolate the cached results across multiple clients',
+      format: String,
+      default: 'apha-integration-bridge:',
+      env: 'REDIS_KEY_PREFIX'
+    },
+    useSingleInstanceCache: {
+      doc: 'Connect to a single instance of redis instead of a cluster.',
+      format: Boolean,
+      default: !isProduction,
+      env: 'USE_SINGLE_INSTANCE_CACHE'
+    },
+    useTLS: {
+      doc: 'Connect to Redis using TLS',
+      format: Boolean,
+      default: isProduction,
+      env: 'REDIS_TLS'
+    },
+    db: {
+      doc: 'Redis database number',
+      format: Number,
+      default: 0,
+      env: 'REDIS_DB'
+    }
+  },
+  rateLimit: {
+    ratePerSecond: {
+      doc: 'Rate limit in requests per second per client',
+      format: Number,
+      default: 10,
+      env: 'RATE_LIMIT_RATE_PER_SECOND'
+    },
+    burstLimit: {
+      doc: 'Maximum burst capacity per client',
+      format: Number,
+      default: 20,
+      env: 'RATE_LIMIT_BURST_LIMIT'
+    },
+    duration: {
+      doc: 'Duration window in seconds for rate limiting',
+      format: Number,
+      default: 1,
+      env: 'RATE_LIMIT_DURATION'
+    }
   }
 })
 

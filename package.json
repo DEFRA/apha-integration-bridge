@@ -56,6 +56,7 @@
     "hapi-pulse": "3.0.1",
     "hapi-swagger": "17.3.2",
     "https-proxy-agent": "9.0.0",
+    "ioredis": "5.4.2",
     "joi": "17.13.3",
     "jose": "6.2.3",
     "jsonc-parser": "3.3.1",
@@ -66,6 +67,7 @@
     "oracledb": "6.10.0",
     "pino": "10.3.1",
     "pino-pretty": "13.1.3",
+    "rate-limiter-flexible": "11.2.0",
     "undici": "8.3.0"
   },
   "devDependencies": {
