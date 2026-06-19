@@ -42,7 +42,7 @@ const CustomerContactDetails = Joi.alternatives(EmailAddress, PhoneNumber)
 
 export const Customer = CustomersData.keys({
   title: Joi.string().required(),
-  firstName: Joi.string().required(),
+  firstName: Joi.string().required().allow(null),
   middleName: Joi.string().required().allow(null),
   lastName: Joi.string().required(),
   addresses: Joi.array().items(Address.keys({ isPreferred: Joi.boolean() })),
