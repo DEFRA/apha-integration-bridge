@@ -7,9 +7,9 @@
 
 import Boom from '@hapi/boom'
 import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible'
-import IORedis from 'ioredis'
 
 import { config } from '../../config.js'
+import { buildRedisClient } from './redis-client.js'
 
 /**
  * @type {import('@hapi/hapi').Plugin<void>}
@@ -144,35 +144,10 @@ async function createLimiter(rateLimitConfig, redisConfig, logger) {
   }
 
   try {
-    const Redis = IORedis.default || IORedis
-    const redisClient = new Redis({
-      host: redisConfig.host,
-      port: redisConfig.port,
-      username: redisConfig.username || undefined,
-      password: redisConfig.password || undefined,
-      db: redisConfig.db || 0,
-      tls: redisConfig.useTLS ? {} : undefined,
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 3,
-      retryStrategy: (times) => {
-        if (times > 3) {
-          logger?.error('Redis connection failed after 3 retries')
-          return null
-        }
-        const delay = Math.min(times * 100, 2000)
-        return delay
-      }
-    })
+    const redisClient = buildRedisClient(redisConfig, logger)
 
     // Test the connection
     await redisClient.ping()
-    logger?.info(
-      `Connected to Redis at ${redisConfig.host}:${redisConfig.port}`
-    )
-
-    redisClient.on('error', (err) => {
-      logger?.error({ err }, 'Redis client error')
-    })
 
     return new RateLimiterRedis({
       storeClient: redisClient,
