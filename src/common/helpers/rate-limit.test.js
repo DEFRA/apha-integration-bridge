@@ -6,7 +6,7 @@ import { config } from '../../config.js'
 
 const CLIENT_ID = 'test-client-123'
 const CLIENT_ID_2 = 'test-client-456'
-const burstLimit = config.get('rateLimit').burstLimit
+const points = config.get('rateLimit').points
 
 const mockAuthPlugin = {
   name: 'mock-auth',
@@ -71,14 +71,14 @@ describe('Rate Limit Plugin', () => {
     })
 
     expect(res.statusCode).toBe(200)
-    expect(res.headers['x-ratelimit-limit']).toBe(String(burstLimit))
-    expect(res.headers['x-ratelimit-remaining']).toBe(String(burstLimit - 1))
+    expect(res.headers['x-ratelimit-limit']).toBe(String(points))
+    expect(res.headers['x-ratelimit-remaining']).toBe(String(points - 1))
     expect(res.headers['x-ratelimit-reset']).toBeDefined()
   })
 
   test('blocks requests exceeding the rate limit', async () => {
     // Exhaust the limit
-    for (let i = 0; i < burstLimit; i++) {
+    for (let i = 0; i < points; i++) {
       await server.inject({
         method: 'GET',
         url: '/api/test',
@@ -113,7 +113,7 @@ describe('Rate Limit Plugin', () => {
 
   test('includes Retry-After header when rate limited', async () => {
     // Exhaust the limit
-    for (let i = 0; i < burstLimit; i++) {
+    for (let i = 0; i < points; i++) {
       await server.inject({
         method: 'GET',
         url: '/api/test',
@@ -133,7 +133,7 @@ describe('Rate Limit Plugin', () => {
 
   test('rate limits are applied per client', async () => {
     // Exhaust limit for client 1
-    for (let i = 0; i < burstLimit; i++) {
+    for (let i = 0; i < points; i++) {
       await server.inject({
         method: 'GET',
         url: '/api/test',

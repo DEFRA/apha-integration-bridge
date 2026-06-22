@@ -464,17 +464,11 @@ const config = convict({
     }
   },
   rateLimit: {
-    ratePerSecond: {
-      doc: 'Rate limit in requests per second per client',
-      format: Number,
-      default: 10,
-      env: 'RATE_LIMIT_RATE_PER_SECOND'
-    },
-    burstLimit: {
-      doc: 'Maximum burst capacity per client',
+    points: {
+      doc: 'Maximum number of requests allowed per duration window per client',
       format: Number,
       default: 20,
-      env: 'RATE_LIMIT_BURST_LIMIT'
+      env: 'RATE_LIMIT_POINTS'
     },
     duration: {
       doc: 'Duration window in seconds for rate limiting',

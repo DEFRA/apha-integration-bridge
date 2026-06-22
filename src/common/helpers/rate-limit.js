@@ -31,7 +31,7 @@ export const rateLimitPlugin = {
     )
 
     server.logger?.info(
-      `Rate limiting enabled: ${rateLimitConfig.burstLimit} requests per client`
+      `Rate limiting enabled: ${rateLimitConfig.points} requests per ${rateLimitConfig.duration}s per client`
     )
 
     server.ext('onPreHandler', async (request, h) => {
@@ -49,7 +49,7 @@ export const rateLimitPlugin = {
 
         request.app.rateLimit = {
           result,
-          limit: rateLimitConfig.burstLimit,
+          limit: rateLimitConfig.points,
           exceeded: false
         }
 
@@ -57,7 +57,7 @@ export const rateLimitPlugin = {
       } catch (rateLimitResult) {
         request.app.rateLimit = {
           result: rateLimitResult,
-          limit: rateLimitConfig.burstLimit,
+          limit: rateLimitConfig.points,
           exceeded: true
         }
 
@@ -117,8 +117,7 @@ export const rateLimitPlugin = {
 
 /**
  * @param {object} rateLimitConfig - Rate limit configuration
- * @param {number} rateLimitConfig.burstLimit
- * @param {number} rateLimitConfig.ratePerSecond
+ * @param {number} rateLimitConfig.points
  * @param {number} rateLimitConfig.duration
  * @param {object} redisConfig - Redis configuration
  * @param {string} redisConfig.host
@@ -138,7 +137,7 @@ async function createLimiter(rateLimitConfig, redisConfig, logger) {
   if (isTest) {
     logger?.info('Using in-memory rate limiter for tests')
     return new RateLimiterMemory({
-      points: rateLimitConfig.burstLimit,
+      points: rateLimitConfig.points,
       duration: rateLimitConfig.duration,
       blockDuration: 0
     })
@@ -177,7 +176,7 @@ async function createLimiter(rateLimitConfig, redisConfig, logger) {
 
     return new RateLimiterRedis({
       storeClient: redisClient,
-      points: rateLimitConfig.burstLimit,
+      points: rateLimitConfig.points,
       duration: rateLimitConfig.duration,
       blockDuration: 0,
       keyPrefix: redisConfig.keyPrefix
@@ -188,7 +187,7 @@ async function createLimiter(rateLimitConfig, redisConfig, logger) {
       'Failed to connect to Redis, falling back to in-memory rate limiter'
     )
     return new RateLimiterMemory({
-      points: rateLimitConfig.burstLimit,
+      points: rateLimitConfig.points,
       duration: rateLimitConfig.duration,
       blockDuration: 0
     })
