@@ -42,6 +42,21 @@ BEGIN
   add_fk('ALTER TABLE ref_data_code_map ADD CONSTRAINT fk_rdcm_ref_data_set_map FOREIGN KEY (ref_data_set_map_pk) REFERENCES ref_data_set_map (ref_data_set_map_pk)');
   add_fk('ALTER TABLE ref_data_code_map ADD CONSTRAINT fk_rdcm_ref_data_code_fm FOREIGN KEY (from_ref_data_code_pk) REFERENCES ref_data_code (ref_data_code_pk)');
   add_fk('ALTER TABLE ref_data_code_map ADD CONSTRAINT fk_rdcm_ref_data_code_to FOREIGN KEY (to_ref_data_code_pk) REFERENCES ref_data_code (ref_data_code_pk)');
+
+  -- ── Party / customer cluster (Stage 3) ─────────────────────────────────────
+  -- real FK: party_role.role_pk -> ROLE omitted (parent out of fixture scope, D2)
+  add_fk('ALTER TABLE party_state ADD CONSTRAINT fk_party_state_party FOREIGN KEY (party_pk) REFERENCES party (party_pk)');
+  add_fk('ALTER TABLE party_role ADD CONSTRAINT fk_party_role_party FOREIGN KEY (party_pk) REFERENCES party (party_pk)');
+  add_fk('ALTER TABLE party_version ADD CONSTRAINT fk_party_version_party FOREIGN KEY (party_pk) REFERENCES party (party_pk)');
+  add_fk('ALTER TABLE person ADD CONSTRAINT fk_person_party FOREIGN KEY (party_pk) REFERENCES party (party_pk)');
+  add_fk('ALTER TABLE organisation ADD CONSTRAINT fk_organisation_party FOREIGN KEY (party_pk) REFERENCES party (party_pk)');
+  add_fk('ALTER TABLE alt_party_identity ADD CONSTRAINT fk_alt_party_identity_party FOREIGN KEY (party_pk) REFERENCES party (party_pk)');
+  add_fk('ALTER TABLE bs7666_address ADD CONSTRAINT fk_bs7666_address_address FOREIGN KEY (address_pk) REFERENCES address (address_pk)');
+  add_fk('ALTER TABLE party_contact_address ADD CONSTRAINT fk_pcad_address_party FOREIGN KEY (party_pk) REFERENCES party (party_pk)');
+  add_fk('ALTER TABLE party_contact_address ADD CONSTRAINT fk_pcad_party_role FOREIGN KEY (party_role_pk) REFERENCES party_role (party_role_pk)');
+  add_fk('ALTER TABLE party_contact_address ADD CONSTRAINT fk_pcad_telecom_address FOREIGN KEY (telecom_address_pk) REFERENCES telecom_address (telecom_address_pk)');
+  add_fk('ALTER TABLE party_contact_address ADD CONSTRAINT fk_pcad_address FOREIGN KEY (address_pk) REFERENCES address (address_pk)');
+  add_fk('ALTER TABLE address_usage ADD CONSTRAINT fk_ausa_party_contact_address FOREIGN KEY (party_contact_address_pk) REFERENCES party_contact_address (party_contact_address_pk)');
 END;
 /
 

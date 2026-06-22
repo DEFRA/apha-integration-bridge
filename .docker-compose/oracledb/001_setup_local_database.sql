@@ -31,7 +31,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
 BEGIN
-  EXECUTE IMMEDIATE 'DROP TABLE v_cph_customer_unit PURGE';
+  EXECUTE IMMEDIATE 'DROP TABLE v_cph_customer_unit CASCADE CONSTRAINTS PURGE';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
@@ -126,11 +126,11 @@ FROM   v_cph_customer_unit;
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Drop if exist (dev-friendly)
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_state PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_state CASCADE CONSTRAINTS PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE location PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE location CASCADE CONSTRAINTS PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_involvement PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_involvement CASCADE CONSTRAINTS PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_map CASCADE CONSTRAINTS PURGE';  EXCEPTION WHEN OTHERS THEN NULL; END;
 /
@@ -364,39 +364,39 @@ EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Drop all tables in correct order (reverse dependency order)
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_location PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_location CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_state PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_state CASCADE CONSTRAINTS PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE coll_regstrd_animal_group PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE coll_regstrd_animal_group CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset CASCADE CONSTRAINTS PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_business_activty PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_business_activty CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_type PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_type CASCADE CONSTRAINTS PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility CASCADE CONSTRAINTS PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal_species PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal_species CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal PURGE';                  EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal CASCADE CONSTRAINTS PURGE';                  EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE livestock_unit PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE livestock_unit CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_point PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_point CASCADE CONSTRAINTS PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_address PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_address CASCADE CONSTRAINTS PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE bs7666_address PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE bs7666_address CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_role PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_role CASCADE CONSTRAINTS PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_state PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_state CASCADE CONSTRAINTS PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE party PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party CASCADE CONSTRAINTS PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature CASCADE CONSTRAINTS PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
 -- Animal tables for livestock species
@@ -423,23 +423,53 @@ CREATE TABLE facility_business_activty (
   facility_businss_actvty_code  VARCHAR2(50)  NOT NULL
 );
 
--- Party tables for holdings relationships
+-- ── Party cluster — aligned to canonical SAM schema ──────────────────────────
+-- New NOT NULL columns use literal DEFAULTs; surrogate state PK uses IDENTITY
+-- (the pattern the original fixture already uses for FEATURE_INVOLVEMENT), so the
+-- existing party_state MERGE/INSERT producers need no per-row edits. FKs in 009.
 CREATE TABLE party (
-  party_pk              NUMBER        PRIMARY KEY,
-  party_id              VARCHAR2(50)  NOT NULL
+  party_pk                      NUMBER        NOT NULL,
+  party_id                      VARCHAR2(20)  NOT NULL,  -- real VARCHAR2(8); widened (D5: 'CUST-...' up to 14)
+  party_type                    VARCHAR2(20)  DEFAULT 'PERSON' NOT NULL,
+  preferred_language_code       VARCHAR2(20),
+  party_ah_memo                 VARCHAR2(4000),
+  party_migrated_datetime       TIMESTAMP(3),
+  party_mig_detail_check_ind    CHAR(1),
+  party_data_last_check_dttm    TIMESTAMP(3),
+  party_data_check_deferred_dt  DATE,
+  password                      VARCHAR2(35),
+  password_hint                 VARCHAR2(20),
+  authentication_refused_ind    CHAR(1),
+  secondary_contact_full_name   VARCHAR2(70),
+  CONSTRAINT pk_party PRIMARY KEY (party_pk),
+  CONSTRAINT ck_part_mig_detail_check_ind CHECK (party_mig_detail_check_ind IN ('Y', 'N', '?')),
+  CONSTRAINT ck_part_refused_ind CHECK (authentication_refused_ind IN ('Y', 'N', '?'))
 );
+CREATE UNIQUE INDEX uk_party_id ON party (party_id);
+CREATE INDEX ix_part_func_sec_contact ON party (secondary_contact_full_name, party_pk);
 
 CREATE TABLE party_state (
-  party_pk              NUMBER        NOT NULL,
-  party_status_code     VARCHAR2(20)  NOT NULL,
-  party_state_to_dttm   DATE
+  party_state_pk          NUMBER        GENERATED BY DEFAULT AS IDENTITY,
+  party_pk                NUMBER        NOT NULL,
+  party_status_code       VARCHAR2(20)  NOT NULL,
+  party_state_reason_code VARCHAR2(20),
+  party_state_from_dttm   TIMESTAMP(3)  DEFAULT TIMESTAMP '2000-01-01 00:00:00' NOT NULL,
+  party_state_to_dttm     TIMESTAMP(3),
+  CONSTRAINT pk_party_state PRIMARY KEY (party_state_pk)
 );
+CREATE UNIQUE INDEX uk_psta_party_party_state ON party_state (party_pk, party_state_pk);
 
 CREATE TABLE party_role (
-  party_role_pk         NUMBER        PRIMARY KEY,
+  party_role_pk         NUMBER        NOT NULL,
   party_pk              NUMBER        NOT NULL,
-  party_role_to_date    DATE
+  role_pk               NUMBER        DEFAULT 0 NOT NULL,  -- real FK -> ROLE omitted (parent out of scope, D2); 0 sentinel
+  main_role_type        VARCHAR2(20)  DEFAULT 'KEEPER' NOT NULL,
+  party_role_from_date  DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  party_role_to_date    DATE,
+  CONSTRAINT pk_party_role PRIMARY KEY (party_role_pk)
 );
+CREATE INDEX ix_prol_party_role_party ON party_role (party_role_pk, party_pk);
+CREATE INDEX ix_prol_role_pk_main_role_type ON party_role (role_pk, main_role_type);
 
 -- Feature table for feature names
 CREATE TABLE feature (
@@ -468,25 +498,29 @@ CREATE TABLE coll_regstrd_animal_group (
 
 -- Core BS7666 address tables
 CREATE TABLE bs7666_address (
-  address_pk                   NUMBER       PRIMARY KEY,
-  paon_start_number            NUMBER,
-  paon_start_number_suffix     VARCHAR2(10),
-  paon_end_number              NUMBER,
-  paon_end_number_suffix       VARCHAR2(10),
-  paon_description             VARCHAR2(255),
-  saon_description             VARCHAR2(255),
-  saon_start_number            NUMBER,
-  saon_start_number_suffix     VARCHAR2(10),
-  saon_end_number              NUMBER,
-  saon_end_number_suffix       VARCHAR2(10),
-  street                       VARCHAR2(255),
-  locality                     VARCHAR2(255),
-  town                         VARCHAR2(255),
-  administrative_area          VARCHAR2(255),
-  postcode                     VARCHAR2(20),
+  address_pk                   NUMBER        NOT NULL,
+  street                       VARCHAR2(100),
+  locality                     VARCHAR2(35),
+  town                         VARCHAR2(30),
+  administrative_area          VARCHAR2(30),
+  postcode                     VARCHAR2(8),
+  country_code                 VARCHAR2(20),
   uk_internal_code             VARCHAR2(20),
-  country_code                 VARCHAR2(10)
+  saon_start_number            NUMBER(4, 0),
+  saon_start_number_suffix     CHAR(1),
+  saon_end_number              NUMBER(4, 0),
+  saon_end_number_suffix       CHAR(1),
+  saon_description             VARCHAR2(90),
+  paon_start_number            NUMBER(4, 0),
+  paon_start_number_suffix     CHAR(1),
+  paon_end_number              NUMBER(4, 0),
+  paon_end_number_suffix       CHAR(1),
+  paon_description             VARCHAR2(90),
+  CONSTRAINT pk_bs7666_address PRIMARY KEY (address_pk)
 );
+CREATE INDEX ix_badd_func_postcode ON bs7666_address (postcode, address_pk);
+CREATE INDEX ix_badd_func_street ON bs7666_address (street, address_pk);
+CREATE INDEX ix_badd_func_town ON bs7666_address (town, address_pk);
 
 CREATE TABLE feature_address (
   feature_pk               NUMBER      NOT NULL,
