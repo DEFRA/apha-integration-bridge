@@ -56,12 +56,42 @@ test('createCustomer masks name fields when masking context is active', () => {
   })
 })
 
-test('createCustomer throws if first_name or last_name is missing', () => {
+test('createCustomer maps a person row with no first_name (null given name)', () => {
+  const customer = createCustomer(
+    {
+      title: 'Mr',
+      first_name: null,
+      second_name: null,
+      last_name: 'Farmer',
+      organisation_name: null,
+      primary_contact_full_name: null
+    },
+    'C123456'
+  )
+
+  expect(customer).toEqual({
+    type: 'customers',
+    id: 'C123456',
+    title: 'Mr',
+    firstName: null,
+    middleName: null,
+    lastName: 'Farmer',
+    addresses: [],
+    contactDetails: [],
+    relationships: {
+      srabpiPlants: {
+        data: []
+      }
+    }
+  })
+})
+
+test('createCustomer throws if last_name is missing', () => {
   expect(() =>
     createCustomer(
       {
         title: null,
-        first_name: null,
+        first_name: 'Bert',
         second_name: null,
         last_name: null,
         organisation_name: 'Acme Farms Ltd',
@@ -69,5 +99,5 @@ test('createCustomer throws if first_name or last_name is missing', () => {
       },
       'C777777'
     )
-  ).toThrow(/first_name.*last_name/i)
+  ).toThrow(/last_name/i)
 })
