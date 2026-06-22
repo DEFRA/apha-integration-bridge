@@ -467,7 +467,7 @@ const config = convict({
     points: {
       doc: 'Maximum number of requests allowed per duration window per client',
       format: Number,
-      default: 20,
+      default: 10,
       env: 'RATE_LIMIT_POINTS'
     },
     duration: {
