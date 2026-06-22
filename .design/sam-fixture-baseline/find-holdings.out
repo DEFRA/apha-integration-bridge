@@ -1,0 +1,9 @@
+01/409/1111					  |ACTIVE|MULTI_LOC_TEST				    |Local Authority 01/409																													    |LA01409					       |LOC-OMEGA					  |CUST-014091111
+01/409/1111					  |ACTIVE|MULTI_LOC_TEST				    |Local Authority 01/409																													    |LA01409					       |LOC-THETA					  |CUST-014091111
+04/432/1234					  |ACTIVE|HOLDER_TEST					    |Local Authority 04/432																													    |LA04432					       |LOC-GAMMA					  |CUST-044321234
+11/111/1111					  |ACTIVE|HOLDER_TEST					    |Local Authority 11/111																													    |LA11111					       |LOC-1111111111					  |CUST-111111111
+22/222/2222					  |ACTIVE|HOLDER_TEST					    |Local Authority 22/222																													    |LA22222					       |LOC-2222222222					  |CUST-222222222
+33/333/3333					  |ACTIVE|HOLDER_TEST					    |<NULL>																															    |<NULL>					       |LOC-3333333333					  |CUST-333333333
+45/001/0002					  |ACTIVE|DEV_SAMPLE					    |<NULL>																															    |<NULL>					       |LOC-BETA					  |CUST-450010002
+98/001/0001					  |ACTIVE|HOLDER_TEST					    |Local Authority 98/001																													    |LA98001					       |L98001						  |CUST-98001
+98/002/0001					  |ACTIVE|HOLDER_TEST					    |Local Authority 98/002																													    |LA98002					       |L98002						  |CUST-98002

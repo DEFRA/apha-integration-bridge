@@ -163,14 +163,26 @@ IS NULL` filter still excludes them) while `find-locations` (which never joins
   sections: (A) `DROP TABLE … CASCADE CONSTRAINTS PURGE` for all 34 tables in
   reverse-dependency order (idempotent over a persisted volume, and FK-safe because
   every table is dropped before any is recreated); (B) all `CREATE TABLE` + index
-  DDL in forward-dependency order (parents before children — e.g. PARTY → PARTY_ROLE
+  DDL in forward-dependency order (parents before children — e.g. PARTY → PARTY*ROLE
   → FEATURE_INVOLVEMENT; ADDRESS → BS7666_ADDRESS/FEATURE_ADDRESS; ANIMAL_SPECIES →
   ANIMAL → ASSET; ORGANISATION before ref-data only if a kept FK requires it, else
   any order); (C) seed inserts in dependency order; (D) the `cph` view. Tables
   currently created in 002/004 (ADDRESS, party-cluster, etc.) are **relocated** into
   001's CREATE section; the now-redundant `CREATE TABLE`/`ALTER TABLE` blocks in
   002/004 are removed (or left as no-op-safe and documented). This eliminates all
-  cross-file DDL-ordering hazards. The non-canonical helper table
+  cross-file DDL-ordering hazards.
+  **D9 refinement (adopted during implementation):** foreign keys are added as
+  **trailing `ALTER TABLE … ADD CONSTRAINT … FOREIGN KEY`** statements in a final
+  section that runs \_after* all tables and all seed data exist (a dedicated
+  `009_add_foreign_keys.sql`), rather than inline in each `CREATE TABLE`. This is
+  strictly safer: parent tables/PKs and all rows are already present, so each FK is
+  validated against fully-loaded data at add time (any orphan surfaces as `ORA-02298`
+  and fails the boot — making the boot the FK gate), and it removes all
+  create-order/drop-order coupling so the in-place column canonicalisation per stage
+  needs no physical relocation of `CREATE TABLE` blocks. Section A still drops every
+  table `CASCADE CONSTRAINTS PURGE` (so re-boot over a persisted volume drops the FKs
+  too); column-shape changes that require it still DROP+CREATE the table. The
+  non-canonical helper table
   `V_CPH_CUSTOMER_UNIT` (local stand-in for the SAM `CPH` source, read directly by
   `get-units` and exposed via the `cph` view) is **retained as-is** and keeps its
   existing DROP (section A) / CREATE (section B, before the `cph` view) / seed
