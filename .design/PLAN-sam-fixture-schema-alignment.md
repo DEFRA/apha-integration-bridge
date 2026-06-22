@@ -215,8 +215,12 @@ IS NULL` filter still excludes them) while `find-locations` (which never joins
     `LU_SPECIES` inner-join chain yields no species and L97339's livestock surface
     with `species='N/A'` (any non-null ANIMAL_PK would resolve a real species, and a
     non-null ANIMAL_PK without ANIMAL_SPECIES/REF_DATA_CODE parents would drop the LU
-    row). `ASSET_TYPE` = `'LIVESTOCKUNIT'`/`'FACILITY'` per role. NULLs are fine under
-    the real `UK_ASSE_ANIMAL_PK` unique index (Oracle allows multiple NULLs).
+    row). `ASSET_TYPE` is left to its column `DEFAULT 'LIVESTOCKUNIT'` for all
+    backfilled assets (incl. the facility assets) rather than set per-role — the
+    column is query-neutral (queries test `ASSET.ASSET_PK IS NULL` only, never
+    `ASSET_TYPE`), so the default avoids editing inserts and changes no result
+    (annotated inline). NULLs are fine under the real `UK_ASSE_ANIMAL_PK` unique
+    index (Oracle allows multiple NULLs).
   - `ANIMAL` (+ `ANIMAL_SPECIES`) rows only for the `animal_pk`s actually referenced:
     `93001001` (species 2001 CATTLE) and `93003001` (species 2002 SHEEP) — both
     already seeded in 005; no other ANIMAL is referenced (001's livestock have

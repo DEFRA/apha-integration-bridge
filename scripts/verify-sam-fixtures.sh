@@ -3,7 +3,7 @@
 # verify-sam-fixtures.sh
 #
 # Boots a throwaway Oracle Free container against .docker-compose/oracledb,
-# asserts the init scripts (001..008) apply with no fatal ORA- errors, then runs
+# asserts the init scripts (001..009) apply with no fatal ORA- errors, then runs
 # the in-scope AHBRP queries (scripts/verify/ahbrp-queries.sql) and writes their
 # per-query, sorted output so it can be diffed against the committed baseline in
 # .design/sam-fixture-baseline/.
