@@ -8,6 +8,12 @@
 ALTER SESSION SET CONTAINER = FREEPDB1;
 CONNECT ahbrp/password@FREEPDB1;
 
+-- FEATURE parent for feature_pk 7432 used by this file's location/feature_state/
+-- feature_involvement rows (FEATURE table + FEATURE_TYPE default created in 001).
+-- Required by the * -> FEATURE FKs added in 009.
+BEGIN EXECUTE IMMEDIATE 'INSERT INTO feature (feature_pk) VALUES (7432)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2) Minimal PARTY tables required by the updated query
 --    (CREATE if missing; ignore error if already present)

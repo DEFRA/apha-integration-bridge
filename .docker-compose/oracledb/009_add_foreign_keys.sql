@@ -57,6 +57,28 @@ BEGIN
   add_fk('ALTER TABLE party_contact_address ADD CONSTRAINT fk_pcad_telecom_address FOREIGN KEY (telecom_address_pk) REFERENCES telecom_address (telecom_address_pk)');
   add_fk('ALTER TABLE party_contact_address ADD CONSTRAINT fk_pcad_address FOREIGN KEY (address_pk) REFERENCES address (address_pk)');
   add_fk('ALTER TABLE address_usage ADD CONSTRAINT fk_ausa_party_contact_address FOREIGN KEY (party_contact_address_pk) REFERENCES party_contact_address (party_contact_address_pk)');
+
+  -- ── Feature / location / asset cluster (Stage 4) ───────────────────────────
+  -- Omitted (parent out of fixture scope, D2): feature_involvement ->
+  -- ACTIVITY_CLASS_PARTY_ROLE / DOCUMENT / CPH (D4); feature -> DOCUMENT
+  -- asset_location -> TEMP_CPH; animal -> BREED; facility -> FACILITY_SUB_BSNSS_ACTVTY.
+  add_fk('ALTER TABLE location ADD CONSTRAINT fk_loca_feature FOREIGN KEY (feature_pk) REFERENCES feature (feature_pk)');
+  add_fk('ALTER TABLE feature_state ADD CONSTRAINT fk_feature_state_feature FOREIGN KEY (feature_pk) REFERENCES feature (feature_pk)');
+  add_fk('ALTER TABLE feature_address ADD CONSTRAINT fk_feature_address_feature FOREIGN KEY (feature_pk) REFERENCES feature (feature_pk)');
+  add_fk('ALTER TABLE feature_address ADD CONSTRAINT fk_feature_address_address FOREIGN KEY (address_pk) REFERENCES address (address_pk)');
+  add_fk('ALTER TABLE feature_point ADD CONSTRAINT fk_feature_point_feature FOREIGN KEY (feature_pk) REFERENCES feature (feature_pk)');
+  add_fk('ALTER TABLE feature_involvement ADD CONSTRAINT fk_finv_feature FOREIGN KEY (feature_pk) REFERENCES feature (feature_pk)');
+  add_fk('ALTER TABLE feature_involvement ADD CONSTRAINT fk_finv_party_role FOREIGN KEY (party_role_pk) REFERENCES party_role (party_role_pk)');
+  add_fk('ALTER TABLE animal ADD CONSTRAINT fk_animal_animal_species FOREIGN KEY (animal_species_pk) REFERENCES animal_species (animal_species_pk)');
+  add_fk('ALTER TABLE asset ADD CONSTRAINT fk_asset_animal FOREIGN KEY (animal_pk) REFERENCES animal (animal_pk)');
+  add_fk('ALTER TABLE coll_regstrd_animal_group ADD CONSTRAINT fk_crag_animal FOREIGN KEY (animal_pk) REFERENCES animal (animal_pk)');
+  add_fk('ALTER TABLE asset_location ADD CONSTRAINT fk_asset_location_feature FOREIGN KEY (feature_pk) REFERENCES feature (feature_pk)');
+  add_fk('ALTER TABLE asset_location ADD CONSTRAINT fk_asset_location_asset FOREIGN KEY (asset_pk) REFERENCES asset (asset_pk)');
+  add_fk('ALTER TABLE asset_state ADD CONSTRAINT fk_asset_state_asset FOREIGN KEY (asset_pk) REFERENCES asset (asset_pk)');
+  add_fk('ALTER TABLE livestock_unit ADD CONSTRAINT fk_livestock_unit_asset FOREIGN KEY (asset_pk) REFERENCES asset (asset_pk)');
+  add_fk('ALTER TABLE facility ADD CONSTRAINT fk_faci_asset FOREIGN KEY (asset_pk) REFERENCES asset (asset_pk)');
+  add_fk('ALTER TABLE facility ADD CONSTRAINT fk_faci_fclty_business_activty FOREIGN KEY (facility_business_activty_pk) REFERENCES facility_business_activty (facility_business_activty_pk)');
+  add_fk('ALTER TABLE facility_business_activty ADD CONSTRAINT fk_fbac_facility_type FOREIGN KEY (facility_type_pk) REFERENCES facility_type (facility_type_pk)');
 END;
 /
 
