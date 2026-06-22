@@ -8,6 +8,7 @@ export const Activities = baseData({
   id: Joi.string().label('Activity ID'),
   activityName: Joi.string()
     .required()
+    .allow(null)
     .description('The activity to be performed'),
   status: Joi.string()
     .required()
@@ -15,6 +16,7 @@ export const Activities = baseData({
     .description('The status of the activity'),
   sequenceNumber: Joi.number()
     .required()
+    .allow(null)
     .description(
       'The sequence in which this activity is expected to be performed'
     ),
