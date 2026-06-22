@@ -77,11 +77,21 @@ grep -nE "ORA-[0-9]+" "$LOGFILE" | sort -t- -k2 -u > "$OUTDIR/_ora-errors.txt" |
 FATAL="$(grep -oE "ORA-[0-9]+" "$LOGFILE" | sort -u \
   | grep -vE "ORA-00942|ORA-01418|ORA-02289|ORA-00955|ORA-01430|ORA-01442|ORA-00001|ORA-01920|ORA-02443|ORA-04043|ORA-00054" || true)"
 # NB: the curated allow-list above are the codes the existing idempotent
-# DROP/CREATE-IF-NOT-EXISTS idiom legitimately swallows. Any OTHER ORA- code, or
-# ORA-01400/02291/12899/00001 surfacing OUTSIDE a swallow, is investigated by hand.
+# DROP/CREATE-IF-NOT-EXISTS idiom can legitimately surface. On a FRESH-container
+# boot (which this harness always does) PL/SQL-swallowed errors do not reach the
+# log, so a clean run shows NO ORA- codes at all. Any FATAL code (a real DDL
+# syntax error, a failed unique index, or an ORA-02298 FK-validation failure from
+# 009) MUST fail the run — the boot is the gate.
 if [[ -s "$OUTDIR/_ora-errors.txt" ]]; then
   echo "  (all ORA- codes seen — see $OUTDIR/_ora-errors.txt)"
 fi
+if [[ -n "$FATAL" ]]; then
+  echo "✗ FATAL ORA- codes during init (not in the idempotency allow-list):"
+  echo "$FATAL" | sed 's/^/    /'
+  echo "  → see $LOGFILE"
+  exit 1
+fi
+echo "  ✓ no fatal ORA- codes during init"
 
 # Resolve @@scripts/verify/<file>.sql includes on the host (sqlplus runs inside
 # the container where those paths do not exist), producing one flat SQL stream.
@@ -114,10 +124,18 @@ awk -v outdir="$OUTDIR" '
   }
   cur!="" { print > cur }
 ' "$RAW"
-# sort each section in place
+# Normalise each section for deterministic, width-INSENSITIVE comparison: drop
+# blank lines, collapse the whitespace padding sqlplus adds around the '|' column
+# separator (column display widths change as tables are canonicalised, but the
+# DATA values do not), strip leading/trailing whitespace, then sort.
 for f in "$OUTDIR"/*.out; do
   [[ -e "$f" ]] || continue
-  grep -vE '^\s*$' "$f" | sed 's/[[:space:]]*$//' | sort > "$f.tmp" && mv "$f.tmp" "$f"
+  # `|| true` so an empty section (e.g. L97339 returns 0 rows) doesn't trip
+  # pipefail and leave a stale .tmp; sort -o + unconditional mv finishes the job.
+  { grep -vE '^[[:space:]]*$' "$f" || true; } \
+    | sed -E 's/[[:space:]]*\|[[:space:]]*/|/g; s/^[[:space:]]+//; s/[[:space:]]+$//' \
+    | sort -o "$f.tmp"
+  mv "$f.tmp" "$f"
 done
 
 echo "▶ query sections captured:"

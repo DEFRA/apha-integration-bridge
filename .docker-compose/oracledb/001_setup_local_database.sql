@@ -132,33 +132,59 @@ BEGIN EXECUTE IMMEDIATE 'DROP TABLE location PURGE';              EXCEPTION WHEN
 /
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_involvement PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_map PURGE';     EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_map CASCADE CONSTRAINTS PURGE';  EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_desc PURGE';    EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_desc CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code CASCADE CONSTRAINTS PURGE';      EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set_map PURGE';      EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set_map CASCADE CONSTRAINTS PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set CASCADE CONSTRAINTS PURGE';       EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
--- Core reference data tables (needed by both holdings and locations)
+-- ── Reference data tables — aligned to canonical SAM schema ──────────────────
+-- New NOT NULL columns use DEFAULTs so the existing column-list INSERTs across
+-- 001..006 need no per-row edits (defaults are query-neutral; the only filtered
+-- column, EFFECTIVE_TO_DATE, stays explicitly seeded). FKs are added in
+-- 009_add_foreign_keys.sql after all data loads (D9 refinement).
 CREATE TABLE ref_data_set (
-  ref_data_set_pk       NUMBER        PRIMARY KEY,
-  ref_data_set_name     VARCHAR2(100) NOT NULL,
-  effective_to_date     DATE
+  ref_data_set_pk            NUMBER        NOT NULL,
+  party_pk                   NUMBER,
+  ref_data_set_name          VARCHAR2(100) NOT NULL,
+  ref_data_set_desc          VARCHAR2(1000),
+  data_type                  VARCHAR2(100) DEFAULT 'REFERENCE' NOT NULL,
+  business_domain            VARCHAR2(100) DEFAULT 'REFERENCE' NOT NULL,
+  is_ldssm_compliant_ind     CHAR(1)       DEFAULT 'N' NOT NULL,
+  is_mastered_by_domain_ind  CHAR(1)       DEFAULT 'N' NOT NULL,
+  effective_from_date        DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date          DATE,
+  CONSTRAINT pk_ref_data_set PRIMARY KEY (ref_data_set_pk),
+  CONSTRAINT ck_rdse_is_ldssm_compliant CHECK (is_ldssm_compliant_ind IN ('Y', 'N')),
+  CONSTRAINT ck_rdse_is_mastered_by_dom_ind CHECK (is_mastered_by_domain_ind IN ('Y', 'N'))
+  -- real FK: party_pk -> ORGANISATION(party_pk) omitted (soft, nullable, query-unused; D2)
 );
+CREATE UNIQUE INDEX uk_rdse_ref_data_set_name ON ref_data_set (ref_data_set_name);
 
 CREATE TABLE ref_data_code (
-  ref_data_code_pk      NUMBER        PRIMARY KEY,
-  code                  VARCHAR2(50)  NOT NULL,
+  ref_data_code_pk      NUMBER        NOT NULL,
   ref_data_set_pk       NUMBER        NOT NULL,
-  effective_to_date     DATE          NOT NULL
+  code                  VARCHAR2(25)  NOT NULL,  -- real VARCHAR2(20); widened (D5: 'Disease Investigation'/'CATTLE_BREEDING_DAIRY' = 21)
+  ref_data_subset_pk    NUMBER,
+  effective_from_date   DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date     DATE,
+  CONSTRAINT pk_ref_data_code PRIMARY KEY (ref_data_code_pk)
+  -- real FK: ref_data_subset_pk -> REF_DATA_SUBSET omitted (parent out of fixture scope; D2)
 );
+CREATE UNIQUE INDEX uk_rdco_ref_data_set_pk_code ON ref_data_code (ref_data_set_pk, code);
 
 CREATE TABLE ref_data_code_desc (
-  ref_data_code_pk      NUMBER        PRIMARY KEY,
-  short_description     VARCHAR2(255) NOT NULL,
-  language_code         VARCHAR2(10)  NOT NULL
+  ref_data_code_pk      NUMBER        NOT NULL,
+  language_code         VARCHAR2(20)  NOT NULL,
+  short_description     VARCHAR2(100) NOT NULL,
+  description           VARCHAR2(1000),
+  sort_sequence         NUMBER,
+  CONSTRAINT pk_ref_data_code_desc PRIMARY KEY (ref_data_code_pk, language_code)
 );
 
 -- Core feature tables
@@ -187,24 +213,41 @@ CREATE TABLE feature_state (
   feature_state_to_dttm  DATE
 );
 
--- Reference data tables (very slimmed down)
 CREATE TABLE ref_data_set_map (
-  ref_data_set_map_pk   NUMBER        PRIMARY KEY,
+  ref_data_set_map_pk   NUMBER        NOT NULL,
   ref_data_set_map_name VARCHAR2(100) NOT NULL,
-  effective_to_date     DATE          NOT NULL
+  ref_data_set_map_desc VARCHAR2(1000),
+  ref_data_set_map_type VARCHAR2(20)  DEFAULT 'CE' NOT NULL,
+  from_ref_data_set_pk  NUMBER        NOT NULL,
+  to_ref_data_set_pk    NUMBER        NOT NULL,
+  party_pk              NUMBER,
+  effective_from_date   DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date     DATE,
+  CONSTRAINT pk_ref_data_set_map PRIMARY KEY (ref_data_set_map_pk),
+  CONSTRAINT ck_rdsm_ref_data_set_map_type CHECK (ref_data_set_map_type IN ('PC', 'NW', 'CE', 'RR'))
+  -- real FK: party_pk -> ORGANISATION(party_pk) omitted (soft, nullable, query-unused; D2)
 );
+CREATE UNIQUE INDEX uk_rdsm_ref_data_set_map_name ON ref_data_set_map (ref_data_set_map_name);
 
 CREATE TABLE ref_data_code_map (
-  ref_data_code_map_pk   NUMBER       PRIMARY KEY,
+  ref_data_code_map_pk   NUMBER       NOT NULL,
   ref_data_set_map_pk    NUMBER       NOT NULL,
   from_ref_data_code_pk  NUMBER       NOT NULL,
   to_ref_data_code_pk    NUMBER       NOT NULL,
-  effective_to_date      DATE         NOT NULL
+  is_primary_code_ind    CHAR(1),
+  effective_from_date    DATE         DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date      DATE,
+  CONSTRAINT pk_ref_data_code_map PRIMARY KEY (ref_data_code_map_pk),
+  CONSTRAINT ck_rdcm_is_prmry_cd_ind CHECK (is_primary_code_ind IN ('Y', 'N', '?'))
 );
+CREATE UNIQUE INDEX uk_rdcm_map_pk_from_pk_to_pk ON ref_data_code_map (ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk);
 
--- Minimal reference data to satisfy WHERE filters and joins
-INSERT INTO ref_data_set_map (ref_data_set_map_pk, ref_data_set_map_name, effective_to_date)
-VALUES (1, 'LOCAL_AUTHORITY_COUNTY_PARISH', DATE '9999-12-31');
+-- Minimal reference data to satisfy WHERE filters and joins.
+-- from/to_ref_data_set_pk point at the LOCAL_AUTHORITY set (2000, created in 005);
+-- the FK is validated in 009 after all data loads. Query-neutral (find-holding's
+-- LOCAL_AUTHORITY CTE joins this map by NAME only).
+INSERT INTO ref_data_set_map (ref_data_set_map_pk, ref_data_set_map_name, ref_data_set_map_type, from_ref_data_set_pk, to_ref_data_set_pk, effective_to_date)
+VALUES (1, 'LOCAL_AUTHORITY_COUNTY_PARISH', 'CE', 2000, 2000, DATE '9999-12-31');
 
 -- Feature graph for each existing test CPH
 -- CPH 01/001/0001

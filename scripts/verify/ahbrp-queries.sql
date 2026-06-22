@@ -3,8 +3,12 @@
 -- marker so the harness can split + sort per-query output for deterministic diffs.
 -- Placeholders/binds from src/lib/db/queries/*.js are inlined here with
 -- representative values (knex .toQuery() inlines IN-clause binds as quoted literals).
+-- CSV markup gives clean, padding-free, wrap-free `val|val|val` rows (sqlplus
+-- fixed-width column output otherwise pads to each column's display width and
+-- wraps very wide rows like find-customers, producing spurious diffs).
+SET MARKUP CSV ON DELIMITER '|' QUOTE OFF
 SET HEADING OFF
-SET PAGESIZE 0
+SET PAGESIZE 50000
 SET FEEDBACK OFF
 SET VERIFY OFF
 SET TRIMSPOOL ON
@@ -12,7 +16,6 @@ SET SQLBLANKLINES ON
 SET LINESIZE 32767
 SET LONG 100000
 SET NULL <NULL>
-SET COLSEP '|'
 -- 'DD-MON-YYYY' parses the queries' literal date strings ('31-DEC-9999' and
 -- '31/DEC/9999' — Oracle treats punctuation as interchangeable) and is
 -- deterministic for output. Do NOT use 'YYYY-MM-DD' here: it makes those literal
