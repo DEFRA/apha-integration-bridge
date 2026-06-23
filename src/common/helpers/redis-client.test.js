@@ -1,14 +1,29 @@
-import { describe, beforeEach, test, expect } from '@jest/globals'
+import { describe, beforeEach, afterEach, test, expect } from '@jest/globals'
 import { buildRedisClient } from './redis-client.js'
 
 describe('buildRedisClient', () => {
   let mockLogger
+  const createdClients = []
 
   beforeEach(() => {
     mockLogger = {
       info: () => {},
       error: () => {}
     }
+  })
+
+  afterEach(async () => {
+    // Disconnect all created Redis clients to prevent hanging
+    await Promise.all(
+      createdClients.map(async (client) => {
+        try {
+          await client.disconnect()
+        } catch (error) {
+          // Ignore errors during cleanup
+        }
+      })
+    )
+    createdClients.length = 0
   })
 
   test('creates single instance Redis client with minimal config', () => {
@@ -19,6 +34,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.port).toBe(6379)
@@ -38,6 +54,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.port).toBe(6380)
@@ -57,6 +74,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.tls).toBeDefined()
@@ -71,6 +89,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.tls).toBeUndefined()
@@ -85,6 +104,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     // Cluster client has different structure
@@ -103,6 +123,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.redisOptions.username).toBe('clusteruser')
@@ -119,6 +140,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.redisOptions.tls).toBeDefined()
@@ -134,6 +156,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     // ioredis sets undefined values to null
@@ -150,6 +173,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     // ioredis sets undefined values to null
@@ -164,6 +188,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.port).toBe(6379)
@@ -177,6 +202,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.options.db).toBe(0)
@@ -190,6 +216,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
   })
@@ -202,6 +229,7 @@ describe('buildRedisClient', () => {
     }
 
     const client = buildRedisClient(config, mockLogger)
+    createdClients.push(client)
 
     expect(client).toBeDefined()
     expect(client.listenerCount('connect')).toBeGreaterThan(0)
