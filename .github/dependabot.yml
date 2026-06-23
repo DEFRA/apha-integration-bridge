@@ -15,16 +15,6 @@ updates:
         applies-to: security-updates
         patterns:
           - '*'
-      npm-production-updates:
-        applies-to: version-updates
-        dependency-type: production
-        patterns:
-          - '*'
-      npm-development-updates:
-        applies-to: version-updates
-        dependency-type: development
-        patterns:
-          - '*'
 
   - package-ecosystem: github-actions
     directory: /
@@ -36,9 +26,5 @@ updates:
     groups:
       actions-security-updates:
         applies-to: security-updates
-        patterns:
-          - '*'
-      actions-version-updates:
-        applies-to: version-updates
         patterns:
           - '*'
