@@ -86,18 +86,32 @@ test('createCustomer maps a person row with no first_name (null given name)', ()
   })
 })
 
-test('createCustomer throws if last_name is missing', () => {
-  expect(() =>
-    createCustomer(
-      {
-        title: null,
-        first_name: 'Bert',
-        second_name: null,
-        last_name: null,
-        organisation_name: 'Acme Farms Ltd',
-        primary_contact_full_name: 'Jane Contact'
-      },
-      'C777777'
-    )
-  ).toThrow(/last_name/i)
+test('createCustomer maps a person row with no last_name (null family name)', () => {
+  const customer = createCustomer(
+    {
+      title: 'Mr',
+      first_name: 'Bert',
+      second_name: null,
+      last_name: null,
+      organisation_name: null,
+      primary_contact_full_name: null
+    },
+    'C123456'
+  )
+
+  expect(customer).toEqual({
+    type: 'customers',
+    id: 'C123456',
+    title: 'Mr',
+    firstName: 'Bert',
+    middleName: null,
+    lastName: null,
+    addresses: [],
+    contactDetails: [],
+    relationships: {
+      srabpiPlants: {
+        data: []
+      }
+    }
+  })
 })

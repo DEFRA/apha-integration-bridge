@@ -10,10 +10,6 @@ export const createCustomer = (row, id) => {
 
   const lastName = asNullableString(row.last_name)
 
-  if (!lastName) {
-    throw new Error('Expected last_name to be populated for customer records')
-  }
-
   const title = asNullableString(row.title) ?? 'Unknown'
 
   const middleName = asNullableString(row.second_name)
