@@ -8,7 +8,24 @@ import { clientScopesPlugin } from '../../common/helpers/client-scopes.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { opentelemetryPlugin } from '../../common/helpers/telemetry.js'
 import { piiContextPlugin } from '../../common/helpers/pii-context.js'
-import * as executeOperation from '../../lib/db/operations/execute.js'
+import { execute } from '../../lib/db/operations/execute.js'
+
+// Mock the execute operation so the error-handling tests can force failures.
+// A `jest.spyOn(import * as executeOperation, 'execute')` does NOT reliably
+// intercept the call made by the query module: under babel's interop the
+// spy targets the `import *` namespace object while the query module reads the
+// raw module export, so the spy silently no-ops and the real DB is hit. A
+// module-factory mock replaces the module for every importer. The default
+// delegates to the real implementation so the seeded-DB integration tests
+// below are unaffected; individual tests override per call.
+jest.mock('../../lib/db/operations/execute.js', () => {
+  const actual = jest.requireActual('../../lib/db/operations/execute.js')
+  return {
+    __esModule: true,
+    ...actual,
+    execute: jest.fn((...args) => actual.execute(...args))
+  }
+})
 
 const path = '/customers/find'
 const organisationId = 'O123456'
@@ -415,7 +432,7 @@ describe('POST /customers/find', () => {
 
   test('returns empty data and does not query DB or acquire connection when page is out of range', async () => {
     const server = await createServer()
-    const executeSpy = jest.spyOn(executeOperation, 'execute')
+    const executeSpy = jest.mocked(execute)
     const samSpy = jest.spyOn(server, /** @type {any} */ ('oracledb.sam'))
     const queryParams = new URLSearchParams({
       page: '2',

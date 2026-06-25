@@ -6,8 +6,37 @@ import route from './get.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
-import * as executeOperation from '../../lib/db/operations/execute.js'
-import * as getWorkordersOperation from '../../lib/db/queries/get-workorders.js'
+import { execute } from '../../lib/db/operations/execute.js'
+import { getWorkorders } from '../../lib/db/queries/get-workorders.js'
+
+// Mock the execute operation so the error-handling tests can force failures.
+// A `jest.spyOn(import * as executeOperation, 'execute')` does NOT reliably
+// intercept the call made by get-workorders.js: under babel's interop the
+// spy targets the `import *` namespace object while the query module reads the
+// raw module export, so the spy silently no-ops and the real DB is hit. A
+// module-factory mock replaces the module for every importer. The default
+// delegates to the real implementation so the seeded-DB integration tests
+// below are unaffected; individual tests override per call.
+jest.mock('../../lib/db/operations/execute.js', () => {
+  const actual = jest.requireActual('../../lib/db/operations/execute.js')
+  return {
+    __esModule: true,
+    ...actual,
+    execute: jest.fn((...args) => actual.execute(...args))
+  }
+})
+
+// Mock the getWorkorders query so tests can assert on its call args and force
+// resolved values without hitting the real DB. The default delegates to the
+// real implementation so the seeded-DB integration tests below are unaffected.
+jest.mock('../../lib/db/queries/get-workorders.js', () => {
+  const actual = jest.requireActual('../../lib/db/queries/get-workorders.js')
+  return {
+    __esModule: true,
+    ...actual,
+    getWorkorders: jest.fn((...args) => actual.getWorkorders(...args))
+  }
+})
 
 const path = '/workorders'
 
@@ -180,12 +209,11 @@ describe('GET /workorders', () => {
 
   test('does not include country filter when country is omitted', async () => {
     const server = await createServer()
-    const getWorkordersSpy = jest
-      .spyOn(getWorkordersOperation, 'getWorkorders')
-      .mockResolvedValue({
-        hasMore: false,
-        workorders: []
-      })
+    const getWorkordersSpy = jest.mocked(getWorkorders)
+    getWorkordersSpy.mockResolvedValueOnce({
+      hasMore: false,
+      workorders: []
+    })
 
     const query = new URLSearchParams({
       startActivationDate: '2024-01-01T00:00:00.000Z',
@@ -216,12 +244,11 @@ describe('GET /workorders', () => {
 
   test('filters by explicit country using case-insensitive input', async () => {
     const server = await createServer()
-    const getWorkordersSpy = jest
-      .spyOn(getWorkordersOperation, 'getWorkorders')
-      .mockResolvedValue({
-        hasMore: false,
-        workorders: []
-      })
+    const getWorkordersSpy = jest.mocked(getWorkorders)
+    getWorkordersSpy.mockResolvedValueOnce({
+      hasMore: false,
+      workorders: []
+    })
 
     const query = new URLSearchParams({
       startActivationDate: '2024-01-01T00:00:00.000Z',
@@ -337,7 +364,7 @@ describe('GET /workorders', () => {
     const server = await createServer()
 
     jest
-      .spyOn(executeOperation, 'execute')
+      .mocked(execute)
       .mockRejectedValueOnce(new Error('Simulated database failure'))
 
     const query = new URLSearchParams({
@@ -365,7 +392,7 @@ describe('GET /workorders', () => {
     const server = await createServer()
 
     jest
-      .spyOn(executeOperation, 'execute')
+      .mocked(execute)
       .mockRejectedValueOnce(
         new HTTPException(
           'BAD_REQUEST',

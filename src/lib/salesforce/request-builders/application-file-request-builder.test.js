@@ -1,7 +1,18 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals'
 
 import { buildApplicationFileCompositeRequest } from './application-file-request-builder.js'
-import * as fileUploadAndLinkRequestBuilder from './file-upload-and-link-request-builder.js'
+import { buildFileUploadAndLinkCompositeRequest } from './file-upload-and-link-request-builder.js'
+
+jest.mock('./file-upload-and-link-request-builder.js', () => {
+  const actual = jest.requireActual('./file-upload-and-link-request-builder.js')
+  return {
+    __esModule: true,
+    ...actual,
+    buildFileUploadAndLinkCompositeRequest: jest.fn((...args) =>
+      actual.buildFileUploadAndLinkCompositeRequest(...args)
+    )
+  }
+})
 
 /** @import {CreateCasePayload} from '../../types/case-management/case.js' */
 
@@ -15,10 +26,7 @@ const mockCompositeRequest = /** @type {any} */ ({
 })
 
 jest
-  .spyOn(
-    fileUploadAndLinkRequestBuilder,
-    'buildFileUploadAndLinkCompositeRequest'
-  )
+  .mocked(buildFileUploadAndLinkCompositeRequest)
   .mockReturnValue(mockCompositeRequest)
 
 describe('buildApplicationFileCompositeRequest', () => {
@@ -34,9 +42,7 @@ describe('buildApplicationFileCompositeRequest', () => {
     )
     const result = buildApplicationFileCompositeRequest(payload, applicationId)
 
-    expect(
-      fileUploadAndLinkRequestBuilder.buildFileUploadAndLinkCompositeRequest
-    ).toHaveBeenCalledWith(
+    expect(buildFileUploadAndLinkCompositeRequest).toHaveBeenCalledWith(
       expectedBase64,
       payload.applicationReferenceNumber,
       `${payload.applicationReferenceNumber}.json`,

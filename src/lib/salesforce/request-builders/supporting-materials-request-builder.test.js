@@ -1,8 +1,34 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals'
 
 import { buildSupportingMaterialsCompositeRequest } from './supporting-materials-request-builder.js'
-import * as fileUploadAndLinkRequestBuilder from './file-upload-and-link-request-builder.js'
-import * as fileUtils from '../../../common/helpers/file/file-utils.js'
+import { buildFileUploadAndLinkCompositeRequest } from './file-upload-and-link-request-builder.js'
+import { fetchFile } from '../../../common/helpers/file/file-utils.js'
+
+// Mock the spied modules with a module-factory that delegates to the real
+// implementation by default. `jest.spyOn(import * as ns, fn)` does not reliably
+// intercept the call made by the SUT under babel's interop, so we replace the
+// module for every importer; only the spied functions become controllable.
+jest.mock('./file-upload-and-link-request-builder.js', () => {
+  const actual = jest.requireActual('./file-upload-and-link-request-builder.js')
+  return {
+    __esModule: true,
+    ...actual,
+    buildFileUploadAndLinkCompositeRequest: jest.fn((...args) =>
+      actual.buildFileUploadAndLinkCompositeRequest(...args)
+    )
+  }
+})
+
+jest.mock('../../../common/helpers/file/file-utils.js', () => {
+  const actual = jest.requireActual(
+    '../../../common/helpers/file/file-utils.js'
+  )
+  return {
+    __esModule: true,
+    ...actual,
+    fetchFile: jest.fn((...args) => actual.fetchFile(...args))
+  }
+})
 
 const mockCompositeRequest = /** @type {any} */ ({
   allOrNone: true,
@@ -18,18 +44,13 @@ const mockFileData = {
   extension: 'pdf'
 }
 
-jest.spyOn(fileUtils, 'fetchFile').mockResolvedValue(mockFileData)
-
-jest
-  .spyOn(
-    fileUploadAndLinkRequestBuilder,
-    'buildFileUploadAndLinkCompositeRequest'
-  )
-  .mockReturnValue(mockCompositeRequest)
-
 describe('buildSupportingMaterialsCompositeRequest', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.mocked(fetchFile).mockResolvedValue(mockFileData)
+    jest
+      .mocked(buildFileUploadAndLinkCompositeRequest)
+      .mockReturnValue(mockCompositeRequest)
   })
 
   test('should fetch file and then call buildFileUploadAndLinkCompositeRequest with correct parameters and return the result', async () => {
@@ -48,10 +69,13 @@ describe('buildSupportingMaterialsCompositeRequest', () => {
     const expectedBase64 = mockFileData.file.toString('base64')
     const expectedPath = `${sectionKey}.${questionKey}.${mockFileData.extension}`
 
-    expect(fileUtils.fetchFile).toHaveBeenCalledWith(filePath)
-    expect(
-      fileUploadAndLinkRequestBuilder.buildFileUploadAndLinkCompositeRequest
-    ).toHaveBeenCalledWith(expectedBase64, filePath, expectedPath, caseId)
+    expect(fetchFile).toHaveBeenCalledWith(filePath)
+    expect(buildFileUploadAndLinkCompositeRequest).toHaveBeenCalledWith(
+      expectedBase64,
+      filePath,
+      expectedPath,
+      caseId
+    )
     expect(result).toBe(mockCompositeRequest)
   })
 })

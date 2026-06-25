@@ -9,9 +9,25 @@ import {
 } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
-import * as userContext from '../../../common/helpers/user-context.js'
+import { getUserEmail } from '../../../common/helpers/user-context.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
 import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
+
+// Mock user-context so getUserEmail can be controlled per test. A
+// `jest.spyOn(import * as userContext, 'getUserEmail')` does NOT reliably
+// intercept the call made by the route handler: under babel's interop the
+// spy targets the `import *` namespace object while the handler reads the raw
+// module export, so the spy silently no-ops. A module-factory mock replaces
+// the module for every importer. The default delegates to the real
+// implementation; individual tests override the return value.
+jest.mock('../../../common/helpers/user-context.js', () => {
+  const actual = jest.requireActual('../../../common/helpers/user-context.js')
+  return {
+    __esModule: true,
+    ...actual,
+    getUserEmail: jest.fn((...args) => actual.getUserEmail(...args))
+  }
+})
 
 /** @type {typeof import('./{caseId}.js')} */
 let route
@@ -26,7 +42,7 @@ const mockGetUserAccessToken = jest.spyOn(
   salesforceClient,
   'getUserAccessToken'
 )
-const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
+const mockGetUserEmail = jest.mocked(getUserEmail)
 
 const MOCK_SALESFORCE_TOKEN = 'mock-salesforce-access-token-12345'
 
