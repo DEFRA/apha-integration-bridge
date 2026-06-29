@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`getCustomerTypesQuery returns the expected query for a single customer id 1`] = `
 "WITH target_party AS (

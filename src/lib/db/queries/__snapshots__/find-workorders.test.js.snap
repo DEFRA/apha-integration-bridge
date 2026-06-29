@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`findWorkordersQuery returns the expected query for multiple ids 1`] = `
 "WITH requested_workorders AS (
