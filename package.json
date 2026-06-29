@@ -75,7 +75,7 @@
     "@babel/eslint-parser": "7.27.5",
     "@babel/plugin-transform-explicit-resource-management": "7.27.5",
     "@babel/preset-env": "7.29.7",
-    "@dotenvx/dotenvx": "1.44.2",
+    "@dotenvx/dotenvx": "1.75.1",
     "@shelf/jest-mongodb": "6.0.2",
     "@types/async-retry": "1.4.9",
     "@types/hapi-pino": "9.1.2",
