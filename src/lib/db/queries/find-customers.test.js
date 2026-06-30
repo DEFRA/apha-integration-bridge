@@ -1,7 +1,23 @@
 import { describe, expect, jest, test } from '@jest/globals'
 
-import * as dbOperations from '../operations/execute.js'
+import { execute } from '../operations/execute.js'
 import { findCustomers, findCustomersQuery } from './find-customers.js'
+
+// Mock the execute operation so the findCustomers tests can control resolved
+// rows. A `jest.spyOn(import * as dbOperations, 'execute')` does NOT reliably
+// intercept the call made by find-customers.js: under babel's interop the spy
+// targets the `import *` namespace object while the query module reads the raw
+// module export, so the spy silently no-ops. A module-factory mock replaces the
+// module for every importer. The default delegates to the real implementation
+// so any non-overridden usage still works; individual tests override per call.
+jest.mock('../operations/execute.js', () => {
+  const actual = jest.requireActual('../operations/execute.js')
+  return {
+    __esModule: true,
+    ...actual,
+    execute: jest.fn((...args) => actual.execute(...args))
+  }
+})
 
 test('returns the expected query for valid ids', () => {
   const ids = ['C123456', 'C234567']
@@ -46,10 +62,10 @@ test('throws if customerType is missing', () => {
 })
 
 describe('findCustomers', () => {
-  const executeSpy = jest.spyOn(dbOperations, 'execute')
+  const executeSpy = jest.mocked(execute)
 
   test('returns mapped customers in requested order', async () => {
-    executeSpy.mockResolvedValue([
+    executeSpy.mockResolvedValueOnce([
       {
         party_id: 'C123456',
         customer_type: 'PERSON',
@@ -228,7 +244,7 @@ describe('findCustomers', () => {
   })
 
   test('throws when PERSON query unexpectedly returns organisation rows', async () => {
-    executeSpy.mockResolvedValue([
+    executeSpy.mockResolvedValueOnce([
       {
         party_id: 'C123456',
         customer_type: 'PERSON',
@@ -303,7 +319,7 @@ describe('findCustomers', () => {
   })
 
   test('returns mapped organisations in requested order', async () => {
-    executeSpy.mockResolvedValue([
+    executeSpy.mockResolvedValueOnce([
       {
         party_id: 'O123456',
         customer_type: 'ORGANISATION',
