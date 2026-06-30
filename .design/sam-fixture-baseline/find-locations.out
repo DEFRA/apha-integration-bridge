@@ -1,0 +1,18 @@
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|F|U000030|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|F|U999999|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|LU|U000010|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|LU|U000020|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L97339|<NULL>|12|<NULL>|<NULL>|<NULL>|Willow Barn|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Lane|Westham|Exampletown|Devon|EX1 2AB|UKX123|GB|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+L98001|Test Farm Location|123|<NULL>|<NULL>|<NULL>|Test Building|Unit 1|<NULL>|<NULL>|<NULL>|<NULL>|Test Street|Test Locality|Test Town|Test County|TE1 1ST|UK123|GB|SK123456|F|F98001001|N/A|<NULL>|Main Cattle Facility|Animal Breeding|Cattle breeding and dairy production|98/001/0001
+L98001|Test Farm Location|123|<NULL>|<NULL>|<NULL>|Test Building|Unit 1|<NULL>|<NULL>|<NULL>|<NULL>|Test Street|Test Locality|Test Town|Test County|TE1 1ST|UK123|GB|SK123456|LU|LU98001001|CATTLE|50|N/A|N/A|N/A|98/001/0001
+L98001|Test Farm Location|123|<NULL>|<NULL>|<NULL>|Test Building|Unit 1|<NULL>|<NULL>|<NULL>|<NULL>|Test Street|Test Locality|Test Town|Test County|TE1 1ST|UK123|GB|SK123456|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|98/001/0001
+L98001|Test Farm Location|123|<NULL>|<NULL>|<NULL>|Test Building|Unit 1|<NULL>|<NULL>|<NULL>|<NULL>|Test Street|Test Locality|Test Town|Test County|TE1 1ST|UK123|GB|SK123456|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|98/001/0001
+L98002|Highland Farm|456|A|<NULL>|<NULL>|Farm House|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Road|Little Village|Bigtown|Shire|TE2 2ST|UK456|GB|SK789012|LU|LU98002001|SHEEP|100|N/A|N/A|N/A|98/002/0001
+L98002|Highland Farm|456|A|<NULL>|<NULL>|Farm House|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|Farm Road|Little Village|Bigtown|Shire|TE2 2ST|UK456|GB|SK789012|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|98/002/0001
+LNOASSET|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|No Asset Street|<NULL>|Nowhereville|Somerset|ZZ1 1ZZ|UKX999|GB|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+LNOASSET|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|No Asset Street|<NULL>|Nowhereville|Somerset|ZZ1 1ZZ|UKX999|GB|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|<NULL>
+LOC-ALPHA|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|01/001/0001
+LOC-ALPHA|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|<NULL>|N/A|N/A|N/A|<NULL>|N/A|N/A|N/A|01/001/0001
