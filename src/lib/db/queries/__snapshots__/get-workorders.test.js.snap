@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`getWorkordersQuery returns the expected query for update date filter 1`] = `
 "WITH filtered_workorders AS (
