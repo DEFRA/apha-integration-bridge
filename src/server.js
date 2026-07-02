@@ -116,10 +116,6 @@ async function createServer() {
      */
     authPlugin,
     /**
-     * rate limiting middleware - protects downstream resources (OracleDB)
-     */
-    rateLimitPlugin,
-    /**
      * sets up opentelemetry tracing and metrics
      */
     opentelemetryPlugin,
@@ -156,6 +152,10 @@ async function createServer() {
      * sets up mongo connection pool and attaches to `server` and `request` objects
      */
     // mongoDb,
+    /**
+     * rate limiting middleware - protects downstream resources (OracleDB)
+     */
+    rateLimitPlugin,
     /**
      * sets up OracleDB connection pool(s) and attaches to `server` and `request` objects
      */
