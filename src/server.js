@@ -21,7 +21,6 @@ import { versionPlugin } from './common/helpers/versioning.js'
 import { opentelemetryPlugin } from './common/helpers/telemetry.js'
 import { HTTPException } from './lib/http/http-exception.js'
 import { errorEnvelope } from './common/helpers/error-envelope.js'
-import { rateLimitPlugin } from './common/helpers/rate-limit.js'
 import { authPlugin } from './common/helpers/auth.js'
 import { piiContextPlugin } from './common/helpers/pii-context.js'
 import { clientScopesPlugin } from './common/helpers/client-scopes.js'
@@ -152,10 +151,6 @@ async function createServer() {
      * sets up mongo connection pool and attaches to `server` and `request` objects
      */
     // mongoDb,
-    /**
-     * rate limiting middleware - protects downstream resources (OracleDB)
-     */
-    rateLimitPlugin,
     /**
      * sets up OracleDB connection pool(s) and attaches to `server` and `request` objects
      */
