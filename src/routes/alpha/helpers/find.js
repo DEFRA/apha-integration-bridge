@@ -1,5 +1,6 @@
 /**
  * @typedef {{ id: string, type: string }} MockData
+ */
 
 /**
  * @param {MockData[]} mockData
@@ -7,16 +8,24 @@
  */
 export const mockFindHandler = (mockData) => async (request, h) => {
   const dataMap = Object.fromEntries(mockData.map((datum) => [datum.id, datum]))
-  const { page, pageSize } = request.query
-  const query = new URLSearchParams(request.query)
+
+  // The alpha find routes validate query/payload with Joi before the
+  // handler runs: page/pageSize arrive as coerced numbers, ids as strings.
+  const { page, pageSize } = /** @type {{ page: number, pageSize: number }} */ (
+    /** @type {unknown} */ (request.query)
+  )
+  const query = new URLSearchParams(
+    /** @type {Record<string, string>} */ (
+      /** @type {unknown} */ (request.query)
+    )
+  )
 
   const zeroIndexedPage = page - 1
   const firstPageOffset = pageSize * zeroIndexedPage
 
-  const ids = request.payload.ids.slice(
-    firstPageOffset,
-    firstPageOffset + pageSize
-  )
+  const payload = /** @type {{ ids: string[] }} */ (request.payload)
+
+  const ids = payload.ids.slice(firstPageOffset, firstPageOffset + pageSize)
   const data = ids.map((id) => dataMap[id]).filter((data) => data !== undefined)
 
   const links = {

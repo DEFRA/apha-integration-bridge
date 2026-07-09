@@ -9,6 +9,20 @@ const path = '/workorders'
 describe('Workorders', () => {
   const server = Hapi.server()
 
+  // The controller calls request.logger unconditionally (no hapi-pino on
+  // this bare test server), so provide one the same way
+  // oauth2/token.post.test.js does.
+  server.decorate(
+    'request',
+    'logger',
+    /** @type {any} */ ({
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      debug: () => {}
+    })
+  )
+
   server.route({
     ...route,
     path,

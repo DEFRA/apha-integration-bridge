@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 /**
  * @typedef {import('@hapi/hapi').Server} Server
  * @typedef {import('@hapi/hapi').Request} Request
@@ -29,7 +31,7 @@ export const securityHeaders = {
       server.ext('onPreResponse', (request, h) => {
         const { response } = request
 
-        const headers = response.isBoom
+        const headers = Boom.isBoom(response)
           ? response.output.headers
           : response.headers
 

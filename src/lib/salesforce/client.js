@@ -112,10 +112,13 @@ class SalesforceClient {
         )
       }
 
-      logger?.debug('Successfully exchanged JWT for access token', {
-        tokenType: body.token_type,
-        expiresIn: body.expires_in
-      })
+      logger?.debug(
+        {
+          tokenType: body.token_type,
+          expiresIn: body.expires_in
+        },
+        'Successfully exchanged JWT for access token'
+      )
 
       return body
     } catch (error) {
@@ -343,10 +346,14 @@ class SalesforceClient {
 
     const methodName = String(method || '').toUpperCase()
 
-    logger?.debug(`Sending ${methodName} request`, {
-      relativePath,
-      authContext: 'system-level'
-    })
+    // relativePath is deliberately not logged: it can embed user-supplied
+    // identifiers (e.g. the application reference in case paths).
+    logger?.debug(
+      {
+        authContext: 'system-level'
+      },
+      `Sending ${methodName} request`
+    )
 
     const url = this.getBaseUrl() + '/' + relativePath.replace(/^\/+/, '')
 
@@ -393,9 +400,12 @@ class SalesforceClient {
       throw new Error('Salesforce access token is required for sendQuery')
     }
 
-    logger?.debug('Sending query request', {
-      authContext: 'user-level'
-    })
+    logger?.debug(
+      {
+        authContext: 'user-level'
+      },
+      'Sending query request'
+    )
 
     const queryUrl = this.getBaseUrl() + '/query?q=' + encodeURIComponent(query)
 

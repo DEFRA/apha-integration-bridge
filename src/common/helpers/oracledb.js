@@ -41,9 +41,13 @@ export const oracleDb = {
        * @note we should always be using a proxy in a deployed environment
        */
       if (proxyUrl) {
-        server.logger.trace('Using proxy for OracleDB connections:', proxyUrl)
-
         const url = new URL(proxyUrl)
+
+        // Log only host/port — a proxy URL can embed credentials.
+        server.logger.trace(
+          { proxyHost: url.hostname, proxyPort: url.port },
+          'Using proxy for OracleDB connections'
+        )
 
         httpsProxy = url.hostname
 
@@ -78,9 +82,14 @@ export const oracleDb = {
           poolAttributes.httpsProxyPort = httpsProxyPort
         }
 
+        // Never log `password` (or the full attributes object) — pino's
+        // message-first form silently dropped this object before; the
+        // object-first form actually emits it.
+        const { password, ...redactedPoolAttributes } = poolAttributes
+
         server.logger.debug(
-          `Creating OracleDB pool "${key}" with attributes`,
-          poolAttributes
+          { poolAttributes: redactedPoolAttributes },
+          `Creating OracleDB pool "${key}" with attributes`
         )
 
         try {
@@ -114,8 +123,8 @@ export const oracleDb = {
           )
         } catch (error) {
           server.logger.error(
-            `Failed to create OracleDB pool for "${key}":`,
-            error
+            { err: error },
+            `Failed to create OracleDB pool for "${key}"`
           )
 
           throw error
@@ -149,8 +158,8 @@ export const oracleDb = {
                 await connection.close()
               } catch (error) {
                 server.logger.error(
-                  `Failed to close OracleDB connection for "${key}":`,
-                  error
+                  { err: error },
+                  `Failed to close OracleDB connection for "${key}"`
                 )
 
                 throw error
@@ -177,7 +186,10 @@ export const oracleDb = {
           try {
             await oracledb.getPool(key).close(config.poolCloseWaitTime)
           } catch (error) {
-            server.logger.error(`Failed to close OracleDB pool ${key}:`, error)
+            server.logger.error(
+              { err: error },
+              `Failed to close OracleDB pool ${key}`
+            )
           }
         })
       }

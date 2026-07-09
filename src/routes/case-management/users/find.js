@@ -132,7 +132,7 @@ async function handler(request, h) {
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
-    request.logger?.error(
+    request.logger.error(
       {
         err: error,
         emailAddress,

@@ -123,7 +123,7 @@ async function handler(request, h) {
 
     response.links({ self: request.path })
 
-    request.logger?.info(
+    request.logger.info(
       {
         caseId,
         authContext: 'user-level'
@@ -133,7 +133,7 @@ async function handler(request, h) {
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
-    request.logger?.error(
+    request.logger.error(
       {
         err: error,
         caseId,

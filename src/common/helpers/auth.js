@@ -192,14 +192,21 @@ export const authPlugin = {
               let cause = ''
 
               if (error.cause) {
+                // Error.cause is typed `unknown`; the causes jose/undici
+                // attach are Error-like objects carrying code/message.
+                const errorCause =
+                  /** @type {{ code?: string, message?: string }} */ (
+                    error.cause
+                  )
+
                 cause = '\ncause: '
 
-                if (error.cause.code) {
-                  cause += `${error.cause.code} `
+                if (errorCause.code) {
+                  cause += `${errorCause.code} `
                 }
 
-                if (error.cause.message) {
-                  cause += error.cause.message
+                if (errorCause.message) {
+                  cause += errorCause.message
                 }
               }
 

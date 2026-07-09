@@ -1,0 +1,15 @@
+{
+  "extends": "./jsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.js"],
+  "exclude": [
+    "**/*.test.js",
+    "node_modules",
+    "coverage",
+    "src/**/__fixtures__/**"
+  ]
+}

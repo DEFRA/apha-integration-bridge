@@ -17,7 +17,12 @@ export function getUserEmail(request) {
   }
 
   try {
-    const token = forwardedAuth.replace(/^Bearer\s+/i, '')
+    // Node's http layer joins repeated headers into a single string, so a
+    // string[] here is unreachable in practice — assert rather than branch.
+    const token = /** @type {string} */ (forwardedAuth).replace(
+      /^Bearer\s+/i,
+      ''
+    )
     const payload = decodeJwt(token)
     const email = payload.email
 

@@ -73,24 +73,45 @@ export const options = {
 }
 
 /**
- * @type {import('@hapi/hapi').Lifecycle.Method}
+ * The query shape this route's Joi `validate.query` schema guarantees
+ * before the handler runs: ISO date strings (endActivationDate is
+ * required), an optional country, and page/pageSize coerced to numbers by
+ * `PaginationSchema`.
+ *
+ * @typedef {{
+ *   startActivationDate: string,
+ *   endActivationDate: string,
+ *   country?: string,
+ *   page: number,
+ *   pageSize: number
+ * }} WorkordersQuery
+ */
+
+/**
+ * @param {import('../../types/api.js').ControllerRequest} request
+ * @param {import('@hapi/hapi').ResponseToolkit} h
+ * @returns {Promise<import('@hapi/hapi').Lifecycle.ReturnValue>}
  */
 export async function handler(request, h) {
+  const query = /** @type {WorkordersQuery} */ (
+    /** @type {unknown} */ (request.query)
+  )
+
   /**
    * parse the start activation date from the query parameters
    */
-  const startActivationDate = new Date(request.query.startActivationDate)
+  const startActivationDate = new Date(query.startActivationDate)
 
   /**
    * @type {Date | undefined}
    */
   let endActivationDate
 
-  if (request.query.endActivationDate) {
+  if (query.endActivationDate) {
     /**
      * an end activation date was provided, parse it
      */
-    endActivationDate = new Date(request.query.endActivationDate)
+    endActivationDate = new Date(query.endActivationDate)
   }
 
   /**
@@ -102,8 +123,8 @@ export async function handler(request, h) {
         'VALIDATION_ERROR',
         'End activation date must be after start activation date',
         {
-          startActivationDate: request.query.startActivationDate,
-          endActivationDate: request.query.endActivationDate
+          startActivationDate: query.startActivationDate,
+          endActivationDate: query.endActivationDate
         }
       )
     ]).boomify()
@@ -119,7 +140,7 @@ export async function handler(request, h) {
         'VALIDATION_ERROR',
         'Start activation date cannot be in the future',
         {
-          startActivationDate: request.query.startActivationDate
+          startActivationDate: query.startActivationDate
         }
       )
     ]).boomify()
@@ -137,7 +158,7 @@ export async function handler(request, h) {
 
   try {
     const { page, pageSize, country, startActivationDate, endActivationDate } =
-      request.query
+      query
 
     const selfQueryParams = new URLSearchParams([
       ['startActivationDate', startActivationDate],
@@ -205,9 +226,7 @@ export async function handler(request, h) {
 
     return h.response(response).code(200)
   } catch (error) {
-    if (request.logger) {
-      request.logger.error(error)
-    }
+    request.logger.error(error)
 
     let httpException = error
 

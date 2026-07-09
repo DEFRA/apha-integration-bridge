@@ -14,6 +14,16 @@ import { config } from '../../../config.js'
  * The no-proxy path deliberately stays on the global fetch: it passes no
  * dispatcher (so there is no version mixing) and remains interceptable by test
  * tooling such as MSW, which patches globalThis.fetch.
+ *
+ * Typed with the global fetch signature so callers (e.g. jose's
+ * `customFetch`) can substitute it anywhere a fetch implementation is
+ * expected. The undici branch is asserted back to the global types: undici
+ * declares its own structurally-equivalent Request/Response that tsc treats
+ * as distinct types.
+ *
+ * @param {Parameters<typeof fetch>[0]} url
+ * @param {Parameters<typeof fetch>[1]} [options]
+ * @returns {ReturnType<typeof fetch>}
  */
 export function proxyFetch(url, options) {
   const proxyUrlConfig = config.get('httpProxy') // bound to HTTP_PROXY
@@ -22,12 +32,16 @@ export function proxyFetch(url, options) {
     return fetch(url, options)
   }
 
-  return undiciFetch(url, {
-    ...options,
-    dispatcher: new ProxyAgent({
-      uri: proxyUrlConfig,
-      keepAliveTimeout: 10,
-      keepAliveMaxTimeout: 10
-    })
-  })
+  return /** @type {ReturnType<typeof fetch>} */ (
+    /** @type {unknown} */ (
+      undiciFetch(/** @type {import('undici').RequestInfo} */ (url), {
+        .../** @type {import('undici').RequestInit} */ (options),
+        dispatcher: new ProxyAgent({
+          uri: proxyUrlConfig,
+          keepAliveTimeout: 10,
+          keepAliveMaxTimeout: 10
+        })
+      })
+    )
+  )
 }

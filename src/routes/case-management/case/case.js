@@ -364,7 +364,7 @@ function handleCaseCreationError(error, request) {
         : []
     }))
 
-    request.logger?.error(
+    request.logger.error(
       {
         endpoint: 'case-management/case',
         failedOperations
@@ -372,7 +372,7 @@ function handleCaseCreationError(error, request) {
       'Composite operations failed in Salesforce'
     )
   } else {
-    request.logger?.error(
+    request.logger.error(
       {
         err: error,
         endpoint: 'case-management/case'
