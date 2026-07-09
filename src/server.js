@@ -9,7 +9,7 @@ import { openApi } from './common/helpers/swagger.js'
 import { config } from './config.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { routingPlugin } from './common/helpers/routing.js'
-// import { mongoDb } from './common/helpers/mongodb.js'
+import { mongoDb } from './common/helpers/mongodb.js'
 import { oracleDb } from './common/helpers/oracledb.js'
 import { oracleDbHealthcheck } from './common/helpers/oracledb-healthcheck.js'
 import { failAction } from './common/helpers/fail-action.js'
@@ -22,6 +22,7 @@ import { opentelemetryPlugin } from './common/helpers/telemetry.js'
 import { HTTPException } from './lib/http/http-exception.js'
 import { errorEnvelope } from './common/helpers/error-envelope.js'
 import { authPlugin } from './common/helpers/auth.js'
+import { rateLimitPlugin } from './common/helpers/rate-limit.js'
 import { piiContextPlugin } from './common/helpers/pii-context.js'
 import { clientScopesPlugin } from './common/helpers/client-scopes.js'
 import { loadClients } from './lib/clients/load.js'
@@ -150,7 +151,12 @@ async function createServer() {
     /**
      * sets up mongo connection pool and attaches to `server` and `request` objects
      */
-    // mongoDb,
+    mongoDb,
+    /**
+     * rate limiting middleware - protects downstream resources (OracleDB)
+     * must be registered after MongoDB to access server.db
+     */
+    rateLimitPlugin,
     /**
      * sets up OracleDB connection pool(s) and attaches to `server` and `request` objects
      */
