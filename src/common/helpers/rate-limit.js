@@ -26,10 +26,16 @@ export const rateLimitPlugin = {
 
     const exemptPaths = ['/health']
 
+    // `db` is decorated onto the server by the mongoDb plugin, which
+    // createServer() registers before this one.
+    const { db } = /** @type {import('../../types/api.js').ServerWithMongo} */ (
+      server
+    )
+
     const limiter = await createLimiter(
       rateLimitConfig,
       mongoConfig,
-      server.db,
+      db,
       server.logger
     )
 
@@ -139,8 +145,8 @@ export const rateLimitPlugin = {
  * @param {object} mongoConfig - MongoDB configuration
  * @param {string} mongoConfig.uri
  * @param {string} mongoConfig.databaseName
- * @param {object} [db] - MongoDB database instance from server
- * @param {object} [logger] - Optional logger instance
+ * @param {import('mongodb').Db} [db] - MongoDB database instance from server
+ * @param {import('pino').Logger} [logger] - Optional logger instance
  */
 async function createLimiter(rateLimitConfig, mongoConfig, db, logger) {
   const isTest = process.env.NODE_ENV === 'test'

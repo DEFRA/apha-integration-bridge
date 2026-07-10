@@ -93,6 +93,29 @@
  */
 
 /**
+ * The Hapi server as decorated by the `mongoDb` plugin
+ * (`src/common/helpers/mongodb.js`). `rateLimitPlugin` reads `db`, which
+ * is why it must register after `mongoDb` in `createServer()`.
+ *
+ * @typedef {import('@hapi/hapi').Server & {
+ *   mongoClient: import('mongodb').MongoClient,
+ *   db: import('mongodb').Db,
+ *   locker: import('mongo-locks').LockManager
+ * }} ServerWithMongo
+ */
+
+/**
+ * The Hapi server as optionally decorated by the `secureContext` plugin
+ * (`src/common/helpers/secure-context/secure-context.js`). Optional
+ * because the decoration only happens when secure contexts are enabled;
+ * consumers must guard (as `mongodb.js` does).
+ *
+ * @typedef {import('@hapi/hapi').Server & {
+ *   secureContext?: import('node:tls').SecureContext
+ * }} ServerWithSecureContext
+ */
+
+/**
  * A request as a controller (route handler) actually receives it at
  * runtime: the server carries the oracledb decorations and the versioning
  * plugin has set `pre.apiVersion` in `onRequest`. `request.logger` needs

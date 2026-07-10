@@ -155,8 +155,10 @@ async function createServer() {
     /**
      * rate limiting middleware - protects downstream resources (OracleDB)
      * must be registered after MongoDB to access server.db
+     * (wrapped so the entry matches the ServerRegisterPluginObject shape
+     * hapi's types require for register() arrays)
      */
-    rateLimitPlugin,
+    { plugin: rateLimitPlugin },
     /**
      * sets up OracleDB connection pool(s) and attaches to `server` and `request` objects
      */
