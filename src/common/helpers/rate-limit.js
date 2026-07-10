@@ -9,10 +9,9 @@
  */
 
 import Boom from '@hapi/boom'
-import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible'
+import { RateLimiterMemory, RateLimiterMongo } from 'rate-limiter-flexible'
 
 import { config } from '../../config.js'
-import { buildRedisClient } from './redis-client.js'
 
 /**
  * @type {import('@hapi/hapi').Plugin<void>}
@@ -23,13 +22,14 @@ export const rateLimitPlugin = {
 
   register: async function (server) {
     const rateLimitConfig = config.get('rateLimit')
-    const redisConfig = config.get('redis')
+    const mongoConfig = config.get('mongo')
 
     const exemptPaths = ['/health']
 
     const limiter = await createLimiter(
       rateLimitConfig,
-      redisConfig,
+      mongoConfig,
+      server.db,
       server.logger
     )
 
@@ -136,21 +136,16 @@ export const rateLimitPlugin = {
  * @param {object} rateLimitConfig - Rate limit configuration
  * @param {number} rateLimitConfig.points
  * @param {number} rateLimitConfig.duration
- * @param {object} redisConfig - Redis configuration
- * @param {string} redisConfig.host
- * @param {number} redisConfig.port
- * @param {string} redisConfig.username
- * @param {string} redisConfig.password
- * @param {string} redisConfig.keyPrefix
- * @param {boolean} redisConfig.useSingleInstanceCache
- * @param {boolean} redisConfig.useTLS
- * @param {number} redisConfig.db
+ * @param {object} mongoConfig - MongoDB configuration
+ * @param {string} mongoConfig.uri
+ * @param {string} mongoConfig.databaseName
+ * @param {object} [db] - MongoDB database instance from server
  * @param {object} [logger] - Optional logger instance
  */
-async function createLimiter(rateLimitConfig, redisConfig, logger) {
+async function createLimiter(rateLimitConfig, mongoConfig, db, logger) {
   const isTest = process.env.NODE_ENV === 'test'
 
-  // Use in-memory limiter for tests, Redis for production/development
+  // Use in-memory limiter for tests, MongoDB for production/development
   if (isTest) {
     logger?.info('Using in-memory rate limiter for tests')
     return new RateLimiterMemory({
@@ -161,22 +156,31 @@ async function createLimiter(rateLimitConfig, redisConfig, logger) {
   }
 
   try {
-    const redisClient = buildRedisClient(redisConfig, logger)
+    if (!db) {
+      throw new Error('MongoDB database instance not available')
+    }
 
-    // Test the connection
-    await redisClient.ping()
+    const collection = db.collection('rate-limits')
 
-    return new RateLimiterRedis({
-      storeClient: redisClient,
+    // Create index for efficient lookups and TTL
+    await collection.createIndex({ key: 1 }, { unique: false })
+    await collection.createIndex(
+      { expire: 1 },
+      { expireAfterSeconds: rateLimitConfig.duration * 2 }
+    )
+
+    return new RateLimiterMongo({
+      storeClient: db,
+      dbName: mongoConfig.databaseName,
+      tableName: 'rate-limits',
       points: rateLimitConfig.points,
       duration: rateLimitConfig.duration,
-      blockDuration: 0,
-      keyPrefix: redisConfig.keyPrefix
+      blockDuration: 0
     })
   } catch (error) {
     logger?.error(
       { err: error },
-      'Failed to connect to Redis, falling back to in-memory rate limiter'
+      'Failed to set up MongoDB rate limiter, falling back to in-memory rate limiter'
     )
     return new RateLimiterMemory({
       points: rateLimitConfig.points,
