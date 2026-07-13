@@ -72,7 +72,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.27.4",
-    "@babel/eslint-parser": "7.27.5",
+    "@babel/eslint-parser": "8.0.1",
     "@babel/plugin-transform-explicit-resource-management": "7.27.5",
     "@babel/preset-env": "7.29.7",
     "@dotenvx/dotenvx": "1.75.1",
