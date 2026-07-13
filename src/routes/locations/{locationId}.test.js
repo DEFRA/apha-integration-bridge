@@ -1,5 +1,5 @@
 import Hapi from '@hapi/hapi'
-import { test, expect } from '@jest/globals'
+import { test, expect, jest } from '@jest/globals'
 import hapiPino from 'hapi-pino'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 
@@ -78,4 +78,64 @@ test('returns the location, address and related units for a known Location ID', 
   )
 
   expect(rel.facilities.data).toEqual([{ type: 'facilities', id: 'F98001001' }])
+})
+
+test('returns the error envelope and logs when the database is unavailable', async () => {
+  const server = Hapi.server({ port: 0 })
+
+  await server.register({
+    plugin: hapiPino,
+    options: {
+      enabled: false
+    }
+  })
+
+  // Stand-in for the oracledb plugin's decoration: the connection request
+  // rejects, driving the handler's catch block.
+  server.decorate('server', 'oracledb.sam', () =>
+    Promise.reject(new Error('connection refused'))
+  )
+
+  // Spy on request.logger.error to prove the catch block logs
+  // unconditionally now that the logger guard is gone.
+  const errorSpy = jest.fn()
+
+  server.ext('onPreHandler', (request, h) => {
+    request.logger = /** @type {any} */ ({
+      info: () => {},
+      debug: () => {},
+      warn: () => {},
+      error: errorSpy
+    })
+    return h.continue
+  })
+
+  server.auth.scheme('simple', () => {
+    return {
+      authenticate: (request, h) => h.authenticated({ credentials: {} })
+    }
+  })
+
+  server.auth.strategy('simple', 'simple', {})
+  server.auth.default('simple')
+
+  server.route({
+    handler: route.handler,
+    options: route.options,
+    path: '/{locationId}',
+    method: 'GET'
+  })
+
+  const res = await server.inject({ method: 'GET', url: '/L98001' })
+
+  expect(res.statusCode).toBe(500)
+  expect(res.result).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    errors: [
+      {
+        code: 'DATABASE_ERROR'
+      }
+    ]
+  })
+  expect(errorSpy).toHaveBeenCalled()
 })

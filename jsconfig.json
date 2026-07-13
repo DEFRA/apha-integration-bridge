@@ -2,7 +2,8 @@
   "compilerOptions": {
     "checkJs": true,
     "module": "NodeNext",
-    "moduleResolution": "nodenext"
+    "moduleResolution": "nodenext",
+    "maxNodeModuleJsDepth": 0
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "coverage", "src/**/__fixtures__/**"]
 }

@@ -3,6 +3,9 @@
  * @property {import('rate-limiter-flexible').RateLimiterRes} result - Rate limiter result
  * @property {number} limit - Maximum requests allowed
  * @property {boolean} exceeded - Whether rate limit was exceeded
+ *
+ * @typedef {import('../../types/api.js').HapiRequestWithRateLimit} HapiRequestWithRateLimit
+ * @typedef {import('@hapi/hapi').ResponseToolkit} ResponseToolkit
  */
 
 import Boom from '@hapi/boom'
@@ -23,10 +26,16 @@ export const rateLimitPlugin = {
 
     const exemptPaths = ['/health']
 
+    // `db` is decorated onto the server by the mongoDb plugin, which
+    // createServer() registers before this one.
+    const { db } = /** @type {import('../../types/api.js').ServerWithMongo} */ (
+      server
+    )
+
     const limiter = await createLimiter(
       rateLimitConfig,
       mongoConfig,
-      server.db,
+      db,
       server.logger
     )
 
@@ -34,82 +43,96 @@ export const rateLimitPlugin = {
       `Rate limiting enabled: ${rateLimitConfig.points} requests per ${rateLimitConfig.duration}s per client`
     )
 
-    server.ext('onPreHandler', async (request, h) => {
-      const { path } = request
+    server.ext(
+      'onPreHandler',
+      /**
+       * @param {HapiRequestWithRateLimit} request
+       * @param {ResponseToolkit} h
+       */
+      async (request, h) => {
+        const { path } = request
 
-      // Skip rate limiting for exempt paths
-      if (exemptPaths.some((p) => path.startsWith(p))) {
-        return h.continue
+        // Skip rate limiting for exempt paths
+        if (exemptPaths.some((p) => path.startsWith(p))) {
+          return h.continue
+        }
+
+        const key = getClientKey(request)
+
+        try {
+          const result = await limiter.consume(key, 1)
+
+          request.app.rateLimit = {
+            result,
+            limit: rateLimitConfig.points,
+            exceeded: false
+          }
+
+          return h.continue
+        } catch (rateLimitResult) {
+          request.app.rateLimit = {
+            result: rateLimitResult,
+            limit: rateLimitConfig.points,
+            exceeded: true
+          }
+
+          throw Boom.tooManyRequests('Rate limit exceeded')
+        }
       }
+    )
 
-      const key = getClientKey(request)
+    server.ext(
+      'onPreResponse',
+      /**
+       * @param {HapiRequestWithRateLimit} request
+       * @param {ResponseToolkit} h
+       */
+      (request, h) => {
+        const rateLimitInfo = request.app.rateLimit
 
-      try {
-        const result = await limiter.consume(key, 1)
+        if (!rateLimitInfo) {
+          return h.continue
+        }
 
-        request.app.rateLimit = {
-          result,
-          limit: rateLimitConfig.points,
-          exceeded: false
+        const response = request.response
+
+        if (!response) {
+          return h.continue
+        }
+
+        const { result, limit, exceeded } = rateLimitInfo
+
+        // Calculate header values
+        const remaining = Math.max(0, result.remainingPoints ?? 0)
+        const reset = getRateLimitResetTime(result.msBeforeNext)
+
+        // Handle both Boom errors and regular responses
+        if (Boom.isBoom(response)) {
+          response.output.headers['X-RateLimit-Limit'] = String(limit)
+          response.output.headers['X-RateLimit-Remaining'] = String(remaining)
+          response.output.headers['X-RateLimit-Reset'] = String(reset)
+
+          if (exceeded) {
+            response.output.headers['Retry-After'] = String(
+              getRetryAfterSeconds(result.msBeforeNext)
+            )
+          }
+        } else if (typeof response.header === 'function') {
+          response.header('X-RateLimit-Limit', String(limit))
+          response.header('X-RateLimit-Remaining', String(remaining))
+          response.header('X-RateLimit-Reset', String(reset))
+
+          if (exceeded) {
+            response.header(
+              'Retry-After',
+              String(getRetryAfterSeconds(result.msBeforeNext))
+            )
+          }
         }
 
         return h.continue
-      } catch (rateLimitResult) {
-        request.app.rateLimit = {
-          result: rateLimitResult,
-          limit: rateLimitConfig.points,
-          exceeded: true
-        }
-
-        throw Boom.tooManyRequests('Rate limit exceeded')
       }
-    })
-
-    server.ext('onPreResponse', (request, h) => {
-      const rateLimitInfo = request.app.rateLimit
-
-      if (!rateLimitInfo) {
-        return h.continue
-      }
-
-      const response = request.response
-
-      if (!response) {
-        return h.continue
-      }
-
-      const { result, limit, exceeded } = rateLimitInfo
-
-      // Calculate header values
-      const remaining = Math.max(0, result.remainingPoints ?? 0)
-      const reset = getRateLimitResetTime(result.msBeforeNext)
-
-      // Handle both Boom errors and regular responses
-      if (response.isBoom) {
-        response.output.headers['X-RateLimit-Limit'] = String(limit)
-        response.output.headers['X-RateLimit-Remaining'] = String(remaining)
-        response.output.headers['X-RateLimit-Reset'] = String(reset)
-
-        if (exceeded) {
-          response.output.headers['Retry-After'] = String(
-            getRetryAfterSeconds(result.msBeforeNext)
-          )
-        }
-      } else if (typeof response.header === 'function') {
-        response.header('X-RateLimit-Limit', String(limit))
-        response.header('X-RateLimit-Remaining', String(remaining))
-        response.header('X-RateLimit-Reset', String(reset))
-
-        if (exceeded) {
-          response.header(
-            'Retry-After',
-            String(getRetryAfterSeconds(result.msBeforeNext))
-          )
-        }
-      }
-
-      return h.continue
-    })
+    )
 
     server.logger?.info('Rate limiting plugin registered successfully')
   }
@@ -122,8 +145,8 @@ export const rateLimitPlugin = {
  * @param {object} mongoConfig - MongoDB configuration
  * @param {string} mongoConfig.uri
  * @param {string} mongoConfig.databaseName
- * @param {object} [db] - MongoDB database instance from server
- * @param {object} [logger] - Optional logger instance
+ * @param {import('mongodb').Db} [db] - MongoDB database instance from server
+ * @param {import('pino').Logger} [logger] - Optional logger instance
  */
 async function createLimiter(rateLimitConfig, mongoConfig, db, logger) {
   const isTest = process.env.NODE_ENV === 'test'

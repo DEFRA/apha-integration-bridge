@@ -27,7 +27,12 @@ export const versionPlugin = {
     const { defaultVersion = 1.0 } = options
 
     server.ext('onRequest', (request, h) => {
-      const acceptHeader = request.headers.accept
+      // Node's http layer joins repeated headers into a single string, so
+      // a string[] here is unreachable in practice — assert rather than
+      // branch.
+      const acceptHeader = /** @type {string | undefined} */ (
+        request.headers.accept
+      )
 
       const versionMatch = acceptHeader
         ? acceptHeader.match(/vnd\.apha\.(\d+(\.\d+)?)/)

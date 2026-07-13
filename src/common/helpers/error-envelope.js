@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 import {
   HTTPException,
   httpExceptionCodeForStatus
@@ -76,7 +78,7 @@ export const errorEnvelope = {
         const { response } = request
 
         // Successful responses are not Boom errors — leave them untouched.
-        if (!response.isBoom) {
+        if (!Boom.isBoom(response)) {
           return h.continue
         }
 
@@ -102,17 +104,21 @@ export const errorEnvelope = {
         }
 
         // (2) / (3) Generic Boom error: rewrite the payload into the envelope,
-        // preserving the original status code and response headers.
-        response.output.payload = {
-          message:
-            statusCode >= 500
-              ? SERVER_ERROR_MESSAGE
-              : (typeof payload?.message === 'string' && payload.message) ||
-                (typeof payload?.error === 'string' && payload.error) ||
-                'Error',
-          code: httpExceptionCodeForStatus(statusCode),
-          errors: []
-        }
+        // preserving the original status code and response headers. The
+        // envelope deliberately drops Boom's required { statusCode, error }
+        // payload fields, so it is asserted past the `Payload` type.
+        response.output.payload = /** @type {import('@hapi/boom').Payload} */ (
+          /** @type {unknown} */ ({
+            message:
+              statusCode >= 500
+                ? SERVER_ERROR_MESSAGE
+                : (typeof payload?.message === 'string' && payload.message) ||
+                  (typeof payload?.error === 'string' && payload.error) ||
+                  'Error',
+            code: httpExceptionCodeForStatus(statusCode),
+            errors: []
+          })
+        )
 
         return h.continue
       })

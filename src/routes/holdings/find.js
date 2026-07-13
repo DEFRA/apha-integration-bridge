@@ -86,7 +86,9 @@ const options = {
 const metrics = createMetricsLogger()
 
 /**
- * @type {import('@hapi/hapi').Lifecycle.Method}
+ * @param {import('../../types/api.js').ControllerRequest} request
+ * @param {import('@hapi/hapi').ResponseToolkit} h
+ * @returns {Promise<import('@hapi/hapi').Lifecycle.ReturnValue>}
  */
 export async function handler(request, h) {
   try {
@@ -104,10 +106,10 @@ export async function handler(request, h) {
 
     const isDevelopment = config.get('isDevelopment')
     if (isDevelopment) {
-      request.logger?.debug(`holdings: ${JSON.stringify(holdings)}`)
+      request.logger.debug(`holdings: ${JSON.stringify(holdings)}`)
     } else {
       const holdingIds = holdings.map((h) => h.id).join(', ')
-      request.logger?.debug(
+      request.logger.debug(
         `Retrieved ${holdings.length} holding(s): ${holdingIds}`
       )
     }
@@ -124,9 +126,7 @@ export async function handler(request, h) {
 
     return h.response(findRequest.toResponse()).code(200)
   } catch (error) {
-    if (request.logger) {
-      request.logger.error(error)
-    }
+    request.logger.error(error)
 
     let httpException = error
 

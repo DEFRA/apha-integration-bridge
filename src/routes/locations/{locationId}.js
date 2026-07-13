@@ -106,7 +106,9 @@ function toAddress(row) {
 }
 
 /**
- * @type {import('@hapi/hapi').Lifecycle.Method}
+ * @param {import('../../types/api.js').ControllerRequest} request
+ * @param {import('@hapi/hapi').ResponseToolkit} h
+ * @returns {Promise<import('@hapi/hapi').Lifecycle.ReturnValue>}
  */
 export async function handler(request, h) {
   if (request.pre.apiVersion > 1.0) {
@@ -133,7 +135,7 @@ export async function handler(request, h) {
 
     const isDevelopment = config.get('isDevelopment')
     if (isDevelopment) {
-      request.logger?.debug(`query: ${JSON.stringify(query)}`)
+      request.logger.debug(`query: ${JSON.stringify(query)}`)
     }
 
     /**
@@ -145,9 +147,9 @@ export async function handler(request, h) {
     const rows = await execute(oracledb.connection, query)
 
     if (isDevelopment) {
-      request.logger?.debug(`rows: ${JSON.stringify(rows)}`)
+      request.logger.debug(`rows: ${JSON.stringify(rows)}`)
     } else {
-      request.logger?.debug(
+      request.logger.debug(
         `Retrieved ${rows.length} row(s) for location ${locationId}`
       )
     }
@@ -207,7 +209,7 @@ export async function handler(request, h) {
 
     return h.response(response.toResponse()).code(200)
   } catch (error) {
-    request.logger?.error(error)
+    request.logger.error(error)
 
     let httpException = error
 

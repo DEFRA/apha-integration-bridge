@@ -8,7 +8,12 @@ export class HTTPFindRequest {
    * @param {import('joi').Schema} schema
    */
   constructor(request, schema) {
-    const { page, pageSize } = request.query
+    // The find routes validate query with PaginationSchema, which defaults
+    // and coerces page/pageSize to numbers before the handler runs.
+    const { page, pageSize } =
+      /** @type {{ page: number, pageSize: number }} */ (
+        /** @type {unknown} */ (request.query)
+      )
 
     const payload = /** @type {{ ids: string[] }} */ (request.payload)
 

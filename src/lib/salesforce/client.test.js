@@ -668,10 +668,10 @@ describe('salesforce client', () => {
         })
       )
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Sending query request',
         expect.objectContaining({
           authContext: 'user-level'
-        })
+        }),
+        'Sending query request'
       )
     })
   })

@@ -47,4 +47,85 @@
  * }} HapiRequestWithSpan
  */
 
+/**
+ * A Hapi request augmented with the per-request rate limit state set by
+ * `rateLimitPlugin` in `onPreHandler` and read back in `onPreResponse`.
+ * `rateLimit` is optional because exempt paths (e.g. `/health`) skip the
+ * limiter and never populate it.
+ *
+ * @typedef {import('@hapi/hapi').Request & {
+ *   app: {
+ *     rateLimit?: import('../common/helpers/rate-limit.js').RateLimitInfo
+ *   }
+ * }} HapiRequestWithRateLimit
+ */
+
+/**
+ * Type-level anchor for hapi-pino. Importing the module here keeps its
+ * `declare module '@hapi/hapi'` augmentation — the non-optional
+ * `Request.logger` / `Server.logger` every controller relies on — inside
+ * the typecheck program even if `request-logger.js` ever stops being
+ * reachable from it.
+ *
+ * @typedef {import('hapi-pino').Options} HapiPinoOptions
+ */
+
+/**
+ * The async-disposable OracleDB session returned by the
+ * `server['oracledb.<pool>']()` decorations registered in
+ * `src/common/helpers/oracledb.js`. `await using` calls the disposer,
+ * which closes the connection and records its open duration.
+ *
+ * @typedef {{
+ *   connection: import('oracledb').Connection
+ * } & AsyncDisposable} OracleDbSession
+ */
+
+/**
+ * The Hapi server as decorated by the oracledb plugin: one session
+ * factory per pool configured in `config.oracledb` (currently `sam` and
+ * `pega`).
+ *
+ * @typedef {import('@hapi/hapi').Server & {
+ *   'oracledb.sam': () => Promise<OracleDbSession>,
+ *   'oracledb.pega': () => Promise<OracleDbSession>
+ * }} ServerWithOracle
+ */
+
+/**
+ * The Hapi server as decorated by the `mongoDb` plugin
+ * (`src/common/helpers/mongodb.js`). `rateLimitPlugin` reads `db`, which
+ * is why it must register after `mongoDb` in `createServer()`.
+ *
+ * @typedef {import('@hapi/hapi').Server & {
+ *   mongoClient: import('mongodb').MongoClient,
+ *   db: import('mongodb').Db,
+ *   locker: import('mongo-locks').LockManager
+ * }} ServerWithMongo
+ */
+
+/**
+ * The Hapi server as optionally decorated by the `secureContext` plugin
+ * (`src/common/helpers/secure-context/secure-context.js`). Optional
+ * because the decoration only happens when secure contexts are enabled;
+ * consumers must guard (as `mongodb.js` does).
+ *
+ * @typedef {import('@hapi/hapi').Server & {
+ *   secureContext?: import('node:tls').SecureContext
+ * }} ServerWithSecureContext
+ */
+
+/**
+ * A request as a controller (route handler) actually receives it at
+ * runtime: the server carries the oracledb decorations and the versioning
+ * plugin has set `pre.apiVersion` in `onRequest`. `request.logger` needs
+ * no re-declaration — hapi-pino's module augmentation already types it
+ * non-optionally on every Request.
+ *
+ * @typedef {import('@hapi/hapi').Request & {
+ *   server: ServerWithOracle,
+ *   pre: { apiVersion: number }
+ * }} ControllerRequest
+ */
+
 export {}
