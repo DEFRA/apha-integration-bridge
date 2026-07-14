@@ -17,7 +17,7 @@ exports[`getWorkordersQuery returns the expected query for update date filter 1`
   AND
   ac.pystatuswork IN ('Open')
   AND
-  (NULL IS NULL OR UPPER(ws.purposecountry) = NULL)
+  (0 = 0 OR UPPER(ws.purposecountry) IN (NULL))
   AND
   (
     ('updated' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
@@ -227,7 +227,7 @@ exports[`getWorkordersQuery returns the expected query for valid parameters 1`] 
   AND
   ac.pystatuswork IN ('Open')
   AND
-  (NULL IS NULL OR UPPER(ws.purposecountry) = NULL)
+  (0 = 0 OR UPPER(ws.purposecountry) IN (NULL))
   AND
   (
     ('activation' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
@@ -437,7 +437,7 @@ exports[`getWorkordersQuery returns the expected query with country filter 1`] =
   AND
   ac.pystatuswork IN ('Open')
   AND
-  ('WALES' IS NULL OR UPPER(ws.purposecountry) = 'WALES')
+  (1 = 0 OR UPPER(ws.purposecountry) IN ('WALES'))
   AND
   (
     ('activation' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))

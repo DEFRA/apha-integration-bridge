@@ -105,6 +105,6 @@ describe('GetWorkordersSchema', () => {
       pageSize: 10
     })
     expect(result.error).toBeUndefined()
-    expect(result.value.country).toBe('wales')
+    expect(result.value.country).toEqual(['wales'])
   })
 })
