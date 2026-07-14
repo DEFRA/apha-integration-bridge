@@ -161,39 +161,50 @@ async function createLimiter(rateLimitConfig, mongoConfig, db, logger) {
     })
   }
 
-  try {
-    if (!db) {
-      throw new Error('MongoDB database instance not available')
-    }
-
-    const collection = db.collection('rate-limits')
-
-    // Create index for efficient lookups and TTL
-    await collection.createIndex({ key: 1 }, { unique: false })
-    await collection.createIndex(
-      { expire: 1 },
-      { expireAfterSeconds: rateLimitConfig.duration * 2 }
-    )
-
-    return new RateLimiterMongo({
-      storeClient: db,
-      dbName: mongoConfig.databaseName,
-      tableName: 'rate-limits',
-      points: rateLimitConfig.points,
-      duration: rateLimitConfig.duration,
-      blockDuration: 0
-    })
-  } catch (error) {
-    logger?.error(
-      { err: error },
-      'Failed to set up MongoDB rate limiter, falling back to in-memory rate limiter'
-    )
-    return new RateLimiterMemory({
-      points: rateLimitConfig.points,
-      duration: rateLimitConfig.duration,
-      blockDuration: 0
-    })
+  if (!db) {
+    throw new Error('MongoDB database instance not available')
   }
+
+  const collection = db.collection('rate-limits')
+
+  //  Drop old non-unique key_1 index if it exists
+  try {
+    const indexes = await collection.listIndexes().toArray()
+    const keyIndex = indexes.find((idx) => idx.name === 'key_1')
+
+    // If old non-unique index exists, drop it so library can create unique one
+    if (keyIndex && !keyIndex.unique) {
+      logger?.info(
+        'Dropping non-unique key_1 index (will be recreated as unique)'
+      )
+      await collection.dropIndex('key_1')
+      logger?.info('Successfully dropped old non-unique key_1 index')
+    }
+  } catch (err) {
+    logger?.debug(
+      { err },
+      'Index check/cleanup completed (may have been handled by another container)'
+    )
+  }
+
+  logger?.info('Ensuring TTL index on rate-limits collection')
+  await collection.createIndex(
+    { expire: 1 },
+    {
+      expireAfterSeconds: rateLimitConfig.duration * 2,
+      background: true
+    }
+  )
+
+  logger?.info('Initializing MongoDB rate limiter')
+  return new RateLimiterMongo({
+    storeClient: db,
+    dbName: mongoConfig.databaseName,
+    tableName: 'rate-limits',
+    points: rateLimitConfig.points,
+    duration: rateLimitConfig.duration,
+    blockDuration: 0
+  })
 }
 
 /**
