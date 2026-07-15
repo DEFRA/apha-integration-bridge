@@ -11,11 +11,7 @@
       // ext-test
       "65mu94mp0k20r3phdk0370a8rb",
       // prod
-      "2nq42e5je49ffdt9f16t874laj",
-      // TODO remove these below when WFM has made the changes to their creds in PROD
-      // adding temporary client ids below as WFM are using these
-      // prod
-      "2840190bi6lfdlkd9de5slbg8i"
+      "2nq42e5je49ffdt9f16t874laj"
     ],
     "scopes": ["pii"]
   },
