@@ -3,6 +3,7 @@ import { execute } from '../operations/execute.js'
 import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { toOracleTimestampString } from '../utils/to-oracle-timestamp-string.js'
+import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { GetWorkordersSchema } from '../../../types/find/workorders-get.js'
 import { WorkorderDateFilterType } from '../../../types/workorder-date-filter.js'
 import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
@@ -14,13 +15,15 @@ import { getCustomerTypes } from './get-customer-types.js'
 
 const sql = loadSQL(import.meta.filename)
 
+const COUNTRIES_BIND_TOKEN = '__COUNTRIES__'
+
 /**
  * @typedef {{
  *   startActivationDate?: string
  *   endActivationDate?: string
  *   startUpdatedDate?: string
  *   endUpdatedDate?: string
- *   country?: string
+ *   country?: string | string[]
  *   page?: number
  *   pageSize?: number
  * }} GetWorkordersParams
@@ -60,17 +63,35 @@ export function getWorkordersQuery(params) {
 
   const offsetRows = (value.page - 1) * value.pageSize
   const fetchRows = value.pageSize + 1
-  const normalizedCountry = value.country
-    ? value.country.trim().toUpperCase()
-    : null
+
+  let normalizedCountries = null
+  let hasCountries = 0
+  let countryBindings = {}
+  let sqlWithCountries = sql
+
+  if (value.country) {
+    const countries = Array.isArray(value.country)
+      ? value.country
+      : [value.country]
+    normalizedCountries = countries.map((c) => c.trim().toUpperCase())
+    hasCountries = 1
+
+    const { placeholders, bindings } =
+      createInClauseBindings(normalizedCountries)
+    countryBindings = bindings
+    sqlWithCountries = sql.replace(COUNTRIES_BIND_TOKEN, placeholders)
+  } else {
+    sqlWithCountries = sql.replace(COUNTRIES_BIND_TOKEN, 'NULL')
+  }
 
   return {
     sql: query()
-      .raw(sql, {
+      .raw(sqlWithCountries, {
         start_date: toOracleTimestampString(startDate),
         end_date: toOracleTimestampString(endDate),
         date_type: dateType,
-        country: normalizedCountry,
+        has_countries: hasCountries,
+        ...countryBindings,
         offset_rows: offsetRows,
         fetch_rows: fetchRows
       })

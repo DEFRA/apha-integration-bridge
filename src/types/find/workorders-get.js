@@ -15,13 +15,17 @@ export const GetWorkordersSchema = PaginationSchema.keys({
   endUpdatedDate: Joi.string()
     .isoDate()
     .description('Paginate workorders before this end update date'),
-  country: Joi.string()
-    .trim()
-    .min(1)
-    .valid('england', 'wales', 'scotland')
-    .insensitive()
+  country: Joi.array()
+    .items(
+      Joi.string()
+        .trim()
+        .min(1)
+        .valid('England', 'Wales', 'Scotland')
+        .insensitive()
+    )
+    .single()
     .description(
-      'Filter workorders by country (allowed: England, Wales, Scotland)'
+      'Filter workorders by one or more countries (allowed: England, Wales, Scotland). Can be a single value or multiple values using repeated query parameters (e.g., country=Scotland&country=Wales)'
     )
 })
   .custom((value, helpers) => {

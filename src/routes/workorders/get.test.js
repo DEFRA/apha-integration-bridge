@@ -242,7 +242,7 @@ describe('GET /workorders', () => {
       expect.objectContaining({
         startActivationDate: '2024-01-01T00:00:00.000Z',
         endActivationDate: '2024-02-01T00:00:00.000Z',
-        country: 'england',
+        country: ['England'],
         page: 1,
         pageSize: 10
       })
@@ -424,6 +424,165 @@ describe('GET /workorders', () => {
     expect(ws76515.relationships.customerOrOrganisation.data).toEqual({
       type: 'customers',
       id: 'C123789'
+    })
+  })
+
+  describe('Multiple country filtering', () => {
+    test('returns workorders for multiple countries using query parameter format country=X&country=Y', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams()
+      query.append('startActivationDate', '2024-01-01T00:00:00.000Z')
+      query.append('endActivationDate', '2024-03-01T00:00:00.000Z')
+      query.append('country', 'Scotland')
+      query.append('country', 'Wales')
+      query.append('page', '1')
+      query.append('pageSize', '10')
+
+      const url = `${path}?${query.toString()}`
+
+      // Verify the URL has the correct format
+      expect(url).toContain('country=Scotland&country=Wales')
+
+      const response = await server.inject({
+        method: 'GET',
+        url
+      })
+
+      expect(response.statusCode).toBe(200)
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+      const returnedWorkorderIds = responseBody.data.map(
+        (workorder) => workorder.id
+      )
+
+      // Should include both Scotland and Wales workorders
+      expect(returnedWorkorderIds).toContain('WS-76513') // Scotland
+      expect(returnedWorkorderIds).toContain('WS-76514') // Wales
+
+      // Should NOT include England workorder
+      expect(returnedWorkorderIds).not.toContain('WS-76512') // England
+
+      // Verify all returned workorders are from the requested countries
+      for (const workorder of responseBody.data) {
+        expect(['Scotland', 'Wales']).toContain(workorder.country)
+      }
+    })
+
+    test('handles multiple countries with case-insensitive input', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams()
+      query.append('startActivationDate', '2024-01-01T00:00:00.000Z')
+      query.append('endActivationDate', '2024-03-01T00:00:00.000Z')
+      query.append('country', 'SCOTLAND')
+      query.append('country', 'wales')
+      query.append('page', '1')
+      query.append('pageSize', '10')
+
+      const response = await server.inject({
+        method: 'GET',
+        url: `${path}?${query.toString()}`
+      })
+
+      expect(response.statusCode).toBe(200)
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+      const returnedWorkorderIds = responseBody.data.map(
+        (workorder) => workorder.id
+      )
+
+      expect(returnedWorkorderIds).toContain('WS-76513') // Scotland
+      expect(returnedWorkorderIds).toContain('WS-76514') // Wales
+      expect(returnedWorkorderIds).not.toContain('WS-76512') // England
+    })
+
+    test('returns all workorders for all three countries when requested', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams()
+      query.append('startActivationDate', '2024-01-01T00:00:00.000Z')
+      query.append('endActivationDate', '2024-03-01T00:00:00.000Z')
+      query.append('country', 'England')
+      query.append('country', 'Scotland')
+      query.append('country', 'Wales')
+      query.append('page', '1')
+      query.append('pageSize', '10')
+
+      const response = await server.inject({
+        method: 'GET',
+        url: `${path}?${query.toString()}`
+      })
+
+      expect(response.statusCode).toBe(200)
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+      const returnedWorkorderIds = responseBody.data.map(
+        (workorder) => workorder.id
+      )
+
+      // Should include all three seeded workorders
+      expect(returnedWorkorderIds).toContain('WS-76512') // England
+      expect(returnedWorkorderIds).toContain('WS-76513') // Scotland
+      expect(returnedWorkorderIds).toContain('WS-76514') // Wales
+    })
+
+    test('returns BAD_REQUEST when one of multiple countries is invalid', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams()
+      query.append('startActivationDate', '2024-01-01T00:00:00.000Z')
+      query.append('endActivationDate', '2024-03-01T00:00:00.000Z')
+      query.append('country', 'Scotland')
+      query.append('country', 'Northern Ireland')
+      query.append('page', '1')
+      query.append('pageSize', '10')
+
+      const response = await server.inject({
+        method: 'GET',
+        url: `${path}?${query.toString()}`
+      })
+
+      expect(response.statusCode).toBe(400)
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+
+      expect(responseBody.code).toBe('BAD_REQUEST')
+      expect(responseBody.errors).toBeDefined()
+      expect(responseBody.errors.length).toBeGreaterThan(0)
+      expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
+    })
+
+    test('supports single country as backwards compatibility', async () => {
+      const server = await createServer()
+
+      const query = new URLSearchParams({
+        startActivationDate: '2024-01-01T00:00:00.000Z',
+        endActivationDate: '2024-03-01T00:00:00.000Z',
+        country: 'Scotland',
+        page: '1',
+        pageSize: '10'
+      })
+
+      const response = await server.inject({
+        method: 'GET',
+        url: `${path}?${query.toString()}`
+      })
+
+      expect(response.statusCode).toBe(200)
+
+      const responseBody = /** @type {Record<string, any>} */ (response.result)
+      const returnedWorkorderIds = responseBody.data.map(
+        (workorder) => workorder.id
+      )
+
+      expect(returnedWorkorderIds).toContain('WS-76513') // Scotland
+      expect(returnedWorkorderIds).not.toContain('WS-76512') // England
+      expect(returnedWorkorderIds).not.toContain('WS-76514') // Wales
+
+      for (const workorder of responseBody.data) {
+        expect(workorder.country).toBe('Scotland')
+      }
     })
   })
 

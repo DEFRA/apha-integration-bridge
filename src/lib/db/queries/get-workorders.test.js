@@ -85,7 +85,7 @@ describe('getWorkordersQuery', () => {
       ...validParams
     })
 
-    expect(sql).toContain('(NULL IS NULL OR UPPER(ws.purposecountry) = NULL)')
+    expect(sql).toContain('(0 = 0 OR UPPER(ws.purposecountry) IN (NULL))')
   })
 
   test('filters by specific country when provided', () => {
@@ -94,9 +94,38 @@ describe('getWorkordersQuery', () => {
       country: 'wales'
     })
 
+    expect(sql).toContain("(1 = 0 OR UPPER(ws.purposecountry) IN ('WALES'))")
+  })
+
+  test('filters by multiple countries when provided as array', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      country: ['scotland', 'wales']
+    })
+
     expect(sql).toContain(
-      "('WALES' IS NULL OR UPPER(ws.purposecountry) = 'WALES')"
+      "(1 = 0 OR UPPER(ws.purposecountry) IN ('SCOTLAND', 'WALES'))"
     )
+  })
+
+  test('normalizes single country to uppercase', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      country: 'EnGlAnD'
+    })
+
+    expect(sql).toContain("'ENGLAND'")
+  })
+
+  test('normalizes multiple countries to uppercase', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      country: ['SCOTLAND', 'wales', 'EnGlAnD']
+    })
+
+    expect(sql).toContain("'SCOTLAND'")
+    expect(sql).toContain("'WALES'")
+    expect(sql).toContain("'ENGLAND'")
   })
 
   test('defaults page and pageSize when omitted', () => {
