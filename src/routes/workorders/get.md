@@ -195,7 +195,7 @@ Example error responses:
   "errors": [
     {
       "code": "VALIDATION_ERROR",
-      "message": "\"country\" must be one of [england, wales, scotland]"
+      "message": "\"country\" must be one of [England, Wales, Scotland]"
     }
   ]
 }

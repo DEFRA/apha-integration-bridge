@@ -20,7 +20,7 @@ export const GetWorkordersSchema = PaginationSchema.keys({
       Joi.string()
         .trim()
         .min(1)
-        .valid('england', 'wales', 'scotland')
+        .valid('England', 'Wales', 'Scotland')
         .insensitive()
     )
     .single()

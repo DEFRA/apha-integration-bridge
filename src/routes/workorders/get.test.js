@@ -242,7 +242,7 @@ describe('GET /workorders', () => {
       expect.objectContaining({
         startActivationDate: '2024-01-01T00:00:00.000Z',
         endActivationDate: '2024-02-01T00:00:00.000Z',
-        country: ['england'],
+        country: ['England'],
         page: 1,
         pageSize: 10
       })
