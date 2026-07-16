@@ -8,11 +8,20 @@ import { versionPlugin } from '../../../common/helpers/versioning.js'
 
 const path = '/alpha/workorders/activity'
 
+// Resolved-Not-Required keeps this a minimal valid payload: the three
+// conditional fields are only mandatory when the closing reason is
+// Resolved-Completed (see the conditional-field tests below).
 const validPayload = {
   workscheduleid: 'WS-12345',
   workscheduleactivityid: 'WSA-100023',
-  activityclosingreason: 'Resolved-Completed',
+  activityclosingreason: 'Resolved-Not-Required',
   businessresource: 'forename.surname@apha.gov.uk'
+}
+
+const completedConditionalFields = {
+  resourcecompletingactivity: 'forename.surname@apha.gov.uk',
+  activityactualstartdate: '2025-09-20T15:45:00Z',
+  activitycompletiondate: '2025-09-21T15:45:00Z'
 }
 
 describe('Workorders activity', () => {
@@ -90,6 +99,84 @@ describe('Workorders activity', () => {
 
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.payload)).toEqual(scenarios.success.response)
+  })
+
+  test('accepts Resolved-Completed when the conditional fields are present', async () => {
+    const res = await server.inject({
+      method: 'PATCH',
+      url: path,
+      payload: {
+        ...validPayload,
+        activityclosingreason: 'Resolved-Completed',
+        ...completedConditionalFields
+      }
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.payload)).toEqual(scenarios.success.response)
+  })
+
+  test('keeps the conditional fields optional for Resolved-Not-Required', async () => {
+    const res = await server.inject({
+      method: 'PATCH',
+      url: path,
+      payload: {
+        ...validPayload,
+        activityclosingreason: 'Resolved-Not-Required'
+      }
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.payload)).toEqual(scenarios.success.response)
+  })
+
+  test.each([
+    'resourcecompletingactivity',
+    'activityactualstartdate',
+    'activitycompletiondate'
+  ])(
+    'returns BAD_REQUEST if %s is missing when closing reason is Resolved-Completed',
+    async (field) => {
+      const payload = {
+        ...validPayload,
+        activityclosingreason: 'Resolved-Completed',
+        ...completedConditionalFields
+      }
+
+      delete payload[field]
+
+      const res = await server.inject({ method: 'PATCH', url: path, payload })
+
+      expect(res.statusCode).toBe(400)
+      expect(JSON.parse(res.payload)).toEqual({
+        message: 'Invalid request parameters',
+        code: 'BAD_REQUEST',
+        errors: [
+          { code: 'VALIDATION_ERROR', message: `"${field}" is required` }
+        ]
+      })
+    }
+  )
+
+  test('aggregates every missing conditional field for Resolved-Completed', async () => {
+    const res = await server.inject({
+      method: 'PATCH',
+      url: path,
+      payload: { ...validPayload, activityclosingreason: 'Resolved-Completed' }
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.payload)).toEqual({
+      message: 'Invalid request parameters',
+      code: 'BAD_REQUEST',
+      errors: [
+        {
+          code: 'VALIDATION_ERROR',
+          message:
+            '"resourcecompletingactivity" is required. "activityactualstartdate" is required. "activitycompletiondate" is required'
+        }
+      ]
+    })
   })
 
   test('exposes exactly the documented scenarios', () => {

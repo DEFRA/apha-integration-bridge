@@ -11,6 +11,19 @@ import { scenarios } from './activity.mocks.js'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
+/**
+ * Presence rule for the fields that are mandatory only when the activity is
+ * being resolved as completed, and optional otherwise (e.g. when it is
+ * Resolved-Not-Required). The `is` schema is an explicit `.required()` so the
+ * branch is taken only when `activityclosingreason` is persent and exactly
+ * equals 'Resolved-Completed' — an absent or different value falls through to
+ * the optional base rule. Formats are not validated, only presence.
+ */
+const requiredWhenCompleted = {
+  is: Joi.valid('Resolved-Completed').required(),
+  then: Joi.required()
+}
+
 const StandardWorkSchema = Joi.object({
   workscheduleid: Joi.string()
     .required()
@@ -29,18 +42,26 @@ const StandardWorkSchema = Joi.object({
     .required()
     .description('Email address of the business user making this data update'),
   activityscheduleddate: Joi.string().description(
-    'Date the work was scheduled for, e.g. 2025-09-18T12:00:00Z'
+    'Date the work was scheduled for, e.g. 2025-09-18T12:00:00Z (always optional)'
   ),
-  resourcecompletingactivity: Joi.string().description(
-    'Email address of the Sam operator who performed the task'
-  ),
-  activityactualstartdate: Joi.string().description(
-    'Activity actual start date'
-  ),
-  activitycompletiondate: Joi.string().description('Activity completion date')
+  resourcecompletingactivity: Joi.string()
+    .when('activityclosingreason', requiredWhenCompleted)
+    .description(
+      "Email address of the Sam operator who performed the task (mandatory when activityclosingreason is 'Resolved-Completed')"
+    ),
+  activityactualstartdate: Joi.string()
+    .when('activityclosingreason', requiredWhenCompleted)
+    .description(
+      "Activity actual start date (mandatory when activityclosingreason is 'Resolved-Completed')"
+    ),
+  activitycompletiondate: Joi.string()
+    .when('activityclosingreason', requiredWhenCompleted)
+    .description(
+      "Activity completion date (mandatory when activityclosingreason is 'Resolved-Completed')"
+    )
 })
   .description(
-    'A standard work update; only the presence of mandatory properties is validated'
+    'A standard work update; presence is validated (including the fields that are conditionally mandatory on activityclosingreason), formats are not'
   )
   .label('Standard Work Update')
 

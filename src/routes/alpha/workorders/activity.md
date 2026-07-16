@@ -2,7 +2,9 @@ Update (and resolve) a work schedule activity in Sam. This alpha endpoint stands
 
 ## Request payload
 
-Mandatory properties — their presence is validated, their formats are not (format validation belongs to the live Sam integration):
+Presence is validated, formats are not (format validation belongs to the live Sam integration). Which properties are mandatory depends on `activityclosingreason`.
+
+Always mandatory:
 
 | Property                 | Description                                                                             |
 | ------------------------ | --------------------------------------------------------------------------------------- |
@@ -11,14 +13,19 @@ Mandatory properties — their presence is validated, their formats are not (for
 | `activityclosingreason`  | Resolution state: `Resolved-Completed` or `Resolved-Not-Required`                       |
 | `businessresource`       | Email address of the business user making this data update                              |
 
-Optional properties:
+Mandatory when `activityclosingreason` is `Resolved-Completed`, otherwise optional (e.g. when it is `Resolved-Not-Required`):
 
-| Property                     | Description                                                  |
-| ---------------------------- | ------------------------------------------------------------ |
-| `activityscheduleddate`      | Date the work was scheduled for, e.g. `2025-09-18T12:00:00Z` |
-| `resourcecompletingactivity` | Email address of the Sam operator who performed the task     |
-| `activityactualstartdate`    | Activity actual start date/time                              |
-| `activitycompletiondate`     | Activity completion date/time                                |
+| Property                     | Description                                              |
+| ---------------------------- | -------------------------------------------------------- |
+| `resourcecompletingactivity` | Email address of the Sam operator who performed the task |
+| `activityactualstartdate`    | Activity actual start date/time                          |
+| `activitycompletiondate`     | Activity completion date/time                            |
+
+Always optional:
+
+| Property                | Description                                                  |
+| ----------------------- | ------------------------------------------------------------ |
+| `activityscheduleddate` | Date the work was scheduled for, e.g. `2025-09-18T12:00:00Z` |
 
 Properties not listed above are rejected with a validation error.
 
@@ -67,7 +74,7 @@ Sam error scenarios are returned unwrapped, with the status code shown in the ta
 
 Where an error body includes `field_errors`, it is an **array** of `{ code, message }` entries (see the `sam-api-error-validation` scenario).
 
-If the request itself is invalid — a mandatory property is missing, an unknown property is sent, an unknown `x-test-scenario` value is used, or the body is absent or not valid JSON — the bridge's standard error envelope is returned instead:
+If the request itself is invalid — a mandatory property is missing (including the conditional properties above when `activityclosingreason` is `Resolved-Completed`), an unknown property is sent, an unknown `x-test-scenario` value is used, or the body is absent or not valid JSON — the bridge's standard error envelope is returned instead:
 
 ```json
 {
