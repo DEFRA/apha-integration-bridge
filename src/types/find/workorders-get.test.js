@@ -107,4 +107,16 @@ describe('GetWorkordersSchema', () => {
     expect(result.error).toBeUndefined()
     expect(result.value.country).toEqual(['Wales'])
   })
+
+  test('accepts valid request with status parameter', () => {
+    const result = GetWorkordersSchema.validate({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
+      endActivationDate: '2024-02-01T00:00:00.000Z',
+      status: 'open',
+      page: 1,
+      pageSize: 10
+    })
+    expect(result.error).toBeUndefined()
+    expect(result.value.status).toEqual(['open'])
+  })
 })
