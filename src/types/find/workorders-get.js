@@ -26,6 +26,13 @@ export const GetWorkordersSchema = PaginationSchema.keys({
     .single()
     .description(
       'Filter workorders by one or more countries (allowed: England, Wales, Scotland). Can be a single value or multiple values using repeated query parameters (e.g., country=Scotland&country=Wales)'
+    ),
+  status: Joi.array()
+    .items(Joi.string().trim().min(1))
+    .single()
+    .optional()
+    .description(
+      'Filter workorders by status (parameter accepted but not yet implemented - has no effect on results)'
     )
 })
   .custom((value, helpers) => {
