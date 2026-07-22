@@ -66,8 +66,8 @@ const config = convict({
         env: 'ORACLEDB_PEGA_POOL_CLOSE_WAIT_TIME'
       },
       poolPingInterval: {
-        doc: 'PEGA Database pool ping interval in seconds. Connections idle for longer than this value are tested with a round-trip to the database before use. Set to 0 to always test.',
-        format: Number,
+        doc: 'PEGA Database pool ping interval in seconds. Connections idle for longer than this value are tested with a round-trip to the database before use. Set to 0 to always test. Negative values disable pinging (driver sentinel).',
+        format: 'int',
         default: 60,
         env: 'ORACLEDB_PEGA_POOL_PING_INTERVAL'
       },
@@ -76,6 +76,37 @@ const config = convict({
         format: Number,
         default: 1,
         env: 'ORACLEDB_PEGA_EXPIRE_TIME'
+      },
+      connectTimeout: {
+        doc: 'PEGA Database Easy Connect connect_timeout in SECONDS — bounds transport establishment and the TNS connect phase. Authentication happens after this window; the pool queueTimeoutMs bounds the caller through auth at acquire time. Range 1-300.',
+        format: 'int',
+        default: 10,
+        env: 'ORACLEDB_PEGA_CONNECT_TIMEOUT'
+      },
+      transportConnectTimeout: {
+        doc: 'PEGA Database Easy Connect transport_connect_timeout in SECONDS — bounds TCP/TLS transport establishment only. Must be <= connectTimeout. Range 1-300.',
+        format: 'int',
+        default: 5,
+        env: 'ORACLEDB_PEGA_TRANSPORT_CONNECT_TIMEOUT'
+      },
+      retryCount: {
+        doc: 'PEGA Database Easy Connect retry_count — additional full connection attempts after the first. Must be 0 for multi-host connect strings. Range 0-2.',
+        format: 'int',
+        default: 0,
+        env: 'ORACLEDB_PEGA_RETRY_COUNT'
+      },
+      queueTimeoutMs: {
+        doc: 'PEGA Database pool queueTimeout in MILLISECONDS — how long a getConnection call may wait in the pool queue before rejecting. 0 (wait forever) is not allowed. Range 1000-60000.',
+        format: 'int',
+        default: 10_000,
+        env: 'ORACLEDB_PEGA_QUEUE_TIMEOUT_MS'
+      },
+      queueMax: {
+        doc: 'PEGA Database pool queueMax — maximum queued getConnection requests; 0 means fail-fast with no queued waiters. When unset, derived as min(500, max(25, 2 * poolMax)). Range 0-500.',
+        format: 'int',
+        nullable: true,
+        default: null,
+        env: 'ORACLEDB_PEGA_QUEUE_MAX'
       }
     },
     sam: {
@@ -132,8 +163,8 @@ const config = convict({
         env: 'ORACLEDB_SAM_SMDB_POOL_CLOSE_WAIT_TIME'
       },
       poolPingInterval: {
-        doc: 'SAM Database pool ping interval in seconds. Connections idle for longer than this value are tested with a round-trip to the database before use. Set to 0 to always test.',
-        format: Number,
+        doc: 'SAM Database pool ping interval in seconds. Connections idle for longer than this value are tested with a round-trip to the database before use. Set to 0 to always test. Negative values disable pinging (driver sentinel).',
+        format: 'int',
         default: 60,
         env: 'ORACLEDB_SAM_SMDB_POOL_PING_INTERVAL'
       },
@@ -142,8 +173,45 @@ const config = convict({
         format: Number,
         default: 1,
         env: 'ORACLEDB_SAM_SMDB_EXPIRE_TIME'
+      },
+      connectTimeout: {
+        doc: 'SAM Database Easy Connect connect_timeout in SECONDS — bounds transport establishment and the TNS connect phase. Authentication happens after this window; the pool queueTimeoutMs bounds the caller through auth at acquire time. Range 1-300.',
+        format: 'int',
+        default: 10,
+        env: 'ORACLEDB_SAM_SMDB_CONNECT_TIMEOUT'
+      },
+      transportConnectTimeout: {
+        doc: 'SAM Database Easy Connect transport_connect_timeout in SECONDS — bounds TCP/TLS transport establishment only. Must be <= connectTimeout. Range 1-300.',
+        format: 'int',
+        default: 5,
+        env: 'ORACLEDB_SAM_SMDB_TRANSPORT_CONNECT_TIMEOUT'
+      },
+      retryCount: {
+        doc: 'SAM Database Easy Connect retry_count — additional full connection attempts after the first. Must be 0 for multi-host connect strings. Range 0-2.',
+        format: 'int',
+        default: 0,
+        env: 'ORACLEDB_SAM_SMDB_RETRY_COUNT'
+      },
+      queueTimeoutMs: {
+        doc: 'SAM Database pool queueTimeout in MILLISECONDS — how long a getConnection call may wait in the pool queue before rejecting. 0 (wait forever) is not allowed. Range 1000-60000.',
+        format: 'int',
+        default: 10_000,
+        env: 'ORACLEDB_SAM_SMDB_QUEUE_TIMEOUT_MS'
+      },
+      queueMax: {
+        doc: 'SAM Database pool queueMax — maximum queued getConnection requests; 0 means fail-fast with no queued waiters. When unset, derived as min(500, max(25, 2 * poolMax)). Range 0-500.',
+        format: 'int',
+        nullable: true,
+        default: null,
+        env: 'ORACLEDB_SAM_SMDB_QUEUE_MAX'
       }
     }
+  },
+  ecsStopTimeoutMs: {
+    doc: 'The ECS task stopTimeout in MILLISECONDS (SIGTERM-to-SIGKILL window). ECS does not expose this to the container, so the IaC/CDP task definition MUST keep this env var in sync with the task stopTimeout — shutdown-budget validation depends on it.',
+    format: 'int',
+    default: 30_000,
+    env: 'ECS_STOP_TIMEOUT_MS'
   },
   oracledbHealthcheck: {
     enabled: {
