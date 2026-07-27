@@ -19,6 +19,7 @@ import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builde
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
+import * as cphMatcher from '../../../lib/services/cph-matcher.js'
 
 /** @import { CreateCasePayload} from '../../../types/case-management/case.js' */
 
@@ -77,6 +78,7 @@ const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 const mockGetLinkedFiles = jest.spyOn(salesforceClient, 'getLinkedFiles')
 const mockAddKeyFacts = jest.spyOn(salesforceClient, 'addKeyFacts')
 const mockGetKeyFacts = jest.spyOn(salesforceClient, 'getKeyFacts')
+const mockMatchCphs = jest.spyOn(cphMatcher, 'matchCphs')
 const mockLoggerError = jest.fn()
 
 /**
@@ -200,6 +202,13 @@ async function createTestServer() {
       info: jest.fn()
     })
     return h.continue
+  })
+
+  server.decorate('server', 'oracledb.sam', () => {
+    return Promise.resolve({
+      connection: {},
+      [Symbol.asyncDispose]: async () => {}
+    })
   })
 
   if (!route.default) {
@@ -966,6 +975,34 @@ describe('POST /case-management/case', () => {
 
       // Should have been called 4 times (initial + 2 retries + extra one to upload application file)
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
+    })
+
+    test('returns 201 when CPH matching fails (non-blocking)', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockGetLinkedFiles.mockResolvedValue({ records: [] })
+      mockGetKeyFacts.mockResolvedValue({ records: [] })
+      mockMatchCphs.mockRejectedValue(
+        new Error('SAM database connection timeout')
+      )
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(201)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          err: expect.any(Error),
+          applicationId: TEST_APP_REF
+        }),
+        'CPH matching failed'
+      )
     })
   })
 
