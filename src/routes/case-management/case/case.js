@@ -356,31 +356,21 @@ async function uploadSupportingMaterials(request, caseId) {
   }
 }
 
-/**
- * Performs CPH matching against SAM database
- * @param {Request} request
- */
 async function performCphMatching(request) {
   try {
     await using samdb = await request.server['oracledb.sam']()
-    const payload = /** @type {CreateCasePayload} */ (request.payload)
 
     const matchResults = await matchCphs({
       samdb: samdb.connection,
-      payload,
+      payload: request.payload,
       logger: request.logger
     })
 
     logCphMatchResults(request.logger, matchResults)
   } catch (error) {
     request.logger.error(
-      {
-        err: error,
-        endpoint: 'case-management/case',
-        applicationId: /** @type {CreateCasePayload} */ (request.payload)
-          .applicationReferenceNumber
-      },
-      'CPH matching failed but application submission will continue'
+      { err: error, applicationId: request.payload.applicationReferenceNumber },
+      'CPH matching failed'
     )
   }
 }
