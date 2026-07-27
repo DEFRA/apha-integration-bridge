@@ -57,6 +57,11 @@ jest.mock(
   })
 )
 
+jest.mock('../../../lib/services/cph-matcher.js', () => ({
+  matchCphs: jest.fn(),
+  logCphMatchResults: jest.fn()
+}))
+
 const ENDPOINT_PATH = '/case-management/case'
 const ENDPOINT_METHOD = 'POST'
 const TEST_APP_REF = 'TB-1234-ABCD'

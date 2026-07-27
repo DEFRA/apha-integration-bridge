@@ -18,6 +18,10 @@ import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/fi
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
+import {
+  matchCphs,
+  logCphMatchResults
+} from '../../../lib/services/cph-matcher.js'
 import { config } from '../../../config.js'
 
 /**
@@ -86,7 +90,8 @@ async function handler(request, h) {
     const caseId = await createCase(request, applicationId, customerId)
     await Promise.all([
       uploadSupportingMaterials(request, caseId),
-      addKeyFacts(request, applicationId)
+      addKeyFacts(request, applicationId),
+      performCphMatching(request)
     ])
     await updateCaseStatus(request, CaseStatus.NEW)
   })
@@ -348,6 +353,35 @@ async function uploadSupportingMaterials(request, caseId) {
         }
       }
     }
+  }
+}
+
+/**
+ * Performs CPH matching against SAM database
+ * @param {Request} request
+ */
+async function performCphMatching(request) {
+  try {
+    await using samdb = await request.server['oracledb.sam']()
+    const payload = /** @type {CreateCasePayload} */ (request.payload)
+
+    const matchResults = await matchCphs({
+      samdb: samdb.connection,
+      payload,
+      logger: request.logger
+    })
+
+    logCphMatchResults(request.logger, matchResults)
+  } catch (error) {
+    request.logger.error(
+      {
+        err: error,
+        endpoint: 'case-management/case',
+        applicationId: /** @type {CreateCasePayload} */ (request.payload)
+          .applicationReferenceNumber
+      },
+      'CPH matching failed but application submission will continue'
+    )
   }
 }
 
