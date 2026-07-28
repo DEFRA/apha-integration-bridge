@@ -63,6 +63,37 @@ Note: if you were already running the docker container you will need to compose 
 In local development, we follow NextJS convention of using a `.env.local` file to store environment variables. All necessary defaults are provided inside
 the `.env` file.
 
+#### Sam write API
+
+`PATCH /workorders/activity` forwards work schedule activity updates to the IBM/Sam standardwork API, authenticating with an EntraID client-credentials token. The mock endpoint `PATCH /alpha/workorders/activity` is unrelated to this configuration: it is unauthenticated, always returns canned responses, and never performs a real write.
+
+| Variable                      | Required          | Description                                                                                                                                                                    |
+| :---------------------------- | :---------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SAM_API_BASE_URL`            | per environment   | Sam API gateway base URL (https, no query or fragment). Unset, the endpoint returns `503` (fails closed); canned responses live at `PATCH /alpha/workorders/activity` instead. |
+| `SAM_API_WRITE_PATH`          | no                | Resource path appended to the base URL. Defaults to `/standardwork` — **confirm before enabling any environment**.                                                             |
+| `SAM_API_TIMEOUT_MS`          | no                | Timeout **per outbound request**. Defaults to `10000`.                                                                                                                         |
+| `SAM_API_ENTRA_TOKEN_URL`     | when base URL set | EntraID OAuth2 v2 token endpoint, including the tenant segment.                                                                                                                |
+| `SAM_API_ENTRA_CLIENT_ID`     | when base URL set | EntraID application (client) id.                                                                                                                                               |
+| `SAM_API_ENTRA_CLIENT_SECRET` | when base URL set | EntraID client secret.                                                                                                                                                         |
+| `SAM_API_ENTRA_SCOPE`         | when base URL set | Requested scope, normally the Sam app's ID URI plus `/.default` (e.g. `api://<sam-app-id>/.default`).                                                                          |
+
+Base URLs by environment:
+
+| Environment      | `SAM_API_BASE_URL`                               |
+| :--------------- | :----------------------------------------------- |
+| DB — Development | `https://samapigwd1.app.defra.gov.uk/api/sam/v1` |
+| SB — System Test | `https://samapigws1.app.defra.gov.uk/api/sam/v1` |
+| QB — Pre-Prod    | `https://samapigwt2.app.defra.gov.uk/api/sam/v1` |
+| PB — Production  | `https://samapigw.app.defra.gov.uk/api/sam/v1`   |
+
+Notes for deployment:
+
+- Setting `SAM_API_BASE_URL` without all four EntraID values makes the service **refuse to boot** in a deployed environment, rather than failing per request.
+- Without `SAM_API_BASE_URL` the endpoint returns `503` in every environment — it never acknowledges a write it did not perform. Use the alpha mock endpoint for canned-scenario testing.
+- Both the Sam gateway host **and** the EntraID token host must be on the squid proxy allowlist — token acquisition also egresses through the proxy.
+- Worst-case latency for one request is roughly `4 × SAM_API_TIMEOUT_MS` (token, write, then a re-authenticated retry if Sam rejects the token). The caller's own timeout must exceed it.
+- Clients need the `write` scope in `clients.jsonc` to call the endpoint.
+
 ### Setup
 
 Install application dependencies:
