@@ -13,7 +13,7 @@
       // prod
       "2nq42e5je49ffdt9f16t874laj"
     ],
-    "scopes": ["pii"]
+    "scopes": ["pii", "write"]
   },
   // teams app
   "apha-integration-bridge-internal-unmasked": {
@@ -27,6 +27,6 @@
       // prod
       "685i446tccrc4ku7fpm80vi45h"
     ],
-    "scopes": ["pii"]
+    "scopes": ["pii", "write"]
   }
 }
