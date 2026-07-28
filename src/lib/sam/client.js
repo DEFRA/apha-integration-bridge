@@ -372,7 +372,7 @@ export class SamClient {
 
         const code = describeError(error)
 
-        logger?.error({ errorCode: code }, `${context} failed`)
+        logger?.error({ errorCode: code }, `${context} failed (${code})`)
 
         throw new SamApiError(`${context} failed (${code})`)
       }
@@ -395,7 +395,7 @@ export class SamClient {
 
         logger?.error(
           { errorCode: code },
-          `${context} failed while reading the response body`
+          `${context} failed while reading the response body (${code})`
         )
 
         throw new SamApiError(

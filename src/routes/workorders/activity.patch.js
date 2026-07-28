@@ -146,7 +146,7 @@ export async function handler(request, h) {
           samCode: error.samCode,
           uid: error.uid
         },
-        'SAM write request failed'
+        `SAM write request failed: ${error.message}`
       )
 
       await metricsCounter('samWriteRequest', 1, { outcome: 'upstreamError' })
