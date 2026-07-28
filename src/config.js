@@ -6,6 +6,70 @@ import { convictValidateMongoUri } from './common/helpers/convict/validate-mongo
 convict.addFormat(convictValidateMongoUri)
 convict.addFormats(convictFormatWithValidator)
 
+// Custom formats for the Sam write API config: https only (credentials and
+// PII must never travel plaintext) and shapes that keep base-URL + path
+// concatenation from ever targeting the wrong resource.
+convict.addFormat({
+  name: 'https-url',
+  validate: (value) => {
+    if (value === null || value === undefined) {
+      return
+    }
+
+    let url
+
+    try {
+      url = new URL(value)
+    } catch {
+      throw new Error('must be an absolute URL')
+    }
+
+    if (url.protocol !== 'https:') {
+      throw new Error('must use https://')
+    }
+
+    if (url.username !== '' || url.password !== '') {
+      throw new Error('must not embed credentials')
+    }
+
+    // Check the raw string, not url.search/hash: a bare trailing '?' or
+    // '#' parses to an EMPTY search/hash but still survives concatenation,
+    // pushing the write path into the query/fragment.
+    if (value.includes('?') || value.includes('#')) {
+      throw new Error('must not contain a query string or fragment')
+    }
+  }
+})
+
+convict.addFormat({
+  name: 'leading-slash-path',
+  validate: (value) => {
+    if (typeof value !== 'string' || !value.startsWith('/')) {
+      throw new Error('must start with /')
+    }
+
+    if (value.startsWith('//')) {
+      throw new Error('must not start with //')
+    }
+
+    if (value.includes('?') || value.includes('#')) {
+      throw new Error('must not contain ? or #')
+    }
+
+    // '.'/'..' segments get canonicalised away at request time, silently
+    // dropping base-path segments
+    if (/(^|\/)\.\.?(\/|$)/.test(value)) {
+      throw new Error('must not contain . or .. path segments')
+    }
+
+    // %2e%2e would smuggle the same dot segments past the check above —
+    // and a legitimate resource path never needs percent-encoding anyway
+    if (value.includes('%')) {
+      throw new Error('must not contain percent-encoded characters')
+    }
+  }
+})
+
 const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
 const isDevelopment = process.env.NODE_ENV === 'development'
@@ -348,6 +412,58 @@ const config = convict({
       }
     }
   },
+  samApi: {
+    baseUrl: {
+      doc: 'Base URL of the Sam write API gateway, e.g. https://samapigwdb.app.defra.gov.uk/api/sam/v1. When unset, PATCH /workorders/activity fails closed (503) in every environment; the mock endpoints under /alpha are unaffected by this config.',
+      format: 'https-url',
+      nullable: true,
+      default: null,
+      env: 'SAM_API_BASE_URL'
+    },
+    writePath: {
+      doc: 'Resource path of the Sam standard-work write endpoint, appended to baseUrl. The default is a placeholder derived from the StandardWork API name — confirm the real path against the Pega elaboration document before enabling any environment.',
+      format: 'leading-slash-path',
+      default: '/standardwork',
+      env: 'SAM_API_WRITE_PATH'
+    },
+    requestTimeoutMs: {
+      doc: 'Timeout per outbound request: the EntraID token POST and the Sam PATCH each get their own budget. Worst case end-to-end for one bridge request is ~4x this value (cold token + PATCH + token re-fetch + single retry after a first Sam 401).',
+      format: 'nat',
+      default: 10000,
+      env: 'SAM_API_TIMEOUT_MS'
+    },
+    entra: {
+      tokenUrl: {
+        doc: 'Full EntraID (Azure AD) OAuth2 v2 token endpoint URL, including the tenant segment.',
+        format: 'https-url',
+        nullable: true,
+        default: null,
+        env: 'SAM_API_ENTRA_TOKEN_URL'
+      },
+      clientId: {
+        doc: 'EntraID application (client) id used for the client-credentials grant.',
+        format: String,
+        nullable: true,
+        default: null,
+        env: 'SAM_API_ENTRA_CLIENT_ID'
+      },
+      clientSecret: {
+        doc: 'EntraID client secret used for the client-credentials grant.',
+        format: String,
+        nullable: true,
+        default: null,
+        sensitive: true,
+        env: 'SAM_API_ENTRA_CLIENT_SECRET'
+      },
+      scope: {
+        doc: "OAuth2 scope requested in the client-credentials grant, normally the Sam application's ID URI plus /.default (e.g. api://<sam-app-id>/.default).",
+        format: String,
+        nullable: true,
+        default: null,
+        env: 'SAM_API_ENTRA_SCOPE'
+      }
+    }
+  },
   aws: {
     region: {
       doc: 'AWS region to use',
@@ -429,5 +545,56 @@ const config = convict({
 })
 
 config.validate({ allowed: 'strict' })
+
+// Env-var name per samApi.entra key. Error messages name the missing KEY
+// only — never echo a (possibly whitespace) secret value into logs.
+// Exported so the client's request-time check uses the same map.
+export const SAM_ENTRA_ENV_VARS = {
+  tokenUrl: 'SAM_API_ENTRA_TOKEN_URL',
+  clientId: 'SAM_API_ENTRA_CLIENT_ID',
+  clientSecret: 'SAM_API_ENTRA_CLIENT_SECRET',
+  scope: 'SAM_API_ENTRA_SCOPE'
+}
+
+/**
+ * Fail loud on a half-configured Sam write API: with SAM_API_BASE_URL set,
+ * all four Entra values are required (missing/empty/whitespace all count as
+ * absent). Throws in production — every deployed CDP env — so a bad deploy
+ * dies at boot instead of 500ing per request; warns in local dev. Inputs are
+ * parameters so tests can drive the production path.
+ *
+ * @param {{ baseUrl: string | null, entra: Record<string, string | null> }} samApi
+ * @param {{ isProduction?: boolean, warn?: (message: string) => void }} [options]
+ */
+export function validateSamApiConfig(
+  samApi,
+  { isProduction: isProductionEnv = false, warn = console.warn } = {}
+) {
+  if (typeof samApi.baseUrl !== 'string' || samApi.baseUrl.trim() === '') {
+    return
+  }
+
+  const missing = Object.entries(SAM_ENTRA_ENV_VARS)
+    .filter(([key]) => {
+      const value = samApi.entra[key]
+
+      return typeof value !== 'string' || value.trim() === ''
+    })
+    .map(([, envVar]) => envVar)
+
+  if (missing.length === 0) {
+    return
+  }
+
+  const message = `SAM_API_BASE_URL is set but the EntraID credentials are incomplete: missing ${missing.join(', ')}`
+
+  if (isProductionEnv) {
+    throw new Error(message)
+  }
+
+  warn(message)
+}
+
+validateSamApiConfig(config.get('samApi'), { isProduction })
 
 export { config }
