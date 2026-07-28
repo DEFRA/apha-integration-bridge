@@ -81,11 +81,10 @@ Base URLs by environment:
 
 | Environment      | `SAM_API_BASE_URL`                               |
 | :--------------- | :----------------------------------------------- |
-| DB — Development | `https://samapigwdb.app.defra.gov.uk/api/sam/v1` |
-| SB — System Test | `https://samapigwsb.app.defra.gov.uk/api/sam/v1` |
-| QB — Pre-Prod    | `https://samapigwqb.app.defra.gov.uk/api/sam/v1` |
-| PB — Production  | `https://samapigwpb.app.defra.gov.uk/api/sam/v1` |
-| TB — Training    | `https://samapigwtb.app.defra.gov.uk/api/sam/v1` |
+| DB — Development | `https://samapigwd1.app.defra.gov.uk/api/sam/v1` |
+| SB — System Test | `https://samapigws1.app.defra.gov.uk/api/sam/v1` |
+| QB — Pre-Prod    | `https://samapigwt2.app.defra.gov.uk/api/sam/v1` |
+| PB — Production  | `https://samapigw.app.defra.gov.uk/api/sam/v1`   |
 
 Notes for deployment:
 
