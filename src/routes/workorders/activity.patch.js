@@ -97,7 +97,7 @@ export async function handler(request, h) {
   /**
    * only supported API version is 1.0
    */
-  if (request.pre.apiVersion >= 1.0) {
+  if (request.pre.apiVersion > 1.0) {
     return new HTTPException(
       'UNSUPPORTED_VERSION',
       `Unknown version: ${request.pre.apiVersion}`

@@ -157,7 +157,7 @@ describe('PATCH /workorders/activity', () => {
       expect(routeModule.default.options.notes).toContain('## Authentication')
       expect(routeModule.default.options.notes).toContain('## Request payload')
       expect(routeModule.default.options.notes).toContain(
-        '## Sam responses (passed through)'
+        '## SAM responses (passed through)'
       )
       expect(routeModule.default.options.notes).toContain(
         '## Bridge responses (envelope)'
