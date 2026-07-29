@@ -266,7 +266,7 @@ describe('salesforce client', () => {
     const payload = {
       Status: CaseStatus.PREPARING,
       Priority: 'Medium',
-      TBL_Application__c: 'APP-123',
+      APHA_Application__c: 'APP-123',
       ContactId: 'CONTACT-456'
     }
 
