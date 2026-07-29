@@ -11,6 +11,25 @@ import { buildJWTAssertion } from './jwt-bearer.js'
 const TOKEN_EXPIRY_BUFFER_MS = 5000
 
 /**
+ * Best available transport error code without leaking upstream details.
+ *
+ * @param {unknown} error
+ * @returns {string}
+ */
+function describeTransportError(error) {
+  const cause =
+    error instanceof Error && error.cause
+      ? /** @type {{ code?: string }} */ (error.cause)
+      : undefined
+
+  return (
+    cause?.code ??
+    (error instanceof Error ? error.name : undefined) ??
+    'unknown error'
+  )
+}
+
+/**
  * Lightweight Salesforce client with in-memory token caching.
  * Supports both client credentials flow (system-level) and JWT Bearer flow (user-level).
  */
@@ -95,7 +114,8 @@ class SalesforceClient {
           body: params
         },
         {
-          timeoutMessage: 'Salesforce JWT token exchange timed out'
+          timeoutMessage: 'Salesforce JWT token exchange timed out',
+          logger
         }
       )
 
@@ -212,7 +232,8 @@ class SalesforceClient {
           body: params
         },
         {
-          timeoutMessage: 'Salesforce token request timed out'
+          timeoutMessage: 'Salesforce token request timed out',
+          logger
         }
       )
 
@@ -368,7 +389,8 @@ class SalesforceClient {
         body: JSON.stringify(payload)
       },
       {
-        timeoutMessage: `Salesforce ${methodName} request timed out`
+        timeoutMessage: `Salesforce ${methodName} request timed out`,
+        logger
       }
     )
 
@@ -418,7 +440,8 @@ class SalesforceClient {
         }
       },
       {
-        timeoutMessage: 'Salesforce query request timed out'
+        timeoutMessage: 'Salesforce query request timed out',
+        logger
       }
     )
 
@@ -512,8 +535,9 @@ class SalesforceClient {
    * @param {object} init
    * @param {object} [options]
    * @param {string} [options.timeoutMessage]
+   * @param {Logger} [options.logger]
    */
-  async requestWithTimeout(url, init, { timeoutMessage } = {}) {
+  async requestWithTimeout(url, init, { timeoutMessage, logger } = {}) {
     const { signal, cancel } = this.timeoutController()
 
     let response
@@ -528,7 +552,17 @@ class SalesforceClient {
         throw new Error(timeoutMessage || 'Request timed out')
       }
 
-      throw error
+      logger?.debug(
+        {
+          transportErrorCode: describeTransportError(error),
+          err: error
+        },
+        'Salesforce transport request failed'
+      )
+
+      throw new Error('Salesforce request failed', {
+        cause: error
+      })
     } finally {
       cancel()
     }
