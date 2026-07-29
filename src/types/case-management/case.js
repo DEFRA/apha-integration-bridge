@@ -320,7 +320,7 @@ export const GetCaseResponseSchema = Joi.object({
  * @property {string} [attributes.referenceId]
  * @property {string} APHA_Key__c
  * @property {string} APHA_Value__c
- * @property {string} APHA_Entity_Type__c
+ * @property {string} APHA_EntityType__c
  * @property {string} APHA_Status__c
  * @property {string} APHA_Application__c
  */
