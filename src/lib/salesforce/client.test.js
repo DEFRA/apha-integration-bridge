@@ -266,7 +266,7 @@ describe('salesforce client', () => {
     const payload = {
       Status: CaseStatus.PREPARING,
       Priority: 'Medium',
-      APHA_Application__c: 'APP-123',
+      TBL_Application__c: 'APP-123',
       ContactId: 'CONTACT-456'
     }
 
@@ -443,13 +443,13 @@ describe('salesforce client', () => {
       records: [
         {
           Id: 'keyfact-001',
-          APHA_Key__c: 'CaseCategory',
-          APHA_Value__c: 'Import'
+          TBL_Key__c: 'CaseCategory',
+          TBL_Value__c: 'Import'
         },
         {
           Id: 'keyfact-002',
-          APHA_Key__c: 'InspectionType',
-          APHA_Value__c: 'Documentary'
+          TBL_Key__c: 'InspectionType',
+          TBL_Value__c: 'Documentary'
         }
       ]
     }
@@ -466,7 +466,7 @@ describe('salesforce client', () => {
 
     expect(result).toEqual(mockKeyFactsResponse)
 
-    const expectedQuery = `SELECT ID, APHA_Key__c, APHA_Value__c, APHA_EntityType__c, APHA_Status__c, APHA_ObjectAPIName__c, APHA_RecordId__c FROM APHA_KeyFact__c WHERE APHA_Application__c='${applicationId}'`
+    const expectedQuery = `SELECT ID, TBL_Key__c, TBL_Value__c, TBL_EntityType__c, TBL_Status__c, TBL_ObjectAPIName__c, TBL_RecordId__c FROM TBL_KeyFact__c WHERE TBL_Application__c='${applicationId}'`
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining('/query?q=' + encodeURIComponent(expectedQuery)),
       expect.objectContaining({
@@ -483,9 +483,9 @@ describe('salesforce client', () => {
       allOrNone: false,
       records: [
         {
-          attributes: { type: 'APHA_KeyFact__c' },
-          APHA_Key__c: 'CaseCategory',
-          APHA_Value__c: 'Import'
+          attributes: { type: 'TBL_KeyFact__c' },
+          TBL_Key__c: 'CaseCategory',
+          TBL_Value__c: 'Import'
         }
       ]
     }

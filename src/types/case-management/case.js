@@ -318,11 +318,11 @@ export const GetCaseResponseSchema = Joi.object({
  * @property {Object} attributes
  * @property {string} attributes.type
  * @property {string} [attributes.referenceId]
- * @property {string} APHA_Key__c
- * @property {string} APHA_Value__c
- * @property {string} APHA_EntityType__c
- * @property {string} APHA_Status__c
- * @property {string} APHA_Application__c
+ * @property {string} TBL_Key__c
+ * @property {string} TBL_Value__c
+ * @property {string} TBL_EntityType__c
+ * @property {string} TBL_Status__c
+ * @property {string} TBL_Application__c
  */
 
 /**
