@@ -466,7 +466,7 @@ describe('salesforce client', () => {
 
     expect(result).toEqual(mockKeyFactsResponse)
 
-    const expectedQuery = `SELECT ID, APHA_Key__c, APHA_Value__c, APHA_Entity_Type__c, APHA_Status__c, APHA_Object_API_Name__c, APHA_Record_Id__c FROM APHA_KeyFact__c WHERE APHA_Application__c='${applicationId}'`
+    const expectedQuery = `SELECT ID, APHA_Key__c, APHA_Value__c, APHA_EntityType__c, APHA_Status__c, APHA_ObjectAPIName__c, APHA_RecordId__c FROM APHA_KeyFact__c WHERE APHA_Application__c='${applicationId}'`
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining('/query?q=' + encodeURIComponent(expectedQuery)),
       expect.objectContaining({

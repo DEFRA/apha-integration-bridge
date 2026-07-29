@@ -40,7 +40,7 @@ function buildSingleKeyFactRequest(applicationId, keyFactKey, keyFactItem) {
     },
     APHA_Key__c: keyFactKey,
     APHA_Value__c: JSON.stringify(keyFactItem.value),
-    APHA_Entity_Type__c: keyFactItem.type,
+    APHA_EntityType__c: keyFactItem.type,
     APHA_Status__c: KeyFactStatus.UNVALIDATED,
     APHA_Application__c: applicationId
   }

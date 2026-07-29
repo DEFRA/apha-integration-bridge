@@ -45,14 +45,14 @@ describe('buildKeyFactsRequest', () => {
     expect(requesterRecord.APHA_Value__c).toBe(
       JSON.stringify(payload.keyFacts.requester.value)
     )
-    expect(requesterRecord.APHA_Entity_Type__c).toBe('text')
+    expect(requesterRecord.APHA_EntityType__c).toBe('text')
     expect(requesterRecord.APHA_Status__c).toBe(KeyFactStatus.UNVALIDATED)
 
     expect(originAddressRecord).toBeDefined()
     expect(originAddressRecord.APHA_Value__c).toBe(
       JSON.stringify(payload.keyFacts.originAddress.value)
     )
-    expect(originAddressRecord.APHA_Entity_Type__c).toBe('address')
+    expect(originAddressRecord.APHA_EntityType__c).toBe('address')
     expect(requesterRecord.APHA_Status__c).toBe(KeyFactStatus.UNVALIDATED)
   })
 })
