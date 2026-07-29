@@ -552,15 +552,17 @@ class SalesforceClient {
         throw new Error(timeoutMessage || 'Request timed out')
       }
 
+      const transportErrorCode = describeTransportError(error)
+
       logger?.debug(
         {
-          transportErrorCode: describeTransportError(error),
+          transportErrorCode,
           err: error
         },
-        'Salesforce transport request failed'
+        `Salesforce transport request failed (${transportErrorCode})`
       )
 
-      throw new Error('Salesforce request failed', {
+      throw new Error(`Salesforce request failed (${transportErrorCode})`, {
         cause: error
       })
     } finally {
