@@ -31,7 +31,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
 BEGIN
-  EXECUTE IMMEDIATE 'DROP TABLE v_cph_customer_unit PURGE';
+  EXECUTE IMMEDIATE 'DROP TABLE v_cph_customer_unit CASCADE CONSTRAINTS PURGE';
 EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
@@ -126,85 +126,160 @@ FROM   v_cph_customer_unit;
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Drop if exist (dev-friendly)
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_state PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_state CASCADE CONSTRAINTS PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE location PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE location CASCADE CONSTRAINTS PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_involvement PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_involvement CASCADE CONSTRAINTS PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_map PURGE';     EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_map CASCADE CONSTRAINTS PURGE';  EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_desc PURGE';    EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code_desc CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_code CASCADE CONSTRAINTS PURGE';      EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set_map PURGE';      EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set_map CASCADE CONSTRAINTS PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE ref_data_set CASCADE CONSTRAINTS PURGE';       EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
--- Core reference data tables (needed by both holdings and locations)
+-- ── Reference data tables — aligned to canonical SAM schema ──────────────────
+-- New NOT NULL columns use DEFAULTs so the existing column-list INSERTs across
+-- 001..006 need no per-row edits (defaults are query-neutral; the only filtered
+-- column, EFFECTIVE_TO_DATE, stays explicitly seeded). FKs are added in
+-- 009_add_foreign_keys.sql after all data loads (D9 refinement).
 CREATE TABLE ref_data_set (
-  ref_data_set_pk       NUMBER        PRIMARY KEY,
-  ref_data_set_name     VARCHAR2(100) NOT NULL,
-  effective_to_date     DATE
+  ref_data_set_pk            NUMBER        NOT NULL,
+  party_pk                   NUMBER,
+  ref_data_set_name          VARCHAR2(100) NOT NULL,
+  ref_data_set_desc          VARCHAR2(1000),
+  data_type                  VARCHAR2(100) DEFAULT 'REFERENCE' NOT NULL,
+  business_domain            VARCHAR2(100) DEFAULT 'REFERENCE' NOT NULL,
+  is_ldssm_compliant_ind     CHAR(1)       DEFAULT 'N' NOT NULL,
+  is_mastered_by_domain_ind  CHAR(1)       DEFAULT 'N' NOT NULL,
+  effective_from_date        DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date          DATE,
+  CONSTRAINT pk_ref_data_set PRIMARY KEY (ref_data_set_pk),
+  CONSTRAINT ck_rdse_is_ldssm_compliant CHECK (is_ldssm_compliant_ind IN ('Y', 'N')),
+  CONSTRAINT ck_rdse_is_mastered_by_dom_ind CHECK (is_mastered_by_domain_ind IN ('Y', 'N'))
+  -- real FK: party_pk -> ORGANISATION(party_pk) omitted (soft, nullable, query-unused; D2)
 );
+CREATE UNIQUE INDEX uk_rdse_ref_data_set_name ON ref_data_set (ref_data_set_name);
 
 CREATE TABLE ref_data_code (
-  ref_data_code_pk      NUMBER        PRIMARY KEY,
-  code                  VARCHAR2(50)  NOT NULL,
+  ref_data_code_pk      NUMBER        NOT NULL,
   ref_data_set_pk       NUMBER        NOT NULL,
-  effective_to_date     DATE          NOT NULL
+  code                  VARCHAR2(25)  NOT NULL,  -- real VARCHAR2(20); widened (D5: 'Disease Investigation'/'CATTLE_BREEDING_DAIRY' = 21)
+  ref_data_subset_pk    NUMBER,
+  effective_from_date   DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date     DATE,
+  CONSTRAINT pk_ref_data_code PRIMARY KEY (ref_data_code_pk)
+  -- real FK: ref_data_subset_pk -> REF_DATA_SUBSET omitted (parent out of fixture scope; D2)
 );
+CREATE UNIQUE INDEX uk_rdco_ref_data_set_pk_code ON ref_data_code (ref_data_set_pk, code);
 
 CREATE TABLE ref_data_code_desc (
-  ref_data_code_pk      NUMBER        PRIMARY KEY,
-  short_description     VARCHAR2(255) NOT NULL,
-  language_code         VARCHAR2(10)  NOT NULL
+  ref_data_code_pk      NUMBER        NOT NULL,
+  language_code         VARCHAR2(20)  NOT NULL,
+  short_description     VARCHAR2(100) NOT NULL,
+  description           VARCHAR2(1000),
+  sort_sequence         NUMBER,
+  CONSTRAINT pk_ref_data_code_desc PRIMARY KEY (ref_data_code_pk, language_code)
 );
 
--- Core feature tables
+-- ── Feature / location cluster — aligned to canonical SAM schema ─────────────
+-- New NOT NULL cols use literal DEFAULTs; surrogate FEATURE_STATE_PK uses IDENTITY
+-- (existing MERGE/INSERT producers unchanged). FKs added in 009.
+-- party_role_pk is real NOT NULL: orphan location-display involvements (5001,5999)
+-- that never gain a real holder role default to the past-dated SENTINEL role 0
+-- (seeded below), so find-holding(s) still excludes them (PR.PARTY_ROLE_TO_DATE
+-- IS NULL fails) while find-locations still shows their CPH (D8).
 CREATE TABLE feature_involvement (
-  feature_involvement_pk      NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  feature_pk                  NUMBER       NOT NULL,
-  cph                         VARCHAR2(50) NOT NULL,
-  feature_involvement_type    VARCHAR2(20) NOT NULL,
-  feature_involv_to_date      DATE,
-  party_role_pk               NUMBER
+  feature_involvement_pk       NUMBER       GENERATED BY DEFAULT AS IDENTITY,
+  feature_pk                   NUMBER       NOT NULL,
+  party_role_pk                NUMBER       DEFAULT 0 NOT NULL,
+  activity_class_party_role_pk NUMBER,
+  document_pk                  NUMBER,
+  feature_involvement_type     VARCHAR2(20) NOT NULL,
+  feature_third_party_info_ind CHAR(1),
+  feature_involv_from_date     DATE         DEFAULT DATE '2000-01-01' NOT NULL,
+  feature_involv_to_date       DATE,
+  ownership_last_checked_date  DATE,
+  owner_of_place_status        VARCHAR2(20),
+  cph                          VARCHAR2(50),  -- real CHAR(11); kept VARCHAR2 (D4) so short CPH ids match without blank-padding
+  vetnet_core_id               NUMBER,
+  temporary_cph_indicator      CHAR(1),
+  CONSTRAINT pk_feature_involvement PRIMARY KEY (feature_involvement_pk),
+  CONSTRAINT ck_finv_third_party_info_ind CHECK (feature_third_party_info_ind IN ('Y', 'N', '?')),
+  CONSTRAINT ck_finv_temporary_cph_ind CHECK (temporary_cph_indicator IN ('Y', 'N', '?', 'T'))
+  -- real FKs feature_pk->FEATURE, party_role_pk->PARTY_ROLE added in 009
+  -- activity_class_party_role_pk->ACTIVITY_CLASS_PARTY_ROLE, document_pk->DOCUMENT,
+  -- and (cph,vetnet_core_id)->CPH + ck_finv_type_cph_core_id omitted (out of scope / D4)
 );
+CREATE INDEX ix_finv_cph ON feature_involvement (cph, party_role_pk);
+CREATE INDEX ix_finv_feature_pk_inv_type ON feature_involvement (feature_pk, feature_involvement_type);
+CREATE INDEX ix_finv_vetnet_core_id ON feature_involvement (vetnet_core_id);
+-- canonical 'functional' index reproduced as an ordinary composite index
+CREATE INDEX ix_finv_func_core_id ON feature_involvement (vetnet_core_id, party_role_pk);
 
--- Canonical LOCATION key in SAM is FEATURE_PK (one row per feature)
 CREATE TABLE location (
-  feature_pk                 NUMBER        NOT NULL,
-  location_id                VARCHAR2(50)  NOT NULL,
-  common_land_indicator      CHAR(1),
-  right_of_way_indicator     CHAR(1),
-  CONSTRAINT location_pk PRIMARY KEY (feature_pk)
+  feature_pk             NUMBER       NOT NULL,
+  location_id            VARCHAR2(20) NOT NULL,  -- real VARCHAR2(8); widened (D5: 'LOC-1111111111' = 14)
+  common_land_indicator  CHAR(1),
+  right_of_way_indicator CHAR(1),
+  CONSTRAINT pk_location PRIMARY KEY (feature_pk),
+  CONSTRAINT ck_loca_common_land_indicator CHECK (common_land_indicator IN ('Y', 'N', '?')),
+  CONSTRAINT ck_loca_of_way_indicator CHECK (right_of_way_indicator IN ('Y', 'N', '?'))
+  -- real FK: feature_pk -> FEATURE (added in 009)
 );
+CREATE UNIQUE INDEX uk_location_location_id ON location (location_id);
 
--- Add feature_state_to_dttm to support locations endpoint filters
 CREATE TABLE feature_state (
-  feature_pk             NUMBER       PRIMARY KEY,
-  feature_status_code    VARCHAR2(20) NOT NULL,
-  feature_state_to_dttm  DATE
+  feature_state_pk          NUMBER       GENERATED BY DEFAULT AS IDENTITY,
+  feature_pk                NUMBER       NOT NULL,
+  feature_status_code       VARCHAR2(20) NOT NULL,
+  feature_state_reason_code VARCHAR2(20),
+  feature_state_from_dttm   TIMESTAMP(3) DEFAULT TIMESTAMP '2000-01-01 00:00:00' NOT NULL,
+  feature_state_to_dttm     TIMESTAMP(3),
+  CONSTRAINT pk_feature_state PRIMARY KEY (feature_state_pk)
+  -- real FK: feature_pk -> FEATURE (added in 009)
 );
 
--- Reference data tables (very slimmed down)
 CREATE TABLE ref_data_set_map (
-  ref_data_set_map_pk   NUMBER        PRIMARY KEY,
+  ref_data_set_map_pk   NUMBER        NOT NULL,
   ref_data_set_map_name VARCHAR2(100) NOT NULL,
-  effective_to_date     DATE          NOT NULL
+  ref_data_set_map_desc VARCHAR2(1000),
+  ref_data_set_map_type VARCHAR2(20)  DEFAULT 'CE' NOT NULL,
+  from_ref_data_set_pk  NUMBER        NOT NULL,
+  to_ref_data_set_pk    NUMBER        NOT NULL,
+  party_pk              NUMBER,
+  effective_from_date   DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date     DATE,
+  CONSTRAINT pk_ref_data_set_map PRIMARY KEY (ref_data_set_map_pk),
+  CONSTRAINT ck_rdsm_ref_data_set_map_type CHECK (ref_data_set_map_type IN ('PC', 'NW', 'CE', 'RR'))
+  -- real FK: party_pk -> ORGANISATION(party_pk) omitted (soft, nullable, query-unused; D2)
 );
+CREATE UNIQUE INDEX uk_rdsm_ref_data_set_map_name ON ref_data_set_map (ref_data_set_map_name);
 
 CREATE TABLE ref_data_code_map (
-  ref_data_code_map_pk   NUMBER       PRIMARY KEY,
+  ref_data_code_map_pk   NUMBER       NOT NULL,
   ref_data_set_map_pk    NUMBER       NOT NULL,
   from_ref_data_code_pk  NUMBER       NOT NULL,
   to_ref_data_code_pk    NUMBER       NOT NULL,
-  effective_to_date      DATE         NOT NULL
+  is_primary_code_ind    CHAR(1),
+  effective_from_date    DATE         DEFAULT DATE '2000-01-01' NOT NULL,
+  effective_to_date      DATE,
+  CONSTRAINT pk_ref_data_code_map PRIMARY KEY (ref_data_code_map_pk),
+  CONSTRAINT ck_rdcm_is_prmry_cd_ind CHECK (is_primary_code_ind IN ('Y', 'N', '?'))
 );
+CREATE UNIQUE INDEX uk_rdcm_map_pk_from_pk_to_pk ON ref_data_code_map (ref_data_set_map_pk, from_ref_data_code_pk, to_ref_data_code_pk);
 
--- Minimal reference data to satisfy WHERE filters and joins
-INSERT INTO ref_data_set_map (ref_data_set_map_pk, ref_data_set_map_name, effective_to_date)
-VALUES (1, 'LOCAL_AUTHORITY_COUNTY_PARISH', DATE '9999-12-31');
+-- Minimal reference data to satisfy WHERE filters and joins.
+-- from/to_ref_data_set_pk point at the LOCAL_AUTHORITY set (2000, created in 005).
+-- The FK is validated in 009 after all data loads. Query-neutral (find-holding's
+-- LOCAL_AUTHORITY CTE joins this map by NAME only).
+INSERT INTO ref_data_set_map (ref_data_set_map_pk, ref_data_set_map_name, ref_data_set_map_type, from_ref_data_set_pk, to_ref_data_set_pk, effective_to_date)
+VALUES (1, 'LOCAL_AUTHORITY_COUNTY_PARISH', 'CE', 2000, 2000, DATE '9999-12-31');
 
 -- Feature graph for each existing test CPH
 -- CPH 01/001/0001
@@ -262,13 +337,10 @@ INSERT INTO feature_state (feature_pk, feature_status_code) VALUES (6410, 'ACTIV
 
 COMMIT;
 
--- Helpful indexes (optional for local XE, but nice to have)
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_fi_cph           ON feature_involvement (cph)';          EXCEPTION WHEN OTHERS THEN NULL; END;
-/
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_fi_feature_pk    ON feature_involvement (feature_pk)';   EXCEPTION WHEN OTHERS THEN NULL; END;
-/
-BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_loc_feature_pk   ON location (feature_pk)';               EXCEPTION WHEN OTHERS THEN NULL; END;
-/
+-- Helpful indexes (optional for local XE, but nice to have).
+-- (idx_fi_cph / idx_fi_feature_pk removed: redundant prefixes of the canonical
+--  composite indexes ix_finv_cph / ix_finv_feature_pk_inv_type; idx_loc_feature_pk
+--  removed: LOCATION's PK already indexes feature_pk.)
 BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_fs_feature_pk    ON feature_state (feature_pk)';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_rdc_code         ON ref_data_code (code)';                EXCEPTION WHEN OTHERS THEN NULL; END;
@@ -321,161 +393,298 @@ EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Drop all tables in correct order (reverse dependency order)
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_location PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_location CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_state PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset_state CASCADE CONSTRAINTS PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE coll_regstrd_animal_group PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE coll_regstrd_animal_group CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE asset CASCADE CONSTRAINTS PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_business_activty PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_business_activty CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_type PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility_type CASCADE CONSTRAINTS PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE facility CASCADE CONSTRAINTS PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal_species PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal_species CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal PURGE';                  EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE animal CASCADE CONSTRAINTS PURGE';                  EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE livestock_unit PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE livestock_unit CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_point PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_point CASCADE CONSTRAINTS PURGE';           EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_address PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature_address CASCADE CONSTRAINTS PURGE';         EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE bs7666_address PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE bs7666_address CASCADE CONSTRAINTS PURGE';          EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_role PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_role CASCADE CONSTRAINTS PURGE';              EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_state PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party_state CASCADE CONSTRAINTS PURGE';             EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE party PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE party CASCADE CONSTRAINTS PURGE';                   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE feature CASCADE CONSTRAINTS PURGE';                EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
 -- Animal tables for livestock species
 CREATE TABLE animal_species (
-  animal_species_pk     NUMBER        PRIMARY KEY,
-  animal_species_code   VARCHAR2(50)  NOT NULL,
-  animal_species_to_date DATE
+  animal_species_pk            NUMBER       NOT NULL,
+  animal_species_code          VARCHAR2(20),
+  longevity_threshold          NUMBER,
+  maximum_offspring            NUMBER,
+  animal_species_from_date     DATE         DEFAULT DATE '2000-01-01' NOT NULL,
+  animal_species_to_date       DATE,
+  individual_rgstrtn_permitted CHAR(1),
+  individual_animals_tracked   CHAR(1),
+  CONSTRAINT pk_animal_species PRIMARY KEY (animal_species_pk),
+  CONSTRAINT ck_aspe_rgstrtn_permitted CHECK (individual_rgstrtn_permitted IN ('Y', 'N', '?'))
 );
+CREATE UNIQUE INDEX uk_aspe_animal_species_code ON animal_species (animal_species_code);
 
 CREATE TABLE animal (
-  animal_pk             NUMBER        PRIMARY KEY,
-  animal_species_pk     NUMBER        NOT NULL
+  animal_pk                   NUMBER       NOT NULL,
+  animal_species_pk           NUMBER       NOT NULL,
+  breed_pk                    NUMBER,
+  animal_type                 VARCHAR2(20) DEFAULT 'COLLECTION' NOT NULL,
+  gender                      CHAR(1),
+  registered_late_indicator   CHAR(1),
+  animal_name                 VARCHAR2(35),
+  plan_to_vaccinate_indicator CHAR(1),
+  type_of_management          VARCHAR2(20),
+  livestock_type              VARCHAR2(20),
+  CONSTRAINT pk_animal PRIMARY KEY (animal_pk),
+  CONSTRAINT ck_anim_vaccinate_indicator CHECK (plan_to_vaccinate_indicator IN ('Y', 'N', '?')),
+  CONSTRAINT ck_anim_late_indicator CHECK (registered_late_indicator IN ('Y', 'N', '?'))
+  -- real FK: animal_species_pk -> ANIMAL_SPECIES (009); breed_pk -> BREED omitted (out of scope, D2)
 );
 
 -- Facility tables for facility business activity
 CREATE TABLE facility_type (
-  facility_type_pk      NUMBER        PRIMARY KEY,
-  facility_type_code    VARCHAR2(50)  NOT NULL
+  facility_type_pk        NUMBER       NOT NULL,
+  facility_type_code      VARCHAR2(20) NOT NULL,
+  facility_type_from_date DATE         DEFAULT DATE '2000-01-01' NOT NULL,
+  facility_type_to_date   DATE,
+  CONSTRAINT pk_facility_type PRIMARY KEY (facility_type_pk)
 );
+CREATE UNIQUE INDEX uk_ftyp_facility_type_code ON facility_type (facility_type_code);
 
 CREATE TABLE facility_business_activty (
-  facility_business_activty_pk  NUMBER        PRIMARY KEY,
-  facility_type_pk              NUMBER        NOT NULL,
-  facility_businss_actvty_code  VARCHAR2(50)  NOT NULL
+  facility_business_activty_pk  NUMBER       NOT NULL,
+  facility_type_pk              NUMBER       NOT NULL,
+  facility_businss_actvty_code  VARCHAR2(25) NOT NULL,  -- real VARCHAR2(20); widened (D5: 'CATTLE_BREEDING_DAIRY' 21)
+  tracing_priority              NUMBER       DEFAULT 0 NOT NULL,
+  CONSTRAINT pk_facility_business_activty PRIMARY KEY (facility_business_activty_pk)
+  -- real FK: facility_type_pk -> FACILITY_TYPE (added in 009)
 );
+CREATE UNIQUE INDEX uk_fbac_ftyp_pk_fbac_actvty_cd ON facility_business_activty (facility_type_pk, facility_businss_actvty_code);
 
--- Party tables for holdings relationships
+-- ── Party cluster — aligned to canonical SAM schema ──────────────────────────
+-- New NOT NULL columns use literal DEFAULTs; surrogate state PK uses IDENTITY
+-- (the pattern the original fixture already uses for FEATURE_INVOLVEMENT), so the
+-- existing party_state MERGE/INSERT producers need no per-row edits. FKs in 009.
 CREATE TABLE party (
-  party_pk              NUMBER        PRIMARY KEY,
-  party_id              VARCHAR2(50)  NOT NULL
+  party_pk                      NUMBER        NOT NULL,
+  party_id                      VARCHAR2(20)  NOT NULL,  -- real VARCHAR2(8); widened (D5: 'CUST-...' up to 14)
+  party_type                    VARCHAR2(20)  DEFAULT 'PERSON' NOT NULL,
+  preferred_language_code       VARCHAR2(20),
+  party_ah_memo                 VARCHAR2(4000),
+  party_migrated_datetime       TIMESTAMP(3),
+  party_mig_detail_check_ind    CHAR(1),
+  party_data_last_check_dttm    TIMESTAMP(3),
+  party_data_check_deferred_dt  DATE,
+  password                      VARCHAR2(35),
+  password_hint                 VARCHAR2(20),
+  authentication_refused_ind    CHAR(1),
+  secondary_contact_full_name   VARCHAR2(70),
+  CONSTRAINT pk_party PRIMARY KEY (party_pk),
+  CONSTRAINT ck_part_mig_detail_check_ind CHECK (party_mig_detail_check_ind IN ('Y', 'N', '?')),
+  CONSTRAINT ck_part_refused_ind CHECK (authentication_refused_ind IN ('Y', 'N', '?'))
 );
+CREATE UNIQUE INDEX uk_party_id ON party (party_id);
+CREATE INDEX ix_part_func_sec_contact ON party (secondary_contact_full_name, party_pk);
 
 CREATE TABLE party_state (
-  party_pk              NUMBER        NOT NULL,
-  party_status_code     VARCHAR2(20)  NOT NULL,
-  party_state_to_dttm   DATE
+  party_state_pk          NUMBER        GENERATED BY DEFAULT AS IDENTITY,
+  party_pk                NUMBER        NOT NULL,
+  party_status_code       VARCHAR2(20)  NOT NULL,
+  party_state_reason_code VARCHAR2(20),
+  party_state_from_dttm   TIMESTAMP(3)  DEFAULT TIMESTAMP '2000-01-01 00:00:00' NOT NULL,
+  party_state_to_dttm     TIMESTAMP(3),
+  CONSTRAINT pk_party_state PRIMARY KEY (party_state_pk)
 );
+CREATE UNIQUE INDEX uk_psta_party_party_state ON party_state (party_pk, party_state_pk);
 
 CREATE TABLE party_role (
-  party_role_pk         NUMBER        PRIMARY KEY,
+  party_role_pk         NUMBER        NOT NULL,
   party_pk              NUMBER        NOT NULL,
-  party_role_to_date    DATE
+  role_pk               NUMBER        DEFAULT 0 NOT NULL,  -- real FK -> ROLE omitted (parent out of scope, D2); 0 sentinel
+  main_role_type        VARCHAR2(20)  DEFAULT 'KEEPER' NOT NULL,
+  party_role_from_date  DATE          DEFAULT DATE '2000-01-01' NOT NULL,
+  party_role_to_date    DATE,
+  CONSTRAINT pk_party_role PRIMARY KEY (party_role_pk)
 );
+CREATE INDEX ix_prol_party_role_party ON party_role (party_role_pk, party_pk);
+CREATE INDEX ix_prol_role_pk_main_role_type ON party_role (role_pk, main_role_type);
 
 -- Feature table for feature names
 CREATE TABLE feature (
-  feature_pk            NUMBER        PRIMARY KEY,
-  feature_name          VARCHAR2(255)
+  feature_pk                   NUMBER        NOT NULL,
+  document_pk                  NUMBER,
+  feature_type                 VARCHAR2(20)  DEFAULT 'LOCATION' NOT NULL,
+  feature_geometry             BLOB,
+  shape_file_id                VARCHAR2(255),
+  feature_name                 VARCHAR2(100),
+  feature_description          VARCHAR2(255),
+  feature_access_description   VARCHAR2(255),
+  contiguous_area_indicator    CHAR(1),
+  feature_area_band            VARCHAR2(20),
+  feature_class_type           VARCHAR2(20),
+  feature_migrated_datetime    TIMESTAMP(3),
+  feature_mig_detail_check_ind CHAR(1),
+  feature_data_last_check_dttm TIMESTAMP(3),
+  feature_ah_memo              VARCHAR2(4000),
+  feature_grouping_type        VARCHAR2(20),
+  organisational_area_type     VARCHAR2(20),
+  ftr_data_check_deferred_date DATE,
+  CONSTRAINT pk_feature PRIMARY KEY (feature_pk),
+  CONSTRAINT ck_feat_area_indicator CHECK (contiguous_area_indicator IN ('Y', 'N', '?')),
+  CONSTRAINT ck_feat_mig_detail_check_ind CHECK (feature_mig_detail_check_ind IN ('Y', 'N', '?'))
+  -- real FK: document_pk -> DOCUMENT omitted (out of scope, D2)
 );
 
 -- Feature point table for OS map references
 CREATE TABLE feature_point (
-  feature_pk                  NUMBER        NOT NULL,
-  primary_feature_point_ind   VARCHAR2(1)   NOT NULL,
-  feature_point_to_date       DATE,
-  os_map_reference            VARCHAR2(100)
+  feature_point_pk          NUMBER       GENERATED BY DEFAULT AS IDENTITY,
+  feature_pk                NUMBER       NOT NULL,
+  feature_point_type        VARCHAR2(20) DEFAULT 'POINT' NOT NULL,
+  os_map_reference          VARCHAR2(12),
+  easting                   NUMBER(6, 0),
+  northing                  NUMBER(7, 0),
+  primary_feature_point_ind CHAR(1)      NOT NULL,
+  feature_point_from_date   DATE         DEFAULT DATE '2000-01-01' NOT NULL,
+  feature_point_to_date     DATE,
+  CONSTRAINT pk_feature_point PRIMARY KEY (feature_point_pk),
+  CONSTRAINT ck_fpoi_feature_point_ind CHECK (primary_feature_point_ind IN ('Y', 'N'))
+  -- real FK: feature_pk -> FEATURE (added in 009)
 );
+CREATE INDEX ix_fpoi_os_map_referfence ON feature_point (os_map_reference);
+-- canonical 'functional' index reproduced as an ordinary composite index
+CREATE INDEX ix_fpoi_func_os_map_ref ON feature_point (os_map_reference, feature_pk);
+CREATE INDEX ix_fpoi_easting ON feature_point (easting, feature_pk);
+CREATE INDEX ix_fpoi_northing ON feature_point (northing, feature_pk);
 
 -- Asset table linking to animals
 CREATE TABLE asset (
-  asset_pk              NUMBER        PRIMARY KEY,
-  animal_pk             NUMBER
+  asset_pk                     NUMBER       NOT NULL,
+  animal_pk                    NUMBER,
+  asset_type                   VARCHAR2(20) DEFAULT 'LIVESTOCKUNIT' NOT NULL,  -- query-neutral (queries test ASSET_PK IS NULL only)
+  asset_migrated_datetime      TIMESTAMP(3),
+  asset_mig_detail_check_ind   CHAR(1),
+  asset_data_last_check_dttm   TIMESTAMP(3),
+  asset_ah_memo                VARCHAR2(4000),
+  unit_type                    VARCHAR2(20),
+  asset_data_check_deferred_dt DATE,
+  CONSTRAINT pk_asset PRIMARY KEY (asset_pk),
+  CONSTRAINT ck_asse_mig_detail_check_ind CHECK (asset_mig_detail_check_ind IN ('Y', 'N', '?'))
+  -- real FK: animal_pk -> ANIMAL (added in 009)
 );
+CREATE UNIQUE INDEX uk_asse_animal_pk ON asset (animal_pk);
 
 CREATE TABLE coll_regstrd_animal_group (
-  animal_pk                     NUMBER        NOT NULL,
-  usual_quantity_of_animals     NUMBER
+  animal_pk                 NUMBER NOT NULL,
+  usual_quantity_of_animals NUMBER,
+  CONSTRAINT pk_coll_regstrd_animal_group PRIMARY KEY (animal_pk)
+  -- real FK: animal_pk -> ANIMAL (added in 009)
 );
 
 -- Core BS7666 address tables
 CREATE TABLE bs7666_address (
-  address_pk                   NUMBER       PRIMARY KEY,
-  paon_start_number            NUMBER,
-  paon_start_number_suffix     VARCHAR2(10),
-  paon_end_number              NUMBER,
-  paon_end_number_suffix       VARCHAR2(10),
-  paon_description             VARCHAR2(255),
-  saon_description             VARCHAR2(255),
-  saon_start_number            NUMBER,
-  saon_start_number_suffix     VARCHAR2(10),
-  saon_end_number              NUMBER,
-  saon_end_number_suffix       VARCHAR2(10),
-  street                       VARCHAR2(255),
-  locality                     VARCHAR2(255),
-  town                         VARCHAR2(255),
-  administrative_area          VARCHAR2(255),
-  postcode                     VARCHAR2(20),
+  address_pk                   NUMBER        NOT NULL,
+  street                       VARCHAR2(100),
+  locality                     VARCHAR2(35),
+  town                         VARCHAR2(30),
+  administrative_area          VARCHAR2(30),
+  postcode                     VARCHAR2(8),
+  country_code                 VARCHAR2(20),
   uk_internal_code             VARCHAR2(20),
-  country_code                 VARCHAR2(10)
+  saon_start_number            NUMBER(4, 0),
+  saon_start_number_suffix     CHAR(1),
+  saon_end_number              NUMBER(4, 0),
+  saon_end_number_suffix       CHAR(1),
+  saon_description             VARCHAR2(90),
+  paon_start_number            NUMBER(4, 0),
+  paon_start_number_suffix     CHAR(1),
+  paon_end_number              NUMBER(4, 0),
+  paon_end_number_suffix       CHAR(1),
+  paon_description             VARCHAR2(90),
+  CONSTRAINT pk_bs7666_address PRIMARY KEY (address_pk)
 );
+CREATE INDEX ix_badd_func_postcode ON bs7666_address (postcode, address_pk);
+CREATE INDEX ix_badd_func_street ON bs7666_address (street, address_pk);
+CREATE INDEX ix_badd_func_town ON bs7666_address (town, address_pk);
 
 CREATE TABLE feature_address (
-  feature_pk               NUMBER      NOT NULL,
-  address_pk               NUMBER      NOT NULL,
-  feature_address_to_date  DATE,
-  CONSTRAINT feature_address_pk PRIMARY KEY (feature_pk, address_pk)
+  feature_address_pk      NUMBER GENERATED BY DEFAULT AS IDENTITY,
+  feature_pk              NUMBER NOT NULL,
+  address_pk              NUMBER NOT NULL,
+  feature_address_from_date DATE DEFAULT DATE '2000-01-01' NOT NULL,
+  feature_address_to_date DATE,
+  CONSTRAINT pk_feature_address PRIMARY KEY (feature_address_pk)
+  -- real FKs feature_pk -> FEATURE, address_pk -> ADDRESS added in 009
 );
 
--- Minimal asset model used by the API query
 CREATE TABLE asset_location (
-  feature_pk               NUMBER       NOT NULL,
-  asset_pk                 NUMBER       NOT NULL,
-  asset_location_type      VARCHAR2(50) NOT NULL,  -- e.g., 'PRIMARYLOCATION'
-  asset_location_to_date   DATE
+  asset_location_pk           NUMBER       GENERATED BY DEFAULT AS IDENTITY,
+  feature_pk                  NUMBER       NOT NULL,
+  asset_pk                    NUMBER       NOT NULL,
+  temp_cph_pk                 NUMBER,
+  asset_location_type         VARCHAR2(20) NOT NULL,  -- e.g. 'PRIMARYLOCATION'
+  asset_location_plan_to_date DATE,
+  animal_stay_headcount       VARCHAR2(8),
+  information_source          VARCHAR2(20),
+  data_derivation             VARCHAR2(20),
+  asset_location_from_date    DATE         DEFAULT DATE '2000-01-01' NOT NULL,
+  asset_location_to_date      DATE,
+  information_last_check_date DATE,
+  CONSTRAINT pk_asset_location PRIMARY KEY (asset_location_pk)
+  -- real FKs feature_pk -> FEATURE, asset_pk -> ASSET added in 009
+  -- temp_cph_pk -> TEMP_CPH omitted (out of scope, D2)
 );
+CREATE INDEX ix_aloc_asset_feature_loc_type ON asset_location (asset_pk, feature_pk, asset_location_type);
 
 CREATE TABLE livestock_unit (
-  asset_pk      NUMBER        PRIMARY KEY,
-  unit_id       VARCHAR2(30)  NOT NULL
+  asset_pk                   NUMBER       NOT NULL,
+  regular_importer_indicator CHAR(1)      DEFAULT 'N' NOT NULL,
+  unit_id                    VARCHAR2(20) NOT NULL,  -- real VARCHAR2(8); widened (D5: 'LU98001001' 10)
+  CONSTRAINT pk_livestock_unit PRIMARY KEY (asset_pk),
+  CONSTRAINT ck_luni_importer_indicator CHECK (regular_importer_indicator IN ('Y', 'N'))
+  -- real FK: asset_pk -> ASSET (added in 009)
 );
+CREATE UNIQUE INDEX uk_livestock_unit_unit_id ON livestock_unit (unit_id);
 
 CREATE TABLE facility (
-  asset_pk                      NUMBER        PRIMARY KEY,
-  unit_id                       VARCHAR2(30)  NOT NULL,
-  facility_name                 VARCHAR2(200),
-  facility_business_activty_pk  NUMBER
+  asset_pk                     NUMBER       NOT NULL,
+  facility_sub_bsnss_actvty_pk NUMBER,
+  facility_name                VARCHAR2(100),  -- real NOT NULL; kept NULLABLE (D13) so seeded name-less facility 8003 yields 'N/A'
+  facility_business_activty_pk NUMBER,
+  unit_id                      VARCHAR2(20) NOT NULL,  -- real VARCHAR2(8); widened (D5: 'F98001001' 9)
+  CONSTRAINT pk_facility PRIMARY KEY (asset_pk)
+  -- real FKs asset_pk -> ASSET, facility_business_activty_pk -> FACILITY_BUSINESS_ACTIVTY added in 009
+  -- facility_sub_bsnss_actvty_pk -> FACILITY_SUB_BSNSS_ACTVTY omitted (out of scope, D2)
 );
+CREATE UNIQUE INDEX uk_facility_unit_id ON facility (unit_id);
 
 CREATE TABLE asset_state (
-  asset_pk              NUMBER        NOT NULL,
-  asset_status_code     VARCHAR2(20)  NOT NULL,    -- e.g., 'ACTIVE'
-  asset_state_to_dttm   DATE
+  asset_state_pk          NUMBER       GENERATED BY DEFAULT AS IDENTITY,
+  asset_pk                NUMBER       NOT NULL,
+  asset_status_code       VARCHAR2(20) NOT NULL,  -- e.g. 'ACTIVE'
+  asset_state_reason_code VARCHAR2(20),
+  asset_state_from_dttm   TIMESTAMP(3) DEFAULT TIMESTAMP '2000-01-01 00:00:00' NOT NULL,
+  asset_state_to_dttm     TIMESTAMP(3),
+  CONSTRAINT pk_asset_state PRIMARY KEY (asset_state_pk)
+  -- real FK: asset_pk -> ASSET (added in 009)
 );
 
 -- Helpful indexes for locations endpoint
@@ -559,5 +768,35 @@ INSERT INTO bs7666_address (
 
 INSERT INTO feature_address (feature_pk, address_pk, feature_address_to_date)
 VALUES (7004, 9002, NULL);
+
+-- ── Parent rows for referential integrity (D10 / D8) ─────────────────────────
+-- FEATURE parent for every feature_pk used in 001 by LOCATION / FEATURE_STATE /
+-- FEATURE_INVOLVEMENT / FEATURE_ADDRESS / FEATURE_POINT / ASSET_LOCATION
+-- (91001/91002 are created in 005; 7432 in 002; 81111/82222/83333 in 003).
+-- Required by the * -> FEATURE FKs added in 009. FEATURE_TYPE defaults to 'LOCATION'.
+INSERT INTO feature (feature_pk) VALUES (5001);
+INSERT INTO feature (feature_pk) VALUES (5002);
+INSERT INTO feature (feature_pk) VALUES (5999);
+INSERT INTO feature (feature_pk) VALUES (6409);
+INSERT INTO feature (feature_pk) VALUES (6410);
+INSERT INTO feature (feature_pk) VALUES (7003);
+INSERT INTO feature (feature_pk) VALUES (7004);
+
+-- ASSET parent for every asset_pk used in 001 by ASSET_LOCATION / ASSET_STATE /
+-- LIVESTOCK_UNIT / FACILITY. ANIMAL_PK is NULL so the LU_SPECIES join yields no
+-- species and find-locations/get-location report species 'N/A' for L97339 (D10).
+-- Required by the * -> ASSET FKs added in 009.
+INSERT INTO asset (asset_pk) VALUES (8001);
+INSERT INTO asset (asset_pk) VALUES (8002);
+INSERT INTO asset (asset_pk) VALUES (8003);
+INSERT INTO asset (asset_pk) VALUES (8004);
+INSERT INTO asset (asset_pk) VALUES (8005);
+
+-- Sentinel PARTY + past-dated PARTY_ROLE (pk 0) backing the feature_involvement
+-- DEFAULT party_role_pk = 0 for orphan location-display involvements (5001, 5999).
+-- PARTY_ROLE_TO_DATE non-NULL => find-holding(s) excludes them (D8); party_id
+-- 'FIX-ORPHAN' never matches a find-customers bind.
+INSERT INTO party (party_pk, party_id, party_type) VALUES (0, 'FIX-ORPHAN', 'PERSON');
+INSERT INTO party_role (party_role_pk, party_pk, party_role_to_date) VALUES (0, 0, DATE '2000-01-01');
 
 COMMIT;
