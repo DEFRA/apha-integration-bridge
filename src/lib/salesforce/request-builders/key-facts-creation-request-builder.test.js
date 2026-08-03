@@ -20,11 +20,11 @@ describe('buildKeyFactsRequest', () => {
 
     const licenceTypeRecord = result.records[0]
     expect(licenceTypeRecord.attributes).toEqual({
-      type: 'APHA_Key_Fact__c',
+      type: 'TBL_KeyFact__c',
       referenceId: 'licenceType'
     })
-    expect(licenceTypeRecord.APHA_Key__c).toBe('licenceType')
-    expect(licenceTypeRecord.APHA_Application__c).toBe(
+    expect(licenceTypeRecord.TBL_Key__c).toBe('licenceType')
+    expect(licenceTypeRecord.TBL_Application__c).toBe(
       payload.applicationReferenceNumber
     )
   })
@@ -35,25 +35,25 @@ describe('buildKeyFactsRequest', () => {
     const result = buildKeyFactsRequest(payload)
 
     const requesterRecord = result.records.find(
-      (record) => record.APHA_Key__c === 'requester'
+      (record) => record.TBL_Key__c === 'requester'
     )
     const originAddressRecord = result.records.find(
-      (record) => record.APHA_Key__c === 'originAddress'
+      (record) => record.TBL_Key__c === 'originAddress'
     )
 
     expect(requesterRecord).toBeDefined()
-    expect(requesterRecord.APHA_Value__c).toBe(
+    expect(requesterRecord.TBL_Value__c).toBe(
       JSON.stringify(payload.keyFacts.requester.value)
     )
-    expect(requesterRecord.APHA_Entity_Type__c).toBe('text')
-    expect(requesterRecord.APHA_Status__c).toBe(KeyFactStatus.UNVALIDATED)
+    expect(requesterRecord.TBL_EntityType__c).toBe('text')
+    expect(requesterRecord.TBL_Status__c).toBe(KeyFactStatus.UNVALIDATED)
 
     expect(originAddressRecord).toBeDefined()
-    expect(originAddressRecord.APHA_Value__c).toBe(
+    expect(originAddressRecord.TBL_Value__c).toBe(
       JSON.stringify(payload.keyFacts.originAddress.value)
     )
-    expect(originAddressRecord.APHA_Entity_Type__c).toBe('address')
-    expect(requesterRecord.APHA_Status__c).toBe(KeyFactStatus.UNVALIDATED)
+    expect(originAddressRecord.TBL_EntityType__c).toBe('address')
+    expect(requesterRecord.TBL_Status__c).toBe(KeyFactStatus.UNVALIDATED)
   })
 })
 

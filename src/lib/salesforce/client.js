@@ -316,7 +316,7 @@ class SalesforceClient {
    */
   async getKeyFacts(applicationId, logger) {
     const token = await this.getAccessToken(logger)
-    const query = `SELECT ID, APHA_Key__c, APHA_Value__c, APHA_Entity_Type__c, APHA_Status__c, APHA_Object_API_Name__c, APHA_Record_Id__c FROM APHA_KeyFact__c WHERE APHA_Application__c='${applicationId}'`
+    const query = `SELECT ID, TBL_Key__c, TBL_Value__c, TBL_EntityType__c, TBL_Status__c, TBL_ObjectAPIName__c, TBL_RecordId__c FROM TBL_KeyFact__c WHERE TBL_Application__c='${applicationId}'`
     return this.sendQuery(query, token, logger)
   }
 

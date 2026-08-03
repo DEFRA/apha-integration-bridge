@@ -5,7 +5,7 @@ import { KeyFactStatus } from '../../../types/salesforce/key-fact-status.js'
  * @import {KeyFactRequest, KeyFactRecordItem, KeyFactItem} from '../../../types/case-management/case.js'
  */
 
-const keyFactTypeName = 'APHA_Key_Fact__c'
+const keyFactTypeName = 'TBL_KeyFact__c'
 
 /**
  * @param {CreateCasePayload} payload
@@ -38,10 +38,10 @@ function buildSingleKeyFactRequest(applicationId, keyFactKey, keyFactItem) {
       type: keyFactTypeName,
       referenceId: keyFactKey
     },
-    APHA_Key__c: keyFactKey,
-    APHA_Value__c: JSON.stringify(keyFactItem.value),
-    APHA_Entity_Type__c: keyFactItem.type,
-    APHA_Status__c: KeyFactStatus.UNVALIDATED,
-    APHA_Application__c: applicationId
+    TBL_Key__c: keyFactKey,
+    TBL_Value__c: JSON.stringify(keyFactItem.value),
+    TBL_EntityType__c: keyFactItem.type,
+    TBL_Status__c: KeyFactStatus.UNVALIDATED,
+    TBL_Application__c: applicationId
   }
 }
