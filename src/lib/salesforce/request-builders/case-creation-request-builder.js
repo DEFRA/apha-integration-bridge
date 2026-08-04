@@ -5,13 +5,19 @@ import { CaseStatus } from '../../../types/salesforce/case-status.js'
 /**
  * @param {string} applicationId
  * @param {string} customerId
+ * @param {string} licenseTypeId
  * @returns {CaseDetailsPayload}
  */
-export function buildCaseCreationPayload(applicationId, customerId) {
+export function buildCaseCreationPayload(
+  applicationId,
+  customerId,
+  licenseTypeId
+) {
   return {
     Status: CaseStatus.PREPARING,
     Priority: 'Medium',
     APHA_Application__c: applicationId,
-    ContactId: customerId
+    ContactId: customerId,
+    LicenseTypeId: licenseTypeId
   }
 }

@@ -7,14 +7,20 @@ describe('buildCaseCreationPayload', () => {
   test('should map application and customer identifiers to Salesforce fields', () => {
     const applicationId = 'APP-123'
     const customerId = 'CONTACT-456'
+    const licenseTypeId = 'LICENSE-TYPE-789'
 
-    const result = buildCaseCreationPayload(applicationId, customerId)
+    const result = buildCaseCreationPayload(
+      applicationId,
+      customerId,
+      licenseTypeId
+    )
 
     expect(result).toEqual({
       Status: CaseStatus.PREPARING,
       Priority: 'Medium',
       APHA_Application__c: applicationId,
-      ContactId: customerId
+      ContactId: customerId,
+      LicenseTypeId: licenseTypeId
     })
   })
 })

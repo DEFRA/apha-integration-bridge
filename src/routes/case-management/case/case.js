@@ -10,7 +10,10 @@ import {
 } from '../../../lib/http/http-exception.js'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import { CreateCasePayloadSchema } from '../../../types/case-management/case.js'
-import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
+import {
+  buildApplicationCreationCompositeRequest,
+  refIdLicenseTypeQuery
+} from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
 import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
@@ -78,12 +81,17 @@ const options = {
  */
 async function handler(request, h) {
   await runCaseCreationFlow(request, async () => {
-    const [applicationId, customerId] = await Promise.all([
+    const [{ applicationId, licenseTypeId }, customerId] = await Promise.all([
       createApplicationAndFile(request),
       createCustomerAccount(request)
     ])
 
-    const caseId = await createCase(request, applicationId, customerId)
+    const caseId = await createCase(
+      request,
+      applicationId,
+      customerId,
+      licenseTypeId
+    )
     await Promise.all([
       uploadSupportingMaterials(request, caseId),
       addKeyFacts(request, applicationId)
@@ -110,12 +118,18 @@ async function runCaseCreationFlow(request, action) {
  * @param {Request} request
  * @param {string} applicationId
  * @param {string} customerId
+ * @param {string} licenseTypeId
  * @returns {Promise<string|null>}
  */
-async function createCase(request, applicationId, customerId) {
+async function createCase(request, applicationId, customerId, licenseTypeId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const applicationReference = payload.applicationReferenceNumber
-  const createCasePayload = buildCaseCreationPayload(applicationId, customerId)
+
+  const createCasePayload = buildCaseCreationPayload(
+    applicationId,
+    customerId,
+    licenseTypeId
+  )
 
   const salesforceResponse = await retry(async () => {
     return await salesforceClient.createOrUpdateCase(
@@ -178,10 +192,10 @@ async function getKeyFacts(request, applicationId) {
 
 /**
  * @param {Request} request
- * @returns {Promise<string|null>}
+ * @returns {Promise<{applicationId: string|null, licenseTypeId: string|null}>}
  */
 async function createApplicationAndFile(request) {
-  const applicationId = await createApplication(request)
+  const { applicationId, licenseTypeId } = await createApplication(request)
 
   if (applicationId) {
     const files = await getLinkedFiles(request, applicationId)
@@ -190,12 +204,12 @@ async function createApplicationAndFile(request) {
     }
   }
 
-  return applicationId
+  return { applicationId, licenseTypeId }
 }
 
 /**
  * @param {Request} request
- * @returns {Promise<string|null>}
+ * @returns {Promise<{applicationId: string|null, licenseTypeId: string|null}>}
  */
 async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
@@ -209,10 +223,16 @@ async function createApplication(request) {
   }, retriesConfig)
 
   const compositeResponse = handleCompositeResponse(salesforceResponse)
-  return (
+
+  const applicationId =
     compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
-      ?.body?.id || null
-  )
+      ?.body.id || null
+
+  const licenseTypeId =
+    compositeResponse.find((item) => item.referenceId === refIdLicenseTypeQuery)
+      ?.body.records[0].Id || null
+
+  return { applicationId, licenseTypeId }
 }
 
 /**
