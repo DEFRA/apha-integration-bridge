@@ -20,7 +20,7 @@ describe('buildCaseCreationPayload', () => {
       Priority: 'Medium',
       APHA_Application__c: applicationId,
       ContactId: customerId,
-      LicenseTypeId: licenseTypeId
+      APHA_LicenseType__c: licenseTypeId
     })
   })
 })

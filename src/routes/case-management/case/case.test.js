@@ -28,7 +28,8 @@ let route
 jest.mock(
   '../../../lib/salesforce/request-builders/application-creation-request-builder.js',
   () => ({
-    buildApplicationCreationCompositeRequest: jest.fn()
+    buildApplicationCreationCompositeRequest: jest.fn(),
+    refIdLicenseTypeQuery: 'licenseTypeQuery'
   })
 )
 jest.mock(
@@ -106,6 +107,24 @@ const mockSuccessfulCompositeResponse = {
   compositeResponse: [
     {
       body: {
+        totalSize: 1,
+        done: true,
+        records: [
+          {
+            attributes: {
+              type: 'RegulatoryAuthorizationType',
+              url: '/test/license-type/TEST-LICENSE-TYPE-123'
+            },
+            Id: 'TEST-LICENSE-TYPE-123'
+          }
+        ]
+      },
+      httpHeaders: {},
+      httpStatusCode: 200,
+      referenceId: 'licenseTypeQuery'
+    },
+    {
+      body: {
         id: 'TEST-CASE-789',
         success: true,
         errors: []
@@ -168,7 +187,7 @@ beforeEach(() => {
     Priority: '',
     APHA_Application__c: '',
     ContactId: '',
-    LicenseTypeId: ''
+    APHA_LicenseType__c: ''
   })
   jest.mocked(buildKeyFactsRequest).mockReturnValue({
     allOrNone: true,
@@ -424,6 +443,11 @@ describe('POST /case-management/case', () => {
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(1)
+      expect(buildCaseCreationPayload).toHaveBeenCalledWith(
+        'TEST-CASE-789',
+        'TEST-CUSTOMER-123',
+        'TEST-LICENSE-TYPE-123'
+      )
     })
 
     test('creates case, returns 201 Created and skips adding key facts if already present', async () => {
@@ -795,6 +819,56 @@ describe('POST /case-management/case', () => {
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
     })
 
+    test('returns 500 and does not create a case when licence type Id is missing from the composite response', async () => {
+      const server = await createTestServer()
+      const mockCompositeResponseWithoutLicenseType = {
+        compositeResponse: [
+          {
+            body: {
+              totalSize: 0,
+              done: true,
+              records: []
+            },
+            httpHeaders: {},
+            httpStatusCode: 200,
+            referenceId: 'licenseTypeQuery'
+          },
+          {
+            body: {
+              id: 'TEST-CASE-789',
+              success: true,
+              errors: []
+            },
+            httpHeaders: {
+              Location: '/test/case/TEST-CASE-789'
+            },
+            httpStatusCode: 201,
+            referenceId: 'applicationRef'
+          }
+        ]
+      }
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockSendComposite.mockResolvedValue(
+        mockCompositeResponseWithoutLicenseType
+      )
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
+    })
+
     test('returns 500 when createCase fails', async () => {
       const server = await createTestServer()
 
@@ -1047,6 +1121,24 @@ describe('POST /case-management/case', () => {
             httpHeaders: {},
             httpStatusCode: 200,
             referenceId: 'contentVersionQuery'
+          },
+          {
+            body: {
+              totalSize: 1,
+              done: true,
+              records: [
+                {
+                  attributes: {
+                    type: 'RegulatoryAuthorizationType',
+                    url: '/test/license-type/TEST-LICENSE-999'
+                  },
+                  Id: 'TEST-LICENSE-999'
+                }
+              ]
+            },
+            httpHeaders: {},
+            httpStatusCode: 200,
+            referenceId: 'licenseTypeQuery'
           }
         ]
       }

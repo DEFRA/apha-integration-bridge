@@ -47,7 +47,7 @@ const GuestCustomerDetailsSchema = Joi.object({
  * @property {string} Priority
  * @property {string} APHA_Application__c
  * @property {string} ContactId
- * @property {string} LicenseTypeId
+ * @property {string} APHA_LicenseType__c
  */
 
 /**

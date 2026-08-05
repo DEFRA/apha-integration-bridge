@@ -192,7 +192,7 @@ async function getKeyFacts(request, applicationId) {
 
 /**
  * @param {Request} request
- * @returns {Promise<{applicationId: string|null, licenseTypeId: string|null}>}
+ * @returns {Promise<{applicationId: string|null, licenseTypeId: string}>}
  */
 async function createApplicationAndFile(request) {
   const { applicationId, licenseTypeId } = await createApplication(request)
@@ -209,7 +209,7 @@ async function createApplicationAndFile(request) {
 
 /**
  * @param {Request} request
- * @returns {Promise<{applicationId: string|null, licenseTypeId: string|null}>}
+ * @returns {Promise<{applicationId: string|null, licenseTypeId: string}>}
  */
 async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
@@ -226,11 +226,17 @@ async function createApplication(request) {
 
   const applicationId =
     compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
-      ?.body.id || null
+      ?.body?.id || null
 
-  const licenseTypeId =
-    compositeResponse.find((item) => item.referenceId === refIdLicenseTypeQuery)
-      ?.body.records[0].Id || null
+  const licenseTypeId = compositeResponse.find(
+    (item) => item.referenceId === refIdLicenseTypeQuery
+  )?.body?.records?.[0]?.Id
+
+  if (!licenseTypeId) {
+    throw new Error(
+      'Licence type Id missing from application creation composite response'
+    )
+  }
 
   return { applicationId, licenseTypeId }
 }
