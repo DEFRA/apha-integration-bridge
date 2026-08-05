@@ -446,7 +446,7 @@ describe('POST /case-management/case', () => {
       expect(buildCaseCreationPayload).toHaveBeenCalledWith(
         'TEST-CASE-789',
         'TEST-CUSTOMER-123',
-        'TEST-LICENSE-TYPE-123'
+        'TB15'
       )
     })
 
@@ -819,9 +819,9 @@ describe('POST /case-management/case', () => {
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
     })
 
-    test('returns 500 and does not create a case when licence type Id is missing from the composite response', async () => {
+    test('returns 400 and does not create a case when the licence type cannot be looked up', async () => {
       const server = await createTestServer()
-      const mockCompositeResponseWithoutLicenseType = {
+      const mockCompositeResponseWithUnknownLicenceType = {
         compositeResponse: [
           {
             body: {
@@ -834,15 +834,15 @@ describe('POST /case-management/case', () => {
             referenceId: 'licenseTypeQuery'
           },
           {
-            body: {
-              id: 'TEST-CASE-789',
-              success: true,
-              errors: []
-            },
-            httpHeaders: {
-              Location: '/test/case/TEST-CASE-789'
-            },
-            httpStatusCode: 201,
+            body: [
+              {
+                errorCode: 'INVALID_INPUT',
+                message:
+                  'Invalid reference specified: licenseTypeQuery.records[0].Id'
+              }
+            ],
+            httpHeaders: {},
+            httpStatusCode: 400,
             referenceId: 'applicationRef'
           }
         ]
@@ -851,7 +851,7 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite.mockResolvedValue(
-        mockCompositeResponseWithoutLicenseType
+        mockCompositeResponseWithUnknownLicenceType
       )
 
       const payload = createValidPayload()
@@ -860,12 +860,20 @@ describe('POST /case-management/case', () => {
       await jest.runAllTimersAsync()
       const res = await responsePromise
 
-      expect(res.statusCode).toBe(500)
+      expect(res.statusCode).toBe(400)
 
       const body = /** @type {Record<string, any>} */ (res.result)
-      expect(body).toMatchObject(genericError)
+      expect(body).toMatchObject({
+        code: 'BAD_REQUEST',
+        message: 'Invalid request parameters',
+        errors: [
+          {
+            code: 'VALIDATION_ERROR',
+            message: 'keyFacts.licenceType is not a recognised licence type'
+          }
+        ]
+      })
 
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 

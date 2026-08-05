@@ -4,15 +4,15 @@ import { buildCaseCreationPayload } from './case-creation-request-builder.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
 
 describe('buildCaseCreationPayload', () => {
-  test('should map application and customer identifiers to Salesforce fields', () => {
+  test('should map application, customer and licence type to Salesforce fields', () => {
     const applicationId = 'APP-123'
     const customerId = 'CONTACT-456'
-    const licenseTypeId = 'LICENSE-TYPE-789'
+    const licenceType = 'TB15'
 
     const result = buildCaseCreationPayload(
       applicationId,
       customerId,
-      licenseTypeId
+      licenceType
     )
 
     expect(result).toEqual({
@@ -20,7 +20,7 @@ describe('buildCaseCreationPayload', () => {
       Priority: 'Medium',
       APHA_Application__c: applicationId,
       ContactId: customerId,
-      APHA_LicenseType__c: licenseTypeId
+      APHA_LicenseType__c: licenceType
     })
   })
 })

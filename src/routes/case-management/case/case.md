@@ -134,11 +134,12 @@ The endpoint signals success through the status code rather than a response payl
 
 ## Error responses
 
-| Status | When it happens                        | Typical code                       |
-| ------ | -------------------------------------- | ---------------------------------- |
-| `400`  | Payload validation failed              | `BAD_REQUEST` / `VALIDATION_ERROR` |
-| `401`  | Missing or invalid bearer token        | Unauthorized by auth layer         |
-| `500`  | Case creation workflow failed upstream | `INTERNAL_SERVER_ERROR`            |
+| Status | When it happens                                         | Typical code                       |
+| ------ | ------------------------------------------------------- | ---------------------------------- |
+| `400`  | Payload validation failed                               | `BAD_REQUEST` / `VALIDATION_ERROR` |
+| `400`  | `keyFacts.licenceType` is not a recognised licence type | `BAD_REQUEST` / `VALIDATION_ERROR` |
+| `401`  | Missing or invalid bearer token                         | Unauthorized by auth layer         |
+| `500`  | Case creation workflow failed upstream                  | `INTERNAL_SERVER_ERROR`            |
 
 Example `400`:
 

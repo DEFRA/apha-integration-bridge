@@ -81,17 +81,12 @@ const options = {
  */
 async function handler(request, h) {
   await runCaseCreationFlow(request, async () => {
-    const [{ applicationId, licenseTypeId }, customerId] = await Promise.all([
+    const [applicationId, customerId] = await Promise.all([
       createApplicationAndFile(request),
       createCustomerAccount(request)
     ])
 
-    const caseId = await createCase(
-      request,
-      applicationId,
-      customerId,
-      licenseTypeId
-    )
+    const caseId = await createCase(request, applicationId, customerId)
     await Promise.all([
       uploadSupportingMaterials(request, caseId),
       addKeyFacts(request, applicationId)
@@ -118,17 +113,17 @@ async function runCaseCreationFlow(request, action) {
  * @param {Request} request
  * @param {string} applicationId
  * @param {string} customerId
- * @param {string} licenseTypeId
  * @returns {Promise<string|null>}
  */
-async function createCase(request, applicationId, customerId, licenseTypeId) {
+async function createCase(request, applicationId, customerId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const applicationReference = payload.applicationReferenceNumber
+  const licenceType = /** @type {string} */ (payload.keyFacts.licenceType.value)
 
   const createCasePayload = buildCaseCreationPayload(
     applicationId,
     customerId,
-    licenseTypeId
+    licenceType
   )
 
   const salesforceResponse = await retry(async () => {
@@ -192,10 +187,10 @@ async function getKeyFacts(request, applicationId) {
 
 /**
  * @param {Request} request
- * @returns {Promise<{applicationId: string|null, licenseTypeId: string}>}
+ * @returns {Promise<string|null>}
  */
 async function createApplicationAndFile(request) {
-  const { applicationId, licenseTypeId } = await createApplication(request)
+  const applicationId = await createApplication(request)
 
   if (applicationId) {
     const files = await getLinkedFiles(request, applicationId)
@@ -204,12 +199,12 @@ async function createApplicationAndFile(request) {
     }
   }
 
-  return { applicationId, licenseTypeId }
+  return applicationId
 }
 
 /**
  * @param {Request} request
- * @returns {Promise<{applicationId: string|null, licenseTypeId: string}>}
+ * @returns {Promise<string|null>}
  */
 async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
@@ -222,23 +217,43 @@ async function createApplication(request) {
     )
   }, retriesConfig)
 
+  assertLicenceTypeResolved(salesforceResponse)
   const compositeResponse = handleCompositeResponse(salesforceResponse)
 
-  const applicationId =
+  return (
     compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
       ?.body?.id || null
+  )
+}
 
-  const licenseTypeId = compositeResponse.find(
-    (item) => item.referenceId === refIdLicenseTypeQuery
-  )?.body?.records?.[0]?.Id
+class InvalidLicenceTypeError extends Error {
+  constructor() {
+    super('Licence type could not be looked up in Salesforce')
+    this.name = 'InvalidLicenceTypeError'
+  }
+}
 
-  if (!licenseTypeId) {
-    throw new Error(
-      'Licence type Id missing from application creation composite response'
-    )
+/**
+ * Throws when the licence type lookup within the application creation
+ * composite response returned no records, meaning the submitted
+ * `keyFacts.licenceType` is not a recognised licence type.
+ *
+ * @param {object} salesforceResponse
+ * @throws {InvalidLicenceTypeError} Handled as a 400 Bad Request
+ */
+function assertLicenceTypeResolved(salesforceResponse) {
+  const compositeResponse = salesforceResponse?.compositeResponse
+  if (!Array.isArray(compositeResponse)) {
+    return
   }
 
-  return { applicationId, licenseTypeId }
+  const licenceTypeQueryItem = compositeResponse.find(
+    (item) => item?.referenceId === refIdLicenseTypeQuery
+  )
+
+  if (licenceTypeQueryItem?.body?.records?.length === 0) {
+    throw new InvalidLicenceTypeError()
+  }
 }
 
 /**
@@ -378,6 +393,22 @@ async function uploadSupportingMaterials(request, caseId) {
 }
 
 function handleCaseCreationError(error, request) {
+  if (error instanceof InvalidLicenceTypeError) {
+    request.logger.error(
+      {
+        err: error,
+        endpoint: 'case-management/case'
+      },
+      'Licence type could not be looked up in Salesforce'
+    )
+    throw new HTTPException('BAD_REQUEST', 'Invalid request parameters', [
+      new HTTPError(
+        'VALIDATION_ERROR',
+        'keyFacts.licenceType is not a recognised licence type'
+      )
+    ]).boomify()
+  }
+
   if (error.name === 'CompositeOperationError') {
     const failedOperations = error.failedItems.map((item) => ({
       referenceId: item.referenceId,
