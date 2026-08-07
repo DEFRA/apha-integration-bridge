@@ -86,7 +86,10 @@ test('toWorkorder maps a single row into one workorder resource, replacing codes
         sequenceNumber: 1,
         performActivity: false,
         workbasket: null,
-        assignedTo: null
+        assignedTo: null,
+        externalReference: null,
+        supplierIdentifier: null,
+        deliveryPartnerIdentifier: null
       }
     ],
     phase: 'Active',

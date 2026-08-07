@@ -14,6 +14,9 @@ export const toActivity = (row) => {
     sequenceNumber: asNullableNumber(row.activitysequencenumber),
     performActivity: asPreferredFlag(row.activityrequiredflag),
     workbasket: asNullableString(row.workbasketname),
-    assignedTo: asNullableString(row.assigned_to)
+    assignedTo: asNullableString(row.assigned_to),
+    externalReference: asNullableString(row.external_reference),
+    supplierIdentifier: asNullableString(row.supplier_identifier),
+    deliveryPartnerIdentifier: asNullableString(row.delivery_partner_identifier)
   }
 }
