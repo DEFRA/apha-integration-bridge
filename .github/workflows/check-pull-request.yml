@@ -62,6 +62,9 @@ jobs:
 
       - run: npm run typecheck
 
+      - name: Wait for oracledb seed scripts to complete
+        run: ./.github/scripts/wait-for-oracle-seed.sh
+
       - run: npm test
         env:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}

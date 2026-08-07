@@ -7,7 +7,7 @@ import { refIdApplicationRef } from './file-upload-request-builder.js'
  */
 
 const salesforceConfig = config.get('salesforce')
-const refIdLicenseTypeQuery = 'licenseTypeQuery'
+export const refIdLicenseTypeQuery = 'licenseTypeQuery'
 
 /**
  * @param {CreateCasePayload} payload

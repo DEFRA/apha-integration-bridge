@@ -4,17 +4,23 @@ import { buildCaseCreationPayload } from './case-creation-request-builder.js'
 import { CaseStatus } from '../../../types/salesforce/case-status.js'
 
 describe('buildCaseCreationPayload', () => {
-  test('should map application and customer identifiers to Salesforce fields', () => {
+  test('should map application, customer and licence type to Salesforce fields', () => {
     const applicationId = 'APP-123'
     const customerId = 'CONTACT-456'
+    const licenceType = 'TB15'
 
-    const result = buildCaseCreationPayload(applicationId, customerId)
+    const result = buildCaseCreationPayload(
+      applicationId,
+      customerId,
+      licenceType
+    )
 
     expect(result).toEqual({
       Status: CaseStatus.PREPARING,
       Priority: 'Medium',
       APHA_Application__c: applicationId,
-      ContactId: customerId
+      ContactId: customerId,
+      APHA_LicenseType__c: licenceType
     })
   })
 })
