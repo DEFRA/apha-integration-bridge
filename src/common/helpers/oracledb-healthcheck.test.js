@@ -166,4 +166,34 @@ describe('#oracleDbHealthcheck', () => {
 
     expect(pega.mock.calls.length).toBe(callsAtStop)
   })
+
+  test('bounds the probe with callTimeout and restores the prior value', async () => {
+    /** @type {unknown[]} */
+    const callTimeoutDuringProbe = []
+
+    const connection = {
+      callTimeout: 7,
+      execute: jest.fn(async () => {
+        callTimeoutDuringProbe.push(connection.callTimeout)
+        return /** @type {unknown[]} */ ([])
+      })
+    }
+
+    const pega = jest.fn(async () => ({
+      connection,
+      [Symbol.asyncDispose]: async () => {}
+    }))
+
+    const server = await buildServer({ pega })
+    await server.start()
+    await tick()
+    await tick()
+
+    // bounded to timeoutMs while the probe query runs...
+    expect(callTimeoutDuringProbe[0]).toBe(40)
+    // ...and restored before the connection returns to the shared pool
+    expect(connection.callTimeout).toBe(7)
+
+    await server.stop()
+  })
 })
