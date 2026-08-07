@@ -427,6 +427,178 @@ describe('GET /workorders', () => {
     })
   })
 
+  test('returns external supplier and delivery partner identifiers on activities', async () => {
+    // GET and POST /workorders/find run separate SQL files. find.test.js pins
+    // the same seeded activities, so this asserts the two queries stay in step
+    // rather than only one of them being updated.
+    const server = await createServer()
+
+    const query = new URLSearchParams({
+      startActivationDate: '2024-01-01T00:00:00.000Z',
+      endActivationDate: '2024-03-01T00:00:00.000Z',
+      page: '1',
+      pageSize: '10'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: `${path}?${query.toString()}`
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    const responseBody = /** @type {Record<string, any>} */ (response.result)
+
+    /**
+     * @param {string} workorderId
+     * @param {string} activityId
+     */
+    const activity = (workorderId, activityId) =>
+      responseBody.data
+        .find(
+          /** @param {Record<string, any>} workorder */
+          (workorder) => workorder.id === workorderId
+        )
+        ?.activities.find(
+          /** @param {Record<string, any>} candidate */
+          (candidate) => candidate.id === activityId
+        )
+
+    // Scotland: allocated straight to an external OV, so the assignment holds
+    // an operator id rather than the literal 'External'.
+    expect(activity('WS-76513', 'WS-76513-ACT2')).toMatchObject({
+      externalReference: 'operator456',
+      supplierIdentifier: 'C1189791',
+      deliveryPartnerIdentifier: null
+    })
+
+    // England and Wales: Delivery Partner plus an external supplier. Two
+    // supplier assignments exist on this activity, cross-ordered, so both
+    // fields must come from the same one.
+    expect(activity('WS-76514', 'WS-76514-ACT2')).toMatchObject({
+      externalReference: 'External',
+      supplierIdentifier: 'C9001234',
+      deliveryPartnerIdentifier: 'DP-1000'
+    })
+
+    // A Delivery Partner with no workbasket assignment at all.
+    expect(activity('WS-76514', 'WS-76514-ACT3')).toMatchObject({
+      externalReference: null,
+      supplierIdentifier: null,
+      deliveryPartnerIdentifier: 'DP-2000'
+    })
+
+    // Internal allocation: the only assignment is an AH office AHDO, not a
+    // 'C'-prefixed supplier, so nothing surfaces.
+    expect(activity('WS-76514', 'WS-76514-ACT1')).toMatchObject({
+      externalReference: null,
+      supplierIdentifier: null,
+      deliveryPartnerIdentifier: null
+    })
+
+    // AC3: whitespace-only operator id and delivery partner identifier both
+    // come back as null, while the supplier still surfaces.
+    expect(activity('WS-76513', 'WS-76513-ACT1')).toMatchObject({
+      externalReference: null,
+      supplierIdentifier: 'C7654321',
+      deliveryPartnerIdentifier: null
+    })
+  })
+
+  test('prefers a supplier assignment with a real operator id over one with a blank id', async () => {
+    // WS-76515-ACT1 has two supplier assignments, one with a whitespace-only
+    // operator id. Whitespace sorts before letters, so a plain ascending rank
+    // would pick it and report externalReference null even though a usable
+    // operator id exists on the other assignment.
+    const server = await createServer()
+
+    const query = new URLSearchParams({
+      startActivationDate: '2024-03-01T00:00:00.000Z',
+      endActivationDate: '2024-04-01T00:00:00.000Z',
+      country: 'England',
+      page: '1',
+      pageSize: '10'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: `${path}?${query.toString()}`
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    const responseBody = /** @type {Record<string, any>} */ (response.result)
+
+    const activity = responseBody.data
+      .find(
+        /** @param {Record<string, any>} workorder */
+        (workorder) => workorder.id === 'WS-76515'
+      )
+      ?.activities.find(
+        /** @param {Record<string, any>} candidate */
+        (candidate) => candidate.id === 'WS-76515-ACT1'
+      )
+
+    expect(activity).toMatchObject({
+      externalReference: 'ovuser01',
+      supplierIdentifier: 'C1110002',
+      deliveryPartnerIdentifier: null
+    })
+  })
+
+  test('does not multiply database rows when an activity has multiple supplier assignments', async () => {
+    // Asserted on the raw query rows rather than the response: toWorkorders
+    // de-duplicates activities by id, so a fanned-out join would be invisible
+    // in the payload and any response-level assertion would pass regardless.
+    // WS-76514-ACT2 carries two supplier assignments and WS-76514-ACT3 none,
+    // but both sit under the same workorder and so share the same entity
+    // cross-product - equal row counts is what proves the CTE collapsed to one
+    // assignment per activity.
+    const server = await createServer()
+
+    const originalExecute = executeOperation.execute
+    /** @type {Record<string, any>[]} */
+    const capturedRows = []
+
+    jest
+      .spyOn(executeOperation, 'execute')
+      .mockImplementation(async (...args) => {
+        const rows = await originalExecute(...args)
+        capturedRows.push(.../** @type {Record<string, any>[]} */ (rows))
+        return rows
+      })
+
+    const query = new URLSearchParams({
+      startActivationDate: '2024-02-01T00:00:00.000Z',
+      endActivationDate: '2024-03-01T00:00:00.000Z',
+      page: '1',
+      pageSize: '10'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: `${path}?${query.toString()}`
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    /** @param {string} activityId */
+    const rowsFor = (activityId) =>
+      capturedRows.filter((row) => row.wsa_id === activityId)
+
+    expect(rowsFor('WS-76514-ACT2').length).toBeGreaterThan(0)
+    expect(rowsFor('WS-76514-ACT2')).toHaveLength(
+      rowsFor('WS-76514-ACT3').length
+    )
+
+    // Every row for the two-assignment activity carries the same pair, so no
+    // row survived from the losing assignment.
+    for (const row of rowsFor('WS-76514-ACT2')) {
+      expect(row.external_reference).toBe('External')
+      expect(row.supplier_identifier).toBe('C9001234')
+    }
+  })
+
   describe('Multiple country filtering', () => {
     test('returns workorders for multiple countries using query parameter format country=X&country=Y', async () => {
       const server = await createServer()

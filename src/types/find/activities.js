@@ -28,5 +28,23 @@ export const Activities = baseData({
     .description('The workbasket that this activity relates to'),
   assignedTo: Joi.string()
     .allow(null)
-    .description('The operator assigned to this activity')
+    .description('The operator assigned to this activity'),
+  externalReference: Joi.string()
+    .required()
+    .allow(null)
+    .description(
+      "The external reference for an activity allocated to an external supplier: the assigned operator's id, or the marker 'External' where the work is routed via a Delivery Partner, whose identity is then given by deliveryPartnerIdentifier. Null when the activity is not externally allocated"
+    ),
+  supplierIdentifier: Joi.string()
+    .required()
+    .allow(null)
+    .description(
+      'The identifier of the third-party organisation the activity is allocated to. Null when the activity is not externally allocated'
+    ),
+  deliveryPartnerIdentifier: Joi.string()
+    .required()
+    .allow(null)
+    .description(
+      'The identifier of the Delivery Partner assigned to this activity (England and Wales). Null when no Delivery Partner is assigned'
+    )
 })

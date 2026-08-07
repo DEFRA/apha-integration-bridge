@@ -11,7 +11,10 @@ const populatedActivity = {
   sequenceNumber: 1,
   performActivity: true,
   workbasket: 'Tech',
-  assignedTo: 'jsmith'
+  assignedTo: 'jsmith',
+  externalReference: 'External',
+  supplierIdentifier: 'C1189791',
+  deliveryPartnerIdentifier: 'DP-1000'
 }
 
 describe('Activities schema', () => {
@@ -64,6 +67,57 @@ describe('Activities schema', () => {
     expect(activity.id).toBe('WS-1-ACT1')
     expect(activity.activityName).toBeNull()
     expect(activity.sequenceNumber).toBeNull()
+
+    const { error } = Activities.validate(activity)
+    expect(error).toBeUndefined()
+  })
+
+  test('accepts null external supplier and delivery partner identifiers', () => {
+    const { error } = Activities.validate({
+      ...populatedActivity,
+      externalReference: null,
+      supplierIdentifier: null,
+      deliveryPartnerIdentifier: null
+    })
+    expect(error).toBeUndefined()
+  })
+
+  test('still requires the external supplier and delivery partner keys to be present', () => {
+    // These are contract keys: consumers should be able to read them off every
+    // activity rather than testing for their absence.
+    const {
+      externalReference,
+      supplierIdentifier,
+      deliveryPartnerIdentifier,
+      ...withoutFields
+    } = populatedActivity
+    const { error } = Activities.validate(withoutFields, { abortEarly: false })
+
+    expect(error).toBeDefined()
+    const missingKeys = error?.details.map((detail) => detail.context?.key)
+    expect(missingKeys).toEqual(
+      expect.arrayContaining([
+        'externalReference',
+        'supplierIdentifier',
+        'deliveryPartnerIdentifier'
+      ])
+    )
+  })
+
+  test('validates the mapper output for an activity with no external allocation', () => {
+    const activity = toActivity({
+      wsa_id: 'WS-1-ACT1',
+      activity_name: 'Arrange Visit',
+      activity_status: 'Open',
+      activitysequencenumber: 1,
+      activityrequiredflag: 'true',
+      workbasketname: 'Tech',
+      assigned_to: 'jsmith'
+    })
+
+    expect(activity.externalReference).toBeNull()
+    expect(activity.supplierIdentifier).toBeNull()
+    expect(activity.deliveryPartnerIdentifier).toBeNull()
 
     const { error } = Activities.validate(activity)
     expect(error).toBeUndefined()

@@ -241,7 +241,13 @@ describe('workorders/find', () => {
             sequenceNumber: 1,
             performActivity: true,
             workbasket: 'Tech',
-            assignedTo: 'jsmith'
+            assignedTo: 'jsmith',
+            // AC3: the seeded pxassignedoperatorid and dpidentifier are
+            // whitespace-only, so both come back as null while the supplier
+            // still surfaces.
+            externalReference: null,
+            supplierIdentifier: 'C7654321',
+            deliveryPartnerIdentifier: null
           },
           {
             type: 'activities',
@@ -251,7 +257,12 @@ describe('workorders/find', () => {
             sequenceNumber: 2,
             performActivity: true,
             workbasket: 'Vet',
-            assignedTo: 'jdoe'
+            assignedTo: 'jdoe',
+            // AC1, Scotland: work is allocated straight to an external OV, so
+            // the assignment carries an operator id rather than 'External'.
+            externalReference: 'operator456',
+            supplierIdentifier: 'C1189791',
+            deliveryPartnerIdentifier: null
           }
         ],
         phase: 'EXPOSURETRACKING',
@@ -315,7 +326,12 @@ describe('workorders/find', () => {
             type: 'activities',
             performActivity: false,
             workbasket: 'Admin',
-            assignedTo: null
+            assignedTo: null,
+            // The only assignment on this activity is an AH office AHDO, not a
+            // 'C'-prefixed supplier, so internal allocation stays invisible.
+            externalReference: null,
+            supplierIdentifier: null,
+            deliveryPartnerIdentifier: null
           },
           {
             activityName: 'Livestock Document Review',
@@ -325,7 +341,14 @@ describe('workorders/find', () => {
             type: 'activities',
             performActivity: true,
             workbasket: 'Tech',
-            assignedTo: 'bjohnson'
+            assignedTo: 'bjohnson',
+            // AC1 + AC2 together, England and Wales. This activity carries two
+            // supplier assignments, cross-ordered: the row that wins on
+            // pxassignedoperatorid ('External' < 'operator999') holds the
+            // larger AHDO, so mixing columns across rows would yield C1189791.
+            externalReference: 'External',
+            supplierIdentifier: 'C9001234',
+            deliveryPartnerIdentifier: 'DP-1000'
           },
           {
             activityName: 'Physical Animal Inspection',
@@ -335,7 +358,11 @@ describe('workorders/find', () => {
             type: 'activities',
             performActivity: true,
             workbasket: 'Vet',
-            assignedTo: 'awilliams'
+            assignedTo: 'awilliams',
+            // AC2 without AC1: a Delivery Partner with no workbasket assignment.
+            externalReference: null,
+            supplierIdentifier: null,
+            deliveryPartnerIdentifier: 'DP-2000'
           }
         ],
         phase: 'INSPECTION',

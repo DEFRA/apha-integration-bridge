@@ -75,7 +75,7 @@ ws_f AS (
   pxindexpurpose = 'workScheduleFacilities'
 ),
 wsa AS (
-  SELECT
+  SELECT /*+ MATERIALIZE */
   rw.work_order_id ws_id,
   wsa_ac.pyid wsa_id,
   aca.actname activity_name,
@@ -83,7 +83,8 @@ wsa AS (
   wsa_ac.activitysequencenumber,
   wsa_ac.activityrequiredflag,
   wsa_ac.workbasketname,
-  op.pyusername assigned_to
+  op.pyusername assigned_to,
+  wsa_ac.dpidentifier
 
   FROM
   pega_Data.ahwork_ac wsa_ac,
@@ -99,6 +100,55 @@ wsa AS (
   wsa_ac.pxcoverinskey = 'AH-AC ' || rw.work_order_id
   AND
   wsa_ac.pyassignedoperator = op.pyuseridentifier(+)
+),
+wb_assignment AS (
+  -- External supplier / OV allocation of an activity. Only 'C'-prefixed AHDO
+  -- identifiers denote a supplier rather than an AH office, and the rank keeps
+  -- one assignment per activity so both columns come from the same row and the
+  -- join cannot multiply activity rows.
+  --
+  -- MATERIALIZE pins single evaluation. Without it the optimizer is free to
+  -- push the outer join predicate into this view and re-run it per outer row,
+  -- which it does choose when AH_ASSIGN_WORKBASKET has no fresh statistics.
+  -- Measured on 200k ahwork_ac / 110k assignment rows, that plan cost 25,386
+  -- consistent gets against 18,761 for the materialized one.
+  SELECT /*+ MATERIALIZE */
+  activity_id,
+  external_reference,
+  supplier_identifier
+
+  FROM
+  (
+    SELECT
+    asn.pxrefobjectinsname activity_id,
+    asn.pxassignedoperatorid external_reference,
+    asn.ahdoidentifier supplier_identifier,
+    ROW_NUMBER() OVER (
+      PARTITION BY asn.pxrefobjectinsname
+      ORDER BY
+        -- Blank operator ids rank last: they map to null in the response, so
+        -- an assignment carrying a real one must win. TRIM returns NULL for
+        -- both NULL and whitespace-only values in Oracle.
+        CASE WHEN TRIM(asn.pxassignedoperatorid) IS NULL THEN 1 ELSE 0 END ASC,
+        asn.pxassignedoperatorid ASC NULLS LAST,
+        asn.ahdoidentifier ASC NULLS LAST
+    ) assignment_rank
+
+    FROM
+    pega_data.ah_assign_workbasket asn,
+    wsa
+
+    WHERE
+    asn.pxrefobjectinsname = wsa.wsa_id
+    AND
+    -- LIKE rather than SUBSTR(...,1,1): a leading-literal LIKE is sargable, so
+    -- Oracle can use it as an index access predicate on
+    -- (pxrefobjectinsname, ahdoidentifier) instead of a post-rowid filter.
+    asn.ahdoidentifier LIKE 'C%'
+  )
+
+  WHERE
+  assignment_rank = 1
 )
 
 SELECT
@@ -123,6 +173,9 @@ wsa.activitysequencenumber,
 wsa.activityrequiredflag,
 wsa.workbasketname,
 wsa.assigned_to,
+wsa.dpidentifier delivery_partner_identifier,
+wba.external_reference,
+wba.supplier_identifier,
 TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
 TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
 TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
@@ -140,7 +193,8 @@ ws_loc,
 ws_c,
 ws_lu,
 ws_f,
-wsa
+wsa,
+wb_assignment wba
 
 WHERE
 ac.pzinskey = ws.pxinsindexedkey
@@ -156,6 +210,8 @@ AND
 ac.pyid = ws_f.pyid(+)
 AND
 ws.pyid = wsa.ws_id(+)
+AND
+wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 
