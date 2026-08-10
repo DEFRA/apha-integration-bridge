@@ -1,6 +1,16 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 --  006_setup_workorders_pega.sql
 --  Seed data for POST /workorders/find endpoint (PEGA SCHEMA)
+--
+--  SCHEMA-ALIGNMENT NOTE (sam-fixture-schema-alignment):
+--  The PEGA_DATA.* work-order tables defined below are NOT in any SAM PDM export
+--  (see .schema/derived/sam-schema-reference.md "Tables Not Found In PDM Exports"),
+--  so they remain reverse-engineered from the find/get-workorders queries and are
+--  intentionally left as-is (plan D3). The AHBRP REF_DATA_* rows seeded near the
+--  end of this file (WORK_AREA / BCF_ANIMAL_SPECIES, consumed by
+--  get-workarea-code-mapping / get-purpose-species-code-mapping) target the
+--  canonical REF_DATA_* tables created in 001; their new NOT NULL columns are
+--  satisfied by the column DEFAULTs, so these INSERTs are unchanged.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 ALTER SESSION SET CONTAINER = FREEPDB1;

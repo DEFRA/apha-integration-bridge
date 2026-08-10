@@ -7,6 +7,16 @@
 ALTER SESSION SET CONTAINER = FREEPDB1;
 CONNECT ahbrp/password@FREEPDB1;
 
+-- FEATURE parents for feature_pks 81111/82222/83333 used by this file's
+-- location/feature_state/feature_involvement rows (FEATURE table created in 001).
+-- Required by the * -> FEATURE FKs added in 009.
+BEGIN EXECUTE IMMEDIATE 'INSERT INTO feature (feature_pk) VALUES (81111)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'INSERT INTO feature (feature_pk) VALUES (82222)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'INSERT INTO feature (feature_pk) VALUES (83333)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+
 -- Local authority mapping for 11/111
 BEGIN
   INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)

@@ -1,0 +1,155 @@
+WITH target_party AS (
+  SELECT p.party_pk, p.party_id
+  FROM ahbrp.party p
+  JOIN ahbrp.party_state ps
+    ON ps.party_pk = p.party_pk
+  WHERE ps.party_status_code <> 'INACTIVE'
+    AND ps.party_state_to_dttm IS NULL
+    AND p.party_id IN ('C123456','C234567','O123456')
+),
+person_details AS (
+  SELECT
+    tp.party_pk,
+    INITCAP(pe.person_title) AS title,
+    pe.person_given_name AS first_name,
+    pe.person_given_name2 AS second_name,
+    pe.person_family_name AS last_name,
+    'PERSON' AS customer_type
+  FROM target_party tp
+  JOIN ahbrp.party_version pv
+    ON pv.party_pk = tp.party_pk
+   AND pv.party_type = 'PERSON'
+   AND pv.party_version_to_datetime = '31-DEC-9999'
+  JOIN ahbrp.person pe
+    ON pe.party_pk = tp.party_pk
+),
+organisation_details AS (
+  SELECT
+    tp.party_pk,
+    o.organisation_name,
+    o.primary_contact_full_name,
+    p.secondary_contact_full_name,
+    'ORGANISATION' AS customer_type
+  FROM target_party tp
+  JOIN ahbrp.party p
+    ON p.party_pk = tp.party_pk
+  JOIN ahbrp.party_version pv
+    ON pv.party_pk = tp.party_pk
+   AND pv.party_type = 'ORGANISATION'
+   AND pv.party_version_to_datetime = '31-DEC-9999'
+  JOIN ahbrp.organisation o
+    ON o.party_pk = tp.party_pk
+),
+telecom_contacts AS (
+  SELECT
+    pca.party_pk,
+    ta.telecom_address_type,
+    ta.mobile_number,
+    ta.telephone_number,
+    ta.internet_email_address,
+    au.preferred_contact_method_ind
+  FROM target_party tp
+  JOIN ahbrp.party_contact_address pca
+    ON pca.party_pk = tp.party_pk
+  JOIN ahbrp.telecom_address ta
+    ON ta.telecom_address_pk = pca.telecom_address_pk
+  LEFT JOIN ahbrp.address_usage au
+    ON au.party_contact_address_pk = pca.party_contact_address_pk
+   AND au.address_usage_to_date IS NULL
+  WHERE pca.telecom_address_pk IS NOT NULL
+    AND pca.party_contact_to_date IS NULL
+    AND ta.telecom_address_to_date IS NULL
+    AND ta.telecom_address_type IN ('MOBILE', 'LANDLINE', 'EMAIL')
+),
+county_lookup AS (
+  SELECT DISTINCT
+    RDC.CODE,
+    RDCD.SHORT_DESCRIPTION
+  FROM AHBRP.REF_DATA_SET RDS
+  JOIN AHBRP.REF_DATA_CODE RDC
+    ON RDC.REF_DATA_SET_PK = RDS.REF_DATA_SET_PK
+  JOIN AHBRP.REF_DATA_CODE_DESC RDCD
+    ON RDCD.REF_DATA_CODE_PK = RDC.REF_DATA_CODE_PK
+  WHERE RDS.REF_DATA_SET_NAME = 'COUNTY'
+    AND RDS.EFFECTIVE_TO_DATE IS NULL
+    AND RDC.EFFECTIVE_TO_DATE = '31-DEC-9999'
+    AND RDCD.LANGUAGE_CODE = 'ENG'
+)
+SELECT
+  tp.party_id,
+  tp.party_pk,
+  per.title,
+  per.first_name,
+  per.second_name,
+  per.last_name,
+  org.organisation_name,
+  org.primary_contact_full_name,
+  org.secondary_contact_full_name,
+  au.address_usage_type,
+  au.preferred_contact_method_ind,
+  ba.paon_start_number,
+  ba.paon_start_number_suffix,
+  ba.paon_end_number,
+  ba.paon_end_number_suffix,
+  ba.paon_description,
+  ba.saon_description,
+  ba.saon_start_number,
+  ba.saon_start_number_suffix,
+  ba.saon_end_number,
+  ba.saon_end_number_suffix,
+  ba.street,
+  ba.locality,
+  ba.town,
+  county_lookup.short_description county,
+  ba.postcode,
+  ba.uk_internal_code,
+  ba.country_code,
+  mobile.mobile_number,
+  mobile.preferred_contact_method_ind mobile_preferred_ind,
+  landline.telephone_number landline,
+  landline.preferred_contact_method_ind landline_preferred_ind,
+  email.internet_email_address email,
+  email.preferred_contact_method_ind email_preferred_ind,
+  api.alt_party_identity_value srabpi_plantid,
+  CASE
+    WHEN per.customer_type IS NOT NULL THEN per.customer_type
+    ELSE org.customer_type
+  END AS customer_type
+FROM target_party tp
+LEFT JOIN person_details per
+  ON per.party_pk = tp.party_pk
+LEFT JOIN organisation_details org
+  ON org.party_pk = tp.party_pk
+LEFT JOIN ahbrp.party_contact_address pca
+  ON pca.party_pk = tp.party_pk
+ AND pca.address_pk IS NOT NULL
+ AND pca.party_contact_to_date IS NULL
+LEFT JOIN ahbrp.address a
+  ON a.address_pk = pca.address_pk
+ AND a.address_to_date IS NULL
+LEFT JOIN ahbrp.bs7666_address ba
+  ON ba.address_pk = a.address_pk
+LEFT JOIN ahbrp.address_usage au
+  ON au.party_contact_address_pk = pca.party_contact_address_pk
+ AND au.address_usage_to_date IS NULL
+LEFT JOIN telecom_contacts mobile
+  ON mobile.party_pk = tp.party_pk
+ AND mobile.telecom_address_type = 'MOBILE'
+LEFT JOIN telecom_contacts landline
+  ON landline.party_pk = tp.party_pk
+ AND landline.telecom_address_type = 'LANDLINE'
+LEFT JOIN telecom_contacts email
+  ON email.party_pk = tp.party_pk
+ AND email.telecom_address_type = 'EMAIL'
+LEFT JOIN county_lookup
+  ON county_lookup.code = ba.administrative_area
+LEFT JOIN ahbrp.alt_party_identity api
+  ON api.party_pk = tp.party_pk
+ AND api.alt_party_identity_type = 'SRABPIPLANTID'
+WHERE (
+  ('PERSON' = 'PERSON' AND per.party_pk IS NOT NULL)
+  OR
+  ('PERSON' = 'ORGANISATION' AND org.party_pk IS NOT NULL)
+)
+
+;
