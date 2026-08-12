@@ -28,11 +28,17 @@ export const GetWorkordersSchema = PaginationSchema.keys({
       'Filter workorders by one or more countries (allowed: England, Wales, Scotland). Can be a single value or multiple values using repeated query parameters (e.g., country=Scotland&country=Wales)'
     ),
   status: Joi.array()
-    .items(Joi.string().trim().min(1))
+    .items(
+      Joi.string()
+        .trim()
+        .min(1)
+        .valid('New', 'Pending', 'Open', 'Resolved-Closed')
+        .insensitive()
+    )
     .single()
     .optional()
     .description(
-      'Filter workorders by status (parameter accepted but not yet implemented - has no effect on results)'
+      'Filter workorders by one or more statuses (allowed: New, Pending, Open, Resolved-Closed). Can be a single value or multiple values using repeated query parameters (e.g., status=Open&status=New). Defaults to Open if not provided.'
     )
 })
   .custom((value, helpers) => {

@@ -12,7 +12,7 @@ WITH filtered_workorders AS (
   AND
   ac.pxobjclass = 'AH-AC-WS'
   AND
-  ac.pystatuswork IN ('Open')
+  ac.pystatuswork IN (__STATUSES__)
   AND
   (:has_countries = 0 OR UPPER(ws.purposecountry) IN (__COUNTRIES__))
   AND
@@ -195,7 +195,7 @@ ws.pyid = wsa.ws_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+ac.pystatuswork IN (__STATUSES__)
 
 ORDER BY
 rw.row_num ASC,

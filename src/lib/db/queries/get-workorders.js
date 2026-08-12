@@ -16,6 +16,7 @@ import { getCustomerTypes } from './get-customer-types.js'
 const sql = loadSQL(import.meta.filename)
 
 const COUNTRIES_BIND_TOKEN = '__COUNTRIES__'
+const STATUSES_BIND_TOKEN = '__STATUSES__'
 
 /**
  * @typedef {{
@@ -24,6 +25,7 @@ const COUNTRIES_BIND_TOKEN = '__COUNTRIES__'
  *   startUpdatedDate?: string
  *   endUpdatedDate?: string
  *   country?: string | string[]
+ *   status?: string | string[]
  *   page?: number
  *   pageSize?: number
  * }} GetWorkordersParams
@@ -84,14 +86,38 @@ export function getWorkordersQuery(params) {
     sqlWithCountries = sql.replace(COUNTRIES_BIND_TOKEN, 'NULL')
   }
 
+  let statusBindings = {}
+  let sqlWithStatuses = sqlWithCountries
+
+  const statuses = value.status
+    ? Array.isArray(value.status)
+      ? value.status
+      : [value.status]
+    : ['Open']
+
+  const normalizedStatuses = statuses.map((s) => s.trim())
+
+  const statusPlaceholders = normalizedStatuses
+    .map((_, index) => `:status${index}`)
+    .join(', ')
+  statusBindings = Object.fromEntries(
+    normalizedStatuses.map((value, index) => [`status${index}`, value])
+  )
+
+  sqlWithStatuses = sqlWithCountries.replaceAll(
+    STATUSES_BIND_TOKEN,
+    statusPlaceholders
+  )
+
   return {
     sql: query()
-      .raw(sqlWithCountries, {
+      .raw(sqlWithStatuses, {
         start_date: toOracleTimestampString(startDate),
         end_date: toOracleTimestampString(endDate),
         date_type: dateType,
         has_countries: hasCountries,
         ...countryBindings,
+        ...statusBindings,
         offset_rows: offsetRows,
         fetch_rows: fetchRows
       })
