@@ -117,6 +117,6 @@ describe('GetWorkordersSchema', () => {
       pageSize: 10
     })
     expect(result.error).toBeUndefined()
-    expect(result.value.status).toEqual(['open'])
+    expect(result.value.status).toEqual(['Open'])
   })
 })

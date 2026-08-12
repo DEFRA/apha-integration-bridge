@@ -784,7 +784,7 @@ describe('GET /workorders', () => {
       expect(getWorkordersSpy).toHaveBeenCalledWith(
         expect.any(Object),
         expect.objectContaining({
-          status: ['oPeN']
+          status: ['Open']
         })
       )
     })
