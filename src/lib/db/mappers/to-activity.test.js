@@ -11,7 +11,10 @@ test('toActivity maps populated fields to API activity shape', () => {
       activitysequencenumber: '12',
       activityrequiredflag: 'true',
       workbasketname: 'Tech',
-      assigned_to: 'jsmith'
+      assigned_to: 'jsmith',
+      external_reference: 'External',
+      supplier_identifier: 'C1189791',
+      delivery_partner_identifier: 'DP-1000'
     })
   ).toEqual({
     type: 'activities',
@@ -21,7 +24,10 @@ test('toActivity maps populated fields to API activity shape', () => {
     sequenceNumber: 12,
     performActivity: true,
     workbasket: 'Tech',
-    assignedTo: 'jsmith'
+    assignedTo: 'jsmith',
+    externalReference: 'External',
+    supplierIdentifier: 'C1189791',
+    deliveryPartnerIdentifier: 'DP-1000'
   })
 })
 
@@ -44,7 +50,10 @@ test('toActivity maps missing and blank values to nullable fields', () => {
     sequenceNumber: null,
     performActivity: false,
     workbasket: null,
-    assignedTo: null
+    assignedTo: null,
+    externalReference: null,
+    supplierIdentifier: null,
+    deliveryPartnerIdentifier: null
   })
 })
 
@@ -67,7 +76,10 @@ test('toActivity maps assigned_to to assignedTo when operator is assigned', () =
     sequenceNumber: 1,
     performActivity: true,
     workbasket: 'Vet',
-    assignedTo: 'jdoe'
+    assignedTo: 'jdoe',
+    externalReference: null,
+    supplierIdentifier: null,
+    deliveryPartnerIdentifier: null
   })
 })
 
@@ -90,6 +102,112 @@ test('toActivity handles null assignedTo for unassigned activities', () => {
     sequenceNumber: 2,
     performActivity: false,
     workbasket: 'Admin',
-    assignedTo: null
+    assignedTo: null,
+    externalReference: null,
+    supplierIdentifier: null,
+    deliveryPartnerIdentifier: null
   })
+})
+
+test('toActivity maps an external OV allocation without a delivery partner', () => {
+  // Scotland: work is allocated directly to an external vet, so the assignment
+  // carries an operator id rather than the literal 'External', and no Delivery
+  // Partner is involved.
+  const activity = toActivity({
+    wsa_id: 'ACT-004',
+    activity_name: 'Perform TB Skin Test',
+    activity_status: 'Open',
+    activitysequencenumber: '2',
+    activityrequiredflag: 'true',
+    workbasketname: 'Vet',
+    assigned_to: 'jdoe',
+    external_reference: 'operator456',
+    supplier_identifier: 'C1189791',
+    delivery_partner_identifier: null
+  })
+
+  expect(activity.externalReference).toBe('operator456')
+  expect(activity.supplierIdentifier).toBe('C1189791')
+  expect(activity.deliveryPartnerIdentifier).toBeNull()
+})
+
+test('toActivity maps a delivery partner with no external supplier assignment', () => {
+  const activity = toActivity({
+    wsa_id: 'ACT-005',
+    activity_name: 'Physical Animal Inspection',
+    activity_status: 'Open',
+    activitysequencenumber: '3',
+    activityrequiredflag: 'true',
+    workbasketname: 'Vet',
+    assigned_to: 'awilliams',
+    external_reference: null,
+    supplier_identifier: null,
+    delivery_partner_identifier: 'DP-2000'
+  })
+
+  expect(activity.externalReference).toBeNull()
+  expect(activity.supplierIdentifier).toBeNull()
+  expect(activity.deliveryPartnerIdentifier).toBe('DP-2000')
+})
+
+test('toActivity maps whitespace-only external supplier values to null', () => {
+  // AC3: Oracle stores '' as NULL, so whitespace is the only "empty" value that
+  // can reach the mapper from the database.
+  const activity = toActivity({
+    wsa_id: 'ACT-006',
+    activity_name: 'Arrange Visit',
+    activity_status: 'Open',
+    activitysequencenumber: '1',
+    activityrequiredflag: 'true',
+    workbasketname: 'Tech',
+    assigned_to: 'jsmith',
+    external_reference: '   ',
+    supplier_identifier: '   ',
+    delivery_partner_identifier: '   '
+  })
+
+  expect(activity.externalReference).toBeNull()
+  expect(activity.supplierIdentifier).toBeNull()
+  expect(activity.deliveryPartnerIdentifier).toBeNull()
+})
+
+test('toActivity maps empty-string external supplier values to null', () => {
+  // Oracle collapses '' to NULL so this cannot arrive from the database, but
+  // AC3 names empty values explicitly and the mapper is reachable from other
+  // callers, so pin it.
+  const activity = toActivity({
+    wsa_id: 'ACT-008',
+    activity_name: 'Arrange Visit',
+    activity_status: 'Open',
+    activitysequencenumber: '1',
+    activityrequiredflag: 'true',
+    workbasketname: 'Tech',
+    assigned_to: 'jsmith',
+    external_reference: '',
+    supplier_identifier: '',
+    delivery_partner_identifier: ''
+  })
+
+  expect(activity.externalReference).toBeNull()
+  expect(activity.supplierIdentifier).toBeNull()
+  expect(activity.deliveryPartnerIdentifier).toBeNull()
+})
+
+test('toActivity trims surrounding whitespace from external supplier values', () => {
+  const activity = toActivity({
+    wsa_id: 'ACT-007',
+    activity_name: 'Arrange Visit',
+    activity_status: 'Open',
+    activitysequencenumber: '1',
+    activityrequiredflag: 'true',
+    workbasketname: 'Tech',
+    assigned_to: 'jsmith',
+    external_reference: ' External ',
+    supplier_identifier: ' C1189791 ',
+    delivery_partner_identifier: ' DP-1000 '
+  })
+
+  expect(activity.externalReference).toBe('External')
+  expect(activity.supplierIdentifier).toBe('C1189791')
+  expect(activity.deliveryPartnerIdentifier).toBe('DP-1000')
 })

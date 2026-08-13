@@ -23,10 +23,17 @@ GRANT CONNECT, RESOURCE, DBA TO pega_data;
 -- Connect as pega_data user
 CONNECT pega_data/password@FREEPDB1;
 
+-- SQL*Plus defaults DEFINE on, which turns any '&' in this script - comment,
+-- string literal or seeded value - into a substitution variable and silently
+-- swallows the rest of the statement. 007 and 008 already guard against this.
+SET DEFINE OFF;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Drop existing tables if they exist (idempotent)
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.pr_operators PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.ah_assign_workbasket PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE pega_data.index_ac_activity PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
@@ -59,7 +66,8 @@ CREATE TABLE pega_data.ahwork_ac (
   activitysequencenumber            NUMBER,                     -- Sequence number
   activityrequiredflag              VARCHAR2(5),                -- Activity required flag (true/false)
   workbasketname                    VARCHAR2(100),              -- Workbasket name (e.g., Tech, Vet, Admin)
-  pyassignedoperator                VARCHAR2(128)               -- Assigned operator (username for join with pr_operators)
+  pyassignedoperator                VARCHAR2(128),              -- Assigned operator (username for join with pr_operators)
+  dpidentifier                      VARCHAR2(50)                -- Delivery Partner identifier (activity rows, England and Wales)
 );
 
 -- Work schedule index table (denormalized Pega structure)
@@ -96,6 +104,16 @@ CREATE TABLE pega_data.pr_operators (
   pyusername                VARCHAR2(128)               -- Username of the operator
 );
 
+-- Workbasket assignment table (external supplier / OV allocation of an activity).
+-- pxrefobjectinsname references the ACTIVITY row's ahwork_ac.pyid (e.g. 'WS-76513-ACT1'),
+-- not index_ac_activity.pyid and not pzinskey.
+CREATE TABLE pega_data.ah_assign_workbasket (
+  pzinskey                  VARCHAR2(200) PRIMARY KEY,  -- Assignment instance key
+  pxrefobjectinsname        VARCHAR2(50)  NOT NULL,     -- Referenced activity (ahwork_ac.pyid)
+  pxassignedoperatorid      VARCHAR2(128),              -- 'External' (England and Wales) or an operator id (Scotland OV)
+  ahdoidentifier            VARCHAR2(50)                -- Supplier ('C'-prefixed) or AH office AHDO
+);
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Create indexes for performance
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -110,6 +128,13 @@ BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_ws_country ON pega_data.index_ac_works
 BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_pyid ON pega_data.index_ac_wsentities (pyid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_wse_purpose ON pega_data.index_ac_wsentities (pxindexpurpose)'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+-- Covering index for the wb_assignment CTE in find-workorders.sql and
+-- get-workorders.sql: pxrefobjectinsname is the join key, ahdoidentifier
+-- carries the LIKE 'C%' access predicate, and pxassignedoperatorid is the only
+-- other column projected - so the CTE resolves entirely from the index with no
+-- table access. Production PEGA_DATA needs the same index.
+BEGIN EXECUTE IMMEDIATE 'CREATE INDEX idx_asn_refobj ON pega_data.ah_assign_workbasket (pxrefobjectinsname, ahdoidentifier, pxassignedoperatorid)'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -216,12 +241,15 @@ INSERT INTO pega_data.index_ac_wsentities (entityid, pyid, pxindexpurpose, cphid
 VALUES ('U000030', 'WS-76513', 'workScheduleFacilities', NULL);
 
 -- Activities for WS-76513
+-- dpidentifier is whitespace-only here: AC3 requires it to surface as null.
 INSERT INTO pega_data.ahwork_ac (
   pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey,
-  activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator
+  activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator,
+  dpidentifier
 ) VALUES (
   'WS-76513-ACT1', 'AH-AC-WS-ACT WS-76513-ACT1', 'activity-1',
-  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 1, 'true', 'Tech', 'operator123'
+  'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76513', 1, 'true', 'Tech', 'operator123',
+  '   '
 );
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
@@ -282,17 +310,65 @@ VALUES ('WS-76514-ACT1', 'AH-AC-WS-ACT WS-76514-ACT1', 'activity-3', 'AH-AC-WS-A
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-3', 'Initial Farm Assessment');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
-VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 2, 'true', 'Tech', 'operator789');
+-- Delivery Partner assigned (England and Wales): dpidentifier set AND an external
+-- supplier assignment (see ah_assign_workbasket seeds below).
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator, dpidentifier)
+VALUES ('WS-76514-ACT2', 'AH-AC-WS-ACT WS-76514-ACT2', 'activity-4', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 2, 'true', 'Tech', 'operator789', 'DP-1000');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-4', 'Livestock Document Review');
 
-INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator)
-VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 3, 'true', 'Vet', 'operator101');
+-- Delivery Partner assigned with NO workbasket assignment row: proves AC2 is
+-- independent of AC1.
+INSERT INTO pega_data.ahwork_ac (pyid, pzinskey, pxinsname, pxobjclass, pystatuswork, pxcoverinskey, activitysequencenumber, activityrequiredflag, workbasketname, pyassignedoperator, dpidentifier)
+VALUES ('WS-76514-ACT3', 'AH-AC-WS-ACT WS-76514-ACT3', 'activity-5', 'AH-AC-WS-ACT', 'Open', 'AH-AC WS-76514', 3, 'true', 'Vet', 'operator101', 'DP-2000');
 
 INSERT INTO pega_data.index_ac_activity (pyid, actname)
 VALUES ('activity-5', 'Physical Animal Inspection');
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Workbasket assignments (external supplier / OV allocation)
+--
+-- Only assignments whose ahdoidentifier is 'C'-prefixed represent an external
+-- supplier; an AH office AHDO is internal work and must not surface. Expected
+-- API output (externalReference / supplierIdentifier / deliveryPartnerIdentifier):
+--
+--   WS-76513-ACT1  null        / C7654321 / null       blank operator + blank dpidentifier -> null (AC3)
+--   WS-76513-ACT2  operator456 / C1189791 / null       Scotland OV (AC1)
+--   WS-76514-ACT1  null        / null     / null       internal AH office AHDO, filtered out
+--   WS-76514-ACT2  External    / C9001234 / DP-1000    England and Wales DP (AC1 + AC2)
+--   WS-76514-ACT3  null        / null     / DP-2000    DP without an assignment (AC2 alone)
+--   WS-76515-ACT1  ovuser01    / C1110002 / null       real operator id outranks a blank one
+--
+-- WS-76514-ACT2 deliberately carries two supplier assignments, cross-ordered so
+-- that the row winning on pxassignedoperatorid ('External' < 'operator999')
+-- holds the lexicographically LARGER ahdoidentifier. An implementation that
+-- picked each column independently would return External/C1189791 and fail.
+-- ─────────────────────────────────────────────────────────────────────────────
+INSERT INTO pega_data.ah_assign_workbasket (pzinskey, pxrefobjectinsname, pxassignedoperatorid, ahdoidentifier)
+VALUES ('ASSIGN-WB WS-76513-ACT1', 'WS-76513-ACT1', '   ', 'C7654321');
+
+INSERT INTO pega_data.ah_assign_workbasket (pzinskey, pxrefobjectinsname, pxassignedoperatorid, ahdoidentifier)
+VALUES ('ASSIGN-WB WS-76513-ACT2', 'WS-76513-ACT2', 'operator456', 'C1189791');
+
+INSERT INTO pega_data.ah_assign_workbasket (pzinskey, pxrefobjectinsname, pxassignedoperatorid, ahdoidentifier)
+VALUES ('ASSIGN-WB WS-76514-ACT1', 'WS-76514-ACT1', 'Admin', 'AHDO123');
+
+INSERT INTO pega_data.ah_assign_workbasket (pzinskey, pxrefobjectinsname, pxassignedoperatorid, ahdoidentifier)
+VALUES ('ASSIGN-WB WS-76514-ACT2-1', 'WS-76514-ACT2', 'External', 'C9001234');
+
+INSERT INTO pega_data.ah_assign_workbasket (pzinskey, pxrefobjectinsname, pxassignedoperatorid, ahdoidentifier)
+VALUES ('ASSIGN-WB WS-76514-ACT2-2', 'WS-76514-ACT2', 'operator999', 'C1189791');
+
+-- WS-76515-ACT1 has one supplier assignment with a blank operator id and one
+-- with a real one. A blank operator id maps to null in the response, so the
+-- populated assignment has to win the rank even though whitespace sorts first
+-- in a plain ascending order.
+INSERT INTO pega_data.ah_assign_workbasket (pzinskey, pxrefobjectinsname, pxassignedoperatorid, ahdoidentifier)
+VALUES ('ASSIGN-WB WS-76515-ACT1-1', 'WS-76515-ACT1', '   ', 'C1110001');
+
+INSERT INTO pega_data.ah_assign_workbasket (pzinskey, pxrefobjectinsname, pxassignedoperatorid, ahdoidentifier)
+VALUES ('ASSIGN-WB WS-76515-ACT1-2', 'WS-76515-ACT1', 'ovuser01', 'C1110002');
 
 -- WS-76515: England, Multiple livestock (2) + facility (1)
 INSERT INTO pega_data.ahwork_ac (
@@ -870,4 +946,6 @@ BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_wsentities TO sam'; 
 BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.index_ac_activity TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.pr_operators TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'GRANT SELECT ON pega_data.ah_assign_workbasket TO sam'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
