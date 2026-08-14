@@ -137,6 +137,61 @@ describe('getWorkordersQuery', () => {
     expect(sql).toContain('row_num > 0')
     expect(sql).toContain('row_num <= 0 + 51')
   })
+
+  test('defaults to Open status when status parameter is omitted', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams
+    })
+
+    expect(sql).toContain("ac.pystatuswork IN ('Open')")
+  })
+
+  test('filters by specific status when provided', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      status: 'New'
+    })
+
+    expect(sql).toContain("ac.pystatuswork IN ('New')")
+  })
+
+  test('filters by multiple statuses when provided as array', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      status: ['Open', 'Pending']
+    })
+
+    expect(sql).toContain("ac.pystatuswork IN ('Open', 'Pending')")
+  })
+
+  test('handles status with case-insensitive input', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      status: 'oPeN'
+    })
+
+    expect(sql).toContain("ac.pystatuswork IN ('Open')")
+  })
+
+  test('supports Resolved-Closed status', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      status: 'Resolved-Closed'
+    })
+
+    expect(sql).toContain("ac.pystatuswork IN ('Resolved-Closed')")
+  })
+
+  test('filters by multiple different statuses including Resolved-Closed', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      status: ['New', 'Pending', 'Open', 'Resolved-Closed']
+    })
+
+    expect(sql).toContain(
+      "ac.pystatuswork IN ('New', 'Pending', 'Open', 'Resolved-Closed')"
+    )
+  })
 })
 
 describe('getWorkorders', () => {
