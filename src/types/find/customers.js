@@ -44,7 +44,7 @@ export const Customer = CustomersData.keys({
   title: Joi.string().required(),
   firstName: Joi.string().required().allow(null),
   middleName: Joi.string().required().allow(null),
-  lastName: Joi.string().required(),
+  lastName: Joi.string().required().allow(null),
   addresses: Joi.array().items(Address.keys({ isPreferred: Joi.boolean() })),
   contactDetails: Joi.array().items(CustomerContactDetails),
   relationships: CustomersRelationships
