@@ -32,13 +32,23 @@ export const GetWorkordersSchema = PaginationSchema.keys({
       Joi.string()
         .trim()
         .min(1)
-        .valid('New', 'Pending', 'Open', 'Resolved-Closed')
+        .valid(
+          'New',
+          'Open',
+          'Open-Reopened',
+          'Pending-Activated',
+          'Pending-Planned',
+          'Resolved-Cancelled',
+          'Resolved-Closed',
+          'Resolved-Completed',
+          'Resolved-Not-Required'
+        )
         .insensitive()
     )
     .single()
     .optional()
     .description(
-      'Filter workorders by one or more statuses (allowed: New, Pending, Open, Resolved-Closed). Can be a single value or multiple values using repeated query parameters (e.g., status=Open&status=New). Defaults to Open if not provided.'
+      'Filter workorders by one or more statuses (allowed: New, Open, Open-Reopened, Pending-Activated, Pending-Planned, Resolved-Cancelled, Resolved-Closed, Resolved-Completed, Resolved-Not-Required). Can be a single value or multiple values using repeated query parameters (e.g., status=Open&status=New). Defaults to Open if not provided.'
     )
 })
   .custom((value, helpers) => {
