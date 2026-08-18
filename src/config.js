@@ -106,7 +106,7 @@ const config = convict({
         env: 'ORACLEDB_PEGA_DBNAME'
       },
       poolMin: {
-        doc: 'PEGA Database pool min',
+        doc: 'PEGA Database pool min. Values > 0 are overridden to 0 at startup — thin-mode pools hot-spin when the database is unreachable if poolMin > 0.',
         format: Number,
         default: 0,
         env: 'ORACLEDB_PEGA_POOL_MIN'
@@ -172,7 +172,7 @@ const config = convict({
         env: 'ORACLEDB_SAM_SMDB_DBNAME'
       },
       poolMin: {
-        doc: 'SAM Database pool min',
+        doc: 'SAM Database pool min. Values > 0 are overridden to 0 at startup — thin-mode pools hot-spin when the database is unreachable if poolMin > 0.',
         format: Number,
         default: 0,
         env: 'ORACLEDB_SAM_SMDB_POOL_MIN'

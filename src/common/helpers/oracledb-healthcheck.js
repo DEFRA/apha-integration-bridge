@@ -85,9 +85,26 @@ export const oracleDbHealthcheck = {
 
               await using db = await acquire()
 
+              /**
+               * bound the probe query, then restore the prior value before
+               * the connection returns to the shared pool — a leaked
+               * callTimeout would silently apply to later API queries on the
+               * same pooled connection
+               */
+              const savedCallTimeout = db.connection.callTimeout
+
               db.connection.callTimeout = timeoutMs
 
-              await db.connection.execute('SELECT 1 FROM DUAL')
+              try {
+                await db.connection.execute('SELECT 1 FROM DUAL')
+              } finally {
+                try {
+                  db.connection.callTimeout = savedCallTimeout
+                } catch {
+                  // a dead connection may reject property access — never
+                  // mask the original probe error
+                }
+              }
             })(),
             timeoutMs
           )
