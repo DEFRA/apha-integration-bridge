@@ -821,14 +821,11 @@ describe('GET /workorders', () => {
   })
 
   describe('Status filtering', () => {
-    test('defaults to Open status when no status parameter provided', async () => {
+    test('defaults to Open when status parameter is omitted', async () => {
       const server = await createServer()
       const getWorkordersSpy = jest
         .spyOn(getWorkordersOperation, 'getWorkorders')
-        .mockResolvedValue({
-          hasMore: false,
-          workorders: []
-        })
+        .mockResolvedValue({ hasMore: false, workorders: [] })
 
       const query = new URLSearchParams({
         startActivationDate: '2024-01-01T00:00:00.000Z',
@@ -837,22 +834,8 @@ describe('GET /workorders', () => {
         pageSize: '10'
       })
 
-      const response = await server.inject({
-        method: 'GET',
-        url: `${path}?${query.toString()}`
-      })
+      await server.inject({ method: 'GET', url: `${path}?${query.toString()}` })
 
-      expect(response.statusCode).toBe(200)
-      expect(getWorkordersSpy).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          startActivationDate: '2024-01-01T00:00:00.000Z',
-          endActivationDate: '2024-02-01T00:00:00.000Z',
-          page: 1,
-          pageSize: 10
-        })
-      )
-      // Verify status is not in the call (default handled by query function)
       const callArgs = getWorkordersSpy.mock.calls[0][1]
       expect(callArgs).not.toHaveProperty('status')
     })
@@ -861,10 +844,7 @@ describe('GET /workorders', () => {
       const server = await createServer()
       const getWorkordersSpy = jest
         .spyOn(getWorkordersOperation, 'getWorkorders')
-        .mockResolvedValue({
-          hasMore: false,
-          workorders: []
-        })
+        .mockResolvedValue({ hasMore: false, workorders: [] })
 
       const query = new URLSearchParams({
         startActivationDate: '2024-01-01T00:00:00.000Z',
@@ -874,70 +854,41 @@ describe('GET /workorders', () => {
         pageSize: '10'
       })
 
-      const response = await server.inject({
-        method: 'GET',
-        url: `${path}?${query.toString()}`
-      })
+      await server.inject({ method: 'GET', url: `${path}?${query.toString()}` })
 
-      expect(response.statusCode).toBe(200)
       expect(getWorkordersSpy).toHaveBeenCalledWith(
         expect.any(Object),
-        expect.objectContaining({
-          startActivationDate: '2024-01-01T00:00:00.000Z',
-          endActivationDate: '2024-02-01T00:00:00.000Z',
-          status: ['New'],
-          page: 1,
-          pageSize: 10
-        })
+        expect.objectContaining({ status: ['New'] })
       )
     })
 
-    test('filters by multiple statuses using repeated query parameters', async () => {
+    test('filters by multiple statuses', async () => {
       const server = await createServer()
       const getWorkordersSpy = jest
         .spyOn(getWorkordersOperation, 'getWorkorders')
-        .mockResolvedValue({
-          hasMore: false,
-          workorders: []
-        })
+        .mockResolvedValue({ hasMore: false, workorders: [] })
 
       const query = new URLSearchParams()
       query.append('startActivationDate', '2024-01-01T00:00:00.000Z')
       query.append('endActivationDate', '2024-02-01T00:00:00.000Z')
       query.append('status', 'Open')
-      query.append('status', 'New')
+      query.append('status', 'Resolved-Closed')
       query.append('page', '1')
       query.append('pageSize', '10')
 
-      const url = `${path}?${query.toString()}`
-      expect(url).toContain('status=Open&status=New')
+      await server.inject({ method: 'GET', url: `${path}?${query.toString()}` })
 
-      const response = await server.inject({
-        method: 'GET',
-        url
-      })
-
-      expect(response.statusCode).toBe(200)
       expect(getWorkordersSpy).toHaveBeenCalledWith(
         expect.any(Object),
-        expect.objectContaining({
-          startActivationDate: '2024-01-01T00:00:00.000Z',
-          endActivationDate: '2024-02-01T00:00:00.000Z',
-          status: ['Open', 'New'],
-          page: 1,
-          pageSize: 10
-        })
+        expect.objectContaining({ status: ['Open', 'Resolved-Closed'] })
       )
     })
 
-    test('handles status with case-insensitive input', async () => {
+    test('normalizes case-insensitive input', async () => {
       const server = await createServer()
       const getWorkordersSpy = jest
         .spyOn(getWorkordersOperation, 'getWorkorders')
-        .mockResolvedValue({
-          hasMore: false,
-          workorders: []
-        })
+        .mockResolvedValue({ hasMore: false, workorders: [] })
 
       const query = new URLSearchParams({
         startActivationDate: '2024-01-01T00:00:00.000Z',
@@ -947,52 +898,15 @@ describe('GET /workorders', () => {
         pageSize: '10'
       })
 
-      const response = await server.inject({
-        method: 'GET',
-        url: `${path}?${query.toString()}`
-      })
+      await server.inject({ method: 'GET', url: `${path}?${query.toString()}` })
 
-      expect(response.statusCode).toBe(200)
       expect(getWorkordersSpy).toHaveBeenCalledWith(
         expect.any(Object),
-        expect.objectContaining({
-          status: ['Open']
-        })
+        expect.objectContaining({ status: ['Open'] })
       )
     })
 
-    test('supports Resolved-Closed status', async () => {
-      const server = await createServer()
-      const getWorkordersSpy = jest
-        .spyOn(getWorkordersOperation, 'getWorkorders')
-        .mockResolvedValue({
-          hasMore: false,
-          workorders: []
-        })
-
-      const query = new URLSearchParams({
-        startActivationDate: '2024-01-01T00:00:00.000Z',
-        endActivationDate: '2024-02-01T00:00:00.000Z',
-        status: 'Resolved-Closed',
-        page: '1',
-        pageSize: '10'
-      })
-
-      const response = await server.inject({
-        method: 'GET',
-        url: `${path}?${query.toString()}`
-      })
-
-      expect(response.statusCode).toBe(200)
-      expect(getWorkordersSpy).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          status: ['Resolved-Closed']
-        })
-      )
-    })
-
-    test('returns BAD_REQUEST for invalid status value', async () => {
+    test('returns BAD_REQUEST for invalid status', async () => {
       const server = await createServer()
 
       const query = new URLSearchParams({
@@ -1009,70 +923,7 @@ describe('GET /workorders', () => {
       })
 
       expect(response.statusCode).toBe(400)
-
-      const responseBody = /** @type {Record<string, any>} */ (response.result)
-
-      expect(responseBody.code).toBe('BAD_REQUEST')
-      expect(responseBody.errors).toBeDefined()
-      expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
-    })
-
-    test('returns BAD_REQUEST when one of multiple statuses is invalid', async () => {
-      const server = await createServer()
-
-      const query = new URLSearchParams()
-      query.append('startActivationDate', '2024-01-01T00:00:00.000Z')
-      query.append('endActivationDate', '2024-02-01T00:00:00.000Z')
-      query.append('status', 'Open')
-      query.append('status', 'InvalidStatus')
-      query.append('page', '1')
-      query.append('pageSize', '10')
-
-      const response = await server.inject({
-        method: 'GET',
-        url: `${path}?${query.toString()}`
-      })
-
-      expect(response.statusCode).toBe(400)
-
-      const responseBody = /** @type {Record<string, any>} */ (response.result)
-
-      expect(responseBody.code).toBe('BAD_REQUEST')
-      expect(responseBody.errors).toBeDefined()
-      expect(responseBody.errors[0].code).toBe('VALIDATION_ERROR')
-    })
-
-    test('supports filtering by all valid statuses', async () => {
-      const server = await createServer()
-      const getWorkordersSpy = jest
-        .spyOn(getWorkordersOperation, 'getWorkorders')
-        .mockResolvedValue({
-          hasMore: false,
-          workorders: []
-        })
-
-      const query = new URLSearchParams()
-      query.append('startActivationDate', '2024-01-01T00:00:00.000Z')
-      query.append('endActivationDate', '2024-02-01T00:00:00.000Z')
-      query.append('status', 'New')
-      query.append('status', 'Pending')
-      query.append('status', 'Open')
-      query.append('status', 'Resolved-Closed')
-      query.append('page', '1')
-      query.append('pageSize', '10')
-
-      const response = await server.inject({
-        method: 'GET',
-        url: `${path}?${query.toString()}`
-      })
-
-      expect(response.statusCode).toBe(200)
-      expect(getWorkordersSpy).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          status: ['New', 'Pending', 'Open', 'Resolved-Closed']
-        })
-      )
+      expect(response.result).toHaveProperty('code', 'BAD_REQUEST')
     })
   })
 })

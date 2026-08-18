@@ -158,10 +158,10 @@ describe('getWorkordersQuery', () => {
   test('filters by multiple statuses when provided as array', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
-      status: ['Open', 'Pending']
+      status: ['Open', 'Pending-Activated']
     })
 
-    expect(sql).toContain("ac.pystatuswork IN ('Open', 'Pending')")
+    expect(sql).toContain("ac.pystatuswork IN ('Open', 'Pending-Activated')")
   })
 
   test('handles status with case-insensitive input', () => {
@@ -182,15 +182,49 @@ describe('getWorkordersQuery', () => {
     expect(sql).toContain("ac.pystatuswork IN ('Resolved-Closed')")
   })
 
-  test('filters by multiple different statuses including Resolved-Closed', () => {
+  test('filters by multiple different statuses including Resolved statuses', () => {
     const { sql } = getWorkordersQuery({
       ...validParams,
-      status: ['New', 'Pending', 'Open', 'Resolved-Closed']
+      status: [
+        'New',
+        'Open',
+        'Pending-Activated',
+        'Resolved-Closed',
+        'Resolved-Completed'
+      ]
     })
 
     expect(sql).toContain(
-      "ac.pystatuswork IN ('New', 'Pending', 'Open', 'Resolved-Closed')"
+      "ac.pystatuswork IN ('New', 'Open', 'Pending-Activated', 'Resolved-Closed', 'Resolved-Completed')"
     )
+  })
+
+  test('supports all valid status values', () => {
+    const { sql } = getWorkordersQuery({
+      ...validParams,
+      status: [
+        'New',
+        'Open',
+        'Open-Reopened',
+        'Pending-Activated',
+        'Pending-Planned',
+        'Resolved-Cancelled',
+        'Resolved-Closed',
+        'Resolved-Completed',
+        'Resolved-Not-Required'
+      ]
+    })
+
+    expect(sql).toContain('ac.pystatuswork IN (')
+    expect(sql).toContain("'New'")
+    expect(sql).toContain("'Open'")
+    expect(sql).toContain("'Open-Reopened'")
+    expect(sql).toContain("'Pending-Activated'")
+    expect(sql).toContain("'Pending-Planned'")
+    expect(sql).toContain("'Resolved-Cancelled'")
+    expect(sql).toContain("'Resolved-Closed'")
+    expect(sql).toContain("'Resolved-Completed'")
+    expect(sql).toContain("'Resolved-Not-Required'")
   })
 })
 
