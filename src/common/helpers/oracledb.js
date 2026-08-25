@@ -38,7 +38,10 @@ export const oracleDb = {
       /**
        * configure oracledb proxy information if we are using a proxy
        *
-       * @note we should always be using a proxy in a deployed environment
+       * @note we should always be using a proxy in a deployed environment —
+       * the database is only reachable via an HTTP CONNECT tunnel through the
+       * platform proxy. The thin driver tunnels both TCP and TCPS connections
+       * through `httpsProxy` (see ntConnect in oracledb's thin sqlnet layer).
        */
       if (proxyUrl) {
         const url = new URL(proxyUrl)
@@ -70,7 +73,13 @@ export const oracleDb = {
           password: config.password,
           connectString: `${config.host}/${config.dbname}`,
           poolMax: config.poolMax,
-          poolMin: config.poolMin,
+          /**
+           * poolMin is deliberately not configurable and always 0:
+           * node-oracledb thin mode hot-spins re-creating connections
+           * (~100% CPU, growing memory, eventual OOM) when poolMin > 0 and
+           * the database is unreachable. See DSFAAP-2707.
+           */
+          poolMin: 0,
           poolTimeout: config.poolTimeout,
           poolPingInterval: config.poolPingInterval,
           expireTime: config.expireTime,
