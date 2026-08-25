@@ -34,7 +34,6 @@ const poolConfig = (overrides = {}) => ({
   password: 'secret',
   host: 'db.example.com:1521',
   dbname: 'SERVICE',
-  poolMin: 0,
   poolMax: 1,
   poolTimeout: 60,
   poolCloseWaitTime: 0,
@@ -156,9 +155,6 @@ describe('#oracleDb', () => {
     // no proxy configured — no proxy attributes on the pool
     expect(mockCreatePool.mock.calls[0][0]).not.toHaveProperty('httpsProxy')
 
-    // poolMin already 0 — no override warning
-    expect(server.logger.warn).not.toHaveBeenCalled()
-
     // the attributes debug log never includes the password
     const [debugContext] = /** @type {jest.Mock} */ (
       /** @type {any} */ (server.logger.debug)
@@ -167,20 +163,6 @@ describe('#oracleDb', () => {
     )
 
     expect(debugContext.poolAttributes).not.toHaveProperty('password')
-  })
-
-  test('forces poolMin to 0 and warns when configured greater than 0', async () => {
-    stubDriver()
-
-    const server = await buildServer({ pega: poolConfig({ poolMin: 1 }) })
-
-    expect(mockCreatePool).toHaveBeenCalledWith(
-      expect.objectContaining({ poolMin: 0 })
-    )
-
-    expect(server.logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('poolMin=1 overridden to 0')
-    )
   })
 
   test('applies HTTP_PROXY attributes to every pool, including plain-TCP connect strings', async () => {

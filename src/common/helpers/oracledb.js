@@ -61,17 +61,6 @@ export const oracleDb = {
         options.oracledbConfigurations
       )) {
         /**
-         * poolMin is always forced to 0: node-oracledb thin mode hot-spins
-         * re-creating connections (~100% CPU, growing memory, eventual OOM)
-         * when poolMin > 0 and the database is unreachable. See DSFAAP-2707.
-         */
-        if (config.poolMin > 0) {
-          server.logger.warn(
-            `oracledb.${key}: configured poolMin=${config.poolMin} overridden to 0 — thin-mode pools hot-spin when the database is unreachable if poolMin > 0`
-          )
-        }
-
-        /**
          * build the pool attributes that we will use for this particular
          * oracledb connection pool
          *
@@ -84,6 +73,12 @@ export const oracleDb = {
           password: config.password,
           connectString: `${config.host}/${config.dbname}`,
           poolMax: config.poolMax,
+          /**
+           * poolMin is deliberately not configurable and always 0:
+           * node-oracledb thin mode hot-spins re-creating connections
+           * (~100% CPU, growing memory, eventual OOM) when poolMin > 0 and
+           * the database is unreachable. See DSFAAP-2707.
+           */
           poolMin: 0,
           poolTimeout: config.poolTimeout,
           poolPingInterval: config.poolPingInterval,

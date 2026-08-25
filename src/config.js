@@ -105,12 +105,6 @@ const config = convict({
         default: 'FREEPDB1',
         env: 'ORACLEDB_PEGA_DBNAME'
       },
-      poolMin: {
-        doc: 'PEGA Database pool min. Values > 0 are overridden to 0 at startup — thin-mode pools hot-spin when the database is unreachable if poolMin > 0.',
-        format: Number,
-        default: 0,
-        env: 'ORACLEDB_PEGA_POOL_MIN'
-      },
       poolMax: {
         doc: 'PEGA Database pool max',
         format: Number,
@@ -170,12 +164,6 @@ const config = convict({
         nullable: false,
         default: 'FREEPDB1',
         env: 'ORACLEDB_SAM_SMDB_DBNAME'
-      },
-      poolMin: {
-        doc: 'SAM Database pool min. Values > 0 are overridden to 0 at startup — thin-mode pools hot-spin when the database is unreachable if poolMin > 0.',
-        format: Number,
-        default: 0,
-        env: 'ORACLEDB_SAM_SMDB_POOL_MIN'
       },
       poolMax: {
         doc: 'SAM Database pool max',
