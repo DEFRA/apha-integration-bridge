@@ -17,7 +17,6 @@ export function buildCaseCreationPayload(
     Status: CaseStatus.PREPARING,
     Priority: 'Medium',
     APHA_Application__c: applicationId,
-    ContactId: customerId,
-    APHA_LicenseType__c: licenceType
+    ContactId: customerId
   }
 }

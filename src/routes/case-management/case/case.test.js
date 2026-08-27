@@ -186,8 +186,7 @@ beforeEach(() => {
     Status: '',
     Priority: '',
     APHA_Application__c: '',
-    ContactId: '',
-    APHA_LicenseType__c: ''
+    ContactId: ''
   })
   jest.mocked(buildKeyFactsRequest).mockReturnValue({
     allOrNone: true,
