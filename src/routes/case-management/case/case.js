@@ -165,7 +165,8 @@ async function addKeyFacts(request, applicationId) {
   const existingKeyFacts = await getKeyFacts(request, applicationId)
   if (existingKeyFacts.length === 0) {
     const keyFactsRequest = buildKeyFactsRequest(
-      /** @type {CreateCasePayload} */ (request.payload)
+      /** @type {CreateCasePayload} */ (request.payload),
+      applicationId
     )
     await retry(async () => {
       return await salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
