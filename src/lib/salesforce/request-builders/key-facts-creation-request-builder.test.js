@@ -3,11 +3,13 @@ import { describe, test, expect } from '@jest/globals'
 import { KeyFactStatus } from '../../../types/salesforce/key-fact-status.js'
 import { buildKeyFactsRequest } from './key-facts-creation-request-builder.js'
 
+const applicationId = 'internal_salesforce_id'
+
 describe('buildKeyFactsRequest', () => {
   test('should return a key facts request with allOrNone set to true and one record per key fact', () => {
     const payload = createPayload()
 
-    const result = buildKeyFactsRequest(payload)
+    const result = buildKeyFactsRequest(payload, applicationId)
 
     expect(result.allOrNone).toBe(true)
     expect(result.records).toHaveLength(3)
@@ -16,7 +18,7 @@ describe('buildKeyFactsRequest', () => {
   test('should include attributes and identifiers for each key fact record', () => {
     const payload = createPayload()
 
-    const result = buildKeyFactsRequest(payload)
+    const result = buildKeyFactsRequest(payload, applicationId)
 
     const licenceTypeRecord = result.records[0]
     expect(licenceTypeRecord.attributes).toEqual({
@@ -24,15 +26,13 @@ describe('buildKeyFactsRequest', () => {
       referenceId: 'licenceType'
     })
     expect(licenceTypeRecord.TBL_Key__c).toBe('licenceType')
-    expect(licenceTypeRecord.TBL_Application__c).toBe(
-      payload.applicationReferenceNumber
-    )
+    expect(licenceTypeRecord.TBL_Application__c).toBe(applicationId)
   })
 
   test('should JSON stringify key fact values', () => {
     const payload = createPayload()
 
-    const result = buildKeyFactsRequest(payload)
+    const result = buildKeyFactsRequest(payload, applicationId)
 
     const requesterRecord = result.records.find(
       (record) => record.TBL_Key__c === 'requester'

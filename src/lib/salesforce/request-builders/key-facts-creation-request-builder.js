@@ -9,16 +9,13 @@ const keyFactTypeName = 'TBL_KeyFact__c'
 
 /**
  * @param {CreateCasePayload} payload
+ * @param {string} applicationId
  * @returns {KeyFactRequest}
  */
-export function buildKeyFactsRequest(payload) {
+export function buildKeyFactsRequest(payload, applicationId) {
   const keyFactRecords = Object.entries(payload.keyFacts).map(
     ([keyFactKey, keyFactItem]) =>
-      buildSingleKeyFactRequest(
-        payload.applicationReferenceNumber,
-        keyFactKey,
-        keyFactItem
-      )
+      buildSingleKeyFactRequest(applicationId, keyFactKey, keyFactItem)
   )
   return {
     allOrNone: true,
