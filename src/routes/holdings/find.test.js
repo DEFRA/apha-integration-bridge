@@ -5,7 +5,24 @@ import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
-import * as executeOperation from '../../lib/db/operations/execute.js'
+import { execute } from '../../lib/db/operations/execute.js'
+
+// Mock the execute operation so the error-handling tests can force failures.
+// A `jest.spyOn(import * as executeOperation, 'execute')` does NOT reliably
+// intercept the call made by the query module: under babel's interop the
+// spy targets the `import *` namespace object while the query module reads the
+// raw module export, so the spy silently no-ops and the real DB is hit. A
+// module-factory mock replaces the module for every importer. The default
+// delegates to the real implementation so the seeded-DB integration tests
+// below are unaffected; individual tests override per call.
+jest.mock('../../lib/db/operations/execute.js', () => {
+  const actual = jest.requireActual('../../lib/db/operations/execute.js')
+  return {
+    __esModule: true,
+    ...actual,
+    execute: jest.fn((...args) => actual.execute(...args))
+  }
+})
 
 /**
  * @import {PostFindHoldingsResponse} from './find.js'
@@ -220,7 +237,6 @@ describe('holdings/find', () => {
 
     test('returns empty data and does not query DB when page is out of range', async () => {
       const server = await createServer()
-      const executeSpy = jest.spyOn(executeOperation, 'execute')
       const queryParams = new URLSearchParams({
         page: '2',
         pageSize: '10'
@@ -243,7 +259,7 @@ describe('holdings/find', () => {
           prev: '/holdings/find?page=1&pageSize=10'
         }
       })
-      expect(executeSpy).not.toHaveBeenCalled()
+      expect(execute).not.toHaveBeenCalled()
     })
 
     test('returns an empty array for no matches', async () => {
@@ -451,7 +467,7 @@ describe('holdings/find', () => {
     test('wraps non HTTPException errors into INTERNAL_SERVER_ERROR', async () => {
       const server = await createServer()
       jest
-        .spyOn(executeOperation, 'execute')
+        .mocked(execute)
         .mockRejectedValueOnce(new Error('Simulated database failure'))
 
       const response = await server.inject({
@@ -477,7 +493,7 @@ describe('holdings/find', () => {
     test('returns thrown HTTPException without wrapping', async () => {
       const server = await createServer()
       jest
-        .spyOn(executeOperation, 'execute')
+        .mocked(execute)
         .mockRejectedValueOnce(
           new HTTPException(
             'BAD_REQUEST',

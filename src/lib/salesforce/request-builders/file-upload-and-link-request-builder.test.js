@@ -1,7 +1,28 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals'
 
 import { buildFileUploadAndLinkCompositeRequest } from './file-upload-and-link-request-builder.js'
-import * as fileUploadRequestBuilder from './file-upload-request-builder.js'
+import {
+  buildFileUploadRequest,
+  buildFileIdRequest,
+  buildLinkFileRequest
+} from './file-upload-request-builder.js'
+
+jest.mock('./file-upload-request-builder.js', () => {
+  const actual = jest.requireActual('./file-upload-request-builder.js')
+  return {
+    __esModule: true,
+    ...actual,
+    buildFileUploadRequest: jest.fn((...args) =>
+      actual.buildFileUploadRequest(...args)
+    ),
+    buildFileIdRequest: jest.fn((...args) =>
+      actual.buildFileIdRequest(...args)
+    ),
+    buildLinkFileRequest: jest.fn((...args) =>
+      actual.buildLinkFileRequest(...args)
+    )
+  }
+})
 
 const base64Payload = 'base64payload'
 const title = 'test-title'
@@ -24,15 +45,9 @@ const mockLinkFileRequest = {
   url: '/link'
 }
 
-jest
-  .spyOn(fileUploadRequestBuilder, 'buildFileUploadRequest')
-  .mockReturnValue(mockFileUploadRequest)
-jest
-  .spyOn(fileUploadRequestBuilder, 'buildFileIdRequest')
-  .mockReturnValue(mockFileIdRequest)
-jest
-  .spyOn(fileUploadRequestBuilder, 'buildLinkFileRequest')
-  .mockReturnValue(mockLinkFileRequest)
+jest.mocked(buildFileUploadRequest).mockReturnValue(mockFileUploadRequest)
+jest.mocked(buildFileIdRequest).mockReturnValue(mockFileIdRequest)
+jest.mocked(buildLinkFileRequest).mockReturnValue(mockLinkFileRequest)
 
 describe('buildFileUploadAndLinkCompositeRequest', () => {
   beforeEach(() => {
@@ -48,13 +63,13 @@ describe('buildFileUploadAndLinkCompositeRequest', () => {
     )
 
     expect(result.allOrNone).toBe(true)
-    expect(
-      fileUploadRequestBuilder.buildFileUploadRequest
-    ).toHaveBeenCalledWith(base64Payload, title, path)
-    expect(fileUploadRequestBuilder.buildFileIdRequest).toHaveBeenCalledWith()
-    expect(fileUploadRequestBuilder.buildLinkFileRequest).toHaveBeenCalledWith(
-      linkedEntityId
+    expect(buildFileUploadRequest).toHaveBeenCalledWith(
+      base64Payload,
+      title,
+      path
     )
+    expect(buildFileIdRequest).toHaveBeenCalledWith()
+    expect(buildLinkFileRequest).toHaveBeenCalledWith(linkedEntityId)
 
     expect(result.compositeRequest).toHaveLength(3)
     expect(result.compositeRequest[0]).toBe(mockFileUploadRequest)
