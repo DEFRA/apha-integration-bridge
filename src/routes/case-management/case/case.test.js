@@ -439,7 +439,7 @@ describe('POST /case-management/case', () => {
         expect.anything()
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(2)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(1)
       expect(buildCaseCreationPayload).toHaveBeenCalledWith(
@@ -473,7 +473,7 @@ describe('POST /case-management/case', () => {
         expect.anything()
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(2)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
     })
@@ -494,7 +494,7 @@ describe('POST /case-management/case', () => {
       expect(res.statusCode).toBe(201)
       expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
 
     test('creates case and returns 201 Created when a file is attached', async () => {
@@ -536,7 +536,7 @@ describe('POST /case-management/case', () => {
         's3/path/file.pdf'
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(3)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
 
     test('creates case, returns 201 Created and does not upload file if already uploaded', async () => {
@@ -574,7 +574,7 @@ describe('POST /case-management/case', () => {
       expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
       expect(buildSupportingMaterialsCompositeRequest).not.toHaveBeenCalled()
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
 
     test('creates a case, returns 201 Created and uploads multiple files when present in payload', async () => {
@@ -634,7 +634,7 @@ describe('POST /case-management/case', () => {
         's3/path/file-two.pdf'
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -989,36 +989,6 @@ describe('POST /case-management/case', () => {
       expect(mockSendComposite).toHaveBeenCalledTimes(6) // 2 for application creation and json file upload + 4 for supporting materials retries
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
-    })
-
-    test('returns 500 when update case status fails', async () => {
-      const server = await createTestServer()
-
-      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValueOnce(
-        mockSuccessfulCreateCaseResponse
-      ) // for initial case creation
-      // Mock update case status failure - will be retried 4 times (initial + 3 retries)
-      mockCreateOrUpdateCase
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-
-      const payload = createValidPayload()
-
-      const responsePromise = createCase(server, payload)
-      await jest.runAllTimersAsync()
-      const res = await responsePromise
-
-      expect(res.statusCode).toBe(500)
-
-      const body = /** @type {Record<string, any>} */ (res.result)
-      expect(body).toMatchObject(genericError)
-
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(5)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
     test('retries on transient errors before failing', async () => {

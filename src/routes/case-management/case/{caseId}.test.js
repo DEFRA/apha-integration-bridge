@@ -10,7 +10,6 @@ import {
 import hapiPino from 'hapi-pino'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
-import { CaseStatus } from '../../../types/salesforce/case-status.js'
 import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 
 /** @type {typeof import('./{caseId}.js')} */
@@ -44,7 +43,6 @@ beforeEach(() => {
 const mockCaseRecord = {
   Id: TEST_CASE_ID,
   CaseNumber: '00001234',
-  Status: CaseStatus.PREPARING,
   Priority: 'Medium',
   ContactId: '003XYZ987654321',
   CreatedDate: '2026-02-09T10:30:00.000Z',
@@ -128,7 +126,6 @@ describe('GET /case-management/case/{caseId}', () => {
       expect(body.data).toHaveProperty('id', TEST_CASE_ID)
       expect(body.data.attributes).toMatchObject({
         caseNumber: '00001234',
-        status: CaseStatus.PREPARING,
         priority: 'Medium',
         contactId: '003XYZ987654321'
       })

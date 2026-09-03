@@ -43,7 +43,6 @@ const GuestCustomerDetailsSchema = Joi.object({
 
 /**
  * @typedef {Object} CaseDetailsPayload
- * @property {string} Status
  * @property {string} Priority
  * @property {string} APHA_Application__c
  * @property {string} ContactId
