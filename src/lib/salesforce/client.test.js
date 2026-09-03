@@ -11,7 +11,6 @@ import { salesforceClient } from './client.js'
 import { spyOnConfig } from '../../common/helpers/test-helpers/config.js'
 import * as jwtBearer from './jwt-bearer.js'
 import { HTTPMethods } from '../http/http-methods.js'
-import { CaseStatus } from '../../types/salesforce/case-status.js'
 
 const mockLogger = /** @type {any} */ ({
   debug: jest.fn(),
@@ -264,7 +263,6 @@ describe('salesforce client', () => {
       )
 
     const payload = {
-      Status: CaseStatus.PREPARING,
       Priority: 'Medium',
       APHA_Application__c: 'APP-123',
       ContactId: 'CONTACT-456'

@@ -19,7 +19,6 @@ import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builde
 import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
-import { CaseStatus } from '../../../types/salesforce/case-status.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { config } from '../../../config.js'
 
@@ -91,7 +90,6 @@ async function handler(request, h) {
       uploadSupportingMaterials(request, caseId),
       addKeyFacts(request, applicationId)
     ])
-    await updateCaseStatus(request, CaseStatus.NEW)
   })
 
   return h.response().code(201)
@@ -135,26 +133,6 @@ async function createCase(request, applicationId, customerId) {
   }, retriesConfig)
 
   return salesforceResponse.id || null
-}
-
-/**
- * @param {Request} request
- * @param {string} status
- */
-async function updateCaseStatus(request, status) {
-  const payload = /** @type {CreateCasePayload} */ (request.payload)
-  const applicationReference = payload.applicationReferenceNumber
-  const updateCasePayload = /** @type {UpdateCaseDetailsPayload} */ ({
-    Status: status
-  })
-
-  await retry(async () => {
-    return await salesforceClient.createOrUpdateCase(
-      updateCasePayload,
-      applicationReference,
-      request.logger
-    )
-  }, retriesConfig)
 }
 
 /**
