@@ -285,17 +285,11 @@ class SalesforceClient {
 
   /**
    * @param {CaseDetailsPayload | UpdateCaseDetailsPayload} payload
-   * @param {string} applicationReference
    * @param {Logger} [logger]
    * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create case response.
    */
-  async createOrUpdateCase(payload, applicationReference, logger) {
-    return this.sendRequest(
-      HTTPMethods.PATCH,
-      `sobjects/Case/APHA_ExternalReferenceNumber__c/${applicationReference}`,
-      payload,
-      logger
-    )
+  async createCase(payload, logger) {
+    return this.sendRequest(HTTPMethods.POST, `sobjects/Case`, payload, logger)
   }
 
   /**
