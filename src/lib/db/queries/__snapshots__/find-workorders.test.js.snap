@@ -1,7 +1,10 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`findWorkordersQuery returns the expected query for multiple ids 1`] = `
-"WITH requested_workorders AS (
+"-- Picks the requested work order ids for POST /workorders/find. The rest of
+-- the query is shared with GET /workorders and lives in workorders.sql, which
+-- is appended to this file.
+WITH filtered_workorders AS (
   SELECT DISTINCT
   ws.pyid work_order_id
 
@@ -11,6 +14,20 @@ exports[`findWorkordersQuery returns the expected query for multiple ids 1`] = `
   WHERE
   ws.pyid IN ('WS-12345', 'WS-12346')
 ),
+requested_workorders AS (
+  SELECT
+  work_order_id,
+  ROW_NUMBER() OVER (ORDER BY work_order_id ASC) row_num
+
+  FROM
+  filtered_workorders
+),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -155,7 +172,8 @@ wb_assignment AS (
 )
 
 SELECT
-DISTINCT ws.pyid work_order_id,
+DISTINCT rw.row_num page_order,
+ws.pyid work_order_id,
 ws.purposeworkarea work_area,
 ws.purposecountry country,
 ws.aimname aim,
@@ -185,13 +203,13 @@ TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
 TO_CHAR(ac.pxupdatedatetime, 'yyyy-mm-dd"T"hh24:mi:ss') updated_date
 -- Dates that don't seem to be used at the moment, but may be useful in the future:
 -- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
--- TO_CHAR(ac.wslatestactivitycompletiondate, 'yyyy-mm-dd"T"hh24:mi:ss') wslatestactivitycompletiondate,
-
+-- TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
+-- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
 
 FROM
+requested_workorders rw,
 pega_data.ahwork_ac ac,
 pega_Data.index_ac_workschedule ws,
-requested_workorders rw,
 ws_loc,
 ws_c,
 ws_lu,
@@ -217,9 +235,11 @@ AND
 wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
+AND
+(0 = 0 OR ac.pystatuswork IN (NULL))
 
 ORDER BY
-ws.pyid ASC,
+rw.row_num ASC,
 wsa.activitysequencenumber ASC,
 wsa.wsa_id ASC,
 ws_lu.entityid ASC,
@@ -229,7 +249,10 @@ ws_c.entityid ASC
 `;
 
 exports[`findWorkordersQuery returns the expected query for valid parameters 1`] = `
-"WITH requested_workorders AS (
+"-- Picks the requested work order ids for POST /workorders/find. The rest of
+-- the query is shared with GET /workorders and lives in workorders.sql, which
+-- is appended to this file.
+WITH filtered_workorders AS (
   SELECT DISTINCT
   ws.pyid work_order_id
 
@@ -239,6 +262,20 @@ exports[`findWorkordersQuery returns the expected query for valid parameters 1`]
   WHERE
   ws.pyid IN ('WS-12345')
 ),
+requested_workorders AS (
+  SELECT
+  work_order_id,
+  ROW_NUMBER() OVER (ORDER BY work_order_id ASC) row_num
+
+  FROM
+  filtered_workorders
+),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -383,7 +420,8 @@ wb_assignment AS (
 )
 
 SELECT
-DISTINCT ws.pyid work_order_id,
+DISTINCT rw.row_num page_order,
+ws.pyid work_order_id,
 ws.purposeworkarea work_area,
 ws.purposecountry country,
 ws.aimname aim,
@@ -413,13 +451,13 @@ TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
 TO_CHAR(ac.pxupdatedatetime, 'yyyy-mm-dd"T"hh24:mi:ss') updated_date
 -- Dates that don't seem to be used at the moment, but may be useful in the future:
 -- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
--- TO_CHAR(ac.wslatestactivitycompletiondate, 'yyyy-mm-dd"T"hh24:mi:ss') wslatestactivitycompletiondate,
-
+-- TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
+-- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
 
 FROM
+requested_workorders rw,
 pega_data.ahwork_ac ac,
 pega_Data.index_ac_workschedule ws,
-requested_workorders rw,
 ws_loc,
 ws_c,
 ws_lu,
@@ -445,9 +483,11 @@ AND
 wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
+AND
+(0 = 0 OR ac.pystatuswork IN (NULL))
 
 ORDER BY
-ws.pyid ASC,
+rw.row_num ASC,
 wsa.activitysequencenumber ASC,
 wsa.wsa_id ASC,
 ws_lu.entityid ASC,

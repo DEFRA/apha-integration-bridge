@@ -5,16 +5,15 @@ import { execute } from '../operations/execute.js'
 import { query } from '../operations/query.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
-import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
-import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
-import { getCustomerTypes } from './get-customer-types.js'
+import { getWorkorderMappings, workordersSQL } from './workorders.js'
 import { WorkorderIdSchema } from '../../../types/workorders.js'
 
 /** @import { DBConnections } from '../../../types/connection.js' */
 
-const sql = loadSQL(import.meta.filename)
+const sql = loadSQL(import.meta.filename) + workordersSQL
 
 const WORKORDER_IDS_BIND_TOKEN = '__WORKORDER_IDS__'
+const STATUSES_BIND_TOKEN = '__STATUSES__'
 
 const FindWorkordersSchema = Joi.object({
   ids: Joi.array()
@@ -37,11 +36,16 @@ export function findWorkordersQuery(ids) {
   }
 
   const { placeholders, bindings } = createInClauseBindings(value.ids)
-  const sqlWithIds = sql.replace(WORKORDER_IDS_BIND_TOKEN, placeholders)
+
+  // Finding by id does not filter on status, so the shared status clause is
+  // switched off the same way GET switches off its country filter.
+  const sqlWithIds = sql
+    .replace(WORKORDER_IDS_BIND_TOKEN, placeholders)
+    .replace(STATUSES_BIND_TOKEN, 'NULL')
 
   return {
     sql: query()
-      .raw(sqlWithIds, { ...bindings })
+      .raw(sqlWithIds, { ...bindings, has_statuses: 0 })
       .toQuery()
   }
 }
@@ -54,39 +58,7 @@ export function findWorkordersQuery(ids) {
  */
 export async function findWorkorders(connections, ids) {
   const rows = await execute(connections.pegadb, findWorkordersQuery(ids))
+  const mappings = await getWorkorderMappings(connections.samdb, rows)
 
-  let workAreaMapping = []
-  let speciesMapping = []
-  let customerTypeMapping = new Map()
-
-  if (rows.length !== 0) {
-    workAreaMapping = await getWorkAreaCodeMapping(connections.samdb, [
-      ...new Set(rows.map((row) => row.work_area))
-    ])
-
-    speciesMapping = await getPurposeSpeciesCodeMapping(connections.samdb, [
-      ...new Set(rows.map((row) => row.purpose_species))
-    ])
-
-    const customerIds = [
-      ...new Set(
-        rows
-          .map((row) => row.customer_id)
-          .filter((customerId) => typeof customerId === 'string')
-      )
-    ]
-
-    if (customerIds.length !== 0) {
-      customerTypeMapping = await getCustomerTypes(
-        connections.samdb,
-        customerIds
-      )
-    }
-  }
-
-  return toWorkorders(rows, ids, {
-    workAreaMapping,
-    speciesMapping,
-    customerTypeMapping
-  })
+  return toWorkorders(rows, ids, mappings)
 }

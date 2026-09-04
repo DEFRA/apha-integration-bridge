@@ -6,14 +6,12 @@ import { toOracleTimestampString } from '../utils/to-oracle-timestamp-string.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { GetWorkordersSchema } from '../../../types/find/workorders-get.js'
 import { WorkorderDateFilterType } from '../../../types/workorder-date-filter.js'
-import { getWorkAreaCodeMapping } from './get-workarea-code-mapping.js'
-import { getPurposeSpeciesCodeMapping } from './get-purpose-species-code-mapping.js'
-import { getCustomerTypes } from './get-customer-types.js'
+import { getWorkorderMappings, workordersSQL } from './workorders.js'
 
 /** @import { DBConnections } from '../../../types/connection.js' */
 /** @import { WorkorderDateFilterType as DateFilterType } from '../../../types/workorder-date-filter.js' */
 
-const sql = loadSQL(import.meta.filename)
+const sql = loadSQL(import.meta.filename) + workordersSQL
 
 const COUNTRIES_BIND_TOKEN = '__COUNTRIES__'
 const STATUSES_BIND_TOKEN = '__STATUSES__'
@@ -116,6 +114,7 @@ export function getWorkordersQuery(params) {
         end_date: toOracleTimestampString(endDate),
         date_type: dateType,
         has_countries: hasCountries,
+        has_statuses: 1,
         ...countryBindings,
         ...statusBindings,
         offset_rows: offsetRows,
@@ -133,35 +132,7 @@ export async function getWorkorders(connections, params) {
   const queryToRun = getWorkordersQuery(params)
 
   const rows = await execute(connections.pegadb, queryToRun)
-
-  let workAreaMapping = []
-  let speciesMapping = []
-  let customerTypeMapping = new Map()
-
-  if (rows.length !== 0) {
-    workAreaMapping = await getWorkAreaCodeMapping(connections.samdb, [
-      ...new Set(rows.map((row) => row.work_area))
-    ])
-
-    speciesMapping = await getPurposeSpeciesCodeMapping(connections.samdb, [
-      ...new Set(rows.map((row) => row.purpose_species))
-    ])
-
-    const customerIds = [
-      ...new Set(
-        rows
-          .map((row) => row.customer_id)
-          .filter((customerId) => typeof customerId === 'string')
-      )
-    ]
-
-    if (customerIds.length !== 0) {
-      customerTypeMapping = await getCustomerTypes(
-        connections.samdb,
-        customerIds
-      )
-    }
-  }
+  const mappings = await getWorkorderMappings(connections.samdb, rows)
 
   const orderedDistinctIds = [
     ...new Set(
@@ -176,10 +147,6 @@ export async function getWorkorders(connections, params) {
 
   return {
     hasMore,
-    workorders: toWorkorders(rows, pageIds, {
-      workAreaMapping,
-      speciesMapping,
-      customerTypeMapping
-    })
+    workorders: toWorkorders(rows, pageIds, mappings)
   }
 }

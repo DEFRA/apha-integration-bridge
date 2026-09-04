@@ -1,7 +1,10 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`getWorkordersQuery returns the expected query for update date filter 1`] = `
-"WITH filtered_workorders AS (
+"-- Picks the page of work order ids for GET /workorders. The rest of the query
+-- is shared with POST /workorders/find and lives in workorders.sql, which is
+-- appended to this file.
+WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
     ac.wsactivationdate activation_date
@@ -46,6 +49,12 @@ requested_workorders AS (
   AND
   row_num <= 0 + 11
 ),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -254,7 +263,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+(1 = 0 OR ac.pystatuswork IN ('Open'))
 
 ORDER BY
 rw.row_num ASC,
@@ -267,7 +276,10 @@ ws_c.entityid ASC
 `;
 
 exports[`getWorkordersQuery returns the expected query for valid parameters 1`] = `
-"WITH filtered_workorders AS (
+"-- Picks the page of work order ids for GET /workorders. The rest of the query
+-- is shared with POST /workorders/find and lives in workorders.sql, which is
+-- appended to this file.
+WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
     ac.wsactivationdate activation_date
@@ -312,6 +324,12 @@ requested_workorders AS (
   AND
   row_num <= 0 + 11
 ),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -520,7 +538,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+(1 = 0 OR ac.pystatuswork IN ('Open'))
 
 ORDER BY
 rw.row_num ASC,
@@ -533,7 +551,10 @@ ws_c.entityid ASC
 `;
 
 exports[`getWorkordersQuery returns the expected query with country filter 1`] = `
-"WITH filtered_workorders AS (
+"-- Picks the page of work order ids for GET /workorders. The rest of the query
+-- is shared with POST /workorders/find and lives in workorders.sql, which is
+-- appended to this file.
+WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
     ac.wsactivationdate activation_date
@@ -578,6 +599,12 @@ requested_workorders AS (
   AND
   row_num <= 0 + 11
 ),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -786,7 +813,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+(1 = 0 OR ac.pystatuswork IN ('Open'))
 
 ORDER BY
 rw.row_num ASC,

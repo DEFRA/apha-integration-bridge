@@ -1,0 +1,223 @@
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
+ws_entities AS (
+  SELECT /*+ MATERIALIZE */
+  wsl.pyid,
+  wsl.pxindexpurpose,
+  wsl.entityid,
+  wsl.cphid
+
+  FROM
+  pega_Data.index_ac_wsentities wsl,
+  requested_workorders rw
+
+  WHERE
+  rw.work_order_id = wsl.pyid
+  AND
+  wsl.pxindexpurpose IN (
+    'workScheduleLocation',
+    'workScheduleCustomers',
+    'workScheduleLivestockUnits',
+    'workScheduleFacilities'
+  )
+),
+ws_loc AS (
+  SELECT
+  pyid,
+  entityid,
+  cphid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleLocation'
+),
+ws_c AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleCustomers'
+),
+ws_lu AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleLivestockUnits'
+),
+ws_f AS (
+  SELECT
+  pyid,
+  entityid
+
+  FROM
+  ws_entities
+
+  WHERE
+  pxindexpurpose = 'workScheduleFacilities'
+),
+wsa AS (
+  SELECT /*+ MATERIALIZE */
+  rw.work_order_id ws_id,
+  wsa_ac.pyid wsa_id,
+  aca.actname activity_name,
+  wsa_ac.pystatuswork wsa_status,
+  wsa_ac.activitysequencenumber,
+  wsa_ac.activityrequiredflag,
+  wsa_ac.workbasketname,
+  op.pyusername assigned_to,
+  wsa_ac.dpidentifier
+
+  FROM
+  pega_Data.ahwork_ac wsa_ac,
+  pega_data.index_ac_activity aca,
+  pega_data.pr_operators op,
+  requested_workorders rw
+
+  WHERE
+  wsa_ac.pxinsname = aca.pyid
+  AND
+  wsa_ac.pydescription IS NULL
+  AND
+  wsa_ac.pxcoverinskey = 'AH-AC ' || rw.work_order_id
+  AND
+  wsa_ac.pyassignedoperator = op.pyuseridentifier(+)
+),
+wb_assignment AS (
+  -- External supplier / OV allocation of an activity. Only 'C'-prefixed AHDO
+  -- identifiers denote a supplier rather than an AH office, and the rank keeps
+  -- one assignment per activity so both columns come from the same row and the
+  -- join cannot multiply activity rows.
+  --
+  -- MATERIALIZE pins single evaluation. Without it the optimizer is free to
+  -- push the outer join predicate into this view and re-run it per outer row,
+  -- which it does choose when AH_ASSIGN_WORKBASKET has no fresh statistics.
+  -- Measured on 200k ahwork_ac / 110k assignment rows, that plan cost 25,386
+  -- consistent gets against 18,761 for the materialized one.
+  SELECT /*+ MATERIALIZE */
+  activity_id,
+  external_reference,
+  supplier_identifier
+
+  FROM
+  (
+    SELECT
+    asn.pxrefobjectinsname activity_id,
+    asn.pxassignedoperatorid external_reference,
+    asn.ahdoidentifier supplier_identifier,
+    ROW_NUMBER() OVER (
+      PARTITION BY asn.pxrefobjectinsname
+      ORDER BY
+        -- Blank operator ids rank last: they map to null in the response, so
+        -- an assignment carrying a real one must win. TRIM returns NULL for
+        -- both NULL and whitespace-only values in Oracle.
+        CASE WHEN TRIM(asn.pxassignedoperatorid) IS NULL THEN 1 ELSE 0 END ASC,
+        asn.pxassignedoperatorid ASC NULLS LAST,
+        asn.ahdoidentifier ASC NULLS LAST
+    ) assignment_rank
+
+    FROM
+    pega_data.ah_assign_workbasket asn,
+    wsa
+
+    WHERE
+    asn.pxrefobjectinsname = wsa.wsa_id
+    AND
+    -- LIKE rather than SUBSTR(...,1,1): a leading-literal LIKE is sargable, so
+    -- Oracle can use it as an index access predicate on
+    -- (pxrefobjectinsname, ahdoidentifier) instead of a post-rowid filter.
+    asn.ahdoidentifier LIKE 'C%'
+  )
+
+  WHERE
+  assignment_rank = 1
+)
+
+SELECT
+DISTINCT rw.row_num page_order,
+ws.pyid work_order_id,
+ws.purposeworkarea work_area,
+ws.purposecountry country,
+ws.aimname aim,
+ws.businessarea business_area,
+ws.purposename purpose,
+ws.speciesforpurpose purpose_species,
+ac.pystatuswork ws_status,
+ws_loc.entityid location_id,
+ws_loc.cphid cph,
+ws_c.entityid customer_id,
+ws_lu.entityid livestock_unit_id,
+ws_f.entityid facility_unit_id,
+wsa.wsa_id,
+wsa.activity_name,
+wsa.wsa_status activity_status,
+ws.phase,
+wsa.activitysequencenumber,
+wsa.activityrequiredflag,
+wsa.workbasketname,
+wsa.assigned_to,
+wsa.dpidentifier delivery_partner_identifier,
+wba.external_reference,
+wba.supplier_identifier,
+TO_CHAR(ac.wsactivationdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsactivationdate,
+TO_CHAR(ac.wsearliestactivitystartdate, 'yyyy-mm-dd"T"hh24:mi:ss') wsearliestactivitystartdate,
+TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd"T"hh24:mi:ss') target_date,
+TO_CHAR(ac.pxupdatedatetime, 'yyyy-mm-dd"T"hh24:mi:ss') updated_date
+-- Dates that don't seem to be used at the moment, but may be useful in the future:
+-- TO_CHAR(ac.wsstartdate, 'yyyy-mm-dd') wsstartdate,
+-- TO_CHAR(ac.wslatestactivitycompletiondate, 'dd/mm/yyyy hh24:mi:ss') wslatestactivitycompletiondate,
+-- TO_CHAR(ac.pysladeadline, 'yyyy-mm-dd') due_date,
+
+FROM
+requested_workorders rw,
+pega_data.ahwork_ac ac,
+pega_Data.index_ac_workschedule ws,
+ws_loc,
+ws_c,
+ws_lu,
+ws_f,
+wsa,
+wb_assignment wba
+
+WHERE
+ac.pzinskey = ws.pxinsindexedkey
+AND
+ws.pyid = rw.work_order_id
+AND
+ac.pyid = ws_loc.pyid (+)
+AND
+ac.pyid = ws_c.pyid(+)
+AND
+ac.pyid = ws_lu.pyid(+)
+AND
+ac.pyid = ws_f.pyid(+)
+AND
+ws.pyid = wsa.ws_id(+)
+AND
+wsa.wsa_id = wba.activity_id(+)
+AND
+ac.pxobjclass = 'AH-AC-WS'
+AND
+(:has_statuses = 0 OR ac.pystatuswork IN (__STATUSES__))
+
+ORDER BY
+rw.row_num ASC,
+wsa.activitysequencenumber ASC,
+wsa.wsa_id ASC,
+ws_lu.entityid ASC,
+ws_f.entityid ASC,
+ws_c.entityid ASC
