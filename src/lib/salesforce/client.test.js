@@ -25,8 +25,6 @@ const mockedAccessTokenResponse = {
   expires_in: 3600
 }
 
-const mockApplicationReference = 'TB-1234-5678'
-
 describe('salesforce client', () => {
   const baseCfg = {
     baseUrl: 'https://salesforce.test',
@@ -248,7 +246,7 @@ describe('salesforce client', () => {
     )
   })
 
-  test('createOrUpdateCase returns response body on success', async () => {
+  test('createCase returns response body on success', async () => {
     const mockedResponse = {
       id: 'CASE-001',
       success: true,
@@ -268,19 +266,13 @@ describe('salesforce client', () => {
       ContactId: 'CONTACT-456'
     }
 
-    const result = await salesforceClient.createOrUpdateCase(
-      payload,
-      mockApplicationReference,
-      mockLogger
-    )
+    const result = await salesforceClient.createCase(payload, mockLogger)
 
     expect(result).toEqual(mockedResponse)
     expect(mockFetch).toHaveBeenLastCalledWith(
-      expect.stringContaining(
-        `/sobjects/Case/APHA_ExternalReferenceNumber__c/${mockApplicationReference}`
-      ),
+      expect.stringContaining(`/sobjects/Case`),
       expect.objectContaining({
-        method: HTTPMethods.PATCH,
+        method: HTTPMethods.POST,
         headers: {
           Authorization: 'Bearer token-123',
           'Content-Type': 'application/json'
@@ -290,7 +282,7 @@ describe('salesforce client', () => {
     )
   })
 
-  test('createOrUpdateCase throws with sanitised logging when Salesforce returns error', async () => {
+  test('createCase throws with sanitised logging when Salesforce returns error', async () => {
     const errorMessage = 'Unexpected character...'
     mockFetch
       .mockResolvedValueOnce(
@@ -305,17 +297,13 @@ describe('salesforce client', () => {
         )
       )
 
-    await expect(
-      salesforceClient.createOrUpdateCase(
-        {},
-        mockApplicationReference,
-        mockLogger
-      )
-    ).rejects.toThrow(/Salesforce PATCH request failed/)
+    await expect(salesforceClient.createCase({}, mockLogger)).rejects.toThrow(
+      /Salesforce POST request failed/
+    )
 
     expect(mockLogger.error).toHaveBeenCalledWith(
       { status: 400, body: errorMessage },
-      'Salesforce PATCH request failed'
+      'Salesforce POST request failed'
     )
   })
 

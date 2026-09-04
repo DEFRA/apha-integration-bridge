@@ -64,10 +64,7 @@ const TEST_APP_REF = 'TB-1234-ABCD'
 
 const mockSendComposite = jest.spyOn(salesforceClient, 'sendComposite')
 const mockCreateCustomer = jest.spyOn(salesforceClient, 'createCustomer')
-const mockCreateOrUpdateCase = jest.spyOn(
-  salesforceClient,
-  'createOrUpdateCase'
-)
+const mockCreateCase = jest.spyOn(salesforceClient, 'createCase')
 const mockSendQuery = jest.spyOn(salesforceClient, 'sendQuery')
 const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 const mockGetLinkedFiles = jest.spyOn(salesforceClient, 'getLinkedFiles')
@@ -159,7 +156,7 @@ beforeAll(async () => {
 beforeEach(() => {
   mockSendComposite.mockReset()
   mockCreateCustomer.mockReset()
-  mockCreateOrUpdateCase.mockReset()
+  mockCreateCase.mockReset()
   mockSendQuery.mockReset()
   mockSendQuery.mockResolvedValue({ records: [] })
   mockGetUserEmail.mockReturnValue(null)
@@ -423,7 +420,7 @@ describe('POST /case-management/case', () => {
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
 
       const payload = createValidPayload()
       const res = await createCase(server, payload)
@@ -439,7 +436,7 @@ describe('POST /case-management/case', () => {
         expect.anything()
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(2)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+      expect(mockCreateCase).toHaveBeenCalledTimes(1)
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(1)
       expect(buildCaseCreationPayload).toHaveBeenCalledWith(
@@ -454,7 +451,7 @@ describe('POST /case-management/case', () => {
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockGetKeyFacts.mockResolvedValue({
         records: [{ Id: 'existing-key-fact-id' }]
       })
@@ -473,7 +470,7 @@ describe('POST /case-management/case', () => {
         expect.anything()
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(2)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+      expect(mockCreateCase).toHaveBeenCalledTimes(1)
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
     })
@@ -483,7 +480,7 @@ describe('POST /case-management/case', () => {
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
 
       // mock query to return a record indicating the application file is already linked to the case
       mockGetLinkedFiles.mockResolvedValue({ records: [{}] })
@@ -494,7 +491,7 @@ describe('POST /case-management/case', () => {
       expect(res.statusCode).toBe(201)
       expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+      expect(mockCreateCase).toHaveBeenCalledTimes(1)
     })
 
     test('creates case and returns 201 Created when a file is attached', async () => {
@@ -502,7 +499,7 @@ describe('POST /case-management/case', () => {
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
 
       const payload = createValidPayload()
       payload.sections[0].questionAnswers.push({
@@ -536,7 +533,7 @@ describe('POST /case-management/case', () => {
         's3/path/file.pdf'
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(3)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+      expect(mockCreateCase).toHaveBeenCalledTimes(1)
     })
 
     test('creates case, returns 201 Created and does not upload file if already uploaded', async () => {
@@ -544,7 +541,7 @@ describe('POST /case-management/case', () => {
       const server = await createTestServer()
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockGetLinkedFiles.mockResolvedValue({
         records: [
           {
@@ -574,7 +571,7 @@ describe('POST /case-management/case', () => {
       expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
       expect(buildSupportingMaterialsCompositeRequest).not.toHaveBeenCalled()
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+      expect(mockCreateCase).toHaveBeenCalledTimes(1)
     })
 
     test('creates a case, returns 201 Created and uploads multiple files when present in payload', async () => {
@@ -582,7 +579,7 @@ describe('POST /case-management/case', () => {
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
 
       const payload = createValidPayload()
       payload.sections[0].questionAnswers.push({
@@ -634,7 +631,7 @@ describe('POST /case-management/case', () => {
         's3/path/file-two.pdf'
       )
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+      expect(mockCreateCase).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -670,7 +667,7 @@ describe('POST /case-management/case', () => {
       const server = await createTestServer()
 
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       // Mock createCustomer failure - will be retried 4 times (initial + 3 retries)
       mockCreateCustomer
         .mockRejectedValueOnce(new Error('Service unavailable'))
@@ -691,14 +688,14 @@ describe('POST /case-management/case', () => {
 
       expect(mockCreateCustomer).toHaveBeenCalledTimes(4)
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
-      expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
+      expect(mockCreateCase).not.toHaveBeenCalled()
     })
 
     test('returns 500 when createApplication fails', async () => {
       const server = await createTestServer()
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite
         .mockRejectedValueOnce(new Error('Connection failed'))
         .mockRejectedValueOnce(new Error('Connection failed'))
@@ -718,7 +715,7 @@ describe('POST /case-management/case', () => {
 
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
-      expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
+      expect(mockCreateCase).not.toHaveBeenCalled()
     })
 
     test('returns 500 when composite operations within createApplication partially fail', async () => {
@@ -787,7 +784,7 @@ describe('POST /case-management/case', () => {
         }),
         'Composite operations failed in Salesforce'
       )
-      expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
+      expect(mockCreateCase).not.toHaveBeenCalled()
     })
 
     test('returns 500 when composite response within createApplication is not an array', async () => {
@@ -799,7 +796,7 @@ describe('POST /case-management/case', () => {
       }
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite.mockResolvedValue(
         /** @type {any} */ (mockInvalidCompositeResponse)
       )
@@ -848,7 +845,7 @@ describe('POST /case-management/case', () => {
       }
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite.mockResolvedValue(
         mockCompositeResponseWithUnknownLicenceType
       )
@@ -873,7 +870,7 @@ describe('POST /case-management/case', () => {
         ]
       })
 
-      expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
+      expect(mockCreateCase).not.toHaveBeenCalled()
     })
 
     test('returns 500 when createCase fails', async () => {
@@ -882,7 +879,7 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       // Mock createCase failure - will be retried 4 times (initial + 3 retries)
-      mockCreateOrUpdateCase
+      mockCreateCase
         .mockRejectedValueOnce(new Error('Service unavailable'))
         .mockRejectedValueOnce(new Error('Service unavailable'))
         .mockRejectedValueOnce(new Error('Service unavailable'))
@@ -899,7 +896,7 @@ describe('POST /case-management/case', () => {
       const body = /** @type {Record<string, any>} */ (res.result)
       expect(body).toMatchObject(genericError)
 
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(4)
+      expect(mockCreateCase).toHaveBeenCalledTimes(4)
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
@@ -908,7 +905,7 @@ describe('POST /case-management/case', () => {
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockGetKeyFacts.mockRejectedValue(new Error('Connection failed'))
 
       const payload = createValidPayload()
@@ -932,7 +929,7 @@ describe('POST /case-management/case', () => {
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockAddKeyFacts.mockRejectedValue(new Error('Connection failed'))
 
       const payload = createValidPayload()
@@ -955,7 +952,7 @@ describe('POST /case-management/case', () => {
       const server = await createTestServer()
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application creation
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application file upload
@@ -988,14 +985,14 @@ describe('POST /case-management/case', () => {
 
       expect(mockSendComposite).toHaveBeenCalledTimes(6) // 2 for application creation and json file upload + 4 for supporting materials retries
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
-      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+      expect(mockCreateCase).toHaveBeenCalledTimes(1)
     })
 
     test('retries on transient errors before failing', async () => {
       const server = await createTestServer()
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
 
       // First 2 calls fail, 3rd succeeds
       mockSendComposite
@@ -1019,7 +1016,7 @@ describe('POST /case-management/case', () => {
   describe('Composite response handling', () => {
     beforeEach(() => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockCreateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
     })
 
     test('handles multiple composite operations successfully', async () => {
