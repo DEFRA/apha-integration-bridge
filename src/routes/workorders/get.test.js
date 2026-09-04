@@ -599,6 +599,38 @@ describe('GET /workorders', () => {
     }
   })
 
+  test('returns a workorder with no work area or species as nulls', async () => {
+    // WS-2806 is seeded with a blank work area and species (DSFAAP-2806). The
+    // SAM code lookups used to be handed the nulls and threw, so the whole
+    // page came back as a 500.
+    const server = await createServer()
+
+    const query = new URLSearchParams({
+      startActivationDate: '2026-09-01T00:00:00.000Z',
+      endActivationDate: '2026-09-08T00:00:00.000Z',
+      page: '1',
+      pageSize: '10'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: `${path}?${query.toString()}`
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    const responseBody = /** @type {Record<string, any>} */ (response.result)
+
+    expect(responseBody.data).toEqual([
+      expect.objectContaining({ id: 'WS-2806', workArea: null, species: null }),
+      expect.objectContaining({
+        id: 'WS-2807',
+        workArea: 'Tuberculosis',
+        species: 'Cattle'
+      })
+    ])
+  })
+
   describe('Multiple country filtering', () => {
     test('returns workorders for multiple countries using query parameter format country=X&country=Y', async () => {
       const server = await createServer()
