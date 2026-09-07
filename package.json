@@ -58,7 +58,7 @@
     "hapi-pulse": "3.0.1",
     "hapi-swagger": "17.3.2",
     "https-proxy-agent": "9.1.0",
-    "joi": "17.13.3",
+    "joi": "18.2.5",
     "jose": "6.2.9",
     "jsonc-parser": "3.3.1",
     "knex": "3.3.0",
