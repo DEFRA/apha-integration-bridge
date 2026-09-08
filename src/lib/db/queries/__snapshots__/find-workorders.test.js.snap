@@ -1,10 +1,7 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`findWorkordersQuery returns the expected query for multiple ids 1`] = `
-"-- Picks the requested work order ids for POST /workorders/find. The rest of
--- the query is shared with GET /workorders and lives in workorders.sql, which
--- is appended to this file.
-WITH filtered_workorders AS (
+"WITH filtered_workorders AS (
   SELECT DISTINCT
   ws.pyid work_order_id
 
@@ -249,10 +246,7 @@ ws_c.entityid ASC
 `;
 
 exports[`findWorkordersQuery returns the expected query for valid parameters 1`] = `
-"-- Picks the requested work order ids for POST /workorders/find. The rest of
--- the query is shared with GET /workorders and lives in workorders.sql, which
--- is appended to this file.
-WITH filtered_workorders AS (
+"WITH filtered_workorders AS (
   SELECT DISTINCT
   ws.pyid work_order_id
 

@@ -1,10 +1,7 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`getWorkordersQuery returns the expected query for update date filter 1`] = `
-"-- Picks the page of work order ids for GET /workorders. The rest of the query
--- is shared with POST /workorders/find and lives in workorders.sql, which is
--- appended to this file.
-WITH filtered_workorders AS (
+"WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
     ac.wsactivationdate activation_date
@@ -276,10 +273,7 @@ ws_c.entityid ASC
 `;
 
 exports[`getWorkordersQuery returns the expected query for valid parameters 1`] = `
-"-- Picks the page of work order ids for GET /workorders. The rest of the query
--- is shared with POST /workorders/find and lives in workorders.sql, which is
--- appended to this file.
-WITH filtered_workorders AS (
+"WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
     ac.wsactivationdate activation_date
@@ -551,10 +545,7 @@ ws_c.entityid ASC
 `;
 
 exports[`getWorkordersQuery returns the expected query with country filter 1`] = `
-"-- Picks the page of work order ids for GET /workorders. The rest of the query
--- is shared with POST /workorders/find and lives in workorders.sql, which is
--- appended to this file.
-WITH filtered_workorders AS (
+"WITH filtered_workorders AS (
   SELECT DISTINCT
     ws.pyid work_order_id,
     ac.wsactivationdate activation_date
