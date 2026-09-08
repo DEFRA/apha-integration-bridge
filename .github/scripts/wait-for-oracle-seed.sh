@@ -6,7 +6,7 @@
 # The image healthcheck only reports that the PDB is open, which happens before
 # those scripts run, so tests that read seeded rows can start against an empty
 # database. This polls for the last row inserted by the final seed script
-# (008_setup_workorders_livestock_ordering.sql) instead.
+# (009_setup_workorders_blank_workarea.sql) instead.
 
 set -eo pipefail
 
@@ -16,7 +16,7 @@ TIMEOUT_SECONDS="${ORACLE_SEED_TIMEOUT_SECONDS:-900}"
 POLL_INTERVAL_SECONDS="${ORACLE_SEED_POLL_INTERVAL_SECONDS:-5}"
 
 # Last row committed by the final seed script.
-SENTINEL_QUERY="SELECT COUNT(*) FROM pega_data.index_ac_wsentities WHERE pyid='WS-76724';"
+SENTINEL_QUERY="SELECT COUNT(*) FROM pega_data.index_ac_workschedule WHERE pyid='WS-2807';"
 
 echo "[INF] Waiting for oracledb seed scripts to complete..."
 echo "[INF] - compose file: $COMPOSE_FILE"

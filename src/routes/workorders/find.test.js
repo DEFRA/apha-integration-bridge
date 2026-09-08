@@ -706,6 +706,44 @@ describe('workorders/find', () => {
     })
   })
 
+  describe('Workorder with no work area or species', () => {
+    test('returns nulls instead of failing the whole page', async () => {
+      const server = await createServer()
+
+      const queryParams = new URLSearchParams({
+        page: '1',
+        pageSize: '10'
+      })
+
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: ['WS-2806', 'WS-2807']
+        },
+        url: `${path}?${queryParams.toString()}`
+      })
+
+      expect(response.statusCode).toBe(200)
+
+      const responseBody = /** @type {PostFindWorkordersResponse} */ (
+        response.result
+      )
+
+      expect(responseBody.data).toEqual([
+        expect.objectContaining({
+          id: 'WS-2806',
+          workArea: null,
+          species: null
+        }),
+        expect.objectContaining({
+          id: 'WS-2807',
+          workArea: 'Tuberculosis',
+          species: 'Cattle'
+        })
+      ])
+    })
+  })
+
   describe('Error handling', () => {
     const queryParams = new URLSearchParams({
       page: '1',

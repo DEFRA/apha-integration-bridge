@@ -46,6 +46,12 @@ requested_workorders AS (
   AND
   row_num <= 0 + 11
 ),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -254,7 +260,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+(1 = 0 OR ac.pystatuswork IN ('Open'))
 
 ORDER BY
 rw.row_num ASC,
@@ -312,6 +318,12 @@ requested_workorders AS (
   AND
   row_num <= 0 + 11
 ),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -520,7 +532,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+(1 = 0 OR ac.pystatuswork IN ('Open'))
 
 ORDER BY
 rw.row_num ASC,
@@ -578,6 +590,12 @@ requested_workorders AS (
   AND
   row_num <= 0 + 11
 ),
+-- The part of the work order query shared by GET /workorders and
+-- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
+-- clause that picks the work order ids, and that file is prepended to this one
+-- as it is. So it has to end with a CTE called requested_workorders exposing
+-- work_order_id and row_num, followed by a trailing comma, and there must be
+-- no second WITH.
 ws_entities AS (
   SELECT /*+ MATERIALIZE */
   wsl.pyid,
@@ -786,7 +804,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-ac.pystatuswork IN ('Open')
+(1 = 0 OR ac.pystatuswork IN ('Open'))
 
 ORDER BY
 rw.row_num ASC,
