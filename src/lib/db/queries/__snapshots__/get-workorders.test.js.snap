@@ -15,14 +15,14 @@ exports[`getWorkordersQuery returns the expected query for update date filter 1`
   AND
   ac.pxobjclass = 'AH-AC-WS'
   AND
-  ac.pystatuswork IN ('Open')
+  ac.pystatuswork IN (:status0)
   AND
-  (0 = 0 OR UPPER(ws.purposecountry) IN (NULL))
+  (:has_countries = 0 OR UPPER(ws.purposecountry) IN (NULL))
   AND
   (
-    ('updated' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    (:date_type = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
     OR
-    ('updated' = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    (:date_type = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
   )
 ),
 ordered_workorders AS (
@@ -42,9 +42,9 @@ requested_workorders AS (
   ordered_workorders
 
   WHERE
-  row_num > 0
+  row_num > :offset_rows
   AND
-  row_num <= 0 + 11
+  row_num <= :offset_rows + :fetch_rows
 ),
 -- The part of the work order query shared by GET /workorders and
 -- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
@@ -260,7 +260,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-(1 = 0 OR ac.pystatuswork IN ('Open'))
+(:has_statuses = 0 OR ac.pystatuswork IN (:status0))
 
 ORDER BY
 rw.row_num ASC,
@@ -287,14 +287,14 @@ exports[`getWorkordersQuery returns the expected query for valid parameters 1`] 
   AND
   ac.pxobjclass = 'AH-AC-WS'
   AND
-  ac.pystatuswork IN ('Open')
+  ac.pystatuswork IN (:status0)
   AND
-  (0 = 0 OR UPPER(ws.purposecountry) IN (NULL))
+  (:has_countries = 0 OR UPPER(ws.purposecountry) IN (NULL))
   AND
   (
-    ('activation' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    (:date_type = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
     OR
-    ('activation' = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    (:date_type = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
   )
 ),
 ordered_workorders AS (
@@ -314,9 +314,9 @@ requested_workorders AS (
   ordered_workorders
 
   WHERE
-  row_num > 0
+  row_num > :offset_rows
   AND
-  row_num <= 0 + 11
+  row_num <= :offset_rows + :fetch_rows
 ),
 -- The part of the work order query shared by GET /workorders and
 -- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
@@ -532,7 +532,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-(1 = 0 OR ac.pystatuswork IN ('Open'))
+(:has_statuses = 0 OR ac.pystatuswork IN (:status0))
 
 ORDER BY
 rw.row_num ASC,
@@ -559,14 +559,14 @@ exports[`getWorkordersQuery returns the expected query with country filter 1`] =
   AND
   ac.pxobjclass = 'AH-AC-WS'
   AND
-  ac.pystatuswork IN ('Open')
+  ac.pystatuswork IN (:status0)
   AND
-  (1 = 0 OR UPPER(ws.purposecountry) IN ('WALES'))
+  (:has_countries = 0 OR UPPER(ws.purposecountry) IN (:id0))
   AND
   (
-    ('activation' = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    (:date_type = 'activation' AND ac.wsactivationdate >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.wsactivationdate < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
     OR
-    ('activation' = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP('2024-01-01 00:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP('2024-01-01 00:05:00.001', 'yyyy-mm-dd hh24:mi:ss.ff3'))
+    (:date_type = 'updated' AND ac.pxupdatedatetime >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3') AND ac.pxupdatedatetime < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3'))
   )
 ),
 ordered_workorders AS (
@@ -586,9 +586,9 @@ requested_workorders AS (
   ordered_workorders
 
   WHERE
-  row_num > 0
+  row_num > :offset_rows
   AND
-  row_num <= 0 + 11
+  row_num <= :offset_rows + :fetch_rows
 ),
 -- The part of the work order query shared by GET /workorders and
 -- POST /workorders/find. Each of those keeps its own SQL file holding the WITH
@@ -804,7 +804,7 @@ wsa.wsa_id = wba.activity_id(+)
 AND
 ac.pxobjclass = 'AH-AC-WS'
 AND
-(1 = 0 OR ac.pystatuswork IN ('Open'))
+(:has_statuses = 0 OR ac.pystatuswork IN (:status0))
 
 ORDER BY
 rw.row_num ASC,

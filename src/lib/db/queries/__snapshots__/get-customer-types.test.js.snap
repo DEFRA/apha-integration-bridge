@@ -8,7 +8,7 @@ exports[`getCustomerTypesQuery returns the expected query for a single customer 
     ON ps.party_pk = p.party_pk
   WHERE ps.party_status_code <> 'INACTIVE'
     AND ps.party_state_to_dttm IS NULL
-    AND p.party_id IN ('C123456')
+    AND p.party_id IN (:id0)
 ),
 customer_type_candidates AS (
   SELECT tp.party_pk, 'PERSON' AS customer_type, 1 AS type_priority
@@ -55,7 +55,7 @@ exports[`getCustomerTypesQuery returns the expected query for multiple customer 
     ON ps.party_pk = p.party_pk
   WHERE ps.party_status_code <> 'INACTIVE'
     AND ps.party_state_to_dttm IS NULL
-    AND p.party_id IN ('C123456', 'C234567')
+    AND p.party_id IN (:id0, :id1)
 ),
 customer_type_candidates AS (
   SELECT tp.party_pk, 'PERSON' AS customer_type, 1 AS type_priority

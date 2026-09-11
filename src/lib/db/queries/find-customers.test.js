@@ -1,14 +1,20 @@
 import { describe, expect, jest, test } from '@jest/globals'
 
+import { placeholdersIn } from '../../../common/helpers/test-helpers/bind-placeholders.js'
 import * as dbOperations from '../operations/execute.js'
 import { findCustomers, findCustomersQuery } from './find-customers.js'
 
 test('returns the expected query for valid ids', () => {
   const ids = ['C123456', 'C234567']
 
-  const { sql } = findCustomersQuery(ids, 'PERSON')
+  const { sql, bindings } = findCustomersQuery(ids, 'PERSON')
 
   expect(sql).toMatchSnapshot()
+  expect(bindings).toEqual({
+    id0: 'C123456',
+    id1: 'C234567',
+    customerType: 'PERSON'
+  })
 })
 
 test('throws if the parameters are invalid', () => {
@@ -43,6 +49,12 @@ test('throws if customerType is missing', () => {
     // @ts-expect-error - explicitly testing missing required parameter
     findCustomersQuery(['C123456'])
   ).toThrow(/customertype/i)
+})
+
+test('binds exactly the placeholders in its sql', () => {
+  const { sql, bindings } = findCustomersQuery(['C123456', 'C234567'], 'PERSON')
+
+  expect(Object.keys(bindings).sort()).toEqual(placeholdersIn(sql))
 })
 
 describe('findCustomers', () => {

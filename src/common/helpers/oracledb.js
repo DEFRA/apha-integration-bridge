@@ -145,7 +145,14 @@ export const oracleDb = {
          */
         server.decorate('server', `oracledb.${key}`, async () => {
           const startTime = Date.now()
+
           const connection = await oracledb.getConnection(key)
+
+          /**
+           * bound every round trip on this connection, so a stuck query fails
+           * instead of holding the pool
+           */
+          connection.callTimeout = config.callTimeout
 
           server.logger.trace(`OracleDB connection established for "${key}"`)
 

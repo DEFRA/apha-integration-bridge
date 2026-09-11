@@ -134,6 +134,12 @@ const config = convict({
         format: Number,
         default: 1,
         env: 'ORACLEDB_PEGA_EXPIRE_TIME'
+      },
+      callTimeout: {
+        doc: 'PEGA Database call timeout in milliseconds. Bounds each round trip of a query on a pooled connection, so a stuck query fails with a call timeout error instead of holding the connection. Set to 0 to disable.',
+        format: 'nat',
+        default: 5000,
+        env: 'ORACLEDB_PEGA_CALL_TIMEOUT'
       }
     },
     sam: {
@@ -194,6 +200,12 @@ const config = convict({
         format: Number,
         default: 1,
         env: 'ORACLEDB_SAM_SMDB_EXPIRE_TIME'
+      },
+      callTimeout: {
+        doc: 'SAM Database call timeout in milliseconds. Bounds each round trip of a query on a pooled connection, so a stuck query fails with a call timeout error instead of holding the connection. Set to 0 to disable.',
+        format: 'nat',
+        default: 5000,
+        env: 'ORACLEDB_SAM_SMDB_CALL_TIMEOUT'
       }
     }
   },

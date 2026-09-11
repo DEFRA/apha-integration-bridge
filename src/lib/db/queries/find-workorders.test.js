@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals'
 
+import { placeholdersIn } from '../../../common/helpers/test-helpers/bind-placeholders.js'
 import * as dbOperations from '../operations/execute.js'
 import * as workAreaMappingModule from './get-workarea-code-mapping.js'
 import * as speciesMappingModule from './get-purpose-species-code-mapping.js'
@@ -10,9 +11,10 @@ describe('findWorkordersQuery', () => {
   test('returns the expected query for valid parameters', () => {
     const ids = ['WS-12345']
 
-    const { sql } = findWorkordersQuery(ids)
+    const { sql, bindings } = findWorkordersQuery(ids)
 
     expect(sql).toMatchSnapshot()
+    expect(bindings).toEqual({ id0: 'WS-12345', has_statuses: 0 })
   })
 
   test('uses a single ws_entities CTE scan for work schedule entities', () => {
@@ -28,9 +30,14 @@ describe('findWorkordersQuery', () => {
   test('returns the expected query for multiple ids', () => {
     const ids = ['WS-12345', 'WS-12346']
 
-    const { sql } = findWorkordersQuery(ids)
+    const { sql, bindings } = findWorkordersQuery(ids)
 
     expect(sql).toMatchSnapshot()
+    expect(bindings).toEqual({
+      id0: 'WS-12345',
+      id1: 'WS-12346',
+      has_statuses: 0
+    })
   })
 
   test('throws when ids is empty', () => {
@@ -41,6 +48,12 @@ describe('findWorkordersQuery', () => {
     expect(() => findWorkordersQuery(["WS-12345' OR '1'='1"])).toThrow(
       'Invalid parameters'
     )
+  })
+
+  test('binds exactly the placeholders in its sql', () => {
+    const { sql, bindings } = findWorkordersQuery(['WS-12345', 'WS-12346'])
+
+    expect(Object.keys(bindings).sort()).toEqual(placeholdersIn(sql))
   })
 })
 
