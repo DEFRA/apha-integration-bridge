@@ -9,7 +9,11 @@
  */
 
 import Boom from '@hapi/boom'
-import { RateLimiterMemory, RateLimiterMongo } from 'rate-limiter-flexible'
+import {
+  RateLimiterMemory,
+  RateLimiterMongo,
+  RateLimiterRes
+} from 'rate-limiter-flexible'
 
 import { config } from '../../config.js'
 
@@ -69,14 +73,29 @@ export const rateLimitPlugin = {
           }
 
           return h.continue
-        } catch (rateLimitResult) {
-          request.app.rateLimit = {
-            result: rateLimitResult,
-            limit: rateLimitConfig.points,
-            exceeded: true
+        } catch (rejection) {
+          if (rejection instanceof RateLimiterRes) {
+            request.app.rateLimit = {
+              result: rejection,
+              limit: rateLimitConfig.points,
+              exceeded: true
+            }
+
+            throw Boom.tooManyRequests('Rate limit exceeded')
           }
 
-          throw Boom.tooManyRequests('Rate limit exceeded')
+          server.logger?.error(
+            { err: rejection },
+            'Rate limiter failed for both the MongoDB store and its in-memory fallback'
+          )
+
+          const unavailable = Boom.serverUnavailable(
+            'Service temporarily unavailable'
+          )
+          unavailable.output.headers['Retry-After'] = String(
+            rateLimitConfig.duration
+          )
+          throw unavailable
         }
       }
     )
@@ -149,20 +168,17 @@ export const rateLimitPlugin = {
  * @param {import('pino').Logger} [logger] - Optional logger instance
  */
 async function createLimiter(rateLimitConfig, mongoConfig, db, logger) {
-  const isTest = process.env.NODE_ENV === 'test'
+  if (!db) {
+    if (process.env.NODE_ENV !== 'test') {
+      throw new Error('MongoDB database instance not available')
+    }
 
-  // Use in-memory limiter for tests, MongoDB for production/development
-  if (isTest) {
     logger?.info('Using in-memory rate limiter for tests')
     return new RateLimiterMemory({
       points: rateLimitConfig.points,
       duration: rateLimitConfig.duration,
       blockDuration: 0
     })
-  }
-
-  if (!db) {
-    throw new Error('MongoDB database instance not available')
   }
 
   const collection = db.collection('rate-limits')
@@ -188,23 +204,110 @@ async function createLimiter(rateLimitConfig, mongoConfig, db, logger) {
   }
 
   logger?.info('Ensuring TTL index on rate-limits collection')
-  await collection.createIndex(
-    { expire: 1 },
-    {
-      expireAfterSeconds: rateLimitConfig.duration * 2,
-      background: true
-    }
-  )
+  await ensureTtlIndex(collection, rateLimitConfig.duration * 2, logger)
 
-  logger?.info('Initializing MongoDB rate limiter')
-  return new RateLimiterMongo({
-    storeClient: db,
-    dbName: mongoConfig.databaseName,
-    tableName: 'rate-limits',
+  // rate-limiter-flexible falls back to this automatically when the Mongo
+  // store errors. Counts per container, so during an outage a client's
+  // effective limit is points * number of running pods.
+  const insuranceLimiter = new RateLimiterMemory({
     points: rateLimitConfig.points,
     duration: rateLimitConfig.duration,
     blockDuration: 0
   })
+
+  logger?.info('Initializing MongoDB rate limiter')
+  return new RateLimiterMongoWithFallbackWarning(
+    {
+      storeClient: db,
+      dbName: mongoConfig.databaseName,
+      tableName: 'rate-limits',
+      points: rateLimitConfig.points,
+      duration: rateLimitConfig.duration,
+      blockDuration: 0,
+      insuranceLimiter
+    },
+    logger
+  )
+}
+
+/**
+ * RateLimiterMongo that logs once when a store operation fails and falls
+ * through to the insurance limiter, so on-call knows Mongo is struggling.
+ */
+class RateLimiterMongoWithFallbackWarning extends RateLimiterMongo {
+  /**
+   * @param {ConstructorParameters<typeof RateLimiterMongo>[0]} opts
+   * @param {import('pino').Logger} [logger]
+   */
+  constructor(opts, logger) {
+    super(opts)
+    this._logger = logger
+    this._fallbackWarned = false
+  }
+
+  _upsert(...args) {
+    // @ts-ignore - _upsert is a private method rate-limiter-flexible doesn't declare in its types, but it's the only hook point for a Mongo store failure
+    return super._upsert(...args).catch((err) => {
+      if (!this._fallbackWarned) {
+        this._fallbackWarned = true
+        this._logger?.warn(
+          { err },
+          'MongoDB rate limiter store failed; falling back to in-memory rate limiting until Mongo recovers'
+        )
+      }
+
+      throw err
+    })
+  }
+}
+
+/**
+ * expireAfterSeconds is derived from config, so a duration change can leave
+ * an index on disk with different options - Mongo refuses to create an
+ * index that already exists with different options, so drop and recreate
+ * it rather than fail the boot.
+ * @param {import('mongodb').Collection} collection
+ * @param {number} expireAfterSeconds
+ * @param {import('pino').Logger} [logger]
+ */
+async function ensureTtlIndex(collection, expireAfterSeconds, logger) {
+  let existing
+
+  try {
+    const indexes = await collection.listIndexes().toArray()
+    existing = indexes.find((idx) => idx.name === 'expire_1')
+  } catch (err) {
+    // Collection doesn't exist yet - listIndexes errors instead of
+    // returning an empty list; createIndex below creates it.
+    logger?.debug(
+      { err },
+      'Could not list indexes on rate-limits collection (likely does not exist yet)'
+    )
+  }
+
+  if (existing && existing.expireAfterSeconds === expireAfterSeconds) {
+    return
+  }
+
+  if (existing) {
+    logger?.info(
+      `Rate limit duration changed; recreating TTL index (expiry ${existing.expireAfterSeconds}s -> ${expireAfterSeconds}s)`
+    )
+
+    try {
+      await collection.dropIndex('expire_1')
+    } catch (err) {
+      logger?.debug(
+        { err },
+        'Drop of expire_1 index failed (may have already been recreated by another container)'
+      )
+    }
+  }
+
+  await collection.createIndex(
+    { expire: 1 },
+    { expireAfterSeconds, background: true }
+  )
 }
 
 /**
