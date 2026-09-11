@@ -10,6 +10,7 @@ import {
 import oracledb from 'oracledb'
 
 import { config } from '../../../config.js'
+import { placeholdersIn } from '../../../common/helpers/test-helpers/bind-placeholders.js'
 import * as dbOperations from '../operations/execute.js'
 import * as workAreaMappingModule from './get-workarea-code-mapping.js'
 import * as speciesMappingModule from './get-purpose-species-code-mapping.js'
@@ -25,16 +26,26 @@ const validParams = {
 
 describe('getWorkordersQuery', () => {
   test('returns the expected query for valid parameters', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       endActivationDate: '2024-01-01T00:05:00.001Z'
     })
 
     expect(sql).toMatchSnapshot()
+    expect(bindings).toEqual({
+      start_date: '2024-01-01 00:00:00.000',
+      end_date: '2024-01-01 00:05:00.001',
+      date_type: 'activation',
+      has_countries: 0,
+      has_statuses: 1,
+      status0: 'Open',
+      offset_rows: 0,
+      fetch_rows: 11
+    })
   })
 
   test('returns the expected query for update date filter', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       startUpdatedDate: '2024-01-01T00:00:00.000Z',
       endUpdatedDate: '2024-01-01T00:05:00.001Z',
       page: 1,
@@ -42,16 +53,37 @@ describe('getWorkordersQuery', () => {
     })
 
     expect(sql).toMatchSnapshot()
+    expect(bindings).toEqual({
+      start_date: '2024-01-01 00:00:00.000',
+      end_date: '2024-01-01 00:05:00.001',
+      date_type: 'updated',
+      has_countries: 0,
+      has_statuses: 1,
+      status0: 'Open',
+      offset_rows: 0,
+      fetch_rows: 11
+    })
   })
 
   test('returns the expected query with country filter', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       endActivationDate: '2024-01-01T00:05:00.001Z',
       country: 'Wales'
     })
 
     expect(sql).toMatchSnapshot()
+    expect(bindings).toEqual({
+      start_date: '2024-01-01 00:00:00.000',
+      end_date: '2024-01-01 00:05:00.001',
+      date_type: 'activation',
+      has_countries: 1,
+      has_statuses: 1,
+      id0: 'WALES',
+      status0: 'Open',
+      offset_rows: 0,
+      fetch_rows: 11
+    })
   })
 
   test('uses a single ws_entities CTE scan for work schedule entities', () => {
@@ -66,124 +98,146 @@ describe('getWorkordersQuery', () => {
   })
 
   test('normalizes timezone-offset date strings before SQL timestamp comparison', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       startActivationDate: '2024-01-01T00:00:00.000+01:00',
       endActivationDate: '2024-01-01T00:05:00.000+01:00'
     })
 
     expect(sql).toContain(
-      "ac.wsactivationdate >= TO_TIMESTAMP('2023-12-31 23:00:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3')"
+      "ac.wsactivationdate >= TO_TIMESTAMP(:start_date, 'yyyy-mm-dd hh24:mi:ss.ff3')"
     )
     expect(sql).toContain(
-      "ac.wsactivationdate < TO_TIMESTAMP('2023-12-31 23:05:00.000', 'yyyy-mm-dd hh24:mi:ss.ff3')"
+      "ac.wsactivationdate < TO_TIMESTAMP(:end_date, 'yyyy-mm-dd hh24:mi:ss.ff3')"
     )
+    expect(bindings).toMatchObject({
+      start_date: '2023-12-31 23:00:00.000',
+      end_date: '2023-12-31 23:05:00.000'
+    })
   })
 
   test('includes all countries when country filter is omitted', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams
     })
 
-    expect(sql).toContain('(0 = 0 OR UPPER(ws.purposecountry) IN (NULL))')
+    expect(sql).toContain(
+      '(:has_countries = 0 OR UPPER(ws.purposecountry) IN (NULL))'
+    )
+    expect(bindings).toMatchObject({ has_countries: 0 })
   })
 
   test('filters by specific country when provided', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       country: 'wales'
     })
 
-    expect(sql).toContain("(1 = 0 OR UPPER(ws.purposecountry) IN ('WALES'))")
+    expect(sql).toContain(
+      '(:has_countries = 0 OR UPPER(ws.purposecountry) IN (:id0))'
+    )
+    expect(bindings).toMatchObject({ has_countries: 1, id0: 'WALES' })
   })
 
   test('filters by multiple countries when provided as array', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       country: ['scotland', 'wales']
     })
 
     expect(sql).toContain(
-      "(1 = 0 OR UPPER(ws.purposecountry) IN ('SCOTLAND', 'WALES'))"
+      '(:has_countries = 0 OR UPPER(ws.purposecountry) IN (:id0, :id1))'
     )
+    expect(bindings).toMatchObject({
+      has_countries: 1,
+      id0: 'SCOTLAND',
+      id1: 'WALES'
+    })
   })
 
   test('normalizes single country to uppercase', () => {
-    const { sql } = getWorkordersQuery({
+    const { bindings } = getWorkordersQuery({
       ...validParams,
       country: 'EnGlAnD'
     })
 
-    expect(sql).toContain("'ENGLAND'")
+    expect(bindings).toMatchObject({ id0: 'ENGLAND' })
   })
 
   test('normalizes multiple countries to uppercase', () => {
-    const { sql } = getWorkordersQuery({
+    const { bindings } = getWorkordersQuery({
       ...validParams,
       country: ['SCOTLAND', 'wales', 'EnGlAnD']
     })
 
-    expect(sql).toContain("'SCOTLAND'")
-    expect(sql).toContain("'WALES'")
-    expect(sql).toContain("'ENGLAND'")
+    expect(bindings).toMatchObject({
+      id0: 'SCOTLAND',
+      id1: 'WALES',
+      id2: 'ENGLAND'
+    })
   })
 
   test('defaults page and pageSize when omitted', () => {
-    const { sql } = getWorkordersQuery({
+    const { bindings } = getWorkordersQuery({
       startActivationDate: '2024-01-01T00:00:00.000Z',
       endActivationDate: '2024-02-01T00:00:00.000Z'
     })
 
-    expect(sql).toContain('row_num > 0')
-    expect(sql).toContain('row_num <= 0 + 51')
+    expect(bindings).toMatchObject({ offset_rows: 0, fetch_rows: 51 })
   })
 
   test('defaults to Open status when status parameter is omitted', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams
     })
 
-    expect(sql).toContain("ac.pystatuswork IN ('Open')")
+    expect(sql).toContain('ac.pystatuswork IN (:status0)')
+    expect(bindings).toMatchObject({ status0: 'Open' })
   })
 
   test('filters by specific status when provided', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       status: 'New'
     })
 
-    expect(sql).toContain("ac.pystatuswork IN ('New')")
+    expect(sql).toContain('ac.pystatuswork IN (:status0)')
+    expect(bindings).toMatchObject({ status0: 'New' })
   })
 
   test('filters by multiple statuses when provided as array', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       status: ['Open', 'Pending-Activated']
     })
 
-    expect(sql).toContain("ac.pystatuswork IN ('Open', 'Pending-Activated')")
+    expect(sql).toContain('ac.pystatuswork IN (:status0, :status1)')
+    expect(bindings).toMatchObject({
+      status0: 'Open',
+      status1: 'Pending-Activated'
+    })
   })
 
   test('handles status with case-insensitive input', () => {
-    const { sql } = getWorkordersQuery({
+    const { bindings } = getWorkordersQuery({
       ...validParams,
       status: 'oPeN'
     })
 
-    expect(sql).toContain("ac.pystatuswork IN ('Open')")
+    expect(bindings).toMatchObject({ status0: 'Open' })
   })
 
   test('supports Resolved-Closed status', () => {
-    const { sql } = getWorkordersQuery({
+    const { bindings } = getWorkordersQuery({
       ...validParams,
       status: 'Resolved-Closed'
     })
 
-    expect(sql).toContain("ac.pystatuswork IN ('Resolved-Closed')")
+    expect(bindings).toMatchObject({ status0: 'Resolved-Closed' })
   })
 
   test('filters by multiple different statuses including Resolved statuses', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       status: [
         'New',
@@ -195,12 +249,19 @@ describe('getWorkordersQuery', () => {
     })
 
     expect(sql).toContain(
-      "ac.pystatuswork IN ('New', 'Open', 'Pending-Activated', 'Resolved-Closed', 'Resolved-Completed')"
+      'ac.pystatuswork IN (:status0, :status1, :status2, :status3, :status4)'
     )
+    expect(bindings).toMatchObject({
+      status0: 'New',
+      status1: 'Open',
+      status2: 'Pending-Activated',
+      status3: 'Resolved-Closed',
+      status4: 'Resolved-Completed'
+    })
   })
 
   test('supports all valid status values', () => {
-    const { sql } = getWorkordersQuery({
+    const { sql, bindings } = getWorkordersQuery({
       ...validParams,
       status: [
         'New',
@@ -215,16 +276,39 @@ describe('getWorkordersQuery', () => {
       ]
     })
 
-    expect(sql).toContain('ac.pystatuswork IN (')
-    expect(sql).toContain("'New'")
-    expect(sql).toContain("'Open'")
-    expect(sql).toContain("'Open-Reopened'")
-    expect(sql).toContain("'Pending-Activated'")
-    expect(sql).toContain("'Pending-Planned'")
-    expect(sql).toContain("'Resolved-Cancelled'")
-    expect(sql).toContain("'Resolved-Closed'")
-    expect(sql).toContain("'Resolved-Completed'")
-    expect(sql).toContain("'Resolved-Not-Required'")
+    expect(sql).toContain(
+      'ac.pystatuswork IN (:status0, :status1, :status2, :status3, :status4, :status5, :status6, :status7, :status8)'
+    )
+    expect(bindings).toMatchObject({
+      status0: 'New',
+      status1: 'Open',
+      status2: 'Open-Reopened',
+      status3: 'Pending-Activated',
+      status4: 'Pending-Planned',
+      status5: 'Resolved-Cancelled',
+      status6: 'Resolved-Closed',
+      status7: 'Resolved-Completed',
+      status8: 'Resolved-Not-Required'
+    })
+  })
+
+  test('binds exactly the placeholders in its sql for every filter branch', () => {
+    const queries = [
+      getWorkordersQuery(validParams),
+      getWorkordersQuery({
+        ...validParams,
+        country: ['England', 'Wales'],
+        status: ['Open', 'New']
+      }),
+      getWorkordersQuery({
+        startUpdatedDate: '2024-01-01T00:00:00.000Z',
+        endUpdatedDate: '2024-02-01T00:00:00.000Z'
+      })
+    ]
+
+    for (const { sql, bindings } of queries) {
+      expect(Object.keys(bindings).sort()).toEqual(placeholdersIn(sql))
+    }
   })
 })
 

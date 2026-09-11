@@ -1,7 +1,6 @@
 import Joi from 'joi'
 
 import { execute } from '../operations/execute.js'
-import { query } from '../operations/query.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 
@@ -18,7 +17,7 @@ const GetCustomerTypesSchema = Joi.array()
 
 /**
  * @param {string[]} customerIds
- * @returns {{ sql: string }}
+ * @returns {{ sql: string; bindings: Record<string, unknown> }}
  */
 export function getCustomerTypesQuery(customerIds) {
   const { value, error } = GetCustomerTypesSchema.validate(customerIds)
@@ -31,9 +30,8 @@ export function getCustomerTypesQuery(customerIds) {
   const sqlWithCustomerIds = sql.replace(CUSTOMER_IDS_BIND_TOKEN, placeholders)
 
   return {
-    sql: query()
-      .raw(sqlWithCustomerIds, { ...bindings })
-      .toQuery()
+    sql: sqlWithCustomerIds,
+    bindings
   }
 }
 

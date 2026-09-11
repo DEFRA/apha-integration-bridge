@@ -2,7 +2,6 @@ import Joi from 'joi'
 
 import { toLocations } from '../mappers/to-locations.js'
 import { execute } from '../operations/execute.js'
-import { query } from '../operations/query.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { LocationIdSchema } from '../../../types/locations.js'
@@ -21,7 +20,7 @@ const FindLocationsSchema = Joi.object({
 
 /**
  * @param {Array<string>} ids
- * @returns {{ sql: string; }} The query and its bindings
+ * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings
  */
 export function findLocationsQuery(ids) {
   const { value, error } = FindLocationsSchema.validate({ ids })
@@ -34,9 +33,8 @@ export function findLocationsQuery(ids) {
   const sqlWithIds = sql.replace(LOCATION_IDS_BIND_TOKEN, placeholders)
 
   return {
-    sql: query()
-      .raw(sqlWithIds, { ...bindings })
-      .toQuery()
+    sql: sqlWithIds,
+    bindings
   }
 }
 
