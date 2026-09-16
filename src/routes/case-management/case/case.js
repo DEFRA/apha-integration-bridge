@@ -103,7 +103,31 @@ async function runCaseCreationFlow(request, action) {
   try {
     await action()
   } catch (error) {
-    handleCaseCreationError(error, request)
+    handleCaseCreationError(
+      /** @type {Error & {step?: string, failedItems?: any[]}} */ (error),
+      request
+    )
+  }
+}
+
+/**
+ * Runs `fn` and tags any error it throws with the flow step it occurred in,
+ * so the failure can be traced back to a specific stage of case creation
+ * (see AC: "determine where an error occurred in the flow"). The innermost
+ * step wins if an error propagates through nested steps.
+ *
+ * @template T
+ * @param {string} step
+ * @param {() => Promise<T>} fn
+ * @returns {Promise<T>}
+ */
+async function withStep(step, fn) {
+  try {
+    return await fn()
+  } catch (error) {
+    const stepError = /** @type {Error & {step?: string}} */ (error)
+    stepError.step = stepError.step ?? step
+    throw stepError
   }
 }
 
@@ -124,13 +148,15 @@ async function createCase(request, applicationId, customerId) {
     licenceType
   )
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.createOrUpdateCase(
-      createCasePayload,
-      applicationReference,
-      request.logger
-    )
-  }, retriesConfig)
+  const salesforceResponse = await withStep('createCase', () =>
+    retry(async () => {
+      return await salesforceClient.createOrUpdateCase(
+        createCasePayload,
+        applicationReference,
+        request.logger
+      )
+    }, retriesConfig)
+  )
 
   return salesforceResponse.id || null
 }
@@ -146,9 +172,14 @@ async function addKeyFacts(request, applicationId) {
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
-    await retry(async () => {
-      return await salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
-    }, retriesConfig)
+    await withStep('addKeyFacts', () =>
+      retry(async () => {
+        return await salesforceClient.addKeyFacts(
+          keyFactsRequest,
+          request.logger
+        )
+      }, retriesConfig)
+    )
   }
 }
 
@@ -158,9 +189,11 @@ async function addKeyFacts(request, applicationId) {
  * @returns {Promise<any[]>}
  */
 async function getKeyFacts(request, applicationId) {
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.getKeyFacts(applicationId, request.logger)
-  }, retriesConfig)
+  const salesforceResponse = await withStep('getKeyFacts', () =>
+    retry(async () => {
+      return await salesforceClient.getKeyFacts(applicationId, request.logger)
+    }, retriesConfig)
+  )
   return salesforceResponse?.records || []
 }
 
@@ -172,7 +205,11 @@ async function createApplicationAndFile(request) {
   const applicationId = await createApplication(request)
 
   if (applicationId) {
-    const files = await getLinkedFiles(request, applicationId)
+    const files = await getLinkedFiles(
+      request,
+      applicationId,
+      'getLinkedFiles:application'
+    )
     if (files.length === 0) {
       await uploadApplicationFile(request, applicationId)
     }
@@ -186,23 +223,25 @@ async function createApplicationAndFile(request) {
  * @returns {Promise<string|null>}
  */
 async function createApplication(request) {
-  const payload = /** @type {CreateCasePayload} */ (request.payload)
-  const compositeRequest = buildApplicationCreationCompositeRequest(payload)
+  return withStep('createApplication', async () => {
+    const payload = /** @type {CreateCasePayload} */ (request.payload)
+    const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(
-      compositeRequest,
-      request.logger
+    const salesforceResponse = await retry(async () => {
+      return await salesforceClient.sendComposite(
+        compositeRequest,
+        request.logger
+      )
+    }, retriesConfig)
+
+    assertLicenceTypeResolved(salesforceResponse)
+    const compositeResponse = handleCompositeResponse(salesforceResponse)
+
+    return (
+      compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
+        ?.body?.id || null
     )
-  }, retriesConfig)
-
-  assertLicenceTypeResolved(salesforceResponse)
-  const compositeResponse = handleCompositeResponse(salesforceResponse)
-
-  return (
-    compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
-      ?.body?.id || null
-  )
+  })
 }
 
 class InvalidLicenceTypeError extends Error {
@@ -238,12 +277,18 @@ function assertLicenceTypeResolved(salesforceResponse) {
 /**
  * @param {Request} request
  * @param {string} applicationId
+ * @param {string} [step]
  * @returns {Promise<any[]>}
  */
-async function getLinkedFiles(request, applicationId) {
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.getLinkedFiles(applicationId, request.logger)
-  }, retriesConfig)
+async function getLinkedFiles(request, applicationId, step = 'getLinkedFiles') {
+  const salesforceResponse = await withStep(step, () =>
+    retry(async () => {
+      return await salesforceClient.getLinkedFiles(
+        applicationId,
+        request.logger
+      )
+    }, retriesConfig)
+  )
   return salesforceResponse?.records || []
 }
 
@@ -252,20 +297,22 @@ async function getLinkedFiles(request, applicationId) {
  * @param {string} applicationId
  */
 async function uploadApplicationFile(request, applicationId) {
-  const payload = /** @type {CreateCasePayload} */ (request.payload)
-  const compositeRequest = buildApplicationFileCompositeRequest(
-    payload,
-    applicationId
-  )
-
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(
-      compositeRequest,
-      request.logger
+  return withStep('uploadApplicationFile', async () => {
+    const payload = /** @type {CreateCasePayload} */ (request.payload)
+    const compositeRequest = buildApplicationFileCompositeRequest(
+      payload,
+      applicationId
     )
-  }, retriesConfig)
 
-  handleCompositeResponse(salesforceResponse)
+    const salesforceResponse = await retry(async () => {
+      return await salesforceClient.sendComposite(
+        compositeRequest,
+        request.logger
+      )
+    }, retriesConfig)
+
+    handleCompositeResponse(salesforceResponse)
+  })
 }
 
 /**
@@ -282,18 +329,20 @@ async function uploadCaseFile(
   filePath,
   logger
 ) {
-  const compositeRequest = await buildSupportingMaterialsCompositeRequest(
-    caseId,
-    sectionKey,
-    questionKey,
-    filePath
-  )
+  return withStep('uploadCaseFile', async () => {
+    const compositeRequest = await buildSupportingMaterialsCompositeRequest(
+      caseId,
+      sectionKey,
+      questionKey,
+      filePath
+    )
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(compositeRequest, logger)
-  }, retriesConfig)
+    const salesforceResponse = await retry(async () => {
+      return await salesforceClient.sendComposite(compositeRequest, logger)
+    }, retriesConfig)
 
-  handleCompositeResponse(salesforceResponse)
+    handleCompositeResponse(salesforceResponse)
+  })
 }
 
 /**
@@ -329,12 +378,14 @@ async function createCustomerAccount(request) {
   const applicant = /** @type {GuestCustomerDetails} */ (payload.applicant)
   const customerCreationPayload = buildCustomerCreationPayload(applicant)
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.createCustomer(
-      customerCreationPayload,
-      request.logger
-    )
-  }, retriesConfig)
+  const salesforceResponse = await withStep('createCustomer', () =>
+    retry(async () => {
+      return await salesforceClient.createCustomer(
+        customerCreationPayload,
+        request.logger
+      )
+    }, retriesConfig)
+  )
 
   return salesforceResponse?.id || null
 }
@@ -346,7 +397,11 @@ async function createCustomerAccount(request) {
  */
 async function uploadSupportingMaterials(request, caseId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
-  const caseFiles = await getLinkedFiles(request, caseId)
+  const caseFiles = await getLinkedFiles(
+    request,
+    caseId,
+    'getLinkedFiles:supportingMaterials'
+  )
   for (const section of payload.sections) {
     for (const questionAnswer of section.questionAnswers) {
       if (
@@ -371,6 +426,10 @@ async function uploadSupportingMaterials(request, caseId) {
   }
 }
 
+/**
+ * @param {Error & {step?: string, name?: string, failedItems?: any[]}} error
+ * @param {Request} request
+ */
 function handleCaseCreationError(error, request) {
   if (error instanceof InvalidLicenceTypeError) {
     request.logger.error(
@@ -388,8 +447,10 @@ function handleCaseCreationError(error, request) {
     ]).boomify()
   }
 
+  const step = error.step || 'unknown'
+
   if (error.name === 'CompositeOperationError') {
-    const failedOperations = error.failedItems.map((item) => ({
+    const failedOperations = (error.failedItems || []).map((item) => ({
       referenceId: item.referenceId,
       httpStatusCode: item.httpStatusCode,
       errors: Array.isArray(item.body)
@@ -403,17 +464,19 @@ function handleCaseCreationError(error, request) {
     request.logger.error(
       {
         endpoint: 'case-management/case',
+        step,
         failedOperations
       },
-      'Composite operations failed in Salesforce'
+      `Composite operations failed in Salesforce during step "${step}"`
     )
   } else {
     request.logger.error(
       {
         err: error,
-        endpoint: 'case-management/case'
+        endpoint: 'case-management/case',
+        step
       },
-      'Failed to create case in Salesforce'
+      `Failed to create case in Salesforce during step "${step}": ${error.message}`
     )
   }
   throw new HTTPException(

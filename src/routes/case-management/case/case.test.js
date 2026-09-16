@@ -650,13 +650,19 @@ describe('POST /case-management/case', () => {
       ]
     }
 
-    const errorLogCallArguments = [
-      expect.objectContaining({
-        err: expect.any(Error),
-        endpoint: 'case-management/case'
-      }),
-      'Failed to create case in Salesforce'
-    ]
+    /**
+     * @param {string} step
+     */
+    function errorLogCallArgumentsForStep(step) {
+      return [
+        expect.objectContaining({
+          err: expect.any(Error),
+          endpoint: 'case-management/case',
+          step
+        }),
+        expect.stringContaining(`during step "${step}"`)
+      ]
+    }
 
     beforeAll(() => {
       jest.useFakeTimers()
@@ -690,7 +696,9 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateCustomer).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('createCustomer')
+      )
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
@@ -717,7 +725,9 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('createApplication')
+      )
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
@@ -772,6 +782,7 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(
         expect.objectContaining({
           endpoint: 'case-management/case',
+          step: 'createApplication',
           failedOperations: [
             {
               referenceId: 'updateContact',
@@ -785,7 +796,7 @@ describe('POST /case-management/case', () => {
             }
           ]
         }),
-        'Composite operations failed in Salesforce'
+        expect.stringContaining('during step "createApplication"')
       )
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
@@ -900,7 +911,9 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('createCase')
+      )
     })
 
     test('returns 500 when getKeyFacts fails', async () => {
@@ -924,7 +937,9 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(4)
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('getKeyFacts')
+      )
     })
 
     test('returns 500 when addKeyFacts fails', async () => {
@@ -948,7 +963,9 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('addKeyFacts')
+      )
     })
 
     test('returns 500 when uploading supporting materials fails', async () => {
@@ -987,8 +1004,61 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(6) // 2 for application creation and json file upload + 4 for supporting materials retries
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('uploadCaseFile')
+      )
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+    })
+
+    test('returns 500 and tags the step when getLinkedFiles fails for the application', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockGetLinkedFiles.mockRejectedValue(new Error('Connection failed'))
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('getLinkedFiles:application')
+      )
+    })
+
+    test('returns 500 and tags the step when getLinkedFiles fails for supporting materials', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      // First call (application file check) succeeds, second (supporting materials) fails
+      mockGetLinkedFiles
+        .mockResolvedValueOnce({ records: [{}] })
+        .mockRejectedValue(new Error('Connection failed'))
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('getLinkedFiles:supportingMaterials')
+      )
     })
 
     test('retries on transient errors before failing', async () => {
