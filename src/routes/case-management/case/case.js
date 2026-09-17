@@ -115,21 +115,26 @@ async function runCaseCreationFlow(request, action) {
 }
 
 /**
- * Runs `fn` and tags any error it throws with the flow step it occurred in,
- * so the failure can be traced back to a specific stage of case creation
- * (see AC: "determine where an error occurred in the flow"). The innermost
- * step wins if an error propagates through nested steps - this also means
- * a step already tagged by the Salesforce client (see client.js) is left
- * untouched.
+ * Runs `fn` (retried via async-retry by default) and tags any error it
+ * throws with the flow step it occurred in, so the failure can be traced
+ * back to a specific stage of case creation (see AC: "determine where an
+ * error occurred in the flow"). The innermost step wins if an error
+ * propagates through nested steps - this also means a step already tagged
+ * by the Salesforce client (see client.js) is left untouched.
+ *
+ * Pass `{ retry: false }` when `fn` does its own retrying internally, or
+ * contains non-retryable post-processing (e.g. parsing a response that was
+ * already fetched by a nested, retried `withStep` call).
  *
  * @template T
  * @param {string} step
  * @param {() => Promise<T>} fn
+ * @param {{retry?: boolean}} [opts]
  * @returns {Promise<T>}
  */
-async function withStep(step, fn) {
+async function withStep(step, fn, opts = { retry: true }) {
   try {
-    return await fn()
+    return await (opts.retry ? retry(fn, retriesConfig) : fn())
   } catch (error) {
     const stepError = /** @type {Error & {step?: string}} */ (error)
     stepError.step = stepError.step ?? step
@@ -155,13 +160,11 @@ async function createCase(request, applicationId, customerId) {
   )
 
   const salesforceResponse = await withStep('createCase', () =>
-    retry(async () => {
-      return await salesforceClient.createOrUpdateCase(
-        createCasePayload,
-        applicationReference,
-        request.logger
-      )
-    }, retriesConfig)
+    salesforceClient.createOrUpdateCase(
+      createCasePayload,
+      applicationReference,
+      request.logger
+    )
   )
 
   return salesforceResponse.id || null
@@ -179,12 +182,7 @@ async function addKeyFacts(request, applicationId) {
       applicationId
     )
     return withStep('addKeyFacts', () =>
-      retry(async () => {
-        return await salesforceClient.addKeyFacts(
-          keyFactsRequest,
-          request.logger
-        )
-      }, retriesConfig)
+      salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
     )
   }
 
@@ -198,9 +196,7 @@ async function addKeyFacts(request, applicationId) {
  */
 async function getKeyFacts(request, applicationId) {
   const salesforceResponse = await withStep('getKeyFacts', () =>
-    retry(async () => {
-      return await salesforceClient.getKeyFacts(applicationId, request.logger)
-    }, retriesConfig)
+    salesforceClient.getKeyFacts(applicationId, request.logger)
   )
   return salesforceResponse?.records || []
 }
@@ -231,25 +227,26 @@ async function createApplicationAndFile(request) {
  * @returns {Promise<string|null>}
  */
 async function createApplication(request) {
-  return withStep('createApplication', async () => {
-    const payload = /** @type {CreateCasePayload} */ (request.payload)
-    const compositeRequest = buildApplicationCreationCompositeRequest(payload)
+  return withStep(
+    'createApplication',
+    async () => {
+      const payload = /** @type {CreateCasePayload} */ (request.payload)
+      const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
-    const salesforceResponse = await retry(async () => {
-      return await salesforceClient.createApplication(
-        compositeRequest,
-        request.logger
+      const salesforceResponse = await withStep('createApplication', () =>
+        salesforceClient.createApplication(compositeRequest, request.logger)
       )
-    }, retriesConfig)
 
-    assertLicenceTypeResolved(salesforceResponse)
+      assertLicenceTypeResolved(salesforceResponse)
 
-    return (
-      salesforceResponse.find(
-        (item) => item.referenceId === refIdApplicationRef
-      )?.body?.id || null
-    )
-  })
+      return (
+        salesforceResponse.find(
+          (item) => item.referenceId === refIdApplicationRef
+        )?.body?.id || null
+      )
+    },
+    { retry: false }
+  )
 }
 
 class InvalidLicenceTypeError extends Error {
@@ -289,13 +286,7 @@ function assertLicenceTypeResolved(salesforceResponse) {
  */
 async function getLinkedFiles(request, applicationId, step = 'getLinkedFiles') {
   const salesforceResponse = await withStep(step, () =>
-    retry(async () => {
-      return await salesforceClient.getLinkedFiles(
-        applicationId,
-        request.logger,
-        step
-      )
-    }, retriesConfig)
+    salesforceClient.getLinkedFiles(applicationId, request.logger, step)
   )
   return salesforceResponse?.records || []
 }
@@ -305,19 +296,17 @@ async function getLinkedFiles(request, applicationId, step = 'getLinkedFiles') {
  * @param {string} applicationId
  */
 async function uploadApplicationFile(request, applicationId) {
-  return withStep('uploadApplicationFile', async () => {
+  return withStep('uploadApplicationFile', () => {
     const payload = /** @type {CreateCasePayload} */ (request.payload)
     const compositeRequest = buildApplicationFileCompositeRequest(
       payload,
       applicationId
     )
 
-    return retry(async () => {
-      return await salesforceClient.uploadApplicationFile(
-        compositeRequest,
-        request.logger
-      )
-    }, retriesConfig)
+    return salesforceClient.uploadApplicationFile(
+      compositeRequest,
+      request.logger
+    )
   })
 }
 
@@ -343,9 +332,7 @@ async function uploadCaseFile(
       filePath
     )
 
-    return retry(async () => {
-      return await salesforceClient.uploadCaseFile(compositeRequest, logger)
-    }, retriesConfig)
+    return salesforceClient.uploadCaseFile(compositeRequest, logger)
   })
 }
 
@@ -359,12 +346,7 @@ async function createCustomerAccount(request) {
   const customerCreationPayload = buildCustomerCreationPayload(applicant)
 
   const salesforceResponse = await withStep('createCustomer', () =>
-    retry(async () => {
-      return await salesforceClient.createCustomer(
-        customerCreationPayload,
-        request.logger
-      )
-    }, retriesConfig)
+    salesforceClient.createCustomer(customerCreationPayload, request.logger)
   )
 
   return salesforceResponse?.id || null
