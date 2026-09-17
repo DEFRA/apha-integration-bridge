@@ -141,7 +141,6 @@ async function createCase(request, applicationId, customerId) {
  */
 async function addKeyFacts(request, applicationId) {
   const existingKeyFacts = await getKeyFacts(request, applicationId)
-  // console.log('existing key facts:', existingKeyFacts)
   if (existingKeyFacts.length === 0) {
     const keyFactsRequest = buildKeyFactsRequest(
       /** @type {CreateCasePayload} */ (request.payload),
@@ -225,12 +224,11 @@ class InvalidLicenceTypeError extends Error {
  * @throws {InvalidLicenceTypeError} Handled as a 400 Bad Request
  */
 function assertLicenceTypeResolved(salesforceResponse) {
-  const compositeResponse = salesforceResponse
-  if (!Array.isArray(compositeResponse)) {
+  if (!Array.isArray(salesforceResponse)) {
     return
   }
 
-  const licenceTypeQueryItem = compositeResponse.find(
+  const licenceTypeQueryItem = salesforceResponse.find(
     (item) => item?.referenceId === refIdLicenseTypeQuery
   )
 

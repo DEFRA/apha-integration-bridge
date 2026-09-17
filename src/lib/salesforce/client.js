@@ -287,7 +287,6 @@ class SalesforceClient {
 
   /**
    * Create a customer (Contact) in Salesforce.
-   * Uses system-level M2M authentication only.
    *
    * @param {object} payload The request payload to forward.
    * @param {Logger} [logger] Optional logger.
@@ -350,7 +349,6 @@ class SalesforceClient {
 
   /**
    * Send a composite API request to Salesforce.
-   * Uses system-level M2M authentication only.
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {Logger} [logger] Optional logger.
@@ -368,7 +366,6 @@ class SalesforceClient {
 
   /**
    * Send a composite sobjects request to Salesforce.
-   * Uses system-level M2M authentication only.
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {Logger} [logger] Optional logger.
