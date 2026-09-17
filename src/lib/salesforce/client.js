@@ -2,10 +2,17 @@ import { proxyFetch } from '../../common/helpers/proxy/proxy-fetch.js'
 import { config } from '../../config.js'
 import { HTTPMethods } from '../http/http-methods.js'
 import { buildJWTAssertion } from './jwt-bearer.js'
+import {
+  CompositeOperationError,
+  CompositeObjectOperationError
+} from './composite-errors.js'
 
 /**
  * @import {CaseDetailsPayload, UpdateCaseDetailsPayload} from '../../types/case-management/case.js'
  * @import {Logger} from 'pino'
+ * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
+ * @import {CompositeObjectResponse} from '../../types/salesforce/composite-response.js'
+ * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
  */
 
 const TOKEN_EXPIRY_BUFFER_MS = 5000
@@ -250,29 +257,44 @@ class SalesforceClient {
   }
 
   /**
-   * Send a composite API request to Salesforce.
-   * Uses system-level M2M authentication only.
+   * Create an application using a Salesforce composite request.
    *
-   * @param {object} compositeBody The request payload to forward.
-   * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<import('../../types/salesforce/composite-response.js').CompositeResponse>} The Salesforce composite response.
+   * @param {object} applicationRequest
+   * @param {Logger} [logger]
+   * @returns {Promise<CompositeResponse>}
    */
-  async sendComposite(compositeBody, logger) {
-    return this.sendRequest(
-      HTTPMethods.POST,
-      'composite',
-      compositeBody,
-      logger
-    )
+  async createApplication(applicationRequest, logger) {
+    return this.sendComposite(applicationRequest, logger)
+  }
+
+  /**
+   * Upload an application file using a Salesforce composite request.
+   *
+   * @param {object} applicationFileRequest
+   * @param {Logger} [logger]
+   * @returns {Promise<CompositeResponse>}
+   */
+  async uploadApplicationFile(applicationFileRequest, logger) {
+    return this.sendComposite(applicationFileRequest, logger)
+  }
+
+  /**
+   * Upload a case file using a Salesforce composite request.
+   *
+   * @param {object} caseFileRequest
+   * @param {Logger} [logger]
+   * @returns {Promise<CompositeResponse>}
+   */
+  async uploadCaseFile(caseFileRequest, logger) {
+    return this.sendComposite(caseFileRequest, logger)
   }
 
   /**
    * Create a customer (Contact) in Salesforce.
-   * Uses system-level M2M authentication only.
    *
    * @param {object} payload The request payload to forward.
    * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create guest response.
+   * @returns {Promise<CreateGuestResponse>} The Salesforce create guest response.
    */
   async createCustomer(payload, logger) {
     return this.sendRequest(
@@ -287,7 +309,7 @@ class SalesforceClient {
    * @param {CaseDetailsPayload | UpdateCaseDetailsPayload} payload
    * @param {string} applicationReference
    * @param {Logger} [logger]
-   * @returns {Promise<import('../../types/salesforce/contact-response.js').CreateGuestResponse>} The Salesforce create case response.
+   * @returns {Promise<CreateGuestResponse>} The Salesforce create case response.
    */
   async createOrUpdateCase(payload, applicationReference, logger) {
     return this.sendRequest(
@@ -323,15 +345,44 @@ class SalesforceClient {
   /**
    * @param {object} keyFactsRequest
    * @param {Logger} [logger]
-   * @returns {Promise<any>}
+   * @returns {Promise<CompositeObjectResponse>}
    */
   async addKeyFacts(keyFactsRequest, logger) {
-    return this.sendRequest(
+    return this.sendCompositeObject(keyFactsRequest, logger)
+  }
+
+  /**
+   * Send a composite API request to Salesforce.
+   *
+   * @param {object} compositeBody The request payload to forward.
+   * @param {Logger} [logger] Optional logger.
+   * @returns {Promise<CompositeResponse>} The Salesforce composite response.
+   */
+  async sendComposite(compositeBody, logger) {
+    const salesforceResponse = await this.sendRequest(
       HTTPMethods.POST,
-      'composite/sobjects',
-      keyFactsRequest,
+      'composite',
+      compositeBody,
       logger
     )
+    return handleCompositeResponse(salesforceResponse?.compositeResponse)
+  }
+
+  /**
+   * Send a composite sobjects request to Salesforce.
+   *
+   * @param {object} compositeBody The request payload to forward.
+   * @param {Logger} [logger] Optional logger.
+   * @returns {Promise<CompositeObjectResponse>} The Salesforce composite sobjects response.
+   */
+  async sendCompositeObject(compositeBody, logger) {
+    const salesforceResponse = await this.sendRequest(
+      HTTPMethods.POST,
+      'composite/sobjects',
+      compositeBody,
+      logger
+    )
+    return handleCompositeObjectResponse(salesforceResponse)
   }
 
   /**
@@ -543,6 +594,48 @@ class SalesforceClient {
 
     return `${baseUrl.replace(/\/$/, '')}/services/data/${this.cfg.apiVersion}`
   }
+}
+
+/**
+ * Validate a standard Salesforce composite response.
+ *
+ * @param {CompositeResponse} compositeResponse
+ * @returns {CompositeResponse}
+ * @throws {Error} Throws an error if any composite operation failed.
+ */
+function handleCompositeResponse(compositeResponse) {
+  const failedCompositeItems = Array.isArray(compositeResponse)
+    ? compositeResponse.filter(
+        (item) =>
+          item?.httpStatusCode &&
+          (item.httpStatusCode < 200 || item.httpStatusCode > 299)
+      )
+    : []
+
+  if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
+    throw new CompositeOperationError(failedCompositeItems)
+  }
+
+  return compositeResponse
+}
+
+/**
+ * Validate a Salesforce composite sobjects response.
+ *
+ * @param {CompositeObjectResponse} compositeResponse
+ * @returns {CompositeObjectResponse}
+ * @throws {Error} Throws an error if any composite object operation failed.
+ */
+function handleCompositeObjectResponse(compositeResponse) {
+  const failedCompositeItems = Array.isArray(compositeResponse)
+    ? compositeResponse.filter((item) => !item?.success)
+    : []
+
+  if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
+    throw new CompositeObjectOperationError(failedCompositeItems)
+  }
+
+  return compositeResponse
 }
 
 export const salesforceClient = new SalesforceClient()

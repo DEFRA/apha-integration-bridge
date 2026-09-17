@@ -21,6 +21,10 @@ import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/fi
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { config } from '../../../config.js'
+import {
+  CompositeOperationError,
+  CompositeObjectOperationError
+} from '../../../lib/salesforce/composite-errors.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
@@ -146,10 +150,14 @@ async function addKeyFacts(request, applicationId) {
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
-    await retry(async () => {
+    const salesforceResponse = await retry(async () => {
       return await salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
     }, retriesConfig)
+
+    return salesforceResponse
   }
+
+  return undefined
 }
 
 /**
@@ -190,17 +198,16 @@ async function createApplication(request) {
   const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
   const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(
+    return await salesforceClient.createApplication(
       compositeRequest,
       request.logger
     )
   }, retriesConfig)
 
   assertLicenceTypeResolved(salesforceResponse)
-  const compositeResponse = handleCompositeResponse(salesforceResponse)
 
   return (
-    compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
+    salesforceResponse.find((item) => item.referenceId === refIdApplicationRef)
       ?.body?.id || null
   )
 }
@@ -221,12 +228,11 @@ class InvalidLicenceTypeError extends Error {
  * @throws {InvalidLicenceTypeError} Handled as a 400 Bad Request
  */
 function assertLicenceTypeResolved(salesforceResponse) {
-  const compositeResponse = salesforceResponse?.compositeResponse
-  if (!Array.isArray(compositeResponse)) {
+  if (!Array.isArray(salesforceResponse)) {
     return
   }
 
-  const licenceTypeQueryItem = compositeResponse.find(
+  const licenceTypeQueryItem = salesforceResponse.find(
     (item) => item?.referenceId === refIdLicenseTypeQuery
   )
 
@@ -259,13 +265,13 @@ async function uploadApplicationFile(request, applicationId) {
   )
 
   const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(
+    return await salesforceClient.uploadApplicationFile(
       compositeRequest,
       request.logger
     )
   }, retriesConfig)
 
-  handleCompositeResponse(salesforceResponse)
+  return salesforceResponse
 }
 
 /**
@@ -290,35 +296,10 @@ async function uploadCaseFile(
   )
 
   const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(compositeRequest, logger)
+    return await salesforceClient.uploadCaseFile(compositeRequest, logger)
   }, retriesConfig)
 
-  handleCompositeResponse(salesforceResponse)
-}
-
-/**
- * @param {object} salesforceResponse
- * @returns {object[]}
- * @throws {Error} Throws an error if any composite operation failed
- */
-function handleCompositeResponse(salesforceResponse) {
-  const compositeResponse = salesforceResponse?.compositeResponse
-  const failedCompositeItems = Array.isArray(compositeResponse)
-    ? compositeResponse.filter(
-        (item) =>
-          item?.httpStatusCode && ![200, 201].includes(item.httpStatusCode)
-      )
-    : []
-
-  if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    const compositeError = /** @type {Error & {failedItems: any[]}} */ (
-      new Error('One or more composite operations failed')
-    )
-    compositeError.name = 'CompositeOperationError'
-    compositeError.failedItems = failedCompositeItems
-    throw compositeError
-  }
-  return compositeResponse
+  return salesforceResponse
 }
 /**
  * @param {Request} request
@@ -388,24 +369,21 @@ function handleCaseCreationError(error, request) {
     ]).boomify()
   }
 
-  if (error.name === 'CompositeOperationError') {
-    const failedOperations = error.failedItems.map((item) => ({
-      referenceId: item.referenceId,
-      httpStatusCode: item.httpStatusCode,
-      errors: Array.isArray(item.body)
-        ? item.body.map((err) => ({
-            errorCode: err.errorCode,
-            message: err.message
-          }))
-        : []
-    }))
-
-    request.logger.error(
-      {
-        endpoint: 'case-management/case',
-        failedOperations
-      },
-      'Composite operations failed in Salesforce'
+  if (error instanceof CompositeOperationError) {
+    logCompositeOperations(
+      request,
+      error.failedItems.map((item) => ({
+        referenceId: item.referenceId,
+        httpStatusCode: item.httpStatusCode,
+        errors: mapSalesforceErrors(item.body)
+      }))
+    )
+  } else if (error instanceof CompositeObjectOperationError) {
+    logCompositeOperations(
+      request,
+      error.failedItems.map((item) => ({
+        errors: mapSalesforceErrors(item.errors)
+      }))
     )
   } else {
     request.logger.error(
@@ -416,6 +394,7 @@ function handleCaseCreationError(error, request) {
       'Failed to create case in Salesforce'
     )
   }
+
   throw new HTTPException(
     'INTERNAL_SERVER_ERROR',
     'Your request could not be processed',
@@ -426,6 +405,23 @@ function handleCaseCreationError(error, request) {
       )
     ]
   ).boomify()
+}
+
+function mapSalesforceErrors(errors) {
+  return (Array.isArray(errors) ? errors : []).map((itemError) => ({
+    errorCode: itemError.errorCode,
+    message: itemError.message
+  }))
+}
+
+function logCompositeOperations(request, failedOperations) {
+  request.logger.error(
+    {
+      endpoint: 'case-management/case',
+      failedOperations
+    },
+    'Composite operations failed in Salesforce'
+  )
 }
 
 const isEnabled = config.get('featureFlags.isCaseManagementEnabled')
