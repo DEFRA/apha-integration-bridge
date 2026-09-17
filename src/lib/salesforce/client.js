@@ -604,7 +604,8 @@ function handleCompositeResponse(compositeResponse) {
   const failedCompositeItems = Array.isArray(compositeResponse)
     ? compositeResponse.filter(
         (item) =>
-          item?.httpStatusCode && ![200, 201].includes(item.httpStatusCode)
+          item?.httpStatusCode &&
+          (item.httpStatusCode < 200 || item.httpStatusCode > 299)
       )
     : []
 
