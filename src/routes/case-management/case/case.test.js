@@ -664,26 +664,14 @@ describe('POST /case-management/case', () => {
       ]
     }
 
-    /**
-     * @param {string} step
-     */
-    function errorLogCallArgumentsForStep(step) {
+    function errorLogCallArguments() {
       return [
         expect.objectContaining({
           err: expect.any(Error),
-          endpoint: 'case-management/case',
-          step
+          endpoint: 'case-management/case'
         }),
-        expect.stringContaining(`during step "${step}"`)
+        'Failed to create case in Salesforce'
       ]
-    }
-
-    /**
-     * @param {string} message
-     * @param {string} step
-     */
-    function stepError(message, step) {
-      return Object.assign(new Error(message), { step })
     }
 
     beforeAll(() => {
@@ -701,18 +689,10 @@ describe('POST /case-management/case', () => {
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       // Mock createCustomer failure - will be retried 4 times (initial + 3 retries)
       mockCreateCustomer
-        .mockRejectedValueOnce(
-          stepError('Service unavailable', 'createCustomer')
-        )
-        .mockRejectedValueOnce(
-          stepError('Service unavailable', 'createCustomer')
-        )
-        .mockRejectedValueOnce(
-          stepError('Service unavailable', 'createCustomer')
-        )
-        .mockRejectedValueOnce(
-          stepError('Service unavailable', 'createCustomer')
-        )
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
 
       const payload = createValidPayload()
 
@@ -726,9 +706,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateCustomer).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('createCustomer')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
@@ -738,18 +716,10 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite
-        .mockRejectedValueOnce(
-          stepError('Connection failed', 'createApplication')
-        )
-        .mockRejectedValueOnce(
-          stepError('Connection failed', 'createApplication')
-        )
-        .mockRejectedValueOnce(
-          stepError('Connection failed', 'createApplication')
-        )
-        .mockRejectedValueOnce(
-          stepError('Connection failed', 'createApplication')
-        )
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
 
       const payload = createValidPayload()
 
@@ -763,9 +733,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('createApplication')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
@@ -786,7 +754,7 @@ describe('POST /case-management/case', () => {
             referenceId: 'updateContact'
           }
         ]),
-        { step: 'createApplication' }
+        {}
       )
 
       mockSendComposite.mockRejectedValue(compositeError)
@@ -809,7 +777,6 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(
         expect.objectContaining({
           endpoint: 'case-management/case',
-          step: 'createApplication',
           failedOperations: [
             {
               referenceId: 'updateContact',
@@ -823,7 +790,7 @@ describe('POST /case-management/case', () => {
             }
           ]
         }),
-        expect.stringContaining('during step "createApplication"')
+        'Composite operations failed in Salesforce'
       )
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
@@ -919,10 +886,10 @@ describe('POST /case-management/case', () => {
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       // Mock createCase failure - will be retried 4 times (initial + 3 retries)
       mockCreateOrUpdateCase
-        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
-        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
-        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
-        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(new Error('Service unavailable'))
 
       const payload = createValidPayload()
 
@@ -936,9 +903,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('createCase')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
     })
 
     test('returns 500 when getKeyFacts fails', async () => {
@@ -947,9 +912,7 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockGetKeyFacts.mockRejectedValue(
-        stepError('Connection failed', 'getKeyFacts')
-      )
+      mockGetKeyFacts.mockRejectedValue(new Error('Connection failed'))
 
       const payload = createValidPayload()
 
@@ -964,9 +927,7 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(4)
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('getKeyFacts')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
     })
 
     test('returns 500 when addKeyFacts fails', async () => {
@@ -975,9 +936,7 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockAddKeyFacts.mockRejectedValue(
-        stepError('Connection failed', 'addKeyFacts')
-      )
+      mockAddKeyFacts.mockRejectedValue(new Error('Connection failed'))
 
       const payload = createValidPayload()
 
@@ -992,9 +951,7 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('addKeyFacts')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
     })
 
     test('returns 500 and logs failed operations when addKeyFacts returns unsuccessful objects', async () => {
@@ -1010,7 +967,7 @@ describe('POST /case-management/case', () => {
             ]
           }
         ]),
-        { step: 'addKeyFacts' }
+        {}
       )
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -1033,7 +990,6 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(
         expect.objectContaining({
           endpoint: 'case-management/case',
-          step: 'addKeyFacts',
           failedOperations: [
             {
               errors: [
@@ -1045,7 +1001,7 @@ describe('POST /case-management/case', () => {
             }
           ]
         }),
-        expect.stringContaining('during step "addKeyFacts"')
+        'Composite operations failed in Salesforce'
       )
     })
 
@@ -1057,10 +1013,10 @@ describe('POST /case-management/case', () => {
       mockSendComposite
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application creation
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application file upload
-        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
-        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
-        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
-        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(new Error('Connection failed'))
 
       const payload = createValidPayload()
       payload.sections[0].questionAnswers.push({
@@ -1085,65 +1041,8 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(6) // 2 for application creation and json file upload + 4 for supporting materials retries
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('uploadCaseFile')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
-    })
-
-    test('returns 500 and tags the step when getLinkedFiles fails for the application', async () => {
-      const server = await createTestServer()
-
-      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockGetLinkedFiles.mockRejectedValue(
-        stepError('Connection failed', 'getLinkedFiles:application')
-      )
-
-      const payload = createValidPayload()
-
-      const responsePromise = createCase(server, payload)
-      await jest.runAllTimersAsync()
-      const res = await responsePromise
-
-      expect(res.statusCode).toBe(500)
-
-      const body = /** @type {Record<string, any>} */ (res.result)
-      expect(body).toMatchObject(genericError)
-
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('getLinkedFiles:application')
-      )
-    })
-
-    test('returns 500 and tags the step when getLinkedFiles fails for supporting materials', async () => {
-      const server = await createTestServer()
-
-      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
-      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
-      // First call (application file check) succeeds, second (supporting materials) fails
-      mockGetLinkedFiles
-        .mockResolvedValueOnce({ records: [{}] })
-        .mockRejectedValue(
-          stepError('Connection failed', 'getLinkedFiles:supportingMaterials')
-        )
-
-      const payload = createValidPayload()
-
-      const responsePromise = createCase(server, payload)
-      await jest.runAllTimersAsync()
-      const res = await responsePromise
-
-      expect(res.statusCode).toBe(500)
-
-      const body = /** @type {Record<string, any>} */ (res.result)
-      expect(body).toMatchObject(genericError)
-
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        ...errorLogCallArgumentsForStep('getLinkedFiles:supportingMaterials')
-      )
     })
 
     test('retries on transient errors before failing', async () => {

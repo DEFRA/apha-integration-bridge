@@ -329,15 +329,12 @@ class SalesforceClient {
   /**
    * @param {string} entityId
    * @param {Logger} [logger]
-   * @param {string} [operation] Label describing what this lookup is for
-   *   (e.g. `getLinkedFiles:application` vs `getLinkedFiles:supportingMaterials`),
-   *   used to tag logs/errors since the same query serves multiple callers.
    * @returns {Promise<any>}
    */
-  async getLinkedFiles(entityId, logger, operation = 'getLinkedFiles') {
+  async getLinkedFiles(entityId, logger) {
     const token = await this.getAccessToken(logger)
     const query = `SELECT ContentDocumentId, ContentDocument.Title FROM ContentDocumentLink WHERE LinkedEntityId = '${entityId}'`
-    return this.sendQuery(query, token, logger, operation)
+    return this.sendQuery(query, token, logger, 'getLinkedFiles')
   }
 
   /**
@@ -365,8 +362,7 @@ class SalesforceClient {
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {Logger} [logger] Optional logger.
-   * @param {string} [operation] Label describing what this call is trying to
-   *   do, used to tag logs/errors so failures can be traced to a step.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<CompositeResponse>} The Salesforce composite response.
    */
   async sendComposite(compositeBody, logger, operation) {
@@ -388,8 +384,7 @@ class SalesforceClient {
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {Logger} [logger] Optional logger.
-   * @param {string} [operation] Label describing what this call is trying to
-   *   do, used to tag logs/errors so failures can be traced to a step.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<CompositeObjectResponse>} The Salesforce composite sobjects response.
    */
   async sendCompositeObject(compositeBody, logger, operation) {
@@ -408,10 +403,7 @@ class SalesforceClient {
    * @param {string} relativePath
    * @param {object} payload
    * @param {Logger} [logger] Optional logger.
-   * @param {string} [operation] Label describing what this call is trying to
-   *   do (e.g. `createCustomer`), included in logs and tagged onto any
-   *   error thrown so failures can be traced back to the step that caused
-   *   them.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<any>} The Salesforce response body.
    */
   async sendRequest(method, relativePath, payload, logger, operation) {
@@ -468,8 +460,7 @@ class SalesforceClient {
    * @param {string} query The SOQL query string.
    * @param {string} token Salesforce access token (required).
    * @param {Logger} [logger] Optional logger.
-   * @param {string} [operation] Label describing what this query is trying
-   *   to do, included in logs and tagged onto any error thrown.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<any>} The Salesforce query response.
    */
   async sendQuery(query, token, logger, operation) {
@@ -518,18 +509,18 @@ class SalesforceClient {
   }
 
   /**
-   * Build an error tagged with the operation that was being attempted, so
-   * callers (see case.js's `handleCaseCreationError`) can report which step
-   * of a multi-call flow failed.
+   * Build an error tagged with the Salesforce operation that was being attempted.
    *
    * @param {string} message
    * @param {string} [operation]
-   * @returns {Error & {step?: string}}
+   * @returns {Error & {operation?: string}}
    */
   taggedError(message, operation) {
-    const error = /** @type {Error & {step?: string}} */ (new Error(message))
+    const error = /** @type {Error & {operation?: string}} */ (
+      new Error(message)
+    )
     if (operation) {
-      error.step = operation
+      error.operation = operation
     }
     return error
   }
@@ -659,13 +650,7 @@ function handleCompositeResponse(compositeResponse, operation) {
     : []
 
   if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    const error = /** @type {CompositeOperationError & {step?: string}} */ (
-      new CompositeOperationError(failedCompositeItems)
-    )
-    if (operation) {
-      error.step = operation
-    }
-    throw error
+    throw new CompositeOperationError(failedCompositeItems, operation)
   }
 
   return compositeResponse
@@ -685,14 +670,7 @@ function handleCompositeObjectResponse(compositeResponse, operation) {
     : []
 
   if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    const error =
-      /** @type {CompositeObjectOperationError & {step?: string}} */ (
-        new CompositeObjectOperationError(failedCompositeItems)
-      )
-    if (operation) {
-      error.step = operation
-    }
-    throw error
+    throw new CompositeObjectOperationError(failedCompositeItems, operation)
   }
 
   return compositeResponse

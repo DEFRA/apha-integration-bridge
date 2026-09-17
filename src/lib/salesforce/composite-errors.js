@@ -4,33 +4,50 @@
  */
 
 export class CompositeError extends Error {
+  /** @type {string|undefined} */
+  operation
+
   /**
    * @param {string} message
    * @param {Object[]} failedItems
+   * @param {string} [operation]
    */
-  constructor(message, failedItems) {
+  constructor(message, failedItems, operation) {
     super(message)
     this.name = 'CompositeError'
     this.failedItems = failedItems
+    this.operation = operation
   }
 }
 
+/**
+ * @property {CompositeResponseItem[]} failedItems
+ */
 export class CompositeOperationError extends CompositeError {
   /**
    * @param {CompositeResponseItem[]} failedItems
+   * @param {string} [operation]
    */
-  constructor(failedItems) {
-    super('One or more composite operations failed', failedItems)
+  constructor(failedItems, operation) {
+    super('One or more composite operations failed', failedItems, operation)
     this.name = 'CompositeOperationError'
   }
 }
 
+/**
+ * @property {CompositeObjectResponseItem[]} failedItems
+ */
 export class CompositeObjectOperationError extends CompositeError {
   /**
    * @param {CompositeObjectResponseItem[]} failedItems
+   * @param {string} [operation]
    */
-  constructor(failedItems) {
-    super('One or more composite object operations failed', failedItems)
+  constructor(failedItems, operation) {
+    super(
+      'One or more composite object operations failed',
+      failedItems,
+      operation
+    )
     this.name = 'CompositeObjectOperationError'
   }
 }

@@ -27,9 +27,11 @@ import {
 } from '../../../lib/salesforce/composite-errors.js'
 
 /**
- * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
+ * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
  * @import {Request} from '@hapi/hapi'
  * @import {Logger} from 'pino'
+ * @import {CompositeResponseItem, CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
+ * @import {SalesforceError} from '../../../types/salesforce/composite-response.js'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -107,10 +109,7 @@ async function runCaseCreationFlow(request, action) {
   try {
     await action()
   } catch (error) {
-    handleCaseCreationError(
-      /** @type {Error & {step?: string, failedItems?: any[]}} */ (error),
-      request
-    )
+    handleCaseCreationError(error, request)
   }
 }
 
@@ -153,9 +152,10 @@ async function addKeyFacts(request, applicationId) {
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
-    return retry(() => {
-      return salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
-    }, retriesConfig)
+    return retry(
+      () => salesforceClient.addKeyFacts(keyFactsRequest, request.logger),
+      retriesConfig
+    )
   }
 
   return undefined
@@ -181,11 +181,7 @@ async function createApplicationAndFile(request) {
   const applicationId = await createApplication(request)
 
   if (applicationId) {
-    const files = await getLinkedFiles(
-      request,
-      applicationId,
-      'getLinkedFiles:application'
-    )
+    const files = await getLinkedFiles(request, applicationId)
     if (files.length === 0) {
       await uploadApplicationFile(request, applicationId)
     }
@@ -202,9 +198,10 @@ async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
-  const salesforceResponse = await retry(() => {
-    return salesforceClient.createApplication(compositeRequest, request.logger)
-  }, retriesConfig)
+  const salesforceResponse = await retry(
+    () => salesforceClient.createApplication(compositeRequest, request.logger),
+    retriesConfig
+  )
 
   assertLicenceTypeResolved(salesforceResponse)
 
@@ -246,12 +243,11 @@ function assertLicenceTypeResolved(salesforceResponse) {
 /**
  * @param {Request} request
  * @param {string} applicationId
- * @param {string} [step]
  * @returns {Promise<any[]>}
  */
-async function getLinkedFiles(request, applicationId, step = 'getLinkedFiles') {
+async function getLinkedFiles(request, applicationId) {
   const salesforceResponse = await retry(() => {
-    return salesforceClient.getLinkedFiles(applicationId, request.logger, step)
+    return salesforceClient.getLinkedFiles(applicationId, request.logger)
   }, retriesConfig)
   return salesforceResponse?.records || []
 }
@@ -267,12 +263,14 @@ async function uploadApplicationFile(request, applicationId) {
     applicationId
   )
 
-  return retry(() => {
+  const salesforceResponse = await retry(() => {
     return salesforceClient.uploadApplicationFile(
       compositeRequest,
       request.logger
     )
   }, retriesConfig)
+
+  return salesforceResponse
 }
 
 /**
@@ -296,9 +294,11 @@ async function uploadCaseFile(
     filePath
   )
 
-  return retry(() => {
+  const salesforceResponse = await retry(() => {
     return salesforceClient.uploadCaseFile(compositeRequest, logger)
   }, retriesConfig)
+
+  return salesforceResponse
 }
 
 /**
@@ -327,11 +327,7 @@ async function createCustomerAccount(request) {
  */
 async function uploadSupportingMaterials(request, caseId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
-  const caseFiles = await getLinkedFiles(
-    request,
-    caseId,
-    'getLinkedFiles:supportingMaterials'
-  )
+  const caseFiles = await getLinkedFiles(request, caseId)
   for (const section of payload.sections) {
     for (const questionAnswer of section.questionAnswers) {
       if (
@@ -357,7 +353,8 @@ async function uploadSupportingMaterials(request, caseId) {
 }
 
 /**
- * @param {Error & {step?: string, failedItems?: any[]}} error
+ *
+ * @param {Error} error
  * @param {Request} request
  */
 function handleCaseCreationError(error, request) {
@@ -377,23 +374,25 @@ function handleCaseCreationError(error, request) {
     ]).boomify()
   }
 
-  const step = error.step || 'unknown'
-
   if (error instanceof CompositeOperationError) {
+    const failedItems = /** @type {CompositeResponseItem[]} */ (
+      error.failedItems
+    )
     logCompositeOperations(
       request,
-      step,
-      (error.failedItems || []).map((item) => ({
+      failedItems.map((item) => ({
         referenceId: item.referenceId,
         httpStatusCode: item.httpStatusCode,
         errors: mapSalesforceErrors(item.body)
       }))
     )
   } else if (error instanceof CompositeObjectOperationError) {
+    const failedItems = /** @type {CompositeObjectResponseItem[]} */ (
+      error.failedItems
+    )
     logCompositeOperations(
       request,
-      step,
-      (error.failedItems || []).map((item) => ({
+      failedItems.map((item) => ({
         errors: mapSalesforceErrors(item.errors)
       }))
     )
@@ -401,10 +400,9 @@ function handleCaseCreationError(error, request) {
     request.logger.error(
       {
         err: error,
-        endpoint: 'case-management/case',
-        step
+        endpoint: 'case-management/case'
       },
-      `Failed to create case in Salesforce during step "${step}": ${error.message}`
+      'Failed to create case in Salesforce'
     )
   }
 
@@ -421,7 +419,9 @@ function handleCaseCreationError(error, request) {
 }
 
 /**
- * @param {any} errors
+ *
+ * @param {SalesforceError[] | Object} errors
+ * @returns {Array<SalesforceError>}
  */
 function mapSalesforceErrors(errors) {
   return (Array.isArray(errors) ? errors : []).map((itemError) => ({
@@ -431,18 +431,17 @@ function mapSalesforceErrors(errors) {
 }
 
 /**
+ *
  * @param {Request} request
- * @param {string} step
- * @param {object[]} failedOperations
+ * @param {Array<Object>} failedOperations
  */
-function logCompositeOperations(request, step, failedOperations) {
+function logCompositeOperations(request, failedOperations) {
   request.logger.error(
     {
       endpoint: 'case-management/case',
-      step,
       failedOperations
     },
-    `Composite operations failed in Salesforce during step "${step}"`
+    'Composite operations failed in Salesforce'
   )
 }
 
