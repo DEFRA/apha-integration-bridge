@@ -664,15 +664,13 @@ describe('POST /case-management/case', () => {
       ]
     }
 
-    function errorLogCallArguments() {
-      return [
-        expect.objectContaining({
-          err: expect.any(Error),
-          endpoint: 'case-management/case'
-        }),
-        'Failed to create case in Salesforce'
-      ]
-    }
+    const errorLogCallArguments = [
+      expect.objectContaining({
+        err: expect.any(Error),
+        endpoint: 'case-management/case'
+      }),
+      'Failed to create case in Salesforce'
+    ]
 
     beforeAll(() => {
       jest.useFakeTimers()
@@ -706,7 +704,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateCustomer).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
@@ -733,29 +731,26 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
     test('returns 500 when composite operations within createApplication partially fail', async () => {
       const server = await createTestServer()
 
-      const compositeError = Object.assign(
-        new CompositeOperationError([
-          {
-            body: [
-              {
-                errorCode: 'REQUIRED_FIELD_MISSING',
-                message: 'Required field missing'
-              }
-            ],
-            httpHeaders: {},
-            httpStatusCode: 400,
-            referenceId: 'updateContact'
-          }
-        ]),
-        {}
-      )
+      const compositeError = new CompositeOperationError([
+        {
+          body: [
+            {
+              errorCode: 'REQUIRED_FIELD_MISSING',
+              message: 'Required field missing'
+            }
+          ],
+          httpHeaders: {},
+          httpStatusCode: 400,
+          referenceId: 'updateContact'
+        }
+      ])
 
       mockSendComposite.mockRejectedValue(compositeError)
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -903,7 +898,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
     test('returns 500 when getKeyFacts fails', async () => {
@@ -927,7 +922,7 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(4)
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
     test('returns 500 when addKeyFacts fails', async () => {
@@ -951,24 +946,21 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
     test('returns 500 and logs failed operations when addKeyFacts returns unsuccessful objects', async () => {
       const server = await createTestServer()
 
-      const compositeObjectError = Object.assign(
-        new CompositeObjectOperationError([
-          {
-            id: 'TEST-KEY-FACT-123',
-            success: false,
-            errors: [
-              { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
-            ]
-          }
-        ]),
-        {}
-      )
+      const compositeObjectError = new CompositeObjectOperationError([
+        {
+          id: 'TEST-KEY-FACT-123',
+          success: false,
+          errors: [
+            { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
+          ]
+        }
+      ])
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
@@ -1041,7 +1033,7 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(6) // 2 for application creation and json file upload + 4 for supporting materials retries
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments())
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
 
