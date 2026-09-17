@@ -678,6 +678,14 @@ describe('POST /case-management/case', () => {
       ]
     }
 
+    /**
+     * @param {string} message
+     * @param {string} step
+     */
+    function stepError(message, step) {
+      return Object.assign(new Error(message), { step })
+    }
+
     beforeAll(() => {
       jest.useFakeTimers()
     })
@@ -693,10 +701,18 @@ describe('POST /case-management/case', () => {
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       // Mock createCustomer failure - will be retried 4 times (initial + 3 retries)
       mockCreateCustomer
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
 
       const payload = createValidPayload()
 
@@ -722,10 +738,18 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
 
       const payload = createValidPayload()
 
@@ -748,19 +772,22 @@ describe('POST /case-management/case', () => {
     test('returns 500 when composite operations within createApplication partially fail', async () => {
       const server = await createTestServer()
 
-      const compositeError = new CompositeOperationError([
-        {
-          body: [
-            {
-              errorCode: 'REQUIRED_FIELD_MISSING',
-              message: 'Required field missing'
-            }
-          ],
-          httpHeaders: {},
-          httpStatusCode: 400,
-          referenceId: 'updateContact'
-        }
-      ])
+      const compositeError = Object.assign(
+        new CompositeOperationError([
+          {
+            body: [
+              {
+                errorCode: 'REQUIRED_FIELD_MISSING',
+                message: 'Required field missing'
+              }
+            ],
+            httpHeaders: {},
+            httpStatusCode: 400,
+            referenceId: 'updateContact'
+          }
+        ]),
+        { step: 'createApplication' }
+      )
 
       mockSendComposite.mockRejectedValue(compositeError)
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -892,10 +919,10 @@ describe('POST /case-management/case', () => {
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       // Mock createCase failure - will be retried 4 times (initial + 3 retries)
       mockCreateOrUpdateCase
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
 
       const payload = createValidPayload()
 
@@ -920,7 +947,9 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockGetKeyFacts.mockRejectedValue(new Error('Connection failed'))
+      mockGetKeyFacts.mockRejectedValue(
+        stepError('Connection failed', 'getKeyFacts')
+      )
 
       const payload = createValidPayload()
 
@@ -946,7 +975,9 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockAddKeyFacts.mockRejectedValue(new Error('Connection failed'))
+      mockAddKeyFacts.mockRejectedValue(
+        stepError('Connection failed', 'addKeyFacts')
+      )
 
       const payload = createValidPayload()
 
@@ -969,15 +1000,18 @@ describe('POST /case-management/case', () => {
     test('returns 500 and logs failed operations when addKeyFacts returns unsuccessful objects', async () => {
       const server = await createTestServer()
 
-      const compositeObjectError = new CompositeObjectOperationError([
-        {
-          id: 'TEST-KEY-FACT-123',
-          success: false,
-          errors: [
-            { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
-          ]
-        }
-      ])
+      const compositeObjectError = Object.assign(
+        new CompositeObjectOperationError([
+          {
+            id: 'TEST-KEY-FACT-123',
+            success: false,
+            errors: [
+              { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
+            ]
+          }
+        ]),
+        { step: 'addKeyFacts' }
+      )
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
@@ -1023,10 +1057,10 @@ describe('POST /case-management/case', () => {
       mockSendComposite
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application creation
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application file upload
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
 
       const payload = createValidPayload()
       payload.sections[0].questionAnswers.push({
@@ -1063,7 +1097,9 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockGetLinkedFiles.mockRejectedValue(new Error('Connection failed'))
+      mockGetLinkedFiles.mockRejectedValue(
+        stepError('Connection failed', 'getLinkedFiles:application')
+      )
 
       const payload = createValidPayload()
 
@@ -1090,7 +1126,9 @@ describe('POST /case-management/case', () => {
       // First call (application file check) succeeds, second (supporting materials) fails
       mockGetLinkedFiles
         .mockResolvedValueOnce({ records: [{}] })
-        .mockRejectedValue(new Error('Connection failed'))
+        .mockRejectedValue(
+          stepError('Connection failed', 'getLinkedFiles:supportingMaterials')
+        )
 
       const payload = createValidPayload()
 
