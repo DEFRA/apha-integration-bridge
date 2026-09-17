@@ -19,9 +19,12 @@ import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builde
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
+import {
+  CompositeOperationError,
+  CompositeObjectOperationError
+} from '../../../lib/salesforce/composite-errors.js'
 
 /** @import { CreateCasePayload } from '../../../types/case-management/case.js' */
-/** @import { CompositeError } from '../../../types/salesforce/composite-response.js' */
 
 /** @type {typeof import('./case.js')} */
 let route
@@ -735,11 +738,7 @@ describe('POST /case-management/case', () => {
     test('returns 500 when composite operations within createApplication partially fail', async () => {
       const server = await createTestServer()
 
-      const compositeError = /** @type {Error & {failedItems: any[]}} */ (
-        new Error('One or more composite operations failed')
-      )
-      compositeError.name = 'CompositeOperationError'
-      compositeError.failedItems = [
+      const compositeError = new CompositeOperationError([
         {
           body: [
             {
@@ -747,10 +746,11 @@ describe('POST /case-management/case', () => {
               message: 'Required field missing'
             }
           ],
+          httpHeaders: {},
           httpStatusCode: 400,
           referenceId: 'updateContact'
         }
-      ]
+      ])
 
       mockSendComposite.mockRejectedValue(compositeError)
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -952,18 +952,15 @@ describe('POST /case-management/case', () => {
     test('returns 500 and logs failed operations when addKeyFacts returns unsuccessful objects', async () => {
       const server = await createTestServer()
 
-      const compositeObjectError = /** @type {Error & {failedItems: any[]}} */ (
-        new Error('One or more composite object operations failed')
-      )
-      compositeObjectError.name = 'CompositeObjectOperationError'
-      compositeObjectError.failedItems = [
+      const compositeObjectError = new CompositeObjectOperationError([
         {
+          id: 'TEST-KEY-FACT-123',
           success: false,
           errors: [
             { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
           ]
         }
-      ]
+      ])
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
@@ -987,8 +984,6 @@ describe('POST /case-management/case', () => {
           endpoint: 'case-management/case',
           failedOperations: [
             {
-              referenceId: undefined,
-              httpStatusCode: undefined,
               errors: [
                 {
                   errorCode: 'REQUIRED_FIELD_MISSING',
@@ -1163,18 +1158,14 @@ describe('POST /case-management/case', () => {
     test('handles mixed success and error codes correctly', async () => {
       const server = await createTestServer()
 
-      const compositeError = /** @type {CompositeError} */ (
-        new Error('One or more composite operations failed')
-      )
-      compositeError.name = 'CompositeOperationError'
-      compositeError.failedItems = [
+      const compositeError = new CompositeOperationError([
         {
           body: [{ errorCode: 'INVALID_FIELD', message: 'Invalid field' }],
           httpHeaders: {},
           httpStatusCode: 404,
           referenceId: 'linkRecord'
         }
-      ]
+      ])
 
       mockSendComposite.mockRejectedValue(compositeError)
 

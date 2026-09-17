@@ -21,6 +21,10 @@ import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/fi
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { config } from '../../../config.js'
+import {
+  CompositeOperationError,
+  CompositeObjectOperationError
+} from '../../../lib/salesforce/composite-errors.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
@@ -41,9 +45,7 @@ const retriesConfig = {
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: {
-    mode: 'required'
-  },
+  auth: false,
   tags: ['api', 'case-management'],
   description: 'Create a case in APHA CRM (Salesforce)',
   notes: fs.readFileSync(
@@ -365,33 +367,21 @@ function handleCaseCreationError(error, request) {
     ]).boomify()
   }
 
-  if (
-    ['CompositeOperationError', 'CompositeObjectOperationError'].includes(
-      error.name
+  if (error instanceof CompositeOperationError) {
+    logCompositeOperations(
+      request,
+      error.failedItems.map((item) => ({
+        referenceId: item.referenceId,
+        httpStatusCode: item.httpStatusCode,
+        errors: mapSalesforceErrors(item.body)
+      }))
     )
-  ) {
-    const failedOperations = error.failedItems.map((item) => ({
-      referenceId: item.referenceId,
-      httpStatusCode: item.httpStatusCode,
-      errors: Array.isArray(item.body)
-        ? item.body.map((err) => ({
-            errorCode: err.errorCode,
-            message: err.message
-          }))
-        : Array.isArray(item.errors)
-          ? item.errors.map((err) => ({
-              errorCode: err.errorCode,
-              message: err.message
-            }))
-          : []
-    }))
-
-    request.logger.error(
-      {
-        endpoint: 'case-management/case',
-        failedOperations
-      },
-      'Composite operations failed in Salesforce'
+  } else if (error instanceof CompositeObjectOperationError) {
+    logCompositeOperations(
+      request,
+      error.failedItems.map((item) => ({
+        errors: mapSalesforceErrors(item.errors)
+      }))
     )
   } else {
     request.logger.error(
@@ -402,6 +392,7 @@ function handleCaseCreationError(error, request) {
       'Failed to create case in Salesforce'
     )
   }
+
   throw new HTTPException(
     'INTERNAL_SERVER_ERROR',
     'Your request could not be processed',
@@ -412,6 +403,23 @@ function handleCaseCreationError(error, request) {
       )
     ]
   ).boomify()
+}
+
+function mapSalesforceErrors(errors) {
+  return (Array.isArray(errors) ? errors : []).map((itemError) => ({
+    errorCode: itemError.errorCode,
+    message: itemError.message
+  }))
+}
+
+function logCompositeOperations(request, failedOperations) {
+  request.logger.error(
+    {
+      endpoint: 'case-management/case',
+      failedOperations
+    },
+    'Composite operations failed in Salesforce'
+  )
 }
 
 const isEnabled = config.get('featureFlags.isCaseManagementEnabled')
