@@ -2,7 +2,6 @@ import Joi from 'joi'
 
 import { toHoldings } from '../mappers/to-holdings.js'
 import { execute } from '../operations/execute.js'
-import { query } from '../operations/query.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { HoldingIdSchema } from '../../../types/holdings.js'
@@ -21,7 +20,7 @@ const FindHoldingsSchema = Joi.object({
 
 /**
  * @param {Array<string>} ids
- * @returns {{ sql: string; }} The query and its bindings
+ * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings
  */
 export function findHoldingsQuery(ids) {
   const { value, error } = FindHoldingsSchema.validate({ ids })
@@ -34,9 +33,8 @@ export function findHoldingsQuery(ids) {
   const sqlWithIds = sql.replace(CPH_IDS_BIND_TOKEN, placeholders)
 
   return {
-    sql: query()
-      .raw(sqlWithIds, { ...bindings })
-      .toQuery()
+    sql: sqlWithIds,
+    bindings
   }
 }
 

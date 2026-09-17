@@ -2,7 +2,6 @@ import Joi from 'joi'
 
 import { toWorkorders } from '../mappers/to-workorders.js'
 import { execute } from '../operations/execute.js'
-import { query } from '../operations/query.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { getWorkorderMappings, workordersSQL } from './workorders.js'
@@ -26,7 +25,7 @@ const FindWorkordersSchema = Joi.object({
 
 /**
  * @param {Array<string>} ids
- * @returns {{ sql: string; }} The query and its bindings
+ * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings
  */
 export function findWorkordersQuery(ids) {
   const { value, error } = FindWorkordersSchema.validate({ ids })
@@ -44,9 +43,8 @@ export function findWorkordersQuery(ids) {
     .replace(STATUSES_BIND_TOKEN, 'NULL')
 
   return {
-    sql: query()
-      .raw(sqlWithIds, { ...bindings, has_statuses: 0 })
-      .toQuery()
+    sql: sqlWithIds,
+    bindings: { ...bindings, has_statuses: 0 }
   }
 }
 

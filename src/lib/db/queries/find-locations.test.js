@@ -1,21 +1,24 @@
 import { test, expect } from '@jest/globals'
 
+import { placeholdersIn } from '../../../common/helpers/test-helpers/bind-placeholders.js'
 import { findLocationsQuery } from './find-locations.js'
 
 test('returns the expected query for valid parameters', () => {
   const ids = ['L97339']
 
-  const { sql } = findLocationsQuery(ids)
+  const { sql, bindings } = findLocationsQuery(ids)
 
   expect(sql).toMatchSnapshot()
+  expect(bindings).toEqual({ id0: 'L97339' })
 })
 
 test('returns the expected query for multiple ids', () => {
   const ids = ['L97339', 'L97340']
 
-  const { sql } = findLocationsQuery(ids)
+  const { sql, bindings } = findLocationsQuery(ids)
 
   expect(sql).toMatchSnapshot()
+  expect(bindings).toEqual({ id0: 'L97339', id1: 'L97340' })
 })
 
 test('uses optimized set operation and removes redundant table joins', () => {
@@ -57,4 +60,10 @@ test('throws when ids contain invalid characters', () => {
   expect(() => findLocationsQuery(["L97339' OR '1'='1"])).toThrow(
     'Invalid parameters'
   )
+})
+
+test('binds exactly the placeholders in its sql', () => {
+  const { sql, bindings } = findLocationsQuery(['L97339', 'L97340'])
+
+  expect(Object.keys(bindings).sort()).toEqual(placeholdersIn(sql))
 })

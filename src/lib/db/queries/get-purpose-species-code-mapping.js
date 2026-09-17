@@ -1,5 +1,4 @@
 import { execute } from '../operations/execute.js'
-import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { GetCodeMappingSchema } from '../../../types/find/workorders.js'
@@ -10,7 +9,7 @@ const SPECIES_CODES_BIND_TOKEN = '__PURPOSE_SPECIES_CODES__'
 
 /**
  * @param {string[]} speciesCodes
- * @returns {{ sql: string }}
+ * @returns {{ sql: string; bindings: Record<string, unknown> }}
  */
 export function getPurposeSpeciesCodeMappingQuery(speciesCodes) {
   const { error } = GetCodeMappingSchema.validate(speciesCodes)
@@ -22,9 +21,8 @@ export function getPurposeSpeciesCodeMappingQuery(speciesCodes) {
   const { placeholders, bindings } = createInClauseBindings(speciesCodes)
   const sqlWithCodes = sql.replace(SPECIES_CODES_BIND_TOKEN, placeholders)
   return {
-    sql: query()
-      .raw(sqlWithCodes, { ...bindings })
-      .toQuery()
+    sql: sqlWithCodes,
+    bindings
   }
 }
 

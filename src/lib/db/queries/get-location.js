@@ -1,6 +1,5 @@
 import Joi from 'joi'
 import { loadSQL } from '../utils/load-sql.js'
-import { query } from '../operations/query.js'
 import { LocationIdSchema } from '../../../types/locations.js'
 
 const sql = loadSQL(import.meta.filename)
@@ -10,10 +9,7 @@ export const GetLocationSchema = Joi.object({
 })
 
 /**
- * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
- * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
- *
- * @returns {{ sql: string; }} The query and its bindings
+ * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings
  */
 export function getLocation(locationId) {
   const { value, error } = GetLocationSchema.validate({ locationId })
@@ -22,6 +18,7 @@ export function getLocation(locationId) {
   }
 
   return {
-    sql: query().raw(sql, { location: value.locationId }).toQuery()
+    sql,
+    bindings: { location: value.locationId }
   }
 }

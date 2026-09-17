@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals'
 
+import { placeholdersIn } from '../../../common/helpers/test-helpers/bind-placeholders.js'
 import * as dbOperations from '../operations/execute.js'
 import {
   getCustomerTypes,
@@ -8,27 +9,31 @@ import {
 
 describe('getCustomerTypesQuery', () => {
   test('returns the expected query for a single customer id', () => {
-    const { sql } = getCustomerTypesQuery(['C123456'])
+    const { sql, bindings } = getCustomerTypesQuery(['C123456'])
 
     expect(sql).toMatchSnapshot()
+    expect(bindings).toEqual({ id0: 'C123456' })
   })
 
   test('returns the expected query for multiple customer ids', () => {
-    const { sql } = getCustomerTypesQuery(['C123456', 'C234567'])
+    const { sql, bindings } = getCustomerTypesQuery(['C123456', 'C234567'])
 
     expect(sql).toMatchSnapshot()
+    expect(bindings).toEqual({ id0: 'C123456', id1: 'C234567' })
   })
 
   test('accepts organisation-style ids that do not start with C', () => {
-    const { sql } = getCustomerTypesQuery(['O123456'])
+    const { sql, bindings } = getCustomerTypesQuery(['O123456'])
 
-    expect(sql).toContain("p.party_id IN ('O123456')")
+    expect(sql).toContain('p.party_id IN (:id0)')
+    expect(bindings).toEqual({ id0: 'O123456' })
   })
 
   test('accepts ids containing hyphens', () => {
-    const { sql } = getCustomerTypesQuery(['C-123456'])
+    const { sql, bindings } = getCustomerTypesQuery(['C-123456'])
 
-    expect(sql).toContain("p.party_id IN ('C-123456')")
+    expect(sql).toContain('p.party_id IN (:id0)')
+    expect(bindings).toEqual({ id0: 'C-123456' })
   })
 
   test('retains subtype joins when resolving customer types', () => {
@@ -40,6 +45,12 @@ describe('getCustomerTypesQuery', () => {
 
   test('throws when customer ids is empty', () => {
     expect(() => getCustomerTypesQuery([])).toThrow('Invalid parameters')
+  })
+
+  test('binds exactly the placeholders in its sql', () => {
+    const { sql, bindings } = getCustomerTypesQuery(['C123456', 'C234567'])
+
+    expect(Object.keys(bindings).sort()).toEqual(placeholdersIn(sql))
   })
 })
 
