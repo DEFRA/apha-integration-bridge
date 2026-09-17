@@ -20,7 +20,8 @@ import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/k
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 
-/** @import { CreateCasePayload} from '../../../types/case-management/case.js' */
+/** @import { CreateCasePayload } from '../../../types/case-management/case.js' */
+/** @import { CompositeError } from '../../../types/salesforce/composite-response.js' */
 
 /** @type {typeof import('./case.js')} */
 let route
@@ -1162,10 +1163,7 @@ describe('POST /case-management/case', () => {
     test('handles mixed success and error codes correctly', async () => {
       const server = await createTestServer()
 
-      // A real, unmocked sendComposite would reject with CompositeOperationError
-      // for a mixed response containing a non-2xx item, since sendComposite is
-      // mocked directly here that behaviour must be simulated explicitly.
-      const compositeError = /** @type {Error & {failedItems: any[]}} */ (
+      const compositeError = /** @type {CompositeError} */ (
         new Error('One or more composite operations failed')
       )
       compositeError.name = 'CompositeOperationError'

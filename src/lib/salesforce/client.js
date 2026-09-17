@@ -8,6 +8,7 @@ import { buildJWTAssertion } from './jwt-bearer.js'
  * @import {Logger} from 'pino'
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
  * @import {CompositeObjectResponse} from '../../types/salesforce/composite-response.js'
+ * @import {CompositeError} from '../../types/salesforce/composite-response.js'
  * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
  */
 
@@ -608,7 +609,7 @@ function handleCompositeResponse(compositeResponse) {
     : []
 
   if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    const compositeError = /** @type {Error & {failedItems: any[]}} */ (
+    const compositeError = /** @type {CompositeError} */ (
       new Error('One or more composite operations failed')
     )
     compositeError.name = 'CompositeOperationError'
@@ -632,7 +633,7 @@ function handleCompositeObjectResponse(compositeResponse) {
     : []
 
   if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    const compositeError = /** @type {Error & {failedItems: any[]}} */ (
+    const compositeError = /** @type {CompositeError} */ (
       new Error('One or more composite object operations failed')
     )
     compositeError.name = 'CompositeObjectOperationError'

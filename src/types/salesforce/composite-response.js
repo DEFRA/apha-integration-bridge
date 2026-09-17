@@ -26,3 +26,7 @@
 /**
  * @typedef {CompositeObjectResponseItem[]} CompositeObjectResponse
  */
+
+/**
+ * @typedef {Error & {failedItems: (CompositeResponseItem | CompositeObjectResponseItem)[]}} CompositeError
+ */
