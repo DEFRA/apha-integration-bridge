@@ -141,15 +141,20 @@ async function createCase(request, applicationId, customerId) {
  */
 async function addKeyFacts(request, applicationId) {
   const existingKeyFacts = await getKeyFacts(request, applicationId)
+  // console.log('existing key facts:', existingKeyFacts)
   if (existingKeyFacts.length === 0) {
     const keyFactsRequest = buildKeyFactsRequest(
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
-    await retry(async () => {
+    const salesforceResponse = await retry(async () => {
       return await salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
     }, retriesConfig)
+
+    return salesforceResponse
   }
+
+  return undefined
 }
 
 /**
@@ -190,17 +195,16 @@ async function createApplication(request) {
   const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
   const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(
+    return await salesforceClient.createApplication(
       compositeRequest,
       request.logger
     )
   }, retriesConfig)
 
   assertLicenceTypeResolved(salesforceResponse)
-  const compositeResponse = handleCompositeResponse(salesforceResponse)
 
   return (
-    compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
+    salesforceResponse.find((item) => item.referenceId === refIdApplicationRef)
       ?.body?.id || null
   )
 }
@@ -221,7 +225,7 @@ class InvalidLicenceTypeError extends Error {
  * @throws {InvalidLicenceTypeError} Handled as a 400 Bad Request
  */
 function assertLicenceTypeResolved(salesforceResponse) {
-  const compositeResponse = salesforceResponse?.compositeResponse
+  const compositeResponse = salesforceResponse
   if (!Array.isArray(compositeResponse)) {
     return
   }
@@ -259,13 +263,13 @@ async function uploadApplicationFile(request, applicationId) {
   )
 
   const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(
+    return await salesforceClient.uploadApplicationFile(
       compositeRequest,
       request.logger
     )
   }, retriesConfig)
 
-  handleCompositeResponse(salesforceResponse)
+  return salesforceResponse
 }
 
 /**
@@ -290,35 +294,10 @@ async function uploadCaseFile(
   )
 
   const salesforceResponse = await retry(async () => {
-    return await salesforceClient.sendComposite(compositeRequest, logger)
+    return await salesforceClient.uploadCaseFile(compositeRequest, logger)
   }, retriesConfig)
 
-  handleCompositeResponse(salesforceResponse)
-}
-
-/**
- * @param {object} salesforceResponse
- * @returns {object[]}
- * @throws {Error} Throws an error if any composite operation failed
- */
-function handleCompositeResponse(salesforceResponse) {
-  const compositeResponse = salesforceResponse?.compositeResponse
-  const failedCompositeItems = Array.isArray(compositeResponse)
-    ? compositeResponse.filter(
-        (item) =>
-          item?.httpStatusCode && ![200, 201].includes(item.httpStatusCode)
-      )
-    : []
-
-  if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    const compositeError = /** @type {Error & {failedItems: any[]}} */ (
-      new Error('One or more composite operations failed')
-    )
-    compositeError.name = 'CompositeOperationError'
-    compositeError.failedItems = failedCompositeItems
-    throw compositeError
-  }
-  return compositeResponse
+  return salesforceResponse
 }
 /**
  * @param {Request} request
@@ -388,7 +367,11 @@ function handleCaseCreationError(error, request) {
     ]).boomify()
   }
 
-  if (error.name === 'CompositeOperationError') {
+  if (
+    ['CompositeOperationError', 'CompositeObjectOperationError'].includes(
+      error.name
+    )
+  ) {
     const failedOperations = error.failedItems.map((item) => ({
       referenceId: item.referenceId,
       httpStatusCode: item.httpStatusCode,
@@ -397,7 +380,12 @@ function handleCaseCreationError(error, request) {
             errorCode: err.errorCode,
             message: err.message
           }))
-        : []
+        : Array.isArray(item.errors)
+          ? item.errors.map((err) => ({
+              errorCode: err.errorCode,
+              message: err.message
+            }))
+          : []
     }))
 
     request.logger.error(

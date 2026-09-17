@@ -103,46 +103,52 @@ const mockSuccessfulCreateCustomerResponse = {
   success: true
 }
 
-const mockSuccessfulCompositeResponse = {
-  compositeResponse: [
-    {
-      body: {
-        totalSize: 1,
-        done: true,
-        records: [
-          {
-            attributes: {
-              type: 'RegulatoryAuthorizationType',
-              url: '/test/license-type/TEST-LICENSE-TYPE-123'
-            },
-            Id: 'TEST-LICENSE-TYPE-123'
-          }
-        ]
-      },
-      httpHeaders: {},
-      httpStatusCode: 200,
-      referenceId: 'licenseTypeQuery'
+const mockSuccessfulCompositeResponse = [
+  {
+    body: {
+      totalSize: 1,
+      done: true,
+      records: [
+        {
+          attributes: {
+            type: 'RegulatoryAuthorizationType',
+            url: '/test/license-type/TEST-LICENSE-TYPE-123'
+          },
+          Id: 'TEST-LICENSE-TYPE-123'
+        }
+      ]
     },
-    {
-      body: {
-        id: 'TEST-CASE-789',
-        success: true,
-        errors: []
-      },
-      httpHeaders: {
-        Location: '/test/case/TEST-CASE-789'
-      },
-      httpStatusCode: 201,
-      referenceId: refIdApplicationRef
-    }
-  ]
-}
+    httpHeaders: {},
+    httpStatusCode: 200,
+    referenceId: 'licenseTypeQuery'
+  },
+  {
+    body: {
+      id: 'TEST-CASE-789',
+      success: true,
+      errors: []
+    },
+    httpHeaders: {
+      Location: '/test/case/TEST-CASE-789'
+    },
+    httpStatusCode: 201,
+    referenceId: refIdApplicationRef
+  }
+]
 
 const mockSuccessfulCreateCaseResponse = {
   id: 'TEST-CASE-789',
   errors: [],
   success: true
 }
+
+const mockSuccessfulKeyFactsResponse = [
+  {
+    id: 'TEST-KEY-FACT-123',
+    success: true,
+    errors: []
+  }
+]
 
 const mockApplicantDetaisls = {
   email: 'test@example.com',
@@ -166,6 +172,7 @@ beforeEach(() => {
   mockGetLinkedFiles.mockReset()
   mockGetLinkedFiles.mockResolvedValue({ records: [] })
   mockAddKeyFacts.mockReset()
+  mockAddKeyFacts.mockResolvedValue(mockSuccessfulKeyFactsResponse)
   mockGetKeyFacts.mockReset()
   mockGetKeyFacts.mockResolvedValue({ records: [] })
   mockLoggerError.mockReset()
@@ -183,7 +190,6 @@ beforeEach(() => {
     Email: mockApplicantDetaisls.email
   })
   jest.mocked(buildCaseCreationPayload).mockReturnValue({
-    Status: '',
     Priority: '',
     APHA_Application__c: '',
     ContactId: ''
@@ -418,7 +424,7 @@ describe('POST /case-management/case', () => {
   })
 
   describe('Successful case creation', () => {
-    test('creates case, returns 201 Created, uploads application file and adds key facts', async () => {
+    test('creates case and adds key facts when none already exist', async () => {
       const server = await createTestServer()
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -442,6 +448,10 @@ describe('POST /case-management/case', () => {
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(1)
+      expect(mockAddKeyFacts).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything()
+      )
       expect(buildCaseCreationPayload).toHaveBeenCalledWith(
         'TEST-CASE-789',
         'TEST-CUSTOMER-123',
@@ -724,35 +734,24 @@ describe('POST /case-management/case', () => {
     test('returns 500 when composite operations within createApplication partially fail', async () => {
       const server = await createTestServer()
 
-      const mockFailedCompositeResponse = {
-        compositeResponse: [
-          {
-            body: {
-              id: 'TEST-CASE-123',
-              success: true,
-              errors: []
-            },
-            httpHeaders: {
-              Location: '/test/case/TEST-CASE-123'
-            },
-            httpStatusCode: 201,
-            referenceId: 'createCase'
-          },
-          {
-            body: [
-              {
-                errorCode: 'REQUIRED_FIELD_MISSING',
-                message: 'Required field missing'
-              }
-            ],
-            httpHeaders: {},
-            httpStatusCode: 400,
-            referenceId: 'updateContact'
-          }
-        ]
-      }
+      const compositeError = /** @type {Error & {failedItems: any[]}} */ (
+        new Error('One or more composite operations failed')
+      )
+      compositeError.name = 'CompositeOperationError'
+      compositeError.failedItems = [
+        {
+          body: [
+            {
+              errorCode: 'REQUIRED_FIELD_MISSING',
+              message: 'Required field missing'
+            }
+          ],
+          httpStatusCode: 400,
+          referenceId: 'updateContact'
+        }
+      ]
 
-      mockSendComposite.mockResolvedValue(mockFailedCompositeResponse)
+      mockSendComposite.mockRejectedValue(compositeError)
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
 
       const payload = createValidPayload()
@@ -766,7 +765,7 @@ describe('POST /case-management/case', () => {
       const body = /** @type {Record<string, any>} */ (res.result)
       expect(body).toMatchObject(genericError)
 
-      expect(mockSendComposite).toHaveBeenCalledTimes(1)
+      expect(mockSendComposite).toHaveBeenCalledTimes(4)
 
       // Verify logger was called with correct details for composite operation error
       expect(mockLoggerError).toHaveBeenCalledWith(
@@ -820,32 +819,30 @@ describe('POST /case-management/case', () => {
 
     test('returns 400 and does not create a case when the licence type cannot be looked up', async () => {
       const server = await createTestServer()
-      const mockCompositeResponseWithUnknownLicenceType = {
-        compositeResponse: [
-          {
-            body: {
-              totalSize: 0,
-              done: true,
-              records: []
-            },
-            httpHeaders: {},
-            httpStatusCode: 200,
-            referenceId: 'licenseTypeQuery'
+      const mockCompositeResponseWithUnknownLicenceType = [
+        {
+          body: {
+            totalSize: 0,
+            done: true,
+            records: []
           },
-          {
-            body: [
-              {
-                errorCode: 'INVALID_INPUT',
-                message:
-                  'Invalid reference specified: licenseTypeQuery.records[0].Id'
-              }
-            ],
-            httpHeaders: {},
-            httpStatusCode: 400,
-            referenceId: 'applicationRef'
-          }
-        ]
-      }
+          httpHeaders: {},
+          httpStatusCode: 200,
+          referenceId: 'licenseTypeQuery'
+        },
+        {
+          body: [
+            {
+              errorCode: 'INVALID_INPUT',
+              message:
+                'Invalid reference specified: licenseTypeQuery.records[0].Id'
+            }
+          ],
+          httpHeaders: {},
+          httpStatusCode: 400,
+          referenceId: 'applicationRef'
+        }
+      ]
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
@@ -951,6 +948,59 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
+    test('returns 500 and logs failed operations when addKeyFacts returns unsuccessful objects', async () => {
+      const server = await createTestServer()
+
+      const compositeObjectError = /** @type {Error & {failedItems: any[]}} */ (
+        new Error('One or more composite object operations failed')
+      )
+      compositeObjectError.name = 'CompositeObjectOperationError'
+      compositeObjectError.failedItems = [
+        {
+          success: false,
+          errors: [
+            { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
+          ]
+        }
+      ]
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockAddKeyFacts.mockRejectedValue(compositeObjectError)
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockAddKeyFacts).toHaveBeenCalledTimes(4)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endpoint: 'case-management/case',
+          failedOperations: [
+            {
+              referenceId: undefined,
+              httpStatusCode: undefined,
+              errors: [
+                {
+                  errorCode: 'REQUIRED_FIELD_MISSING',
+                  message: 'Missing key'
+                }
+              ]
+            }
+          ]
+        }),
+        'Composite operations failed in Salesforce'
+      )
+    })
+
     test('returns 500 when uploading supporting materials fails', async () => {
       const server = await createTestServer()
 
@@ -1025,53 +1075,39 @@ describe('POST /case-management/case', () => {
     test('handles multiple composite operations successfully', async () => {
       const server = await createTestServer()
 
-      const mockCompositeResponse = {
-        compositeResponse: [
-          {
-            body: {
-              totalSize: 1,
-              done: true,
-              records: [
-                {
-                  attributes: {
-                    type: 'RegulatoryAuthorizationType',
-                    url: '/test/license-type/TEST-LICENSE-123'
-                  },
-                  Id: 'TEST-LICENSE-123'
-                }
-              ]
-            },
-            httpHeaders: {},
-            httpStatusCode: 200,
-            referenceId: 'licenseTypeQuery'
+      const mockCompositeResponse = [
+        {
+          body: {
+            totalSize: 1,
+            done: true,
+            records: [
+              {
+                attributes: {
+                  type: 'RegulatoryAuthorizationType',
+                  url: '/test/license-type/TEST-LICENSE-123'
+                },
+                Id: 'TEST-LICENSE-123'
+              }
+            ]
           },
-          {
-            body: {
-              id: 'TEST-CASE-456',
-              success: true,
-              errors: [],
-              created: false
-            },
-            httpHeaders: {
-              Location: '/test/case/TEST-CASE-456'
-            },
-            httpStatusCode: 200,
-            referenceId: 'createCase'
+          httpHeaders: {},
+          httpStatusCode: 200,
+          referenceId: 'licenseTypeQuery'
+        },
+        {
+          body: {
+            id: 'TEST-CASE-456',
+            success: true,
+            errors: [],
+            created: false
           },
-          {
-            body: {
-              id: 'TEST-CONTENT-789',
-              success: true,
-              errors: []
-            },
-            httpHeaders: {
-              Location: '/test/content/TEST-CONTENT-789'
-            },
-            httpStatusCode: 201,
-            referenceId: 'createContentVersion'
-          }
-        ]
-      }
+          httpHeaders: {
+            Location: '/test/case/TEST-CASE-456'
+          },
+          httpStatusCode: 200,
+          referenceId: refIdApplicationRef
+        }
+      ]
 
       mockSendComposite.mockResolvedValue(mockCompositeResponse)
 
@@ -1084,41 +1120,36 @@ describe('POST /case-management/case', () => {
     test('handles composite response with 200 status codes', async () => {
       const server = await createTestServer()
 
-      const mockCompositeResponse = {
-        compositeResponse: [
-          {
-            body: {
-              attributes: {
-                type: 'ContentVersion',
-                url: '/test/content/TEST-CONTENT-999'
-              },
-              ContentDocumentId: 'TEST-DOC-999',
-              Id: 'TEST-CONTENT-999'
-            },
-            httpHeaders: {},
-            httpStatusCode: 200,
-            referenceId: 'contentVersionQuery'
+      const mockCompositeResponse = [
+        {
+          body: {
+            totalSize: 1,
+            done: true,
+            records: [
+              {
+                attributes: {
+                  type: 'RegulatoryAuthorizationType',
+                  url: '/test/license-type/TEST-LICENSE-999'
+                },
+                Id: 'TEST-LICENSE-999'
+              }
+            ]
           },
-          {
-            body: {
-              totalSize: 1,
-              done: true,
-              records: [
-                {
-                  attributes: {
-                    type: 'RegulatoryAuthorizationType',
-                    url: '/test/license-type/TEST-LICENSE-999'
-                  },
-                  Id: 'TEST-LICENSE-999'
-                }
-              ]
-            },
-            httpHeaders: {},
-            httpStatusCode: 200,
-            referenceId: 'licenseTypeQuery'
-          }
-        ]
-      }
+          httpHeaders: {},
+          httpStatusCode: 200,
+          referenceId: 'licenseTypeQuery'
+        },
+        {
+          body: {
+            id: 'TEST-CONTENT-999',
+            success: true,
+            errors: []
+          },
+          httpHeaders: {},
+          httpStatusCode: 200,
+          referenceId: refIdApplicationRef
+        }
+      ]
 
       mockSendComposite.mockResolvedValue(mockCompositeResponse)
 
@@ -1131,30 +1162,23 @@ describe('POST /case-management/case', () => {
     test('handles mixed success and error codes correctly', async () => {
       const server = await createTestServer()
 
-      const mockMixedResponse = {
-        compositeResponse: [
-          {
-            body: {
-              id: 'TEST-CASE-123',
-              success: true,
-              errors: []
-            },
-            httpHeaders: {
-              Location: '/test/case/TEST-CASE-123'
-            },
-            httpStatusCode: 201,
-            referenceId: 'createCase'
-          },
-          {
-            body: [{ errorCode: 'INVALID_FIELD', message: 'Invalid field' }],
-            httpHeaders: {},
-            httpStatusCode: 404,
-            referenceId: 'linkRecord'
-          }
-        ]
-      }
+      // A real, unmocked sendComposite would reject with CompositeOperationError
+      // for a mixed response containing a non-2xx item, since sendComposite is
+      // mocked directly here that behaviour must be simulated explicitly.
+      const compositeError = /** @type {Error & {failedItems: any[]}} */ (
+        new Error('One or more composite operations failed')
+      )
+      compositeError.name = 'CompositeOperationError'
+      compositeError.failedItems = [
+        {
+          body: [{ errorCode: 'INVALID_FIELD', message: 'Invalid field' }],
+          httpHeaders: {},
+          httpStatusCode: 404,
+          referenceId: 'linkRecord'
+        }
+      ]
 
-      mockSendComposite.mockResolvedValue(mockMixedResponse)
+      mockSendComposite.mockRejectedValue(compositeError)
 
       const payload = createValidPayload()
       const res = await createCase(server, payload)
