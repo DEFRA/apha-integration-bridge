@@ -1,5 +1,4 @@
 import Joi from 'joi'
-import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { HoldingIdSchema } from '../../../types/holdings.js'
 
@@ -14,11 +13,8 @@ export const FindHoldingSchema = Joi.object({
 })
 
 /**
- * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
- * @typedef {{ sql: string; bindings: readonly unknown[]; marshallers?: Marshallers }} Query
- *
  * @param {unknown} parameters
- * @returns {{ sql: string; }} The query and its bindings
+ * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings
  */
 export function findHoldingQuery(parameters) {
   const { value, error } = FindHoldingSchema.validate(parameters)
@@ -28,6 +24,7 @@ export function findHoldingQuery(parameters) {
   }
 
   return {
-    sql: query().raw(sql, value).toQuery()
+    sql,
+    bindings: { cph: value.cph }
   }
 }

@@ -39,6 +39,7 @@ const poolConfig = (overrides = {}) => ({
   poolCloseWaitTime: 0,
   poolPingInterval: 60,
   expireTime: 1,
+  callTimeout: 5000,
   ...overrides
 })
 
@@ -233,6 +234,7 @@ describe('#oracleDb', () => {
 
     expect(mockGetConnection).toHaveBeenCalledWith('pega')
     expect(handle.connection).toBe(connection)
+    expect(connection.callTimeout).toBe(5000)
 
     await handle[Symbol.asyncDispose]()
 

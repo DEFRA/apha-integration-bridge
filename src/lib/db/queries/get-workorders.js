@@ -1,6 +1,5 @@
 import { toWorkorders } from '../mappers/to-workorders.js'
 import { execute } from '../operations/execute.js'
-import { query } from '../operations/query.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { toOracleTimestampString } from '../utils/to-oracle-timestamp-string.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
@@ -31,7 +30,7 @@ const STATUSES_BIND_TOKEN = '__STATUSES__'
 
 /**
  * @param {GetWorkordersParams} params
- * @returns {{ sql: string }}
+ * @returns {{ sql: string; bindings: Record<string, unknown> }}
  */
 export function getWorkordersQuery(params) {
   const { value, error } = GetWorkordersSchema.validate(params)
@@ -108,19 +107,18 @@ export function getWorkordersQuery(params) {
   )
 
   return {
-    sql: query()
-      .raw(sqlWithStatuses, {
-        start_date: toOracleTimestampString(startDate),
-        end_date: toOracleTimestampString(endDate),
-        date_type: dateType,
-        has_countries: hasCountries,
-        has_statuses: 1,
-        ...countryBindings,
-        ...statusBindings,
-        offset_rows: offsetRows,
-        fetch_rows: fetchRows
-      })
-      .toQuery()
+    sql: sqlWithStatuses,
+    bindings: {
+      start_date: toOracleTimestampString(startDate),
+      end_date: toOracleTimestampString(endDate),
+      date_type: dateType,
+      has_countries: hasCountries,
+      has_statuses: 1,
+      ...countryBindings,
+      ...statusBindings,
+      offset_rows: offsetRows,
+      fetch_rows: fetchRows
+    }
   }
 }
 

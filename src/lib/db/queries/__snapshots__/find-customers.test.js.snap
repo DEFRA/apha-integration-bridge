@@ -8,7 +8,7 @@ exports[`returns the expected query for valid ids 1`] = `
     ON ps.party_pk = p.party_pk
   WHERE ps.party_status_code <> 'INACTIVE'
     AND ps.party_state_to_dttm IS NULL
-    AND p.party_id IN ('C123456', 'C234567')
+    AND p.party_id IN (:id0, :id1)
 ),
 person_details AS (
   SELECT
@@ -150,9 +150,9 @@ LEFT JOIN ahbrp.alt_party_identity api
   ON api.party_pk = tp.party_pk
  AND api.alt_party_identity_type = 'SRABPIPLANTID'
 WHERE (
-  ('PERSON' = 'PERSON' AND per.party_pk IS NOT NULL)
+  (:customerType = 'PERSON' AND per.party_pk IS NOT NULL)
   OR
-  ('PERSON' = 'ORGANISATION' AND org.party_pk IS NOT NULL)
+  (:customerType = 'ORGANISATION' AND org.party_pk IS NOT NULL)
 )
 "
 `;

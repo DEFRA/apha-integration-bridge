@@ -21,6 +21,10 @@ import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/fi
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
 import { config } from '../../../config.js'
+import {
+  CompositeOperationError,
+  CompositeObjectOperationError
+} from '../../../lib/salesforce/composite-errors.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
@@ -114,7 +118,9 @@ async function runCaseCreationFlow(request, action) {
  * Runs `fn` and tags any error it throws with the flow step it occurred in,
  * so the failure can be traced back to a specific stage of case creation
  * (see AC: "determine where an error occurred in the flow"). The innermost
- * step wins if an error propagates through nested steps.
+ * step wins if an error propagates through nested steps - this also means
+ * a step already tagged by the Salesforce client (see client.js) is left
+ * untouched.
  *
  * @template T
  * @param {string} step
@@ -172,7 +178,7 @@ async function addKeyFacts(request, applicationId) {
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
-    await withStep('addKeyFacts', () =>
+    return withStep('addKeyFacts', () =>
       retry(async () => {
         return await salesforceClient.addKeyFacts(
           keyFactsRequest,
@@ -181,6 +187,8 @@ async function addKeyFacts(request, applicationId) {
       }, retriesConfig)
     )
   }
+
+  return undefined
 }
 
 /**
@@ -228,18 +236,18 @@ async function createApplication(request) {
     const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
     const salesforceResponse = await retry(async () => {
-      return await salesforceClient.sendComposite(
+      return await salesforceClient.createApplication(
         compositeRequest,
         request.logger
       )
     }, retriesConfig)
 
     assertLicenceTypeResolved(salesforceResponse)
-    const compositeResponse = handleCompositeResponse(salesforceResponse)
 
     return (
-      compositeResponse.find((item) => item.referenceId === refIdApplicationRef)
-        ?.body?.id || null
+      salesforceResponse.find(
+        (item) => item.referenceId === refIdApplicationRef
+      )?.body?.id || null
     )
   })
 }
@@ -260,12 +268,11 @@ class InvalidLicenceTypeError extends Error {
  * @throws {InvalidLicenceTypeError} Handled as a 400 Bad Request
  */
 function assertLicenceTypeResolved(salesforceResponse) {
-  const compositeResponse = salesforceResponse?.compositeResponse
-  if (!Array.isArray(compositeResponse)) {
+  if (!Array.isArray(salesforceResponse)) {
     return
   }
 
-  const licenceTypeQueryItem = compositeResponse.find(
+  const licenceTypeQueryItem = salesforceResponse.find(
     (item) => item?.referenceId === refIdLicenseTypeQuery
   )
 
@@ -285,7 +292,8 @@ async function getLinkedFiles(request, applicationId, step = 'getLinkedFiles') {
     retry(async () => {
       return await salesforceClient.getLinkedFiles(
         applicationId,
-        request.logger
+        request.logger,
+        step
       )
     }, retriesConfig)
   )
@@ -304,14 +312,12 @@ async function uploadApplicationFile(request, applicationId) {
       applicationId
     )
 
-    const salesforceResponse = await retry(async () => {
-      return await salesforceClient.sendComposite(
+    return retry(async () => {
+      return await salesforceClient.uploadApplicationFile(
         compositeRequest,
         request.logger
       )
     }, retriesConfig)
-
-    handleCompositeResponse(salesforceResponse)
   })
 }
 
@@ -337,38 +343,12 @@ async function uploadCaseFile(
       filePath
     )
 
-    const salesforceResponse = await retry(async () => {
-      return await salesforceClient.sendComposite(compositeRequest, logger)
+    return retry(async () => {
+      return await salesforceClient.uploadCaseFile(compositeRequest, logger)
     }, retriesConfig)
-
-    handleCompositeResponse(salesforceResponse)
   })
 }
 
-/**
- * @param {object} salesforceResponse
- * @returns {object[]}
- * @throws {Error} Throws an error if any composite operation failed
- */
-function handleCompositeResponse(salesforceResponse) {
-  const compositeResponse = salesforceResponse?.compositeResponse
-  const failedCompositeItems = Array.isArray(compositeResponse)
-    ? compositeResponse.filter(
-        (item) =>
-          item?.httpStatusCode && ![200, 201].includes(item.httpStatusCode)
-      )
-    : []
-
-  if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    const compositeError = /** @type {Error & {failedItems: any[]}} */ (
-      new Error('One or more composite operations failed')
-    )
-    compositeError.name = 'CompositeOperationError'
-    compositeError.failedItems = failedCompositeItems
-    throw compositeError
-  }
-  return compositeResponse
-}
 /**
  * @param {Request} request
  * @returns {Promise<string|null>}
@@ -427,7 +407,7 @@ async function uploadSupportingMaterials(request, caseId) {
 }
 
 /**
- * @param {Error & {step?: string, name?: string, failedItems?: any[]}} error
+ * @param {Error & {step?: string, failedItems?: any[]}} error
  * @param {Request} request
  */
 function handleCaseCreationError(error, request) {
@@ -449,25 +429,23 @@ function handleCaseCreationError(error, request) {
 
   const step = error.step || 'unknown'
 
-  if (error.name === 'CompositeOperationError') {
-    const failedOperations = (error.failedItems || []).map((item) => ({
-      referenceId: item.referenceId,
-      httpStatusCode: item.httpStatusCode,
-      errors: Array.isArray(item.body)
-        ? item.body.map((err) => ({
-            errorCode: err.errorCode,
-            message: err.message
-          }))
-        : []
-    }))
-
-    request.logger.error(
-      {
-        endpoint: 'case-management/case',
-        step,
-        failedOperations
-      },
-      `Composite operations failed in Salesforce during step "${step}"`
+  if (error instanceof CompositeOperationError) {
+    logCompositeOperations(
+      request,
+      step,
+      (error.failedItems || []).map((item) => ({
+        referenceId: item.referenceId,
+        httpStatusCode: item.httpStatusCode,
+        errors: mapSalesforceErrors(item.body)
+      }))
+    )
+  } else if (error instanceof CompositeObjectOperationError) {
+    logCompositeOperations(
+      request,
+      step,
+      (error.failedItems || []).map((item) => ({
+        errors: mapSalesforceErrors(item.errors)
+      }))
     )
   } else {
     request.logger.error(
@@ -479,6 +457,7 @@ function handleCaseCreationError(error, request) {
       `Failed to create case in Salesforce during step "${step}": ${error.message}`
     )
   }
+
   throw new HTTPException(
     'INTERNAL_SERVER_ERROR',
     'Your request could not be processed',
@@ -489,6 +468,32 @@ function handleCaseCreationError(error, request) {
       )
     ]
   ).boomify()
+}
+
+/**
+ * @param {any} errors
+ */
+function mapSalesforceErrors(errors) {
+  return (Array.isArray(errors) ? errors : []).map((itemError) => ({
+    errorCode: itemError.errorCode,
+    message: itemError.message
+  }))
+}
+
+/**
+ * @param {Request} request
+ * @param {string} step
+ * @param {object[]} failedOperations
+ */
+function logCompositeOperations(request, step, failedOperations) {
+  request.logger.error(
+    {
+      endpoint: 'case-management/case',
+      step,
+      failedOperations
+    },
+    `Composite operations failed in Salesforce during step "${step}"`
+  )
 }
 
 const isEnabled = config.get('featureFlags.isCaseManagementEnabled')

@@ -13,6 +13,16 @@
  */
 
 /**
- * @typedef {Object} CompositeResponse
- * @property {CompositeResponseItem[]} compositeResponse - Array of composite response items
+ * @typedef {CompositeResponseItem[]} CompositeResponse
+ */
+
+/**
+ * @typedef {Object} CompositeObjectResponseItem
+ * @property {string} id - Salesforce record ID.
+ * @property {boolean} success - Whether the record operation succeeded.
+ * @property {SalesforceError[]} errors - Errors returned for the record operation.
+ */
+
+/**
+ * @typedef {CompositeObjectResponseItem[]} CompositeObjectResponse
  */

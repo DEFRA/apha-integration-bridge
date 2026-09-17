@@ -3,7 +3,6 @@ import Joi from 'joi'
 import { toOrganisations } from '../mappers/to-organisations.js'
 import { toPeople } from '../mappers/to-people.js'
 import { execute } from '../operations/execute.js'
-import { query } from '../operations/query.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 
@@ -35,7 +34,7 @@ export const FindCustomersSchema = Joi.object({
 /**
  * @param {string[]} ids
  * @param {'PERSON' | 'ORGANISATION'} customerType
- * @returns {{ sql: string; }} The query and its bindings
+ * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings
  */
 export function findCustomersQuery(ids, customerType) {
   const { value, error } = FindCustomersSchema.validate({ ids, customerType })
@@ -52,9 +51,8 @@ export function findCustomersQuery(ids, customerType) {
   )
 
   return {
-    sql: query()
-      .raw(sqlWithFilters, { ...bindings, customerType: value.customerType })
-      .toQuery()
+    sql: sqlWithFilters,
+    bindings: { ...bindings, customerType: value.customerType }
   }
 }
 

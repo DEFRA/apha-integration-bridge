@@ -146,20 +146,18 @@ describe('salesforce client', () => {
       mockLogger
     )
 
-    expect(result).toEqual({
-      compositeResponse: [
-        {
-          body: { id: '001', success: true },
-          httpStatusCode: 201,
-          referenceId: 'ref1'
-        },
-        {
-          body: { id: '002', success: true },
-          httpStatusCode: 201,
-          referenceId: 'ref2'
-        }
-      ]
-    })
+    expect(result).toEqual([
+      {
+        body: { id: '001', success: true },
+        httpStatusCode: 201,
+        referenceId: 'ref1'
+      },
+      {
+        body: { id: '002', success: true },
+        httpStatusCode: 201,
+        referenceId: 'ref2'
+      }
+    ])
 
     expect(mockFetch).toHaveBeenCalledTimes(2)
     expect(mockFetch).toHaveBeenLastCalledWith(
@@ -243,7 +241,7 @@ describe('salesforce client', () => {
     ).rejects.toThrow(/Salesforce POST request failed/)
 
     expect(mockLogger.error).toHaveBeenCalledWith(
-      { status: 400, body: errorMessage },
+      { status: 400, body: errorMessage, operation: 'createCustomer' },
       'Salesforce POST request failed'
     )
   })
@@ -314,7 +312,7 @@ describe('salesforce client', () => {
     ).rejects.toThrow(/Salesforce PATCH request failed/)
 
     expect(mockLogger.error).toHaveBeenCalledWith(
-      { status: 400, body: errorMessage },
+      { status: 400, body: errorMessage, operation: 'createCase' },
       'Salesforce PATCH request failed'
     )
   })
@@ -518,6 +516,61 @@ describe('salesforce client', () => {
         body: JSON.stringify(keyFactsRequest)
       })
     )
+  })
+
+  test('addKeyFacts throws CompositeObjectOperationError for an unsuccessful object', async () => {
+    const keyFactsRequest = {
+      allOrNone: false,
+      records: [{ attributes: { type: 'TBL_KeyFact__c' } }]
+    }
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, [
+            {
+              success: false,
+              errors: [
+                { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
+              ]
+            }
+          ])
+        )
+      )
+
+    await expect(
+      salesforceClient.addKeyFacts(keyFactsRequest)
+    ).rejects.toMatchObject({
+      name: 'CompositeObjectOperationError',
+      failedItems: [
+        {
+          success: false
+        }
+      ]
+    })
+  })
+
+  test('addKeyFacts throws CompositeObjectOperationError when success is missing', async () => {
+    const keyFactsRequest = {
+      allOrNone: false,
+      records: [{ attributes: { type: 'TBL_KeyFact__c' } }]
+    }
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(/** @type {any}*/ (mockJsonResponse(200, [{}])))
+
+    await expect(
+      salesforceClient.addKeyFacts(keyFactsRequest)
+    ).rejects.toMatchObject({
+      name: 'CompositeObjectOperationError',
+      failedItems: [{}]
+    })
   })
 
   test('throws a timeout error when fetch aborts', async () => {

@@ -15,10 +15,10 @@ const latencyGauge = meter.createGauge('oracledb.execution.time', {
  * execute a sql query against the supplied connection
  *
  * @typedef {Record<string, Array<(value: unknown) => unknown>>} Marshallers
- * @typedef {{ sql: string; marshallers?: Marshallers }} Query
+ * @typedef {{ sql: string; bindings?: Record<string, unknown>; marshallers?: Marshallers }} Query
  *
  * @param {import('oracledb').Connection} connection - the oracledb connection to use
- * @param {Query} query - a knex query builder instance
+ * @param {Query} query - the sql to run, its bind values and any column marshallers
  */
 export async function execute(connection, query) {
   /**
@@ -31,8 +31,10 @@ export async function execute(connection, query) {
 
       return tracer.startActiveSpan('oracledb#execute', async (span) => {
         try {
+          const { sql, bindings = {} } = query
+
           // @ts-ignore - OracleDB does not have a type definition for `execute` that matches the usage here
-          const results = await connection.execute(query.sql, [], {
+          const results = await connection.execute(sql, bindings, {
             outFormat: OracleDB.OUT_FORMAT_OBJECT,
             fetchTypeHandler: function (metadata) {
               /**
