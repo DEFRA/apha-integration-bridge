@@ -329,3 +329,20 @@ export const GetCaseResponseSchema = Joi.object({
  * @property {boolean} allOrNone
  * @property {KeyFactRecordItem[]} records
  */
+
+/**
+ * @typedef {Object} QuestionAndAnswerRecordItem
+ * @property {Object} attributes
+ * @property {string} attributes.type
+ * @property {string} TBL_Question__c
+ * @property {string} TBL_QuestionKey__c
+ * @property {string} TBL_SectionKey__c
+ * @property {string} TBL_Answer__c
+ * @property {string} TBL_Application__c
+ */
+
+/**
+ * @typedef {Object} QuestionAndAnswerRequest
+ * @property {boolean} allOrNone
+ * @property {QuestionAndAnswerRecordItem[]} records
+ */

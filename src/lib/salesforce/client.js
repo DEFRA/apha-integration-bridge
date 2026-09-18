@@ -358,6 +358,30 @@ class SalesforceClient {
   }
 
   /**
+   * @param {string} applicationId
+   * @param {Logger} [logger]
+   * @returns {Promise<any>}
+   */
+  async getQuestionsAndAnswers(applicationId, logger) {
+    const token = await this.getAccessToken(logger)
+    const query = `SELECT Id, TBL_Application__c, TBL_SectionKey__c, TBL_Question__c, TBL_QuestionKey__c, TBL_Answer__c FROM TBL_ApplicationQuestionnaire__c WHERE TBL_Application__c='${applicationId}'`
+    return this.sendQuery(query, token, logger, 'getQuestionsAndAnswers')
+  }
+
+  /**
+   * @param {object} questionsAndAnswersRequest
+   * @param {Logger} [logger]
+   * @returns {Promise<CompositeObjectResponse>}
+   */
+  async addQuestionsAndAnswers(questionsAndAnswersRequest, logger) {
+    return this.sendCompositeObject(
+      questionsAndAnswersRequest,
+      logger,
+      'addQuestionsAndAnswers'
+    )
+  }
+
+  /**
    * Send a composite API request to Salesforce.
    *
    * @param {object} compositeBody The request payload to forward.
@@ -458,7 +482,7 @@ class SalesforceClient {
   /**
    * Execute a SOQL query against Salesforce.
    * @param {string} query The SOQL query string.
-   * @param {string} token Salesforce access token (required).
+   * @param {string | null} token Salesforce access token (required).
    * @param {Logger} [logger] Optional logger.
    * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<any>} The Salesforce query response.

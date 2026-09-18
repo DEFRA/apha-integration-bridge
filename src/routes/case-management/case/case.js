@@ -25,6 +25,7 @@ import {
   CompositeOperationError,
   CompositeObjectOperationError
 } from '../../../lib/salesforce/composite-errors.js'
+import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request-builders/questions-and-answers-creation-request-builder.js'
 
 /**
  * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
@@ -93,6 +94,7 @@ async function handler(request, h) {
 
     const caseId = await createCase(request, applicationId, customerId)
     await Promise.all([
+      addQuestionsAndAnswers(request, applicationId),
       uploadSupportingMaterials(request, caseId),
       addKeyFacts(request, applicationId)
     ])
@@ -164,11 +166,55 @@ async function addKeyFacts(request, applicationId) {
 /**
  * @param {Request} request
  * @param {string} applicationId
+ */
+async function addQuestionsAndAnswers(request, applicationId) {
+  const existingQuestionsAndAnswers = await getQuestionsAndAnswers(
+    request,
+    applicationId
+  )
+  if (existingQuestionsAndAnswers.length === 0) {
+    const questionsAndAnswersRequest = buildQuestionsAndAnswersRequest(
+      /** @type {CreateCasePayload} */ (request.payload),
+      applicationId
+    )
+    const salesforceResponse = await retry(
+      () =>
+        salesforceClient.addQuestionsAndAnswers(
+          questionsAndAnswersRequest,
+          request.logger
+        ),
+      retriesConfig
+    )
+
+    return salesforceResponse
+  }
+
+  return undefined
+}
+
+/**
+ * @param {Request} request
+ * @param {string} applicationId
  * @returns {Promise<any[]>}
  */
 async function getKeyFacts(request, applicationId) {
   const salesforceResponse = await retry(() => {
     return salesforceClient.getKeyFacts(applicationId, request.logger)
+  }, retriesConfig)
+  return salesforceResponse?.records || []
+}
+
+/**
+ * @param {Request} request
+ * @param {string} applicationId
+ * @returns {Promise<any[]>}
+ */
+async function getQuestionsAndAnswers(request, applicationId) {
+  const salesforceResponse = await retry(async () => {
+    return await salesforceClient.getQuestionsAndAnswers(
+      applicationId,
+      request.logger
+    )
   }, retriesConfig)
   return salesforceResponse?.records || []
 }

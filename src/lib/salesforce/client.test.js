@@ -599,6 +599,171 @@ describe('salesforce client', () => {
     })
   })
 
+  test('getQuestionsAndAnswers returns questions and answers for given application', async () => {
+    const applicationId = 'application-123'
+    const mockQuestionsAndAnswersResponse = {
+      totalSize: 2,
+      done: true,
+      records: [
+        {
+          Id: 'question-001',
+          TBL_QuestionKey__c: 'test-q',
+          TBL_Question__c: 'Test question',
+          TBL_Answer__c: 'Test answer',
+          TBL_SectionKey__c: 'section-1'
+        },
+        {
+          Id: 'question-002',
+          TBL_QuestionKey__c: 'second-q',
+          TBL_Question__c: 'Second question',
+          TBL_Answer__c: 'Second answer',
+          TBL_SectionKey__c: 'section-2'
+        }
+      ]
+    }
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, mockQuestionsAndAnswersResponse)
+        )
+      )
+
+    const result = await salesforceClient.getQuestionsAndAnswers(
+      applicationId,
+      mockLogger
+    )
+
+    expect(result).toEqual(mockQuestionsAndAnswersResponse)
+    const expectedQuery = `SELECT Id, TBL_Application__c, TBL_SectionKey__c, TBL_Question__c, TBL_QuestionKey__c, TBL_Answer__c FROM TBL_ApplicationQuestionnaire__c WHERE TBL_Application__c='${applicationId}'`
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/query?q=' + encodeURIComponent(expectedQuery)),
+      expect.objectContaining({
+        method: HTTPMethods.GET,
+        headers: {
+          Authorization: 'Bearer token-123'
+        }
+      })
+    )
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'getQuestionsAndAnswers' }),
+      'Sending query request'
+    )
+  })
+
+  test('addQuestionsAndAnswers posts composite sobjects payload and returns response body', async () => {
+    const questionsAndAnswersRequest = {
+      allOrNone: false,
+      records: [
+        {
+          attributes: { type: 'TBL_ApplicationQuestionnaire__c' },
+          TBL_QuestionKey__c: 'test-q',
+          TBL_Question__c: 'Test question',
+          TBL_Answer__c: 'Test answer',
+          TBL_SectionKey__c: 'section-1'
+        }
+      ]
+    }
+
+    const mockAddQuestionAndAnswersResponse = [
+      {
+        id: 'a01xx0000001ABC',
+        success: true,
+        errors: []
+      }
+    ]
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, mockAddQuestionAndAnswersResponse)
+        )
+      )
+
+    const result = await salesforceClient.addQuestionsAndAnswers(
+      questionsAndAnswersRequest,
+      mockLogger
+    )
+
+    expect(result).toEqual(mockAddQuestionAndAnswersResponse)
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/composite/sobjects'),
+      expect.objectContaining({
+        method: HTTPMethods.POST,
+        headers: {
+          Authorization: 'Bearer token-123',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(questionsAndAnswersRequest)
+      })
+    )
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'addQuestionsAndAnswers' }),
+      'Sending POST request'
+    )
+  })
+
+  test('addQuestionsAndAnswers throws CompositeObjectOperationError for an unsuccessful object', async () => {
+    const questionsAndAnswersRequest = {
+      allOrNone: false,
+      records: [{ attributes: { type: 'TBL_ApplicationQuestionnaire__c' } }]
+    }
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (
+          mockJsonResponse(200, [
+            {
+              success: false,
+              errors: [
+                { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
+              ]
+            }
+          ])
+        )
+      )
+
+    await expect(
+      salesforceClient.addQuestionsAndAnswers(questionsAndAnswersRequest)
+    ).rejects.toMatchObject({
+      name: 'CompositeObjectOperationError',
+      failedItems: [
+        {
+          success: false
+        }
+      ]
+    })
+  })
+
+  test('addQuestionsAndAnswers throws CompositeObjectOperationError when success is missing', async () => {
+    const questionsAndAnswersRequest = {
+      allOrNone: false,
+      records: [{ attributes: { type: 'TBL_ApplicationQuestionnaire__c' } }]
+    }
+
+    mockFetch
+      .mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
+      )
+      .mockResolvedValueOnce(/** @type {any}*/ (mockJsonResponse(200, [{}])))
+
+    await expect(
+      salesforceClient.addQuestionsAndAnswers(questionsAndAnswersRequest)
+    ).rejects.toMatchObject({
+      name: 'CompositeObjectOperationError',
+      failedItems: [{}]
+    })
+  })
+
   test('throws a timeout error when fetch aborts', async () => {
     const abortError = new Error('Aborted')
     abortError.name = 'AbortError'
