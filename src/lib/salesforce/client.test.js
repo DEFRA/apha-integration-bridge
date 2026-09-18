@@ -632,7 +632,10 @@ describe('salesforce client', () => {
         )
       )
 
-    const result = await salesforceClient.getQuestionsAndAnswers(applicationId)
+    const result = await salesforceClient.getQuestionsAndAnswers(
+      applicationId,
+      mockLogger
+    )
 
     expect(result).toEqual(mockQuestionsAndAnswersResponse)
     const expectedQuery = `SELECT Id, TBL_Application__c, TBL_SectionKey__c, TBL_Question__c, TBL_QuestionKey__c, TBL_Answer__c FROM TBL_ApplicationQuestionnaire__c WHERE TBL_Application__c='${applicationId}'`
@@ -644,6 +647,10 @@ describe('salesforce client', () => {
           Authorization: 'Bearer token-123'
         }
       })
+    )
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'getQuestionsAndAnswers' }),
+      'Sending query request'
     )
   })
 
@@ -680,7 +687,8 @@ describe('salesforce client', () => {
       )
 
     const result = await salesforceClient.addQuestionsAndAnswers(
-      questionsAndAnswersRequest
+      questionsAndAnswersRequest,
+      mockLogger
     )
 
     expect(result).toEqual(mockAddQuestionAndAnswersResponse)
@@ -694,6 +702,10 @@ describe('salesforce client', () => {
         },
         body: JSON.stringify(questionsAndAnswersRequest)
       })
+    )
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'addQuestionsAndAnswers' }),
+      'Sending POST request'
     )
   })
 

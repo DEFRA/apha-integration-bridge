@@ -365,7 +365,7 @@ class SalesforceClient {
   async getQuestionsAndAnswers(applicationId, logger) {
     const token = await this.getAccessToken(logger)
     const query = `SELECT Id, TBL_Application__c, TBL_SectionKey__c, TBL_Question__c, TBL_QuestionKey__c, TBL_Answer__c FROM TBL_ApplicationQuestionnaire__c WHERE TBL_Application__c='${applicationId}'`
-    return this.sendQuery(query, token, logger)
+    return this.sendQuery(query, token, logger, 'getQuestionsAndAnswers')
   }
 
   /**
@@ -374,7 +374,11 @@ class SalesforceClient {
    * @returns {Promise<CompositeObjectResponse>}
    */
   async addQuestionsAndAnswers(questionsAndAnswersRequest, logger) {
-    return this.sendCompositeObject(questionsAndAnswersRequest, logger)
+    return this.sendCompositeObject(
+      questionsAndAnswersRequest,
+      logger,
+      'addQuestionsAndAnswers'
+    )
   }
 
   /**
