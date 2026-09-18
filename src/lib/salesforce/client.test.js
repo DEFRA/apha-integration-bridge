@@ -219,6 +219,13 @@ describe('salesforce client', () => {
     )
 
     expect(result).toEqual(mockedResponse)
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authContext: 'system-level',
+        operation: 'createCustomer'
+      }),
+      'Sending POST request'
+    )
   })
 
   test('createCustomer throws with sanitised logging when Salesforce returns error', async () => {
@@ -374,12 +381,16 @@ describe('salesforce client', () => {
       salesforceClient.sendQuery(
         'SELECT * FORM Account',
         'user-token-456',
-        mockLogger
+        mockLogger,
+        'getKeyFacts'
       )
-    ).rejects.toThrow(/Salesforce query request failed/)
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('Salesforce query request failed'),
+      operation: 'getKeyFacts'
+    })
 
     expect(mockLogger.error).toHaveBeenCalledWith(
-      { status: 400, body: expect.any(String) },
+      { status: 400, body: expect.any(String), operation: 'getKeyFacts' },
       'Salesforce query request failed'
     )
   })
@@ -415,7 +426,7 @@ describe('salesforce client', () => {
         /** @type {any}*/ (mockJsonResponse(200, mockLinkedFilesResponse))
       )
 
-    const result = await salesforceClient.getLinkedFiles(entityId)
+    const result = await salesforceClient.getLinkedFiles(entityId, mockLogger)
 
     expect(result).toEqual(mockLinkedFilesResponse)
 
@@ -428,6 +439,10 @@ describe('salesforce client', () => {
           Authorization: 'Bearer token-123'
         }
       })
+    )
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'getLinkedFiles' }),
+      'Sending query request'
     )
   })
 
@@ -458,7 +473,7 @@ describe('salesforce client', () => {
         /** @type {any}*/ (mockJsonResponse(200, mockKeyFactsResponse))
       )
 
-    const result = await salesforceClient.getKeyFacts(applicationId)
+    const result = await salesforceClient.getKeyFacts(applicationId, mockLogger)
 
     expect(result).toEqual(mockKeyFactsResponse)
 
@@ -471,6 +486,10 @@ describe('salesforce client', () => {
           Authorization: 'Bearer token-123'
         }
       })
+    )
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'getKeyFacts' }),
+      'Sending query request'
     )
   })
 
@@ -502,7 +521,10 @@ describe('salesforce client', () => {
         /** @type {any}*/ (mockJsonResponse(200, mockAddKeyFactsResponse))
       )
 
-    const result = await salesforceClient.addKeyFacts(keyFactsRequest)
+    const result = await salesforceClient.addKeyFacts(
+      keyFactsRequest,
+      mockLogger
+    )
 
     expect(result).toEqual(mockAddKeyFactsResponse)
     expect(mockFetch).toHaveBeenLastCalledWith(
@@ -515,6 +537,10 @@ describe('salesforce client', () => {
         },
         body: JSON.stringify(keyFactsRequest)
       })
+    )
+    expect(mockLogger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'addKeyFacts' }),
+      'Sending POST request'
     )
   })
 
@@ -595,6 +621,21 @@ describe('salesforce client', () => {
     )
   })
 
+  test('getAccessToken logs and throws when Salesforce returns an error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      /** @type {any}*/ (mockJsonResponse(401, { message: 'invalid_client' }))
+    )
+
+    await expect(salesforceClient.getAccessToken(mockLogger)).rejects.toThrow(
+      /Failed to fetch Salesforce token/
+    )
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      { status: 401, body: 'invalid_client' },
+      'Salesforce token request failed'
+    )
+  })
+
   describe('JWT Bearer authentication (user-level)', () => {
     const userEmail = 'test@example.com'
     const mockJWTAssertion = 'mock.jwt.assertion'
@@ -632,6 +673,37 @@ describe('salesforce client', () => {
       expect(first).toBe('user-token-123')
       expect(second).toBe('user-token-123')
       expect(jwtBearer.buildJWTAssertion).toHaveBeenCalledTimes(1)
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        {
+          tokenType: mockJWTTokenResponse.token_type,
+          expiresIn: mockJWTTokenResponse.expires_in
+        },
+        'Successfully exchanged JWT for access token'
+      )
+    })
+
+    test('getUserAccessToken logs at both levels when the JWT exchange fails at the HTTP level', async () => {
+      mockFetch.mockReset()
+      mockFetch.mockResolvedValueOnce(
+        /** @type {any}*/ (mockJsonResponse(400, { message: 'invalid_grant' }))
+      )
+
+      await expect(
+        salesforceClient.getUserAccessToken(userEmail, mockLogger)
+      ).rejects.toThrow(/Failed to exchange JWT/)
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        { status: 400, body: 'invalid_grant' },
+        'Failed to exchange JWT for access token'
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Error during JWT token exchange'
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error), userEmail }),
+        'Failed to acquire user access token'
+      )
     })
 
     test('getUserAccessToken caches different tokens for different users', async () => {
