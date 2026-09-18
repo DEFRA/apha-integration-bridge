@@ -27,9 +27,11 @@ import {
 } from '../../../lib/salesforce/composite-errors.js'
 
 /**
- * @import {CreateCasePayload, GuestCustomerDetails, UpdateCaseDetailsPayload} from '../../../types/case-management/case.js'
+ * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
  * @import {Request} from '@hapi/hapi'
  * @import {Logger} from 'pino'
+ * @import {CompositeResponseItem, CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
+ * @import {SalesforceError} from '../../../types/salesforce/composite-response.js'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -128,8 +130,8 @@ async function createCase(request, applicationId, customerId) {
     licenceType
   )
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.createOrUpdateCase(
+  const salesforceResponse = await retry(() => {
+    return salesforceClient.createOrUpdateCase(
       createCasePayload,
       applicationReference,
       request.logger
@@ -150,11 +152,10 @@ async function addKeyFacts(request, applicationId) {
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
-    const salesforceResponse = await retry(async () => {
-      return await salesforceClient.addKeyFacts(keyFactsRequest, request.logger)
-    }, retriesConfig)
-
-    return salesforceResponse
+    return retry(
+      () => salesforceClient.addKeyFacts(keyFactsRequest, request.logger),
+      retriesConfig
+    )
   }
 
   return undefined
@@ -166,8 +167,8 @@ async function addKeyFacts(request, applicationId) {
  * @returns {Promise<any[]>}
  */
 async function getKeyFacts(request, applicationId) {
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.getKeyFacts(applicationId, request.logger)
+  const salesforceResponse = await retry(() => {
+    return salesforceClient.getKeyFacts(applicationId, request.logger)
   }, retriesConfig)
   return salesforceResponse?.records || []
 }
@@ -197,12 +198,10 @@ async function createApplication(request) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const compositeRequest = buildApplicationCreationCompositeRequest(payload)
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.createApplication(
-      compositeRequest,
-      request.logger
-    )
-  }, retriesConfig)
+  const salesforceResponse = await retry(
+    () => salesforceClient.createApplication(compositeRequest, request.logger),
+    retriesConfig
+  )
 
   assertLicenceTypeResolved(salesforceResponse)
 
@@ -247,8 +246,8 @@ function assertLicenceTypeResolved(salesforceResponse) {
  * @returns {Promise<any[]>}
  */
 async function getLinkedFiles(request, applicationId) {
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.getLinkedFiles(applicationId, request.logger)
+  const salesforceResponse = await retry(() => {
+    return salesforceClient.getLinkedFiles(applicationId, request.logger)
   }, retriesConfig)
   return salesforceResponse?.records || []
 }
@@ -264,8 +263,8 @@ async function uploadApplicationFile(request, applicationId) {
     applicationId
   )
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.uploadApplicationFile(
+  const salesforceResponse = await retry(() => {
+    return salesforceClient.uploadApplicationFile(
       compositeRequest,
       request.logger
     )
@@ -295,12 +294,13 @@ async function uploadCaseFile(
     filePath
   )
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.uploadCaseFile(compositeRequest, logger)
+  const salesforceResponse = await retry(() => {
+    return salesforceClient.uploadCaseFile(compositeRequest, logger)
   }, retriesConfig)
 
   return salesforceResponse
 }
+
 /**
  * @param {Request} request
  * @returns {Promise<string|null>}
@@ -310,8 +310,8 @@ async function createCustomerAccount(request) {
   const applicant = /** @type {GuestCustomerDetails} */ (payload.applicant)
   const customerCreationPayload = buildCustomerCreationPayload(applicant)
 
-  const salesforceResponse = await retry(async () => {
-    return await salesforceClient.createCustomer(
+  const salesforceResponse = await retry(() => {
+    return salesforceClient.createCustomer(
       customerCreationPayload,
       request.logger
     )
@@ -352,6 +352,11 @@ async function uploadSupportingMaterials(request, caseId) {
   }
 }
 
+/**
+ *
+ * @param {Error} error
+ * @param {Request} request
+ */
 function handleCaseCreationError(error, request) {
   if (error instanceof InvalidLicenceTypeError) {
     request.logger.error(
@@ -370,18 +375,24 @@ function handleCaseCreationError(error, request) {
   }
 
   if (error instanceof CompositeOperationError) {
+    const failedItems = /** @type {CompositeResponseItem[]} */ (
+      error.failedItems
+    )
     logCompositeOperations(
       request,
-      error.failedItems.map((item) => ({
+      failedItems.map((item) => ({
         referenceId: item.referenceId,
         httpStatusCode: item.httpStatusCode,
         errors: mapSalesforceErrors(item.body)
       }))
     )
   } else if (error instanceof CompositeObjectOperationError) {
+    const failedItems = /** @type {CompositeObjectResponseItem[]} */ (
+      error.failedItems
+    )
     logCompositeOperations(
       request,
-      error.failedItems.map((item) => ({
+      failedItems.map((item) => ({
         errors: mapSalesforceErrors(item.errors)
       }))
     )
@@ -407,6 +418,11 @@ function handleCaseCreationError(error, request) {
   ).boomify()
 }
 
+/**
+ *
+ * @param {SalesforceError[] | Object} errors
+ * @returns {Array<SalesforceError>}
+ */
 function mapSalesforceErrors(errors) {
   return (Array.isArray(errors) ? errors : []).map((itemError) => ({
     errorCode: itemError.errorCode,
@@ -414,6 +430,11 @@ function mapSalesforceErrors(errors) {
   }))
 }
 
+/**
+ *
+ * @param {Request} request
+ * @param {Array<Object>} failedOperations
+ */
 function logCompositeOperations(request, failedOperations) {
   request.logger.error(
     {

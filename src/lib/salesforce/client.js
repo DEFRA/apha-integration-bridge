@@ -264,7 +264,7 @@ class SalesforceClient {
    * @returns {Promise<CompositeResponse>}
    */
   async createApplication(applicationRequest, logger) {
-    return this.sendComposite(applicationRequest, logger)
+    return this.sendComposite(applicationRequest, logger, 'createApplication')
   }
 
   /**
@@ -275,7 +275,11 @@ class SalesforceClient {
    * @returns {Promise<CompositeResponse>}
    */
   async uploadApplicationFile(applicationFileRequest, logger) {
-    return this.sendComposite(applicationFileRequest, logger)
+    return this.sendComposite(
+      applicationFileRequest,
+      logger,
+      'uploadApplicationFile'
+    )
   }
 
   /**
@@ -286,7 +290,7 @@ class SalesforceClient {
    * @returns {Promise<CompositeResponse>}
    */
   async uploadCaseFile(caseFileRequest, logger) {
-    return this.sendComposite(caseFileRequest, logger)
+    return this.sendComposite(caseFileRequest, logger, 'uploadCaseFile')
   }
 
   /**
@@ -301,7 +305,8 @@ class SalesforceClient {
       HTTPMethods.POST,
       'sobjects/Contact',
       payload,
-      logger
+      logger,
+      'createCustomer'
     )
   }
 
@@ -316,7 +321,8 @@ class SalesforceClient {
       HTTPMethods.PATCH,
       `sobjects/Case/APHA_ExternalReferenceNumber__c/${applicationReference}`,
       payload,
-      logger
+      logger,
+      'createCase'
     )
   }
 
@@ -328,7 +334,7 @@ class SalesforceClient {
   async getLinkedFiles(entityId, logger) {
     const token = await this.getAccessToken(logger)
     const query = `SELECT ContentDocumentId, ContentDocument.Title FROM ContentDocumentLink WHERE LinkedEntityId = '${entityId}'`
-    return this.sendQuery(query, token, logger)
+    return this.sendQuery(query, token, logger, 'getLinkedFiles')
   }
 
   /**
@@ -339,7 +345,7 @@ class SalesforceClient {
   async getKeyFacts(applicationId, logger) {
     const token = await this.getAccessToken(logger)
     const query = `SELECT ID, TBL_Key__c, TBL_Value__c, TBL_EntityType__c, TBL_Status__c, TBL_ObjectAPIName__c, TBL_RecordId__c FROM TBL_KeyFact__c WHERE TBL_Application__c='${applicationId}'`
-    return this.sendQuery(query, token, logger)
+    return this.sendQuery(query, token, logger, 'getKeyFacts')
   }
 
   /**
@@ -348,7 +354,7 @@ class SalesforceClient {
    * @returns {Promise<CompositeObjectResponse>}
    */
   async addKeyFacts(keyFactsRequest, logger) {
-    return this.sendCompositeObject(keyFactsRequest, logger)
+    return this.sendCompositeObject(keyFactsRequest, logger, 'addKeyFacts')
   }
 
   /**
@@ -356,16 +362,21 @@ class SalesforceClient {
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {Logger} [logger] Optional logger.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<CompositeResponse>} The Salesforce composite response.
    */
-  async sendComposite(compositeBody, logger) {
+  async sendComposite(compositeBody, logger, operation) {
     const salesforceResponse = await this.sendRequest(
       HTTPMethods.POST,
       'composite',
       compositeBody,
-      logger
+      logger,
+      operation
     )
-    return handleCompositeResponse(salesforceResponse?.compositeResponse)
+    return handleCompositeResponse(
+      salesforceResponse?.compositeResponse,
+      operation
+    )
   }
 
   /**
@@ -373,16 +384,18 @@ class SalesforceClient {
    *
    * @param {object} compositeBody The request payload to forward.
    * @param {Logger} [logger] Optional logger.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<CompositeObjectResponse>} The Salesforce composite sobjects response.
    */
-  async sendCompositeObject(compositeBody, logger) {
+  async sendCompositeObject(compositeBody, logger, operation) {
     const salesforceResponse = await this.sendRequest(
       HTTPMethods.POST,
       'composite/sobjects',
       compositeBody,
-      logger
+      logger,
+      operation
     )
-    return handleCompositeObjectResponse(salesforceResponse)
+    return handleCompositeObjectResponse(salesforceResponse, operation)
   }
 
   /**
@@ -390,9 +403,10 @@ class SalesforceClient {
    * @param {string} relativePath
    * @param {object} payload
    * @param {Logger} [logger] Optional logger.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<any>} The Salesforce response body.
    */
-  async sendRequest(method, relativePath, payload, logger) {
+  async sendRequest(method, relativePath, payload, logger, operation) {
     const token = await this.getAccessToken(logger)
 
     const methodName = String(method || '').toUpperCase()
@@ -401,7 +415,8 @@ class SalesforceClient {
     // identifiers (e.g. the application reference in case paths).
     logger?.debug(
       {
-        authContext: 'system-level'
+        authContext: 'system-level',
+        operation
       },
       `Sending ${methodName} request`
     )
@@ -425,14 +440,15 @@ class SalesforceClient {
 
     if (!response.ok) {
       logger?.error(
-        { status: response.status, body: this.safeMessage(body) },
+        { status: response.status, body: this.safeMessage(body), operation },
         `Salesforce ${methodName} request failed`
       )
 
-      throw new Error(
+      throw this.taggedError(
         `Salesforce ${methodName} request failed (${response.status}): ${this.safeMessage(
           body
-        )}`
+        )}`,
+        operation
       )
     }
 
@@ -444,16 +460,18 @@ class SalesforceClient {
    * @param {string} query The SOQL query string.
    * @param {string} token Salesforce access token (required).
    * @param {Logger} [logger] Optional logger.
+   * @param {string} [operation] Salesforce operation being performed.
    * @returns {Promise<any>} The Salesforce query response.
    */
-  async sendQuery(query, token, logger) {
+  async sendQuery(query, token, logger, operation) {
     if (!token) {
       throw new Error('Salesforce access token is required for sendQuery')
     }
 
     logger?.debug(
       {
-        authContext: 'user-level'
+        authContext: 'user-level',
+        operation
       },
       'Sending query request'
     )
@@ -475,18 +493,36 @@ class SalesforceClient {
 
     if (!response.ok) {
       logger?.error(
-        { status: response.status, body: this.safeMessage(body) },
+        { status: response.status, body: this.safeMessage(body), operation },
         'Salesforce query request failed'
       )
 
-      throw new Error(
+      throw this.taggedError(
         `Salesforce query request failed (${response.status}): ${this.safeMessage(
           body
-        )}`
+        )}`,
+        operation
       )
     }
 
     return body
+  }
+
+  /**
+   * Build an error tagged with the Salesforce operation that was being attempted.
+   *
+   * @param {string} message
+   * @param {string} [operation]
+   * @returns {Error & {operation?: string}}
+   */
+  taggedError(message, operation) {
+    const error = /** @type {Error & {operation?: string}} */ (
+      new Error(message)
+    )
+    if (operation) {
+      error.operation = operation
+    }
+    return error
   }
 
   /**
@@ -600,10 +636,11 @@ class SalesforceClient {
  * Validate a standard Salesforce composite response.
  *
  * @param {CompositeResponse} compositeResponse
+ * @param {string} [operation]
  * @returns {CompositeResponse}
  * @throws {Error} Throws an error if any composite operation failed.
  */
-function handleCompositeResponse(compositeResponse) {
+function handleCompositeResponse(compositeResponse, operation) {
   const failedCompositeItems = Array.isArray(compositeResponse)
     ? compositeResponse.filter(
         (item) =>
@@ -613,7 +650,7 @@ function handleCompositeResponse(compositeResponse) {
     : []
 
   if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    throw new CompositeOperationError(failedCompositeItems)
+    throw new CompositeOperationError(failedCompositeItems, operation)
   }
 
   return compositeResponse
@@ -623,16 +660,17 @@ function handleCompositeResponse(compositeResponse) {
  * Validate a Salesforce composite sobjects response.
  *
  * @param {CompositeObjectResponse} compositeResponse
+ * @param {string} [operation]
  * @returns {CompositeObjectResponse}
  * @throws {Error} Throws an error if any composite object operation failed.
  */
-function handleCompositeObjectResponse(compositeResponse) {
+function handleCompositeObjectResponse(compositeResponse, operation) {
   const failedCompositeItems = Array.isArray(compositeResponse)
     ? compositeResponse.filter((item) => !item?.success)
     : []
 
   if (failedCompositeItems.length > 0 || !Array.isArray(compositeResponse)) {
-    throw new CompositeObjectOperationError(failedCompositeItems)
+    throw new CompositeObjectOperationError(failedCompositeItems, operation)
   }
 
   return compositeResponse
