@@ -17,6 +17,7 @@ import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforc
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
+import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request-builders/questions-and-answers-creation-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 import {
@@ -61,6 +62,12 @@ jest.mock(
     buildKeyFactsRequest: jest.fn()
   })
 )
+jest.mock(
+  '../../../lib/salesforce/request-builders/questions-and-answers-creation-request-builder.js',
+  () => ({
+    buildQuestionsAndAnswersRequest: jest.fn()
+  })
+)
 
 const ENDPOINT_PATH = '/case-management/case'
 const ENDPOINT_METHOD = 'POST'
@@ -77,6 +84,14 @@ const mockGetUserEmail = jest.spyOn(userContext, 'getUserEmail')
 const mockGetLinkedFiles = jest.spyOn(salesforceClient, 'getLinkedFiles')
 const mockAddKeyFacts = jest.spyOn(salesforceClient, 'addKeyFacts')
 const mockGetKeyFacts = jest.spyOn(salesforceClient, 'getKeyFacts')
+const mockAddQuestionsAndAnswers = jest.spyOn(
+  salesforceClient,
+  'addQuestionsAndAnswers'
+)
+const mockGetQuestionsAndAnswers = jest.spyOn(
+  salesforceClient,
+  'getQuestionsAndAnswers'
+)
 const mockLoggerError = jest.fn()
 
 /**
@@ -154,6 +169,14 @@ const mockSuccessfulKeyFactsResponse = [
   }
 ]
 
+const mockSuccessfulQuestionsAndAnswersResponse = [
+  {
+    id: 'TEST-QUESTION-ANSWER-123',
+    success: true,
+    errors: []
+  }
+]
+
 const mockApplicantDetaisls = {
   email: 'test@example.com',
   firstName: 'John',
@@ -179,6 +202,12 @@ beforeEach(() => {
   mockAddKeyFacts.mockResolvedValue(mockSuccessfulKeyFactsResponse)
   mockGetKeyFacts.mockReset()
   mockGetKeyFacts.mockResolvedValue({ records: [] })
+  mockAddQuestionsAndAnswers.mockReset()
+  mockAddQuestionsAndAnswers.mockResolvedValue(
+    mockSuccessfulQuestionsAndAnswersResponse
+  )
+  mockGetQuestionsAndAnswers.mockReset()
+  mockGetQuestionsAndAnswers.mockResolvedValue({ records: [] })
   mockLoggerError.mockReset()
   jest.mocked(buildApplicationCreationCompositeRequest).mockReturnValue({
     allOrNone: true,
@@ -199,6 +228,10 @@ beforeEach(() => {
     ContactId: ''
   })
   jest.mocked(buildKeyFactsRequest).mockReturnValue({
+    allOrNone: true,
+    records: []
+  })
+  jest.mocked(buildQuestionsAndAnswersRequest).mockReturnValue({
     allOrNone: true,
     records: []
   })
@@ -428,7 +461,7 @@ describe('POST /case-management/case', () => {
   })
 
   describe('Successful case creation', () => {
-    test('creates case and adds key facts when none already exist', async () => {
+    test('creates case and adds key facts and questions and answers when none already exist', async () => {
       const server = await createTestServer()
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -453,6 +486,12 @@ describe('POST /case-management/case', () => {
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything()
+      )
+      expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+      expect(mockAddQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+      expect(mockAddQuestionsAndAnswers).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything()
       )
@@ -490,6 +529,26 @@ describe('POST /case-management/case', () => {
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
+      expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+      expect(mockAddQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+    })
+
+    test('creates case and skips adding questions and answers if already present', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockGetQuestionsAndAnswers.mockResolvedValue({
+        records: [{ Id: 'existing-question-and-answer-id' }]
+      })
+
+      const payload = createValidPayload()
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(201)
+      expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+      expect(mockAddQuestionsAndAnswers).not.toHaveBeenCalled()
     })
 
     test('creates case, returns 201 Created and skips uploading application file if already present', async () => {
@@ -925,6 +984,32 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
+    test('returns 500 when getQuestionsAndAnswers fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockGetQuestionsAndAnswers.mockRejectedValue(
+        new Error('Connection failed')
+      )
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(4)
+      expect(mockAddQuestionsAndAnswers).not.toHaveBeenCalled()
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+    })
+
     test('returns 500 when addKeyFacts fails', async () => {
       const server = await createTestServer()
 
@@ -946,6 +1031,32 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(4)
+      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+    })
+
+    test('returns 500 when addQuestionsAndAnswers fails', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockAddQuestionsAndAnswers.mockRejectedValue(
+        new Error('Connection failed')
+      )
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+      expect(mockAddQuestionsAndAnswers).toHaveBeenCalledTimes(4)
       expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
     })
 
@@ -988,6 +1099,54 @@ describe('POST /case-management/case', () => {
                 {
                   errorCode: 'REQUIRED_FIELD_MISSING',
                   message: 'Missing key'
+                }
+              ]
+            }
+          ]
+        }),
+        'Composite operations failed in Salesforce'
+      )
+    })
+
+    test('returns 500 and logs failed operations when addQuestionsAndAnswers returns unsuccessful objects', async () => {
+      const server = await createTestServer()
+
+      const compositeObjectError = new CompositeObjectOperationError([
+        {
+          id: 'TEST-QUESTION-AND-ANSWER-123',
+          success: false,
+          errors: [
+            { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing question' }
+          ]
+        }
+      ])
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockAddQuestionsAndAnswers.mockRejectedValue(compositeObjectError)
+
+      const payload = createValidPayload()
+
+      const responsePromise = createCase(server, payload)
+      await jest.runAllTimersAsync()
+      const res = await responsePromise
+
+      expect(res.statusCode).toBe(500)
+
+      const body = /** @type {Record<string, any>} */ (res.result)
+      expect(body).toMatchObject(genericError)
+
+      expect(mockAddQuestionsAndAnswers).toHaveBeenCalledTimes(4)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endpoint: 'case-management/case',
+          failedOperations: [
+            {
+              errors: [
+                {
+                  errorCode: 'REQUIRED_FIELD_MISSING',
+                  message: 'Missing question'
                 }
               ]
             }
