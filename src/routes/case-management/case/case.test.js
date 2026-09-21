@@ -13,7 +13,10 @@ import hapiPino from 'hapi-pino'
 import { salesforceClient } from '../../../lib/salesforce/client.js'
 import * as userContext from '../../../common/helpers/user-context.js'
 import { buildApplicationCreationCompositeRequest } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
-import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
+import {
+  buildFileTitle,
+  buildSupportingMaterialsCompositeRequest
+} from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
@@ -40,6 +43,7 @@ jest.mock(
 jest.mock(
   '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js',
   () => ({
+    buildFileTitle: jest.fn(),
     buildSupportingMaterialsCompositeRequest: jest.fn()
   })
 )
@@ -72,6 +76,9 @@ jest.mock(
 const ENDPOINT_PATH = '/case-management/case'
 const ENDPOINT_METHOD = 'POST'
 const TEST_APP_REF = 'TB-1234-ABCD'
+const SECTION_KEY = 'section-key'
+const UPLOAD_QUESTION_KEY = 'upload-question-key'
+const FILE_TITLE = `${SECTION_KEY}_${UPLOAD_QUESTION_KEY}`
 
 const mockSendComposite = jest.spyOn(salesforceClient, 'sendComposite')
 const mockCreateCustomer = jest.spyOn(salesforceClient, 'createCustomer')
@@ -217,6 +224,7 @@ beforeEach(() => {
     allOrNone: true,
     compositeRequest: []
   })
+  jest.mocked(buildFileTitle).mockReturnValue(FILE_TITLE)
   jest.mocked(buildCustomerCreationPayload).mockReturnValue({
     FirstName: mockApplicantDetaisls.firstName,
     LastName: mockApplicantDetaisls.lastName,
@@ -301,7 +309,7 @@ function createValidPayload() {
     applicationReferenceNumber: TEST_APP_REF,
     sections: [
       {
-        sectionKey: 'section-key',
+        sectionKey: SECTION_KEY,
         title: 'Section Title',
         questionAnswers: [
           {
@@ -604,7 +612,7 @@ describe('POST /case-management/case', () => {
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledTimes(1)
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(
         expect.any(String),
-        'section-key',
+        SECTION_KEY,
         'upload',
         's3/path/file.pdf'
       )
@@ -622,7 +630,7 @@ describe('POST /case-management/case', () => {
         records: [
           {
             ContentDocument: {
-              Title: filePath
+              Title: FILE_TITLE
             }
           }
         ]
@@ -631,7 +639,7 @@ describe('POST /case-management/case', () => {
       const payload = createValidPayload()
       payload.sections[0].questionAnswers.push({
         question: 'Upload your document',
-        questionKey: 'upload-one',
+        questionKey: UPLOAD_QUESTION_KEY,
         answer: {
           type: 'file',
           value: {
@@ -696,13 +704,13 @@ describe('POST /case-management/case', () => {
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledTimes(2)
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(
         expect.any(String),
-        'section-key',
+        SECTION_KEY,
         'upload-one',
         's3/path/file-one.pdf'
       )
       expect(buildSupportingMaterialsCompositeRequest).toHaveBeenCalledWith(
         expect.any(String),
-        'section-key',
+        SECTION_KEY,
         'upload-two',
         's3/path/file-two.pdf'
       )
