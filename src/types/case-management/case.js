@@ -282,7 +282,14 @@ export const CreateCasePayloadSchema = Joi.object({
   .label('Create Case Request')
 
 export const GetCaseParamsSchema = Joi.object({
-  caseId: Joi.string().required().label('Case ID')
+  caseId: Joi.string()
+    .pattern(/^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$/)
+    .required()
+    .label('Case ID')
+    .messages({
+      'string.pattern.base':
+        'caseId must be a valid Salesforce ID (15 or 18 alphanumeric characters)'
+    })
 })
 
 export const CaseData = Joi.object({

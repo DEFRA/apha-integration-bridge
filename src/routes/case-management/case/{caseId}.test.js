@@ -1,4 +1,5 @@
 import Hapi from '@hapi/hapi'
+import Boom from '@hapi/boom'
 import {
   test,
   expect,
@@ -63,7 +64,15 @@ async function createTestServer() {
 
   server.auth.scheme('simple', () => {
     return {
-      authenticate: (request, h) => h.authenticated({ credentials: {} })
+      authenticate: (request, h) => {
+        const authHeader = request.raw.req.headers.authorization
+
+        if (!authHeader?.startsWith('Bearer ')) {
+          throw Boom.unauthorized('Missing or invalid Authorization header')
+        }
+
+        return h.authenticated({ credentials: {} })
+      }
     }
   })
 
@@ -101,6 +110,22 @@ async function getCase(server, caseId, headers = {}) {
 }
 
 describe('GET /case-management/case/{caseId}', () => {
+  describe('Authentication', () => {
+    test('requires authentication explicitly', () => {
+      expect(route.default.options.auth).toEqual({ mode: 'required' })
+    })
+
+    test('returns 401 when Authorization header is missing', async () => {
+      const server = await createTestServer()
+
+      const res = await getCase(server, TEST_CASE_ID, { authorization: '' })
+
+      expect(res.statusCode).toBe(401)
+      expect(mockGetUserAccessToken).not.toHaveBeenCalled()
+      expect(mockSendQuery).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Successful case retrieval', () => {
     test('returns case details when case exists with user context', async () => {
       const server = await createTestServer()
@@ -222,7 +247,7 @@ describe('GET /case-management/case/{caseId}', () => {
         done: true
       })
 
-      const res = await getCase(server, 'NONEXISTENT123', {
+      const res = await getCase(server, '500ZZZ999999999', {
         'x-forwarded-authorization': 'Bearer test-user-jwt-token'
       })
 
@@ -236,7 +261,7 @@ describe('GET /case-management/case/{caseId}', () => {
         errors: [
           {
             code: 'CASE_NOT_FOUND',
-            message: 'Case with ID NONEXISTENT123 was not found'
+            message: 'Case with ID 500ZZZ999999999 was not found'
           }
         ]
       })
@@ -246,33 +271,62 @@ describe('GET /case-management/case/{caseId}', () => {
     })
   })
 
-  describe('SOQL injection prevention', () => {
-    test('escapes single quotes in case ID to prevent SOQL injection', async () => {
+  describe('Case ID validation', () => {
+    test.each([
+      ["500ABC' OR '1'='1"],
+      ["abc' OR Id != '"],
+      ['500ABC12345678'], // 14 chars - too short
+      ['500ABC1234567890123'], // 19 chars - too long
+      ['500ABC12345678!'] // non-alphanumeric
+    ])(
+      'returns 400 for malformed case ID %p without querying Salesforce',
+      async (maliciousCaseId) => {
+        const server = await createTestServer()
+
+        mockGetUserEmail.mockReturnValue(TEST_USER_EMAIL)
+
+        const res = await getCase(server, maliciousCaseId, {
+          'x-forwarded-authorization': 'Bearer [REDACTED]'
+        })
+
+        expect(res.statusCode).toBe(400)
+
+        const body = /** @type {Record<string, any>} */ (res.result)
+
+        expect(body).toMatchObject({
+          code: 'BAD_REQUEST',
+          errors: [{ code: 'VALIDATION_ERROR' }]
+        })
+
+        // The malicious input must never reach Salesforce.
+        expect(mockGetUserAccessToken).not.toHaveBeenCalled()
+        expect(mockSendQuery).not.toHaveBeenCalled()
+      }
+    )
+
+    test('accepts 18-character Salesforce IDs', async () => {
       const server = await createTestServer()
 
       mockGetUserEmail.mockReturnValue(TEST_USER_EMAIL)
 
+      const longId = '500ABC123456789ABC'
+
       mockSendQuery.mockResolvedValueOnce({
-        records: [],
-        totalSize: 0,
+        records: [{ ...mockCaseRecord, Id: longId }],
+        totalSize: 1,
         done: true
       })
 
-      const maliciousCaseId = "500ABC' OR '1'='1"
-      const res = await getCase(server, maliciousCaseId, {
-        'x-forwarded-authorization': 'Bearer test-user-jwt-token'
+      const res = await getCase(server, longId, {
+        'x-forwarded-authorization': 'Bearer [REDACTED]'
       })
 
-      expect(res.statusCode).toBe(404) // Not found since it's escaped
-
+      expect(res.statusCode).toBe(200)
       expect(mockSendQuery).toHaveBeenCalledWith(
-        expect.stringContaining("\\'"),
+        expect.stringContaining(longId),
         MOCK_SALESFORCE_TOKEN,
         expect.anything()
       )
-
-      const calledQuery = mockSendQuery.mock.calls[0][0]
-      expect(calledQuery).toContain("500ABC\\' OR \\'1\\'=\\'1")
     })
   })
 
@@ -339,6 +393,23 @@ describe('GET /case-management/case/{caseId}', () => {
   })
 
   describe('User authentication requirements', () => {
+    test('rejects a forwarded token that fails verification', async () => {
+      const server = await createTestServer()
+
+      // getUserEmail returns null when the forwarded JWT signature, issuer
+      // or expiry does not verify (e.g. a hand-made token).
+      mockGetUserEmail.mockReturnValue(null)
+
+      const res = await getCase(server, TEST_CASE_ID, {
+        'x-forwarded-authorization': 'Bearer hand-made.jwt.token'
+      })
+
+      expect(res.statusCode).toBe(400)
+      expect(mockGetUserEmail).toHaveBeenCalled()
+      expect(mockGetUserAccessToken).not.toHaveBeenCalled()
+      expect(mockSendQuery).not.toHaveBeenCalled()
+    })
+
     test('requires X-Forwarded-Authorization header', async () => {
       const server = await createTestServer()
 
