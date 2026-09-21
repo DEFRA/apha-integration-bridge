@@ -6,6 +6,16 @@ import { buildFileUploadAndLinkCompositeRequest } from './file-upload-and-link-r
  */
 
 /**
+ *
+ * @param {string} sectionKey
+ * @param {string} questionKey
+ * @returns {string}
+ */
+export function buildFileTitle(sectionKey, questionKey) {
+  return `${sectionKey}_${questionKey}`
+}
+
+/**
  * @param {string} caseId
  * @param {string} sectionKey
  * @param {string} questionKey
@@ -19,7 +29,7 @@ export async function buildSupportingMaterialsCompositeRequest(
   filePath
 ) {
   const fileData = await fetchFile(filePath)
-  const fileTitle = `${sectionKey}_${questionKey}`
+  const fileTitle = buildFileTitle(sectionKey, questionKey)
   return buildFileUploadAndLinkCompositeRequest(
     fileData.file.toString('base64'),
     fileTitle,

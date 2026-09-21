@@ -1,6 +1,9 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals'
 
-import { buildSupportingMaterialsCompositeRequest } from './supporting-materials-request-builder.js'
+import {
+  buildFileTitle,
+  buildSupportingMaterialsCompositeRequest
+} from './supporting-materials-request-builder.js'
 import * as fileUploadAndLinkRequestBuilder from './file-upload-and-link-request-builder.js'
 import * as fileUtils from '../../../common/helpers/file/file-utils.js'
 
@@ -26,6 +29,14 @@ jest
     'buildFileUploadAndLinkCompositeRequest'
   )
   .mockReturnValue(mockCompositeRequest)
+
+describe('buildFileTitle', () => {
+  test('should concatenate the section and question keys to form the file title', () => {
+    expect(buildFileTitle('section-2', 'question-2')).toBe(
+      'section-2_question-2'
+    )
+  })
+})
 
 describe('buildSupportingMaterialsCompositeRequest', () => {
   beforeEach(() => {

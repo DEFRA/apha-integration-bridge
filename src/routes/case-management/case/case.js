@@ -16,7 +16,10 @@ import {
 } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
-import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
+import {
+  buildSupportingMaterialsCompositeRequest,
+  buildFileTitle
+} from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
@@ -382,7 +385,9 @@ async function uploadSupportingMaterials(request, caseId) {
       ) {
         const filePath = questionAnswer.answer.value.path
         const isFileAlreadyUploaded = caseFiles.some(
-          (file) => file.ContentDocument.Title === filePath
+          (file) =>
+            file.ContentDocument.Title ===
+            buildFileTitle(section.sectionKey, questionAnswer.questionKey)
         )
         if (!isFileAlreadyUploaded) {
           await uploadCaseFile(
