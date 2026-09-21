@@ -19,10 +19,11 @@ export async function buildSupportingMaterialsCompositeRequest(
   filePath
 ) {
   const fileData = await fetchFile(filePath)
+  const fileTitle = `${sectionKey}_${questionKey}`
   return buildFileUploadAndLinkCompositeRequest(
     fileData.file.toString('base64'),
-    filePath,
-    `${sectionKey}.${questionKey}.${fileData.extension}`,
+    fileTitle,
+    `${fileTitle}.${fileData.extension}`,
     caseId
   )
 }
