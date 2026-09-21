@@ -37,6 +37,8 @@ describe('buildSupportingMaterialsCompositeRequest', () => {
     const sectionKey = 'section-2'
     const questionKey = 'question-2'
     const filePath = '/path/to/document.pdf'
+    const expectedTitle = 'section-2_question-2'
+    const expectedPath = 'section-2_question-2.pdf'
 
     const result = await buildSupportingMaterialsCompositeRequest(
       caseId,
@@ -46,12 +48,11 @@ describe('buildSupportingMaterialsCompositeRequest', () => {
     )
 
     const expectedBase64 = mockFileData.file.toString('base64')
-    const expectedPath = `${sectionKey}.${questionKey}.${mockFileData.extension}`
 
     expect(fileUtils.fetchFile).toHaveBeenCalledWith(filePath)
     expect(
       fileUploadAndLinkRequestBuilder.buildFileUploadAndLinkCompositeRequest
-    ).toHaveBeenCalledWith(expectedBase64, filePath, expectedPath, caseId)
+    ).toHaveBeenCalledWith(expectedBase64, expectedTitle, expectedPath, caseId)
     expect(result).toBe(mockCompositeRequest)
   })
 })
