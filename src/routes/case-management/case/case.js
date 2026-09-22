@@ -114,7 +114,10 @@ async function runCaseCreationFlow(request, action) {
   try {
     await action()
   } catch (error) {
-    handleCaseCreationError(error, request)
+    handleCaseCreationError(
+      /** @type {Error & {operation?: string}} */ (error),
+      request
+    )
   }
 }
 
@@ -404,8 +407,14 @@ async function uploadSupportingMaterials(request, caseId) {
 }
 
 /**
+ * `error.operation` is set by the Salesforce client (see client.js's
+ * `sendRequest`/`sendQuery`/composite handling) to whichever step of the
+ * case-creation flow made the failing call (e.g. `addKeyFacts`). Every
+ * branch below surfaces it - both in the message, so it reads clearly in a
+ * log viewer without opening the stack trace, and as a field, so it can be
+ * filtered/aggregated on.
  *
- * @param {Error} error
+ * @param {Error & {operation?: string}} error
  * @param {Request} request
  */
 function handleCaseCreationError(error, request) {
@@ -425,12 +434,15 @@ function handleCaseCreationError(error, request) {
     ]).boomify()
   }
 
+  const step = error.operation || 'unknown'
+
   if (error instanceof CompositeOperationError) {
     const failedItems = /** @type {CompositeResponseItem[]} */ (
       error.failedItems
     )
     logCompositeOperations(
       request,
+      step,
       failedItems.map((item) => ({
         referenceId: item.referenceId,
         httpStatusCode: item.httpStatusCode,
@@ -443,6 +455,7 @@ function handleCaseCreationError(error, request) {
     )
     logCompositeOperations(
       request,
+      step,
       failedItems.map((item) => ({
         errors: mapSalesforceErrors(item.errors)
       }))
@@ -451,9 +464,10 @@ function handleCaseCreationError(error, request) {
     request.logger.error(
       {
         err: error,
-        endpoint: 'case-management/case'
+        endpoint: 'case-management/case',
+        operation: step
       },
-      'Failed to create case in Salesforce'
+      `Failed to create case in Salesforce during step "${step}": ${error.message}`
     )
   }
 
@@ -484,15 +498,17 @@ function mapSalesforceErrors(errors) {
 /**
  *
  * @param {Request} request
+ * @param {string} step
  * @param {Array<Object>} failedOperations
  */
-function logCompositeOperations(request, failedOperations) {
+function logCompositeOperations(request, step, failedOperations) {
   request.logger.error(
     {
       endpoint: 'case-management/case',
+      operation: step,
       failedOperations
     },
-    'Composite operations failed in Salesforce'
+    `Composite operations failed in Salesforce during step "${step}"`
   )
 }
 
