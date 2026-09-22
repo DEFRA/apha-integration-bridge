@@ -14,13 +14,13 @@ Use this endpoint to fetch current details for a single case.
 - `Accept: application/vnd.apha.1+json` is supported.
 - `Authorization: Bearer <service-token>` is required in our deployed setup.
 
-The forwarded user token must include an email claim so user context can be resolved.
+The forwarded user token must include an email claim so user context can be resolved. Its signature, issuer and expiry are verified against the trusted issuers before the email is used — hand-made tokens are rejected.
 
 ## Path parameter
 
-| Parameter | Type   | Required | Rules                                           |
-| --------- | ------ | -------- | ----------------------------------------------- |
-| `caseId`  | string | Yes      | Case identifier (for example `500ABC123456789`) |
+| Parameter | Type   | Required | Rules                                                               |
+| --------- | ------ | -------- | ------------------------------------------------------------------- |
+| `caseId`  | string | Yes      | Salesforce ID: 15 or 18 alphanumeric chars (e.g. `500ABC123456789`) |
 
 Example:
 
