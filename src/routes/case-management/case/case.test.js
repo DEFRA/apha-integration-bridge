@@ -746,12 +746,6 @@ describe('POST /case-management/case', () => {
     }
 
     /**
-     * case.js reads `error.operation`, which the real Salesforce client sets
-     * on every error it throws (see client.js). These tests mock
-     * salesforceClient methods directly, bypassing the client's own
-     * tagging, so the mocked rejection needs to carry the `operation` the
-     * real client would have attached.
-     *
      * @param {string} message
      * @param {string} operation
      */

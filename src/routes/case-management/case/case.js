@@ -407,13 +407,11 @@ async function uploadSupportingMaterials(request, caseId) {
 }
 
 /**
- * `error.operation` is set by the Salesforce client (see client.js's
- * `sendRequest`/`sendQuery`/composite handling) to whichever step of the
- * case-creation flow made the failing call (e.g. `addKeyFacts`). Every
- * branch below surfaces it - both in the message, so it reads clearly in a
- * log viewer without opening the stack trace, and as a field, so it can be
- * filtered/aggregated on.
- *
+/**
+ * `error.operation` is set by the Salesforce client (see `client.js`)
+ * to show which step failed, for example `addKeyFacts`. We include it
+ * in both the error message and as a separate field so it is easy to
+ * see in logs and can also be used for filtering or grouping errors.
  * @param {Error & {operation?: string}} error
  * @param {Request} request
  */
