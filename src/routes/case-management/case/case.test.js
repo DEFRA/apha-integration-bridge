@@ -731,13 +731,27 @@ describe('POST /case-management/case', () => {
       ]
     }
 
-    const errorLogCallArguments = [
-      expect.objectContaining({
-        err: expect.any(Error),
-        endpoint: 'case-management/case'
-      }),
-      'Failed to create case in Salesforce'
-    ]
+    /**
+     * @param {string} step
+     */
+    function errorLogCallArgumentsForStep(step) {
+      return [
+        expect.objectContaining({
+          err: expect.any(Error),
+          endpoint: 'case-management/case',
+          operation: step
+        }),
+        expect.stringContaining(`during step "${step}"`)
+      ]
+    }
+
+    /**
+     * @param {string} message
+     * @param {string} operation
+     */
+    function stepError(message, operation) {
+      return Object.assign(new Error(message), { operation })
+    }
 
     beforeAll(() => {
       jest.useFakeTimers()
@@ -754,10 +768,18 @@ describe('POST /case-management/case', () => {
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       // Mock createCustomer failure - will be retried 4 times (initial + 3 retries)
       mockCreateCustomer
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
+        .mockRejectedValueOnce(
+          stepError('Service unavailable', 'createCustomer')
+        )
 
       const payload = createValidPayload()
 
@@ -771,7 +793,9 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateCustomer).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('createCustomer')
+      )
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
@@ -781,10 +805,18 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockSendComposite
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
+        .mockRejectedValueOnce(
+          stepError('Connection failed', 'createApplication')
+        )
 
       const payload = createValidPayload()
 
@@ -798,26 +830,31 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('createApplication')
+      )
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
 
     test('returns 500 when composite operations within createApplication partially fail', async () => {
       const server = await createTestServer()
 
-      const compositeError = new CompositeOperationError([
-        {
-          body: [
-            {
-              errorCode: 'REQUIRED_FIELD_MISSING',
-              message: 'Required field missing'
-            }
-          ],
-          httpHeaders: {},
-          httpStatusCode: 400,
-          referenceId: 'updateContact'
-        }
-      ])
+      const compositeError = new CompositeOperationError(
+        [
+          {
+            body: [
+              {
+                errorCode: 'REQUIRED_FIELD_MISSING',
+                message: 'Required field missing'
+              }
+            ],
+            httpHeaders: {},
+            httpStatusCode: 400,
+            referenceId: 'updateContact'
+          }
+        ],
+        'createApplication'
+      )
 
       mockSendComposite.mockRejectedValue(compositeError)
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
@@ -839,6 +876,7 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(
         expect.objectContaining({
           endpoint: 'case-management/case',
+          operation: 'createApplication',
           failedOperations: [
             {
               referenceId: 'updateContact',
@@ -852,7 +890,7 @@ describe('POST /case-management/case', () => {
             }
           ]
         }),
-        'Composite operations failed in Salesforce'
+        expect.stringContaining('during step "createApplication"')
       )
       expect(mockCreateOrUpdateCase).not.toHaveBeenCalled()
     })
@@ -948,10 +986,10 @@ describe('POST /case-management/case', () => {
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       // Mock createCase failure - will be retried 4 times (initial + 3 retries)
       mockCreateOrUpdateCase
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
-        .mockRejectedValueOnce(new Error('Service unavailable'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
+        .mockRejectedValueOnce(stepError('Service unavailable', 'createCase'))
 
       const payload = createValidPayload()
 
@@ -965,7 +1003,9 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('createCase')
+      )
     })
 
     test('returns 500 when getKeyFacts fails', async () => {
@@ -974,7 +1014,9 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockGetKeyFacts.mockRejectedValue(new Error('Connection failed'))
+      mockGetKeyFacts.mockRejectedValue(
+        stepError('Connection failed', 'getKeyFacts')
+      )
 
       const payload = createValidPayload()
 
@@ -989,7 +1031,9 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(4)
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('getKeyFacts')
+      )
     })
 
     test('returns 500 when getQuestionsAndAnswers fails', async () => {
@@ -999,7 +1043,7 @@ describe('POST /case-management/case', () => {
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockGetQuestionsAndAnswers.mockRejectedValue(
-        new Error('Connection failed')
+        stepError('Connection failed', 'getQuestionsAndAnswers')
       )
 
       const payload = createValidPayload()
@@ -1015,7 +1059,9 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(4)
       expect(mockAddQuestionsAndAnswers).not.toHaveBeenCalled()
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('getQuestionsAndAnswers')
+      )
     })
 
     test('returns 500 when addKeyFacts fails', async () => {
@@ -1024,7 +1070,9 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockAddKeyFacts.mockRejectedValue(new Error('Connection failed'))
+      mockAddKeyFacts.mockRejectedValue(
+        stepError('Connection failed', 'addKeyFacts')
+      )
 
       const payload = createValidPayload()
 
@@ -1039,7 +1087,9 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetKeyFacts).toHaveBeenCalledTimes(1)
       expect(mockAddKeyFacts).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('addKeyFacts')
+      )
     })
 
     test('returns 500 when addQuestionsAndAnswers fails', async () => {
@@ -1049,7 +1099,7 @@ describe('POST /case-management/case', () => {
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
       mockAddQuestionsAndAnswers.mockRejectedValue(
-        new Error('Connection failed')
+        stepError('Connection failed', 'addQuestionsAndAnswers')
       )
 
       const payload = createValidPayload()
@@ -1065,21 +1115,26 @@ describe('POST /case-management/case', () => {
 
       expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(1)
       expect(mockAddQuestionsAndAnswers).toHaveBeenCalledTimes(4)
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('addQuestionsAndAnswers')
+      )
     })
 
     test('returns 500 and logs failed operations when addKeyFacts returns unsuccessful objects', async () => {
       const server = await createTestServer()
 
-      const compositeObjectError = new CompositeObjectOperationError([
-        {
-          id: 'TEST-KEY-FACT-123',
-          success: false,
-          errors: [
-            { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
-          ]
-        }
-      ])
+      const compositeObjectError = new CompositeObjectOperationError(
+        [
+          {
+            id: 'TEST-KEY-FACT-123',
+            success: false,
+            errors: [
+              { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
+            ]
+          }
+        ],
+        'addKeyFacts'
+      )
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
@@ -1101,6 +1156,7 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(
         expect.objectContaining({
           endpoint: 'case-management/case',
+          operation: 'addKeyFacts',
           failedOperations: [
             {
               errors: [
@@ -1112,22 +1168,28 @@ describe('POST /case-management/case', () => {
             }
           ]
         }),
-        'Composite operations failed in Salesforce'
+        expect.stringContaining('during step "addKeyFacts"')
       )
     })
 
     test('returns 500 and logs failed operations when addQuestionsAndAnswers returns unsuccessful objects', async () => {
       const server = await createTestServer()
 
-      const compositeObjectError = new CompositeObjectOperationError([
-        {
-          id: 'TEST-QUESTION-AND-ANSWER-123',
-          success: false,
-          errors: [
-            { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing question' }
-          ]
-        }
-      ])
+      const compositeObjectError = new CompositeObjectOperationError(
+        [
+          {
+            id: 'TEST-QUESTION-AND-ANSWER-123',
+            success: false,
+            errors: [
+              {
+                errorCode: 'REQUIRED_FIELD_MISSING',
+                message: 'Missing question'
+              }
+            ]
+          }
+        ],
+        'addQuestionsAndAnswers'
+      )
 
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
@@ -1149,6 +1211,7 @@ describe('POST /case-management/case', () => {
       expect(mockLoggerError).toHaveBeenCalledWith(
         expect.objectContaining({
           endpoint: 'case-management/case',
+          operation: 'addQuestionsAndAnswers',
           failedOperations: [
             {
               errors: [
@@ -1160,7 +1223,7 @@ describe('POST /case-management/case', () => {
             }
           ]
         }),
-        'Composite operations failed in Salesforce'
+        expect.stringContaining('during step "addQuestionsAndAnswers"')
       )
     })
 
@@ -1172,10 +1235,10 @@ describe('POST /case-management/case', () => {
       mockSendComposite
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application creation
         .mockResolvedValueOnce(mockSuccessfulCompositeResponse) // for application file upload
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
-        .mockRejectedValueOnce(new Error('Connection failed'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
+        .mockRejectedValueOnce(stepError('Connection failed', 'uploadCaseFile'))
 
       const payload = createValidPayload()
       payload.sections[0].questionAnswers.push({
@@ -1200,7 +1263,9 @@ describe('POST /case-management/case', () => {
       expect(body).toMatchObject(genericError)
 
       expect(mockSendComposite).toHaveBeenCalledTimes(6) // 2 for application creation and json file upload + 4 for supporting materials retries
-      expect(mockLoggerError).toHaveBeenCalledWith(...errorLogCallArguments)
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        ...errorLogCallArgumentsForStep('uploadCaseFile')
+      )
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
 

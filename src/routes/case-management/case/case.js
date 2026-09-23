@@ -36,6 +36,7 @@ import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request
  * @import {Logger} from 'pino'
  * @import {CompositeResponseItem, CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
  * @import {SalesforceError} from '../../../types/salesforce/composite-response.js'
+ * @import {SalesforceOperationError} from '../../../types/salesforce/operation-error.js'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -114,7 +115,10 @@ async function runCaseCreationFlow(request, action) {
   try {
     await action()
   } catch (error) {
-    handleCaseCreationError(error, request)
+    handleCaseCreationError(
+      /** @type {SalesforceOperationError} */ (error),
+      request
+    )
   }
 }
 
@@ -404,8 +408,7 @@ async function uploadSupportingMaterials(request, caseId) {
 }
 
 /**
- *
- * @param {Error} error
+ * @param {SalesforceOperationError} error
  * @param {Request} request
  */
 function handleCaseCreationError(error, request) {
@@ -425,12 +428,15 @@ function handleCaseCreationError(error, request) {
     ]).boomify()
   }
 
+  const step = error.operation || 'unknown'
+
   if (error instanceof CompositeOperationError) {
     const failedItems = /** @type {CompositeResponseItem[]} */ (
       error.failedItems
     )
     logCompositeOperations(
       request,
+      step,
       failedItems.map((item) => ({
         referenceId: item.referenceId,
         httpStatusCode: item.httpStatusCode,
@@ -443,6 +449,7 @@ function handleCaseCreationError(error, request) {
     )
     logCompositeOperations(
       request,
+      step,
       failedItems.map((item) => ({
         errors: mapSalesforceErrors(item.errors)
       }))
@@ -451,9 +458,10 @@ function handleCaseCreationError(error, request) {
     request.logger.error(
       {
         err: error,
-        endpoint: 'case-management/case'
+        endpoint: 'case-management/case',
+        operation: step
       },
-      'Failed to create case in Salesforce'
+      `Failed to create case in Salesforce during step "${step}": ${error.message}`
     )
   }
 
@@ -484,15 +492,17 @@ function mapSalesforceErrors(errors) {
 /**
  *
  * @param {Request} request
+ * @param {string} step
  * @param {Array<Object>} failedOperations
  */
-function logCompositeOperations(request, failedOperations) {
+function logCompositeOperations(request, step, failedOperations) {
   request.logger.error(
     {
       endpoint: 'case-management/case',
+      operation: step,
       failedOperations
     },
-    'Composite operations failed in Salesforce'
+    `Composite operations failed in Salesforce during step "${step}"`
   )
 }
 
