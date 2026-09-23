@@ -13,7 +13,7 @@ import {
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
  * @import {CompositeObjectResponse} from '../../types/salesforce/composite-response.js'
  * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
- * @import {SalesforceOperationError} from './composite-errors.js'
+ * @import {SalesforceOperationError} from '../../types/salesforce/operation-error.js'
  */
 
 const TOKEN_EXPIRY_BUFFER_MS = 5000

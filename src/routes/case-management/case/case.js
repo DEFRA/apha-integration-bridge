@@ -36,7 +36,7 @@ import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request
  * @import {Logger} from 'pino'
  * @import {CompositeResponseItem, CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
  * @import {SalesforceError} from '../../../types/salesforce/composite-response.js'
- * @import {SalesforceOperationError} from '../../../lib/salesforce/composite-errors.js'
+ * @import {SalesforceOperationError} from '../../../types/salesforce/operation-error.js'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
