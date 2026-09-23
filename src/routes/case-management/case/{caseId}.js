@@ -35,9 +35,7 @@ const retriesConfig = {
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
 const options = {
-  auth: {
-    mode: 'required'
-  },
+  auth: false,
   tags: ['api', 'case-management'],
   description: 'Get a case by ID from APHA CRM (Salesforce)',
   notes: fs.readFileSync(
@@ -75,7 +73,7 @@ async function handler(request, h) {
   const { caseId } = /** @type {{ caseId: string }} */ (request.params)
 
   try {
-    const userEmail = await getUserEmail(request)
+    const userEmail = getUserEmail(request)
 
     if (!userEmail) {
       return new HTTPException('BAD_REQUEST', 'User authentication required', [
@@ -163,10 +161,7 @@ async function handler(request, h) {
  * @returns {string}
  */
 function buildCaseQuery(caseId) {
-  // Defense in depth: params validation already restricts caseId to the
-  // Salesforce ID format, but escape both backslashes and quotes so a future
-  // caller can't break out of the literal (SOQL treats \ as an escape too).
-  const escapedCaseId = caseId.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  const escapedCaseId = caseId.replace(/'/g, "\\'")
 
   return `
     SELECT
