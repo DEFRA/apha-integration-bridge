@@ -36,6 +36,7 @@ import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request
  * @import {Logger} from 'pino'
  * @import {CompositeResponseItem, CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
  * @import {SalesforceError} from '../../../types/salesforce/composite-response.js'
+ * @import {SalesforceOperationError} from '../../../lib/salesforce/composite-errors.js'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -115,7 +116,7 @@ async function runCaseCreationFlow(request, action) {
     await action()
   } catch (error) {
     handleCaseCreationError(
-      /** @type {Error & {operation?: string}} */ (error),
+      /** @type {SalesforceOperationError} */ (error),
       request
     )
   }
@@ -407,12 +408,7 @@ async function uploadSupportingMaterials(request, caseId) {
 }
 
 /**
-/**
- * `error.operation` is set by the Salesforce client (see `client.js`)
- * to show which step failed, for example `addKeyFacts`. We include it
- * in both the error message and as a separate field so it is easy to
- * see in logs and can also be used for filtering or grouping errors.
- * @param {Error & {operation?: string}} error
+ * @param {SalesforceOperationError} error
  * @param {Request} request
  */
 function handleCaseCreationError(error, request) {
