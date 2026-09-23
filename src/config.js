@@ -307,12 +307,7 @@ const config = convict({
       doc: 'Log paths to redact',
       format: Array,
       default: isProduction
-        ? [
-            'req.headers.authorization',
-            'req.headers.cookie',
-            'req.headers.x-forwarded-authorization',
-            'res.headers'
-          ]
+        ? ['req.headers.authorization', 'req.headers.cookie', 'res.headers']
         : ['req', 'res', 'responseTime']
     }
   },
