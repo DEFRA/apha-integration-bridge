@@ -204,7 +204,7 @@ beforeEach(() => {
   mockSendQuery.mockResolvedValue({ records: [] })
   mockGetUserEmail.mockReturnValue(null)
   mockGetLinkedFiles.mockReset()
-  mockGetLinkedFiles.mockResolvedValue({ records: [] })
+  mockGetLinkedFiles.mockResolvedValue([])
   mockAddKeyFacts.mockReset()
   mockAddKeyFacts.mockResolvedValue(mockSuccessfulKeyFactsResponse)
   mockGetKeyFacts.mockReset()
@@ -567,7 +567,12 @@ describe('POST /case-management/case', () => {
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
 
       // mock query to return a record indicating the application file is already linked to the case
-      mockGetLinkedFiles.mockResolvedValue({ records: [{}] })
+      mockGetLinkedFiles.mockResolvedValue([
+        {
+          title: TEST_APP_REF,
+          pathOnClient: 'some-path.pdf'
+        }
+      ])
 
       const payload = createValidPayload()
       const res = await createCase(server, payload)
@@ -575,6 +580,27 @@ describe('POST /case-management/case', () => {
       expect(res.statusCode).toBe(201)
       expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
       expect(mockSendComposite).toHaveBeenCalledTimes(1)
+      expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
+    })
+
+    test('creates case, returns 201 Created and uploads application file when existing file does not match the application reference', async () => {
+      const server = await createTestServer()
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      mockGetLinkedFiles.mockResolvedValue([
+        {
+          title: 'different-application-ref',
+          pathOnClient: 'different-path.pdf'
+        }
+      ])
+
+      const payload = createValidPayload()
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(201)
+      expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
+      expect(mockSendComposite).toHaveBeenCalledTimes(2)
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
 
@@ -626,15 +652,12 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockSendComposite.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockGetLinkedFiles.mockResolvedValue({
-        records: [
-          {
-            ContentDocument: {
-              Title: FILE_TITLE
-            }
-          }
-        ]
-      })
+      mockGetLinkedFiles.mockResolvedValue([
+        {
+          title: FILE_TITLE,
+          pathOnClient: 'path'
+        }
+      ])
 
       const payload = createValidPayload()
       payload.sections[0].questionAnswers.push({
@@ -654,7 +677,7 @@ describe('POST /case-management/case', () => {
       expect(res.statusCode).toBe(201)
       expect(mockCreateCustomer).toHaveBeenCalledTimes(1)
       expect(buildSupportingMaterialsCompositeRequest).not.toHaveBeenCalled()
-      expect(mockSendComposite).toHaveBeenCalledTimes(1)
+      expect(mockSendComposite).toHaveBeenCalledTimes(2)
       expect(mockCreateOrUpdateCase).toHaveBeenCalledTimes(1)
     })
 
