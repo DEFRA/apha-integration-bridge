@@ -234,8 +234,12 @@ async function createApplicationAndFile(request) {
   const applicationId = await createApplication(request)
 
   if (applicationId) {
-    const files = await getLinkedFiles(request, applicationId)
-    if (files.length === 0) {
+    const caseFiles = await getLinkedFiles(request, applicationId)
+    const payload = /** @type {CreateCasePayload} */ (request.payload)
+    const isFileAlreadyUploaded = caseFiles.some((file) => {
+      return file.title === payload.applicationReferenceNumber
+    })
+    if (!isFileAlreadyUploaded) {
       await uploadApplicationFile(request, applicationId)
     }
   }
@@ -299,10 +303,9 @@ function assertLicenceTypeResolved(salesforceResponse) {
  * @returns {Promise<any[]>}
  */
 async function getLinkedFiles(request, applicationId) {
-  const salesforceResponse = await retry(() => {
+  return retry(() => {
     return salesforceClient.getLinkedFiles(applicationId, request.logger)
   }, retriesConfig)
-  return salesforceResponse?.records || []
 }
 
 /**
@@ -390,7 +393,7 @@ async function uploadSupportingMaterials(request, caseId) {
         const filePath = questionAnswer.answer.value.path
         const isFileAlreadyUploaded = caseFiles.some(
           (file) =>
-            file.ContentDocument.Title ===
+            file.title ===
             buildFileTitle(section.sectionKey, questionAnswer.questionKey)
         )
         if (!isFileAlreadyUploaded) {
