@@ -60,6 +60,12 @@ const GuestCustomerDetailsSchema = Joi.object({
  * @typedef { 'text'|'number'|'address'|'file'|'checkbox'|'date'|'email'|'name'} KeyFactType
  */
 
+/**
+ * @typedef {Object} KeyFactItem
+ * @property {KeyFactType} type
+ * @property {string|number|string[]|Address|Name} value
+ */
+
 const KeyFactItemSchema = Joi.object({
   type: Joi.string()
     .valid(
