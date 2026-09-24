@@ -409,14 +409,25 @@ describe('salesforce client', () => {
       records: [
         {
           ContentDocumentId: 'doc-001',
-          ContentDocument: { Title: 'file1.pdf' }
+          ContentDocument: {
+            Title: 'file1',
+            LatestPublishedVersion: { PathOnClient: 'file1.pdf' }
+          }
         },
         {
           ContentDocumentId: 'doc-002',
-          ContentDocument: { Title: 'file2.json' }
+          ContentDocument: {
+            Title: 'file2',
+            LatestPublishedVersion: { PathOnClient: 'file2.json' }
+          }
         }
       ]
     }
+
+    const expectedResponse = [
+      { pathOnClient: 'file1.pdf', title: 'file1' },
+      { pathOnClient: 'file2.json', title: 'file2' }
+    ]
 
     mockFetch
       .mockResolvedValueOnce(
@@ -428,9 +439,12 @@ describe('salesforce client', () => {
 
     const result = await salesforceClient.getLinkedFiles(entityId, mockLogger)
 
-    expect(result).toEqual(mockLinkedFilesResponse)
+    expect(result).toEqual(expectedResponse)
 
-    const expectedQuery = `SELECT ContentDocumentId, ContentDocument.Title FROM ContentDocumentLink WHERE LinkedEntityId = '${entityId}'`
+    const expectedQuery = `SELECT ContentDocumentId, ContentDocument.Title,
+                    ContentDocument.LatestPublishedVersion.PathOnClient
+                    FROM ContentDocumentLink
+                    WHERE LinkedEntityId = '${entityId}'`
     expect(mockFetch).toHaveBeenLastCalledWith(
       expect.stringContaining('/query?q=' + encodeURIComponent(expectedQuery)),
       expect.objectContaining({

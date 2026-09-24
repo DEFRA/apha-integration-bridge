@@ -1,9 +1,6 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals'
 
-import {
-  buildFileTitle,
-  buildSupportingMaterialsCompositeRequest
-} from './supporting-materials-request-builder.js'
+import { buildSupportingMaterialsCompositeRequest } from './supporting-materials-request-builder.js'
 import * as fileUploadAndLinkRequestBuilder from './file-upload-and-link-request-builder.js'
 import * as fileUtils from '../../../common/helpers/file/file-utils.js'
 
@@ -30,14 +27,6 @@ jest
   )
   .mockReturnValue(mockCompositeRequest)
 
-describe('buildFileTitle', () => {
-  test('should concatenate the section and question keys to form the file title', () => {
-    expect(buildFileTitle('section-2', 'question-2')).toBe(
-      'section-2_question-2'
-    )
-  })
-})
-
 describe('buildSupportingMaterialsCompositeRequest', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -45,16 +34,14 @@ describe('buildSupportingMaterialsCompositeRequest', () => {
 
   test('should fetch file and then call buildFileUploadAndLinkCompositeRequest with correct parameters and return the result', async () => {
     const caseId = 'case-456'
-    const sectionKey = 'section-2'
-    const questionKey = 'question-2'
-    const filePath = '/path/to/document.pdf'
-    const expectedTitle = 'section-2_question-2'
-    const expectedPath = 'section-2_question-2.pdf'
+    const keyFact = 'fileKeyFact'
+    const filePath = '/s3/path/to/document'
+    const expectedTitle = 'fileKeyFact'
+    const expectedPath = '/s3/path/to/document.pdf'
 
     const result = await buildSupportingMaterialsCompositeRequest(
       caseId,
-      sectionKey,
-      questionKey,
+      keyFact,
       filePath
     )
 
