@@ -1,6 +1,6 @@
 /**
- * @import {CompositeResponseItem} from '../../types/salesforce/composite-response.js'
- * @import {CompositeObjectResponseItem} from '../../types/salesforce/composite-response.js'
+ * @import {CompositeResponseItem} from '../../../types/salesforce/composite-response.js'
+ * @import {CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
  */
 
 export class CompositeError extends Error {
