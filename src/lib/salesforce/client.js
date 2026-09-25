@@ -5,7 +5,8 @@ import { buildJWTAssertion } from './jwt-bearer.js'
 import {
   CompositeOperationError,
   CompositeObjectOperationError
-} from './composite-errors.js'
+} from './errors/composite-errors.js'
+import { salesforceTaggedError } from './errors/error-helpers.js'
 
 /**
  * @import {CaseDetailsPayload, UpdateCaseDetailsPayload} from '../../types/case-management/case.js'
@@ -13,7 +14,6 @@ import {
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
  * @import {CompositeObjectResponse} from '../../types/salesforce/composite-response.js'
  * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
- * @import {SalesforceOperationError} from '../../types/salesforce/operation-error.js'
  * @import {SalesforceContentDocumentLink, SalesforceLinkedFileSummary} from '../../types/salesforce/file.js'
  */
 
@@ -484,7 +484,7 @@ class SalesforceClient {
         `Salesforce ${methodName} request failed`
       )
 
-      throw this.taggedError(
+      throw salesforceTaggedError(
         `Salesforce ${methodName} request failed (${response.status}): ${this.safeMessage(
           body
         )}`,
@@ -537,7 +537,7 @@ class SalesforceClient {
         'Salesforce query request failed'
       )
 
-      throw this.taggedError(
+      throw salesforceTaggedError(
         `Salesforce query request failed (${response.status}): ${this.safeMessage(
           body
         )}`,
@@ -546,21 +546,6 @@ class SalesforceClient {
     }
 
     return body
-  }
-
-  /**
-   * Build an error tagged with the Salesforce operation that was being attempted.
-   *
-   * @param {string} message
-   * @param {string} [operation]
-   * @returns {SalesforceOperationError}
-   */
-  taggedError(message, operation) {
-    const error = /** @type {SalesforceOperationError} */ (new Error(message))
-    if (operation) {
-      error.operation = operation
-    }
-    return error
   }
 
   /**

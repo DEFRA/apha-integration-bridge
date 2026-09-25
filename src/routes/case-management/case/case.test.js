@@ -22,7 +22,7 @@ import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 import {
   CompositeOperationError,
   CompositeObjectOperationError
-} from '../../../lib/salesforce/composite-errors.js'
+} from '../../../lib/salesforce/errors/composite-errors.js'
 
 /** @import { CreateCasePayload } from '../../../types/case-management/case.js' */
 
@@ -239,7 +239,18 @@ beforeEach(() => {
   })
   jest.mocked(buildQuestionsAndAnswersRequest).mockReturnValue({
     allOrNone: true,
-    records: []
+    records: [
+      {
+        attributes: {
+          type: 'TBL_ApplicationQuestionnaire__c'
+        },
+        TBL_QuestionKey__c: 'email',
+        TBL_Question__c: 'What is your email address?',
+        TBL_SectionKey__c: 'section-key',
+        TBL_Answer__c: mockApplicantDetaisls.email,
+        TBL_Application__c: 'application-id'
+      }
+    ]
   })
 })
 

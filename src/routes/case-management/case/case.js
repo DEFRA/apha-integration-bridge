@@ -24,7 +24,7 @@ import { config } from '../../../config.js'
 import {
   CompositeOperationError,
   CompositeObjectOperationError
-} from '../../../lib/salesforce/composite-errors.js'
+} from '../../../lib/salesforce/errors/composite-errors.js'
 import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request-builders/questions-and-answers-creation-request-builder.js'
 
 /**
@@ -182,6 +182,9 @@ async function addQuestionsAndAnswers(request, applicationId) {
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
+    if (questionsAndAnswersRequest.records.length === 0) {
+      return undefined
+    }
     const salesforceResponse = await retry(
       () =>
         salesforceClient.addQuestionsAndAnswers(
