@@ -179,7 +179,7 @@ const FileArrayKeyFactItemSchema = KeyFactItemSchema.keys({
 
 /**
  * @typedef {Object} KeyFacts
- * @property {KeyFactItem} licenceType
+ * @property {TextKeyFactItem} licenceType
  * @property {RequesterKeyFactItem} requester
  * @property {MovementDirectionKeyFactItem} [movementDirection]
  * @property {TextKeyFactItem} [additionalInformation]

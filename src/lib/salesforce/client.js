@@ -14,6 +14,7 @@ import {
  * @import {CompositeObjectResponse} from '../../types/salesforce/composite-response.js'
  * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
  * @import {SalesforceOperationError} from '../../types/salesforce/operation-error.js'
+ * @import {SalesforceContentDocumentLink, SalesforceLinkedFileSummary} from '../../types/salesforce/file.js'
  */
 
 const TOKEN_EXPIRY_BUFFER_MS = 5000
@@ -330,12 +331,26 @@ class SalesforceClient {
   /**
    * @param {string} entityId
    * @param {Logger} [logger]
-   * @returns {Promise<any>}
+   * @returns {Promise<SalesforceLinkedFileSummary[]>}
    */
   async getLinkedFiles(entityId, logger) {
     const token = await this.getAccessToken(logger)
-    const query = `SELECT ContentDocumentId, ContentDocument.Title FROM ContentDocumentLink WHERE LinkedEntityId = '${entityId}'`
-    return this.sendQuery(query, token, logger, 'getLinkedFiles')
+    const query = `SELECT ContentDocumentId, ContentDocument.Title,
+                    ContentDocument.LatestPublishedVersion.PathOnClient
+                    FROM ContentDocumentLink
+                    WHERE LinkedEntityId = '${entityId}'`
+    const linkedFiles = await this.sendQuery(
+      query,
+      token,
+      logger,
+      'getLinkedFiles'
+    )
+    return /** @type {SalesforceContentDocumentLink[]} */ (
+      linkedFiles.records
+    ).map((file) => ({
+      title: file.ContentDocument.Title,
+      pathOnClient: file.ContentDocument.LatestPublishedVersion.PathOnClient
+    }))
   }
 
   /**

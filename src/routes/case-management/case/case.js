@@ -16,10 +16,7 @@ import {
 } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
 import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
-import {
-  buildSupportingMaterialsCompositeRequest,
-  buildFileTitle
-} from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
+import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
 import { buildApplicationFileCompositeRequest } from '../../../lib/salesforce/request-builders/application-file-request-builder.js'
 import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/key-facts-creation-request-builder.js'
@@ -37,6 +34,7 @@ import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request
  * @import {CompositeResponseItem, CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
  * @import {SalesforceError} from '../../../types/salesforce/composite-response.js'
  * @import {SalesforceOperationError} from '../../../types/salesforce/operation-error.js'
+ * @import {FileArrayKeyFactItem} from '../../../types/case-management/case.js'
  */
 
 const __dirname = new URL('.', import.meta.url).pathname
@@ -234,8 +232,12 @@ async function createApplicationAndFile(request) {
   const applicationId = await createApplication(request)
 
   if (applicationId) {
-    const files = await getLinkedFiles(request, applicationId)
-    if (files.length === 0) {
+    const caseFiles = await getLinkedFiles(request, applicationId)
+    const payload = /** @type {CreateCasePayload} */ (request.payload)
+    const isFileAlreadyUploaded = caseFiles.some((file) => {
+      return file.title === payload.applicationReferenceNumber
+    })
+    if (!isFileAlreadyUploaded) {
       await uploadApplicationFile(request, applicationId)
     }
   }
@@ -299,10 +301,9 @@ function assertLicenceTypeResolved(salesforceResponse) {
  * @returns {Promise<any[]>}
  */
 async function getLinkedFiles(request, applicationId) {
-  const salesforceResponse = await retry(() => {
+  return retry(() => {
     return salesforceClient.getLinkedFiles(applicationId, request.logger)
   }, retriesConfig)
-  return salesforceResponse?.records || []
 }
 
 /**
@@ -328,22 +329,14 @@ async function uploadApplicationFile(request, applicationId) {
 
 /**
  * @param {string} caseId
- * @param {string} sectionKey
- * @param {string} questionKey
+ * @param {string} title
  * @param {string} filePath
  * @param {Logger} logger
  */
-async function uploadCaseFile(
-  caseId,
-  sectionKey,
-  questionKey,
-  filePath,
-  logger
-) {
+async function uploadCaseFile(caseId, title, filePath, logger) {
   const compositeRequest = await buildSupportingMaterialsCompositeRequest(
     caseId,
-    sectionKey,
-    questionKey,
+    title,
     filePath
   )
 
@@ -381,27 +374,21 @@ async function createCustomerAccount(request) {
 async function uploadSupportingMaterials(request, caseId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const caseFiles = await getLinkedFiles(request, caseId)
-  for (const section of payload.sections) {
-    for (const questionAnswer of section.questionAnswers) {
-      if (
-        questionAnswer.answer.type === 'file' &&
-        questionAnswer.answer.value.path
-      ) {
-        const filePath = questionAnswer.answer.value.path
-        const isFileAlreadyUploaded = caseFiles.some(
-          (file) =>
-            file.ContentDocument.Title ===
-            buildFileTitle(section.sectionKey, questionAnswer.questionKey)
-        )
-        if (!isFileAlreadyUploaded) {
-          await uploadCaseFile(
-            caseId,
-            section.sectionKey,
-            questionAnswer.questionKey,
-            filePath,
-            request.logger
-          )
-        }
+  const fileKeyFacts = Object.entries(payload.keyFacts).filter(
+    ([, keyFact]) => keyFact.type === 'file'
+  )
+
+  for (const [key, keyFact] of fileKeyFacts) {
+    const fileKeyFact = /** @type {FileArrayKeyFactItem} */ (keyFact)
+
+    for (const [index, filePath] of fileKeyFact.value.entries()) {
+      const isFileAlreadyUploaded = caseFiles.some(
+        (file) => file.pathOnClient.replace(/\.[^.]+$/, '') === filePath
+      )
+
+      if (!isFileAlreadyUploaded) {
+        const title = `${key}-${index}`
+        await uploadCaseFile(caseId, title, filePath, request.logger)
       }
     }
   }
