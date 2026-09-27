@@ -23,7 +23,8 @@ import { buildKeyFactsRequest } from '../../../lib/salesforce/request-builders/k
 import { config } from '../../../config.js'
 import {
   CompositeOperationError,
-  CompositeObjectOperationError
+  CompositeObjectOperationError,
+  CompositeGraphOperationError
 } from '../../../lib/salesforce/errors/composite-errors.js'
 import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request-builders/questions-and-answers-creation-request-builder.js'
 
@@ -182,7 +183,7 @@ async function addQuestionsAndAnswers(request, applicationId) {
       /** @type {CreateCasePayload} */ (request.payload),
       applicationId
     )
-    if (questionsAndAnswersRequest.records.length === 0) {
+    if (questionsAndAnswersRequest.graphs[0].compositeRequest.length === 0) {
       return undefined
     }
     const salesforceResponse = await retry(
@@ -442,6 +443,19 @@ function handleCaseCreationError(error, request) {
       step,
       failedItems.map((item) => ({
         errors: mapSalesforceErrors(item.errors)
+      }))
+    )
+  } else if (error instanceof CompositeGraphOperationError) {
+    const failedItems = /** @type {CompositeResponseItem[]} */ (
+      error.failedItems
+    )
+    logCompositeOperations(
+      request,
+      step,
+      failedItems.map((item) => ({
+        referenceId: item.referenceId,
+        httpStatusCode: item.httpStatusCode,
+        errors: mapSalesforceErrors(item.body)
       }))
     )
   } else {

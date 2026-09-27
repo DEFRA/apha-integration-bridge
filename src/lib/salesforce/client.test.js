@@ -668,27 +668,46 @@ describe('salesforce client', () => {
     )
   })
 
-  test('addQuestionsAndAnswers posts composite sobjects payload and returns response body', async () => {
+  test('addQuestionsAndAnswers posts composite graph payload and returns response body', async () => {
     const questionsAndAnswersRequest = {
-      allOrNone: false,
-      records: [
+      graphs: [
         {
-          attributes: { type: 'TBL_ApplicationQuestionnaire__c' },
-          TBL_QuestionKey__c: 'test-q',
-          TBL_Question__c: 'Test question',
-          TBL_Answer__c: 'Test answer',
-          TBL_SectionKey__c: 'section-1'
+          graphId: 'QuestionsAndAnswers',
+          compositeRequest: [
+            {
+              method: 'POST',
+              url: '/services/data/v62.0/sobjects/TBL_ApplicationQuestionnaire__c',
+              referenceId: 'section-1_test-q',
+              body: {
+                TBL_QuestionKey__c: 'test-q',
+                TBL_Question__c: 'Test question',
+                TBL_Answer__c: 'Test answer',
+                TBL_SectionKey__c: 'section-1'
+              }
+            }
+          ]
         }
       ]
     }
 
-    const mockAddQuestionAndAnswersResponse = [
-      {
-        id: 'a01xx0000001ABC',
-        success: true,
-        errors: []
-      }
-    ]
+    const mockAddQuestionAndAnswersResponse = {
+      graphs: [
+        {
+          graphId: 'QuestionsAndAnswers',
+          isSuccessful: true,
+          graphResponse: {
+            compositeResponse: [
+              {
+                body: { id: 'a01xx0000001ABC', success: true, errors: [] },
+                httpHeaders: {},
+                httpStatusCode: 201,
+                referenceId: 'section-1_test-q'
+              }
+            ]
+          }
+        }
+      ]
+    }
 
     mockFetch
       .mockResolvedValueOnce(
@@ -705,9 +724,9 @@ describe('salesforce client', () => {
       mockLogger
     )
 
-    expect(result).toEqual(mockAddQuestionAndAnswersResponse)
+    expect(result).toEqual(mockAddQuestionAndAnswersResponse.graphs)
     expect(mockFetch).toHaveBeenLastCalledWith(
-      expect.stringContaining('/composite/sobjects'),
+      expect.stringContaining('/composite/graph'),
       expect.objectContaining({
         method: HTTPMethods.POST,
         headers: {
@@ -723,11 +742,8 @@ describe('salesforce client', () => {
     )
   })
 
-  test('addQuestionsAndAnswers throws CompositeObjectOperationError for an unsuccessful object', async () => {
-    const questionsAndAnswersRequest = {
-      allOrNone: false,
-      records: [{ attributes: { type: 'TBL_ApplicationQuestionnaire__c' } }]
-    }
+  test('addQuestionsAndAnswers throws CompositeGraphOperationError for an unsuccessful graph', async () => {
+    const questionsAndAnswersRequest = { graphs: [{ graphId: 'x' }] }
 
     mockFetch
       .mockResolvedValueOnce(
@@ -735,46 +751,58 @@ describe('salesforce client', () => {
       )
       .mockResolvedValueOnce(
         /** @type {any}*/ (
-          mockJsonResponse(200, [
-            {
-              success: false,
-              errors: [
-                { errorCode: 'REQUIRED_FIELD_MISSING', message: 'Missing key' }
-              ]
-            }
-          ])
+          mockJsonResponse(200, {
+            graphs: [
+              {
+                graphId: 'QuestionsAndAnswers',
+                isSuccessful: false,
+                graphResponse: {
+                  compositeResponse: [
+                    {
+                      body: [
+                        {
+                          errorCode: 'REQUIRED_FIELD_MISSING',
+                          message: 'Missing key'
+                        }
+                      ],
+                      httpStatusCode: 400,
+                      referenceId: 'section-1_test-q'
+                    }
+                  ]
+                }
+              }
+            ]
+          })
         )
       )
 
     await expect(
       salesforceClient.addQuestionsAndAnswers(questionsAndAnswersRequest)
     ).rejects.toMatchObject({
-      name: 'CompositeObjectOperationError',
+      name: 'CompositeGraphOperationError',
       failedItems: [
         {
-          success: false
+          httpStatusCode: 400,
+          referenceId: 'section-1_test-q'
         }
       ]
     })
   })
 
-  test('addQuestionsAndAnswers throws CompositeObjectOperationError when success is missing', async () => {
-    const questionsAndAnswersRequest = {
-      allOrNone: false,
-      records: [{ attributes: { type: 'TBL_ApplicationQuestionnaire__c' } }]
-    }
+  test('addQuestionsAndAnswers throws CompositeGraphOperationError when graphs is missing', async () => {
+    const questionsAndAnswersRequest = { graphs: [{ graphId: 'x' }] }
 
     mockFetch
       .mockResolvedValueOnce(
         /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
       )
-      .mockResolvedValueOnce(/** @type {any}*/ (mockJsonResponse(200, [{}])))
+      .mockResolvedValueOnce(/** @type {any}*/ (mockJsonResponse(200, {})))
 
     await expect(
       salesforceClient.addQuestionsAndAnswers(questionsAndAnswersRequest)
     ).rejects.toMatchObject({
-      name: 'CompositeObjectOperationError',
-      failedItems: [{}]
+      name: 'CompositeGraphOperationError',
+      failedItems: []
     })
   })
 

@@ -21,7 +21,8 @@ import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/fi
 import { spyOnConfig } from '../../../common/helpers/test-helpers/config.js'
 import {
   CompositeOperationError,
-  CompositeObjectOperationError
+  CompositeObjectOperationError,
+  CompositeGraphOperationError
 } from '../../../lib/salesforce/errors/composite-errors.js'
 
 /** @import { CreateCasePayload } from '../../../types/case-management/case.js' */
@@ -178,9 +179,18 @@ const mockSuccessfulKeyFactsResponse = [
 
 const mockSuccessfulQuestionsAndAnswersResponse = [
   {
-    id: 'TEST-QUESTION-ANSWER-123',
-    success: true,
-    errors: []
+    graphId: 'QuestionsAndAnswers',
+    isSuccessful: true,
+    graphResponse: {
+      compositeResponse: [
+        {
+          body: { id: 'TEST-QUESTION-ANSWER-123', success: true, errors: [] },
+          httpHeaders: {},
+          httpStatusCode: 201,
+          referenceId: 'section-1_test-q'
+        }
+      ]
+    }
   }
 ]
 
@@ -238,17 +248,17 @@ beforeEach(() => {
     records: []
   })
   jest.mocked(buildQuestionsAndAnswersRequest).mockReturnValue({
-    allOrNone: true,
-    records: [
+    graphs: [
       {
-        attributes: {
-          type: 'TBL_ApplicationQuestionnaire__c'
-        },
-        TBL_QuestionKey__c: 'email',
-        TBL_Question__c: 'What is your email address?',
-        TBL_SectionKey__c: 'section-key',
-        TBL_Answer__c: mockApplicantDetaisls.email,
-        TBL_Application__c: 'application-id'
+        graphId: 'QuestionsAndAnswers',
+        compositeRequest: [
+          {
+            method: 'POST',
+            url: '/services/data/v62.0/sobjects/TBL_ApplicationQuestionnaire__c',
+            referenceId: 'section-1_test-q',
+            body: {}
+          }
+        ]
       }
     ]
   })
@@ -556,6 +566,27 @@ describe('POST /case-management/case', () => {
       expect(mockAddKeyFacts).not.toHaveBeenCalled()
       expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(1)
       expect(mockAddQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+    })
+
+    test('creates case and skips adding questions and answers when there are none to add', async () => {
+      const server = await createTestServer()
+
+      mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
+      mockCreateApplication.mockResolvedValue(mockSuccessfulCompositeResponse)
+      mockUploadApplicationFile.mockResolvedValue(
+        mockSuccessfulCompositeResponse
+      )
+      mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
+      jest.mocked(buildQuestionsAndAnswersRequest).mockReturnValue({
+        graphs: [{ graphId: 'QuestionsAndAnswers', compositeRequest: [] }]
+      })
+
+      const payload = createValidPayload()
+      const res = await createCase(server, payload)
+
+      expect(res.statusCode).toBe(201)
+      expect(mockGetQuestionsAndAnswers).toHaveBeenCalledTimes(1)
+      expect(mockAddQuestionsAndAnswers).not.toHaveBeenCalled()
     })
 
     test('creates case and skips adding questions and answers if already present', async () => {
@@ -1214,20 +1245,21 @@ describe('POST /case-management/case', () => {
       )
     })
 
-    test('returns 500 and logs failed operations when addQuestionsAndAnswers returns unsuccessful objects', async () => {
+    test('returns 500 and logs failed operations when addQuestionsAndAnswers returns unsuccessful graph', async () => {
       const server = await createTestServer()
 
-      const compositeObjectError = new CompositeObjectOperationError(
+      const compositeGraphError = new CompositeGraphOperationError(
         [
           {
-            id: 'TEST-QUESTION-AND-ANSWER-123',
-            success: false,
-            errors: [
+            body: [
               {
                 errorCode: 'REQUIRED_FIELD_MISSING',
                 message: 'Missing question'
               }
-            ]
+            ],
+            httpHeaders: {},
+            httpStatusCode: 400,
+            referenceId: 'section-1_test-q'
           }
         ],
         'addQuestionsAndAnswers'
@@ -1236,7 +1268,7 @@ describe('POST /case-management/case', () => {
       mockCreateCustomer.mockResolvedValue(mockSuccessfulCreateCustomerResponse)
       mockCreateApplication.mockResolvedValue(mockSuccessfulCompositeResponse)
       mockCreateOrUpdateCase.mockResolvedValue(mockSuccessfulCreateCaseResponse)
-      mockAddQuestionsAndAnswers.mockRejectedValue(compositeObjectError)
+      mockAddQuestionsAndAnswers.mockRejectedValue(compositeGraphError)
 
       const payload = createValidPayload()
 
@@ -1256,6 +1288,8 @@ describe('POST /case-management/case', () => {
           operation: 'addQuestionsAndAnswers',
           failedOperations: [
             {
+              referenceId: 'section-1_test-q',
+              httpStatusCode: 400,
               errors: [
                 {
                   errorCode: 'REQUIRED_FIELD_MISSING',

@@ -4,7 +4,8 @@ import { HTTPMethods } from '../http/http-methods.js'
 import { buildJWTAssertion } from './jwt-bearer.js'
 import {
   CompositeOperationError,
-  CompositeObjectOperationError
+  CompositeObjectOperationError,
+  CompositeGraphOperationError
 } from './errors/composite-errors.js'
 import { salesforceTaggedError } from './errors/error-helpers.js'
 
@@ -13,6 +14,7 @@ import { salesforceTaggedError } from './errors/error-helpers.js'
  * @import {Logger} from 'pino'
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
  * @import {CompositeObjectResponse} from '../../types/salesforce/composite-response.js'
+ * @import {CompositeGraphResponse} from '../../types/salesforce/composite-response.js'
  * @import {CreateGuestResponse} from '../../types/salesforce/contact-response.js'
  * @import {SalesforceContentDocumentLink, SalesforceLinkedFileSummary} from '../../types/salesforce/file.js'
  */
@@ -387,10 +389,10 @@ class SalesforceClient {
   /**
    * @param {object} questionsAndAnswersRequest
    * @param {Logger} [logger]
-   * @returns {Promise<CompositeObjectResponse>}
+   * @returns {Promise<CompositeGraphResponse>}
    */
   async addQuestionsAndAnswers(questionsAndAnswersRequest, logger) {
-    return this.sendCompositeObject(
+    return this.sendCompositeGraph(
       questionsAndAnswersRequest,
       logger,
       'addQuestionsAndAnswers'
@@ -436,6 +438,25 @@ class SalesforceClient {
       operation
     )
     return handleCompositeObjectResponse(salesforceResponse, operation)
+  }
+
+  /**
+   * Send a composite graph request to Salesforce.
+   *
+   * @param {object} compositeBody The request payload to forward.
+   * @param {Logger} [logger] Optional logger.
+   * @param {string} [operation] Salesforce operation being performed.
+   * @returns {Promise<CompositeGraphResponse>} The Salesforce composite graph response.
+   */
+  async sendCompositeGraph(compositeBody, logger, operation) {
+    const salesforceResponse = await this.sendRequest(
+      HTTPMethods.POST,
+      'composite/graph',
+      compositeBody,
+      logger,
+      operation
+    )
+    return handleCompositeGraphResponse(salesforceResponse?.graphs, operation)
   }
 
   /**
@@ -697,6 +718,30 @@ function handleCompositeObjectResponse(compositeResponse, operation) {
   }
 
   return compositeResponse
+}
+
+/**
+ * Validate a Salesforce composite graph response.
+ *
+ * @param {CompositeGraphResponse} graphs
+ * @param {string} [operation]
+ * @returns {CompositeGraphResponse}
+ * @throws {Error} Throws an error if any graph or sub-request failed.
+ */
+function handleCompositeGraphResponse(graphs, operation) {
+  if (!Array.isArray(graphs)) {
+    throw new CompositeGraphOperationError([], operation)
+  }
+
+  const failedSubResponses = graphs
+    .filter((graph) => !graph?.isSuccessful)
+    .flatMap((graph) => graph.graphResponse?.compositeResponse || [])
+
+  if (failedSubResponses.length > 0) {
+    throw new CompositeGraphOperationError(failedSubResponses, operation)
+  }
+
+  return graphs
 }
 
 export const salesforceClient = new SalesforceClient()

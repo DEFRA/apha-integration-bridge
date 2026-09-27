@@ -26,3 +26,14 @@
 /**
  * @typedef {CompositeObjectResponseItem[]} CompositeObjectResponse
  */
+
+/**
+ * @typedef {Object} CompositeGraphResult
+ * @property {string} graphId - Identifier of the graph within the request
+ * @property {boolean} isSuccessful - Whether all requests within the graph succeeded
+ * @property {{compositeResponse: CompositeResponseItem[]}} graphResponse - Composite responses for the graph's sub-requests
+ */
+
+/**
+ * @typedef {CompositeGraphResult[]} CompositeGraphResponse
+ */
