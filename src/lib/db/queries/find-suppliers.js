@@ -92,7 +92,9 @@ export const toSupplier = (row) => ({
   title: asNullableString(row.person_title),
   firstName: mask(asNullableString(row.person_given_name)),
   lastName: mask(asNullableString(row.person_family_name)),
-  organisationName: asNullableString(row.organisation_name)
+  // A sole-trader practice's organisation name can be a person's name, so it
+  // is treated as PII like every other mapper does. Title is left as-is.
+  organisationName: mask(asNullableString(row.organisation_name))
 })
 
 /**

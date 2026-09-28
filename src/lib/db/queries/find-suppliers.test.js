@@ -2,7 +2,12 @@ import { describe, expect, jest, test } from '@jest/globals'
 
 import { placeholdersIn } from '../../../common/helpers/test-helpers/bind-placeholders.js'
 import * as dbOperations from '../operations/execute.js'
-import { findSuppliers, findSuppliersQuery } from './find-suppliers.js'
+import { runWithMaskingContext } from '../../pii/index.js'
+import {
+  findSuppliers,
+  findSuppliersQuery,
+  toSupplier
+} from './find-suppliers.js'
 
 test('returns the expected query and bindings', () => {
   const { sql, bindings, pageSize } = findSuppliersQuery({
@@ -112,5 +117,35 @@ describe('findSuppliers', () => {
 
     expect(result.hasMore).toBe(false)
     expect(result.suppliers).toHaveLength(1)
+  })
+})
+
+describe('toSupplier masking', () => {
+  const row = {
+    party_id: 'C1',
+    party_type: 'ORGANISATION',
+    person_title: 'Dr',
+    person_given_name: 'Sam',
+    person_family_name: 'Smith',
+    organisation_name: 'Smith and Co. 12646'
+  }
+
+  test('masks organisation name and person names, leaves title alone', () => {
+    runWithMaskingContext({ shouldMask: true }, () => {
+      expect(toSupplier(row)).toEqual({
+        id: 'C1',
+        partyType: 'ORGANISATION',
+        title: 'Dr',
+        firstName: '***',
+        lastName: '*****',
+        organisationName: 'S*****************6'
+      })
+    })
+  })
+
+  test('passes everything through when masking is off', () => {
+    runWithMaskingContext({ shouldMask: false }, () => {
+      expect(toSupplier(row).organisationName).toBe('Smith and Co. 12646')
+    })
   })
 })
