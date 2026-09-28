@@ -7,7 +7,7 @@ import { findSuppliers, findSuppliersQuery } from './find-suppliers.js'
 test('returns the expected query and bindings', () => {
   const { sql, bindings, pageSize } = findSuppliersQuery({
     type: 'OVPRACTICE',
-    lastName: 'Smi',
+    name: 'Smi',
     page: 2,
     pageSize: 10
   })
@@ -16,11 +16,16 @@ test('returns the expected query and bindings', () => {
   expect(pageSize).toBe(10)
   expect(bindings).toEqual({
     roleType: 'OVPRACTICE',
-    firstName: null,
-    lastName: 'Smi',
+    name: 'Smi',
     offsetRows: 10,
     fetchRows: 11
   })
+})
+
+test('binds a null name when none is supplied', () => {
+  const { bindings } = findSuppliersQuery({ type: 'OVPRACTICE' })
+
+  expect(bindings.name).toBeNull()
 })
 
 test('binds exactly the placeholders in its sql', () => {
@@ -29,14 +34,40 @@ test('binds exactly the placeholders in its sql', () => {
   expect(Object.keys(bindings).sort()).toEqual(placeholdersIn(sql))
 })
 
+test('matches the name against person and organisation columns', () => {
+  const { sql } = findSuppliersQuery({ type: 'OVPRACTICE', name: 'vet' })
+
+  expect(sql).toContain(
+    "UPPER(pe.person_given_name) LIKE '%' || UPPER(:name) || '%'"
+  )
+  expect(sql).toContain(
+    "UPPER(pe.person_family_name) LIKE '%' || UPPER(:name) || '%'"
+  )
+  expect(sql).toContain(
+    "UPPER(o.organisation_name) LIKE '%' || UPPER(:name) || '%'"
+  )
+})
+
 test('rejects an unknown supplier type', () => {
   expect(() => findSuppliersQuery({ type: 'PLUMBER' })).toThrow(/invalid/i)
 })
 
-test('rejects LIKE wildcards in a name prefix', () => {
-  expect(() =>
-    findSuppliersQuery({ type: 'OVPRACTICE', lastName: 'Smi%' })
-  ).toThrow(/invalid/i)
+test.each(['Smi%', 'Smi_th', '%'])(
+  'rejects the LIKE wildcard in name %p',
+  (name) => {
+    expect(() => findSuppliersQuery({ type: 'OVPRACTICE', name })).toThrow(
+      /invalid/i
+    )
+  }
+)
+
+test('accepts digits and punctuation found in organisation names', () => {
+  const { bindings } = findSuppliersQuery({
+    type: 'OVPRACTICE',
+    name: "Smith & Co. (Vets) Ltd 12646 O'Brien-Jones"
+  })
+
+  expect(bindings.name).toBe("Smith & Co. (Vets) Ltd 12646 O'Brien-Jones")
 })
 
 describe('findSuppliers', () => {

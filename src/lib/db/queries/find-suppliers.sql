@@ -45,8 +45,10 @@ matched AS (
     ON pe.party_pk = tp.party_pk
   LEFT JOIN ahbrp.organisation o
     ON o.party_pk = tp.party_pk
-  WHERE (:firstName IS NULL OR UPPER(pe.person_given_name) LIKE UPPER(:firstName) || '%')
-    AND (:lastName IS NULL OR UPPER(pe.person_family_name) LIKE UPPER(:lastName) || '%')
+  WHERE (:name IS NULL
+    OR UPPER(pe.person_given_name) LIKE '%' || UPPER(:name) || '%'
+    OR UPPER(pe.person_family_name) LIKE '%' || UPPER(:name) || '%'
+    OR UPPER(o.organisation_name) LIKE '%' || UPPER(:name) || '%')
 )
 SELECT
   party_id,

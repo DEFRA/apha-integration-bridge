@@ -40,7 +40,7 @@ const options = {
     mode: 'required'
   },
   tags: ['api', 'alpha', 'suppliers'],
-  description: 'Search suppliers by type and name prefix',
+  description: 'Search suppliers by type and name',
   notes: documentationNotes,
   plugins: {
     'hapi-swagger': {

@@ -15,25 +15,24 @@ const sql = loadSQL(import.meta.filename)
 export const SUPPLIER_TYPES = ['OVPRACTICE']
 
 /**
- * A "starts with" name fragment. Letters, spaces, hyphens and apostrophes
- * only, so a caller cannot smuggle LIKE wildcards into the prefix match.
+ * A name fragment matched with "contains" against given name, family name
+ * and organisation name. Oracle LIKE wildcards are rejected so a caller
+ * cannot widen the match beyond the literal text. Organisation names carry
+ * digits and punctuation, so anything else is allowed through.
  */
-const NamePrefixSchema = Joi.string()
+const NameSchema = Joi.string()
   .trim()
   .min(1)
-  .max(50)
-  .pattern(/^[A-Za-z][A-Za-z '-]*$/)
+  .max(100)
+  .pattern(/^[^%_]+$/, 'no LIKE wildcards')
 
 export const FindSuppliersSchema = Joi.object({
   type: Joi.string()
     .valid(...SUPPLIER_TYPES)
     .required()
     .description('Supplier role type'),
-  firstName: NamePrefixSchema.description(
-    'Given name starts with (case-insensitive)'
-  ),
-  lastName: NamePrefixSchema.description(
-    'Family name starts with (case-insensitive)'
+  name: NameSchema.description(
+    'Name contains (case-insensitive). Matches given name, family name or organisation name'
   ),
   page: Joi.number()
     .integer()
@@ -51,8 +50,7 @@ export const FindSuppliersSchema = Joi.object({
 /**
  * @typedef {{
  *   type: string,
- *   firstName?: string,
- *   lastName?: string,
+ *   name?: string,
  *   page?: number,
  *   pageSize?: number
  * }} FindSuppliersParams
@@ -69,14 +67,13 @@ export function findSuppliersQuery(params) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  const { type, firstName = null, lastName = null, page, pageSize } = value
+  const { type, name = null, page, pageSize } = value
 
   return {
     sql,
     bindings: {
       roleType: type,
-      firstName,
-      lastName,
+      name,
       offsetRows: pageSize * (page - 1),
       // fetch one row beyond the page so the caller can tell whether a
       // further page exists without a separate COUNT(*)
