@@ -331,18 +331,12 @@ export const GetCaseResponseSchema = Joi.object({
  */
 
 /**
- * @typedef {Object} QuestionAndAnswerRecordItem
- * @property {Object} attributes
- * @property {string} attributes.type
- * @property {string} TBL_Question__c
- * @property {string} TBL_QuestionKey__c
- * @property {string} TBL_SectionKey__c
- * @property {string} TBL_Answer__c
- * @property {string} TBL_Application__c
+ * @typedef {Object} QuestionAndAnswerGraph
+ * @property {string} graphId
+ * @property {import('../salesforce/composite-request.js').CompositeRequestItem[]} compositeRequest
  */
 
 /**
- * @typedef {Object} QuestionAndAnswerRequest
- * @property {boolean} allOrNone
- * @property {QuestionAndAnswerRecordItem[]} records
+ * @typedef {Object} QuestionAndAnswerGraphRequest
+ * @property {QuestionAndAnswerGraph[]} graphs
  */

@@ -1,32 +1,39 @@
 import { describe, test, expect } from '@jest/globals'
+import { config } from '../../../config.js'
 import { buildQuestionsAndAnswersRequest } from './questions-and-answers-creation-request-builder.js'
 
 const applicationId = 'internal_salesforce_id'
+const apiVersion = config.get('salesforce').apiVersion
 
 describe('buildQuestionsAndAnswersRequest', () => {
-  test('should return a questions and answers request with allOrNone set to true and one record per answer', () => {
+  test('should return a single graph containing one composite request item per answer', () => {
     const payload = createPayload()
 
     const result = buildQuestionsAndAnswersRequest(payload, applicationId)
 
-    expect(result.allOrNone).toBe(true)
-    expect(result.records).toHaveLength(3)
+    expect(result.graphs).toHaveLength(1)
+    expect(result.graphs[0].graphId).toBeTruthy()
+    expect(result.graphs[0].compositeRequest).toHaveLength(3)
   })
 
-  test('should include attributes and identifiers for each question and answer record', () => {
+  test('should include method, url, referenceId and body for each question and answer item', () => {
     const payload = createPayload()
 
     const result = buildQuestionsAndAnswersRequest(payload, applicationId)
 
-    const testQuestionRecord = result.records[0]
-    expect(testQuestionRecord.attributes).toEqual({
-      type: 'TBL_ApplicationQuestionnaire__c'
+    const testQuestionItem = result.graphs[0].compositeRequest[0]
+    expect(testQuestionItem.method).toBe('POST')
+    expect(testQuestionItem.url).toBe(
+      `/services/data/${apiVersion}/sobjects/TBL_ApplicationQuestionnaire__c`
+    )
+    expect(testQuestionItem.referenceId).toBe('section-1_test-q')
+    expect(testQuestionItem.body).toEqual({
+      TBL_Application__c: applicationId,
+      TBL_QuestionKey__c: 'test-q',
+      TBL_Question__c: 'Test question',
+      TBL_Answer__c: 'Test answer',
+      TBL_SectionKey__c: 'section-1'
     })
-    expect(testQuestionRecord.TBL_Application__c).toBe(applicationId)
-    expect(testQuestionRecord.TBL_QuestionKey__c).toBe('test-q')
-    expect(testQuestionRecord.TBL_Question__c).toBe('Test question')
-    expect(testQuestionRecord.TBL_Answer__c).toBe('Test answer')
-    expect(testQuestionRecord.TBL_SectionKey__c).toBe('section-1')
   })
 
   test('should map questions and answers from every section in order', () => {
@@ -34,21 +41,12 @@ describe('buildQuestionsAndAnswersRequest', () => {
 
     const result = buildQuestionsAndAnswersRequest(payload, applicationId)
 
-    expect(result.records.map((record) => record.TBL_QuestionKey__c)).toEqual([
-      'test-q',
-      'second-q',
-      'third-q'
-    ])
-    expect(result.records.map((record) => record.TBL_SectionKey__c)).toEqual([
-      'section-1',
-      'section-2',
-      'section-2'
-    ])
-    expect(result.records.map((record) => record.TBL_Answer__c)).toEqual([
-      'Test answer',
-      'Second answer',
-      'Third answer'
-    ])
+    expect(
+      result.graphs[0].compositeRequest.map((item) => item.referenceId)
+    ).toEqual(['section-1_test-q', 'section-2_second-q', 'section-2_third-q'])
+    expect(
+      result.graphs[0].compositeRequest.map((item) => item.body.TBL_Answer__c)
+    ).toEqual(['Test answer', 'Second answer', 'Third answer'])
   })
 
   test('should use the answer display text', () => {
@@ -60,19 +58,21 @@ describe('buildQuestionsAndAnswersRequest', () => {
 
     const result = buildQuestionsAndAnswersRequest(payload, applicationId)
 
-    expect(result.records[0].TBL_Answer__c).toBe('Displayed answer')
+    expect(result.graphs[0].compositeRequest[0].body.TBL_Answer__c).toBe(
+      'Displayed answer'
+    )
   })
 
-  test('should return no records when there are no sections', () => {
+  test('should return no composite request items when there are no sections', () => {
     const payload = createPayload()
     payload.sections = []
 
     const result = buildQuestionsAndAnswersRequest(payload, applicationId)
 
-    expect(result.records).toEqual([])
+    expect(result.graphs[0].compositeRequest).toEqual([])
   })
 
-  test('should return no records for sections without questions and answers', () => {
+  test('should return no composite request items for sections without questions and answers', () => {
     const payload = createPayload()
     payload.sections = [
       {
@@ -84,7 +84,7 @@ describe('buildQuestionsAndAnswersRequest', () => {
 
     const result = buildQuestionsAndAnswersRequest(payload, applicationId)
 
-    expect(result.records).toEqual([])
+    expect(result.graphs[0].compositeRequest).toEqual([])
   })
 })
 

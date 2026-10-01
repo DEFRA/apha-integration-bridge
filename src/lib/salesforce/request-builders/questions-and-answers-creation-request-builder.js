@@ -1,17 +1,22 @@
+import { config } from '../../../config.js'
+
 /**
  * @import {CreateCasePayload} from '../../../types/case-management/case.js'
- * @import {QuestionAndAnswerRequest, QuestionAndAnswerRecordItem} from '../../../types/case-management/case.js'
+ * @import {QuestionAndAnswerGraphRequest} from '../../../types/case-management/case.js'
+ * @import {CompositeRequestItem} from '../../../types/salesforce/composite-request.js'
  */
 
+const salesforceConfig = config.get('salesforce')
 const questionAndAnswerTypeName = 'TBL_ApplicationQuestionnaire__c'
+const questionAndAnswerGraphId = 'QuestionsAndAnswers'
 
 /**
  * @param {CreateCasePayload} payload
  * @param {string} applicationId
- * @returns {QuestionAndAnswerRequest}
+ * @returns {QuestionAndAnswerGraphRequest}
  */
 export function buildQuestionsAndAnswersRequest(payload, applicationId) {
-  const questionAndAnswerRecords = payload.sections.flatMap((section) => {
+  const compositeRequest = payload.sections.flatMap((section) => {
     return section.questionAnswers.map((question) => {
       return buildSingleQuestionAndAnswerRequest(
         applicationId,
@@ -23,8 +28,12 @@ export function buildQuestionsAndAnswersRequest(payload, applicationId) {
     })
   })
   return {
-    allOrNone: true,
-    records: questionAndAnswerRecords
+    graphs: [
+      {
+        graphId: questionAndAnswerGraphId,
+        compositeRequest
+      }
+    ]
   }
 }
 
@@ -34,7 +43,7 @@ export function buildQuestionsAndAnswersRequest(payload, applicationId) {
  * @param {string} question
  * @param {string} sectionKey
  * @param {string} answer
- * @returns {QuestionAndAnswerRecordItem}
+ * @returns {CompositeRequestItem}
  */
 function buildSingleQuestionAndAnswerRequest(
   applicationId,
@@ -44,13 +53,15 @@ function buildSingleQuestionAndAnswerRequest(
   answer
 ) {
   return {
-    attributes: {
-      type: questionAndAnswerTypeName
-    },
-    TBL_QuestionKey__c: questionKey,
-    TBL_Question__c: question,
-    TBL_SectionKey__c: sectionKey,
-    TBL_Answer__c: answer,
-    TBL_Application__c: applicationId
+    method: 'POST',
+    url: `/services/data/${salesforceConfig.apiVersion}/sobjects/${questionAndAnswerTypeName}`,
+    referenceId: `${sectionKey}_${questionKey}`,
+    body: {
+      TBL_Application__c: applicationId,
+      TBL_Question__c: question,
+      TBL_QuestionKey__c: questionKey,
+      TBL_SectionKey__c: sectionKey,
+      TBL_Answer__c: answer
+    }
   }
 }

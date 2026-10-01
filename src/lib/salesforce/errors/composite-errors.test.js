@@ -2,7 +2,8 @@ import { describe, expect, test } from '@jest/globals'
 import {
   CompositeError,
   CompositeOperationError,
-  CompositeObjectOperationError
+  CompositeObjectOperationError,
+  CompositeGraphOperationError
 } from './composite-errors.js'
 
 describe('Salesforce composite errors', () => {
@@ -56,6 +57,26 @@ describe('Salesforce composite errors', () => {
     expect(error).not.toBeInstanceOf(CompositeOperationError)
     expect(error.name).toBe('CompositeObjectOperationError')
     expect(error.message).toBe('One or more composite object operations failed')
+    expect(error.failedItems).toBe(failedItems)
+  })
+
+  test('creates a CompositeGraphOperationError with graph operation details', () => {
+    const failedItems = [
+      {
+        body: [{ errorCode: 'INVALID_FIELD', message: 'Invalid field' }],
+        httpHeaders: {},
+        httpStatusCode: 400,
+        referenceId: 'failedOperation'
+      }
+    ]
+
+    const error = new CompositeGraphOperationError(failedItems)
+
+    expect(error).toBeInstanceOf(CompositeError)
+    expect(error).toBeInstanceOf(CompositeGraphOperationError)
+    expect(error).not.toBeInstanceOf(CompositeOperationError)
+    expect(error.name).toBe('CompositeGraphOperationError')
+    expect(error.message).toBe('One or more composite graph operations failed')
     expect(error.failedItems).toBe(failedItems)
   })
 })

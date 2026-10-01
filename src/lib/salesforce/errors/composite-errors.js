@@ -51,3 +51,21 @@ export class CompositeObjectOperationError extends CompositeError {
     this.name = 'CompositeObjectOperationError'
   }
 }
+
+/**
+ * @property {CompositeResponseItem[]} failedItems
+ */
+export class CompositeGraphOperationError extends CompositeError {
+  /**
+   * @param {CompositeResponseItem[]} failedItems
+   * @param {string} [operation]
+   */
+  constructor(failedItems, operation) {
+    super(
+      'One or more composite graph operations failed',
+      failedItems,
+      operation
+    )
+    this.name = 'CompositeGraphOperationError'
+  }
+}
