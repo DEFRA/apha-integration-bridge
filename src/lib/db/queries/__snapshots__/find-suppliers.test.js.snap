@@ -1,0 +1,68 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`returns the expected query and bindings 1`] = `
+"WITH target_role AS (
+  SELECT r.role_pk
+  FROM ahbrp.role r
+  WHERE r.role_type = :roleType
+    AND r.main_role_type = 'SUPPLIER'
+    AND r.role_effective_from_date <= SYSDATE
+    AND SYSDATE < NVL(r.role_effective_to_date, TO_DATE('31-DEC-9999', 'DD-MON-YYYY'))
+),
+supplier_party AS (
+  SELECT DISTINCT pr.party_pk
+  FROM ahbrp.party_role pr
+  JOIN target_role tr
+    ON tr.role_pk = pr.role_pk
+  WHERE pr.main_role_type = 'SUPPLIER'
+    AND pr.party_role_to_date IS NULL
+),
+active_party AS (
+  SELECT p.party_pk, p.party_id
+  FROM supplier_party sp
+  JOIN ahbrp.party p
+    ON p.party_pk = sp.party_pk
+  JOIN ahbrp.party_state ps
+    ON ps.party_pk = p.party_pk
+   AND ps.party_state_to_dttm IS NULL
+   AND ps.party_status_code <> 'INACTIVE'
+),
+typed_party AS (
+  SELECT ap.party_pk, ap.party_id, pv.party_type
+  FROM active_party ap
+  JOIN ahbrp.party_version pv
+    ON pv.party_pk = ap.party_pk
+   AND pv.party_version_to_datetime = '31-DEC-9999'
+),
+matched AS (
+  SELECT
+    tp.party_id,
+    tp.party_type,
+    pe.person_title,
+    pe.person_given_name,
+    pe.person_family_name,
+    o.organisation_name,
+    ROW_NUMBER() OVER (ORDER BY tp.party_pk ASC) row_num
+  FROM typed_party tp
+  LEFT JOIN ahbrp.person pe
+    ON pe.party_pk = tp.party_pk
+  LEFT JOIN ahbrp.organisation o
+    ON o.party_pk = tp.party_pk
+  WHERE (:name IS NULL
+    OR UPPER(pe.person_given_name) LIKE '%' || UPPER(:name) || '%'
+    OR UPPER(pe.person_family_name) LIKE '%' || UPPER(:name) || '%'
+    OR UPPER(o.organisation_name) LIKE '%' || UPPER(:name) || '%')
+)
+SELECT
+  party_id,
+  party_type,
+  person_title,
+  person_given_name,
+  person_family_name,
+  organisation_name
+FROM matched
+WHERE row_num > :offsetRows
+  AND row_num <= :offsetRows + :fetchRows
+ORDER BY row_num
+"
+`;
