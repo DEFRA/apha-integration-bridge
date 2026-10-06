@@ -26,7 +26,7 @@ describe('buildQuestionsAndAnswersRequest', () => {
     expect(testQuestionItem.url).toBe(
       `/services/data/${apiVersion}/sobjects/TBL_ApplicationQuestionnaire__c`
     )
-    expect(testQuestionItem.referenceId).toBe('section-1_test-q')
+    expect(testQuestionItem.referenceId).toBe('section_1_test_q')
     expect(testQuestionItem.body).toEqual({
       TBL_Application__c: applicationId,
       TBL_QuestionKey__c: 'test-q',
@@ -43,7 +43,7 @@ describe('buildQuestionsAndAnswersRequest', () => {
 
     expect(
       result.graphs[0].compositeRequest.map((item) => item.referenceId)
-    ).toEqual(['section-1_test-q', 'section-2_second-q', 'section-2_third-q'])
+    ).toEqual(['section_1_test_q', 'section_2_second_q', 'section_2_third_q'])
     expect(
       result.graphs[0].compositeRequest.map((item) => item.body.TBL_Answer__c)
     ).toEqual(['Test answer', 'Second answer', 'Third answer'])
@@ -70,6 +70,33 @@ describe('buildQuestionsAndAnswersRequest', () => {
     const result = buildQuestionsAndAnswersRequest(payload, applicationId)
 
     expect(result.graphs[0].compositeRequest).toEqual([])
+  })
+
+  test('should sanitize hyphenated section and question keys in referenceId', () => {
+    const payload = createPayload()
+    payload.sections = [
+      {
+        sectionKey: 'biosecurity-map',
+        title: 'Biosecurity map',
+        questionAnswers: [
+          {
+            question: 'Upload a biosecurity map',
+            questionKey: 'upload-plan',
+            answer: {
+              type: 'file',
+              value: { path: 'some/path', skipped: true },
+              displayText: 'Map uploaded'
+            }
+          }
+        ]
+      }
+    ]
+
+    const result = buildQuestionsAndAnswersRequest(payload, applicationId)
+
+    const referenceId = result.graphs[0].compositeRequest[0].referenceId
+    expect(referenceId).toBe('biosecurity_map_upload_plan')
+    expect(referenceId).toMatch(/^[a-zA-Z0-9_]+$/)
   })
 
   test('should return no composite request items for sections without questions and answers', () => {

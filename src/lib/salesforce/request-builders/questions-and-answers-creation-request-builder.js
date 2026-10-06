@@ -55,7 +55,7 @@ function buildSingleQuestionAndAnswerRequest(
   return {
     method: 'POST',
     url: `/services/data/${salesforceConfig.apiVersion}/sobjects/${questionAndAnswerTypeName}`,
-    referenceId: `${sectionKey}_${questionKey}`,
+    referenceId: buildReferenceId(sectionKey, questionKey),
     body: {
       TBL_Application__c: applicationId,
       TBL_Question__c: question,
@@ -64,4 +64,13 @@ function buildSingleQuestionAndAnswerRequest(
       TBL_Answer__c: answer
     }
   }
+}
+
+/**
+ * @param {string} sectionKey
+ * @param {string} questionKey
+ * @returns {string}
+ */
+function buildReferenceId(sectionKey, questionKey) {
+  return `${sectionKey}_${questionKey}`.replace(/[^a-zA-Z0-9_]/g, '_')
 }
