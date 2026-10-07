@@ -510,6 +510,15 @@ const config = convict({
       format: Boolean,
       default: !isProduction,
       env: 'CASE_MANAGEMENT_ENABLED'
+    },
+    isHpaiDiscoveryEnabled: {
+      doc: 'Enable the temporary GET /alpha/hpai/discovery probe. On by default only outside deployed environments and in CDP dev (NODE_ENV is "production" in every deployed environment, so the platform environment name decides); set HPAI_DISCOVERY_ENABLED to override.',
+      format: Boolean,
+      default:
+        !isProduction ||
+        process.env.ENVIRONMENT === 'dev' ||
+        process.env.CDP_ENV === 'dev',
+      env: 'HPAI_DISCOVERY_ENABLED'
     }
   },
   pagination: {
