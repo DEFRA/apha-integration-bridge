@@ -24,7 +24,7 @@ describe('proxyFetch', () => {
   let proxy
   let originPort
   let proxyPort
-  let proxyConnects = 0
+  let proxyHits = 0
   let originHits = 0
 
   beforeAll(async () => {
@@ -34,14 +34,27 @@ describe('proxyFetch', () => {
       res.end(JSON.stringify({ ok: true, path: req.url }))
     })
 
-    // Minimal forward proxy. undici's ProxyAgent tunnels via HTTP CONNECT (even
-    // for http:// origins), so the `connect` handler is the one that fires.
+    // Minimal forward proxy. undici's ProxyAgent sends http:// origins as
+    // absolute-form requests (handled here) and tunnels https:// origins via
+    // HTTP CONNECT (handled by the `connect` listener below).
     proxy = http.createServer((req, res) => {
-      res.writeHead(501)
-      res.end()
+      proxyHits++
+      const upstream = http.request(
+        req.url,
+        { method: req.method, headers: req.headers },
+        (upstreamRes) => {
+          res.writeHead(upstreamRes.statusCode ?? 502, upstreamRes.headers)
+          upstreamRes.pipe(res)
+        }
+      )
+      upstream.on('error', () => {
+        res.writeHead(502)
+        res.end()
+      })
+      req.pipe(upstream)
     })
     proxy.on('connect', (req, clientSocket, head) => {
-      proxyConnects++
+      proxyHits++
       const [host, port] = req.url.split(':')
       const serverSocket = net.connect(Number(port), host, () => {
         clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
@@ -58,7 +71,7 @@ describe('proxyFetch', () => {
 
   afterEach(() => {
     config.set('httpProxy', null)
-    proxyConnects = 0
+    proxyHits = 0
     originHits = 0
   })
 
@@ -74,12 +87,12 @@ describe('proxyFetch', () => {
 
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ ok: true, path: '/jwks' })
-    // Proves the request was tunnelled through the proxy AND that undici's own
+    // Proves the request was routed through the proxy AND that undici's own
     // fetch + ProxyAgent are version-compatible. The previous global-fetch +
     // userland-ProxyAgent combination threw at request time with
     // `UND_ERR_INVALID_ARG: invalid onRequestStart method`, so reaching a 200
     // here is the regression guard for that incident.
-    expect(proxyConnects).toBeGreaterThan(0)
+    expect(proxyHits).toBeGreaterThan(0)
   })
 
   test('fetches directly when no proxy is configured', async () => {
@@ -89,7 +102,7 @@ describe('proxyFetch', () => {
 
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ ok: true, path: '/direct' })
-    expect(proxyConnects).toBe(0)
+    expect(proxyHits).toBe(0)
     expect(originHits).toBeGreaterThan(0)
   })
 })
