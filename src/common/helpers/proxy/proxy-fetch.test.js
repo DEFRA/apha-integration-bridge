@@ -22,6 +22,7 @@ const close = (server) => new Promise((resolve) => server.close(resolve))
 describe('proxyFetch', () => {
   let origin
   let proxy
+  /** @type {number} */
   let originPort
   let proxyPort
   let proxyHits = 0
@@ -36,12 +37,19 @@ describe('proxyFetch', () => {
 
     // Minimal forward proxy. undici's ProxyAgent sends http:// origins as
     // absolute-form requests (handled here) and tunnels https:// origins via
-    // HTTP CONNECT (handled by the `connect` listener below).
+    // HTTP CONNECT (handled by the `connect` listener below). Both always
+    // forward to the test origin rather than the client-supplied target.
     proxy = http.createServer((req, res) => {
       proxyHits++
+      const { pathname, search } = new URL(req.url ?? '/', 'http://127.0.0.1')
       const upstream = http.request(
-        req.url,
-        { method: req.method, headers: req.headers },
+        {
+          host: '127.0.0.1',
+          port: originPort,
+          path: `${pathname}${search}`,
+          method: req.method,
+          headers: req.headers
+        },
         (upstreamRes) => {
           res.writeHead(upstreamRes.statusCode ?? 502, upstreamRes.headers)
           upstreamRes.pipe(res)
@@ -53,10 +61,9 @@ describe('proxyFetch', () => {
       })
       req.pipe(upstream)
     })
-    proxy.on('connect', (req, clientSocket, head) => {
+    proxy.on('connect', (_req, clientSocket, head) => {
       proxyHits++
-      const [host, port] = req.url.split(':')
-      const serverSocket = net.connect(Number(port), host, () => {
+      const serverSocket = net.connect(originPort, '127.0.0.1', () => {
         clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
         serverSocket.write(head)
         serverSocket.pipe(clientSocket)
