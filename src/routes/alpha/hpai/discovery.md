@@ -45,10 +45,22 @@ Only one discovery request runs at a time across all instances, so the probe nev
 | `role-types`                 | scan      | Every role with its population by party type                                                    |
 | `party-role-states`          | scan      | Role status codes by role type; roles with no or several current states                         |
 | `party-relationships`        | scan      | Which relationship links a person to an organisation, with the party type at each end           |
-| `organisation-attributes`    | scan      | Organisation types, Defra unit types and head-office flags                                      |
+| `organisation-attributes`    | scan      | Organisation types and head-office flags; which types mark Defra units and CPH holders          |
 | `contact-methods`            | scan      | Contact media, telecom types, usage types and preferred flags                                   |
 | `contact-multiplicity`       | scan      | How many phone numbers or email addresses of one type a party has                               |
 | `party-id-formats`           | scan      | The shapes of customer ids by party type                                                        |
+
+The second run added these, for the questions the first left open:
+
+| Dataset                    | Kind      | Answers                                                                                        |
+| -------------------------- | --------- | ---------------------------------------------------------------------------------------------- |
+| `point-coordinates`        | scan      | Points at the grid origin, and the precision positions are recorded to                         |
+| `cph-type-agreement`       | scan      | Whether the temporary-CPH indicator agrees with the CPH row's type                             |
+| `shared-holderships`       | scan      | Whether holderships sharing a CPH and core id, or a location, are joint holders or duplicates  |
+| `location-address-history` | scan      | Why most locations have no address, whether they had one, and whether the holder's could serve |
+| `ref-data-history`         | reference | Whether the codes missing from reference sets, or a secondary-contact usage, ever existed      |
+| `address-usage-history`    | scan      | Whether SAM ever recorded a secondary-contact usage or a role-level contact                    |
+| `feature-classification`   | scan      | Whether any feature or location column carries a usable location type                          |
 
 ## Example
 

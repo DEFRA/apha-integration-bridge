@@ -167,9 +167,9 @@ export const HPAI_DISCOVERY_DATASETS = Object.freeze({
   'organisation-attributes': {
     kind: 'scan',
     description:
-      'Organisations by type, organisational-unit type, head-office indicator and active status',
+      'Organisations by type, head-office indicator and active status, with whether each holds a current Defra-organisation or CPH-holder role',
     answers:
-      'organisationType, organisationalUnitType and headOffice, and how many Defra units there are (question 11)'
+      'organisationType and headOffice, which types mark Defra units (question 11), and which types CPH holders have'
   },
   'contact-methods': {
     kind: 'scan',
@@ -189,6 +189,56 @@ export const HPAI_DISCOVERY_DATASETS = Object.freeze({
     description:
       'The shapes of SAM customer ids by party type (first character kept, other letters as A, digits as 9)',
     answers: "Whether the API's id pattern fits every customer id (question 1)"
+  },
+  // Second run: the questions the first run left open (docs/hpai-discovery-findings.md)
+  'point-coordinates': {
+    kind: 'scan',
+    description:
+      'Current primary points by missing or zero coordinates, and by the coarsest grid they sit on (1,000, 100, 10 or 1 metres)',
+    answers:
+      'How many points sit at the grid origin, and how precise positions are, for position, latitude and longitude (DSFAAP-2890)'
+  },
+  'cph-type-agreement': {
+    kind: 'scan',
+    description:
+      'CPH holderships by TEMPORARY_CPH_INDICATOR against the CPH_TYPE of their (CPH, core id) row',
+    answers:
+      'Whether the indicator (N permanent, T temporary, Y emergency in the 2018 model) agrees with CPH_TYPE, and so how to decode holdership.temporaryCph'
+  },
+  'shared-holderships': {
+    kind: 'scan',
+    description:
+      'Groups of active holderships of one CPH number that share a Vetnet core id or a location, by whether they have one or several parties, locations, core ids and start dates',
+    answers:
+      'Whether (CPH, core id) identifies a holdership, and whether shared holderships are joint holders or duplicate rows'
+  },
+  'location-address-history': {
+    kind: 'scan',
+    description:
+      'Locations by current and ended address links and by current state, with how many are held and how many holders have a postal address',
+    answers:
+      "Why most locations have no address, whether they ever had one, and whether the holder's address could stand in"
+  },
+  'ref-data-history': {
+    kind: 'reference',
+    description:
+      'Ended codes in the reference sets the contract uses, and any code matching the off-list values the first run found or a secondary-contact usage',
+    answers:
+      "Whether MIGRATED, NOTKNOWN, the migration reason codes or a secondary-contact usage type ever existed in SAM's reference data"
+  },
+  'address-usage-history': {
+    kind: 'scan',
+    description:
+      'Every address-usage row, current or ended, by medium, link level and usage type, with its date range',
+    answers:
+      'Whether SAM has ever recorded a secondary-contact usage or a role-level contact (question 8)'
+  },
+  'feature-classification': {
+    kind: 'scan',
+    description:
+      'Features by grouping type, class type, area band and common-land indicator',
+    answers:
+      'Whether any FEATURE or LOCATION column carries a usable location type (question 5)'
   }
 })
 
