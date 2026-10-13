@@ -40,10 +40,11 @@ const routePath = '/workorders/activity'
 const WRITE_CLIENT = 'write-client'
 const READ_CLIENT = 'read-only-client'
 
-const clients = {
-  'fixture-write': { client_ids: [WRITE_CLIENT], scopes: ['pii', 'write'] },
-  'fixture-read': { client_ids: [READ_CLIENT], scopes: ['pii'] }
-}
+const clientsScopes = [
+  { client_id: WRITE_CLIENT, scopes: ['pii'] },
+  { client_id: WRITE_CLIENT, scopes: ['write'] },
+  { client_id: READ_CLIENT, scopes: ['pii'] }
+]
 
 const mockLogger = /** @type {any} */ ({
   trace: jest.fn(),
@@ -106,7 +107,7 @@ describe('PATCH /workorders/activity', () => {
     await server.register([
       errorEnvelope,
       versionPlugin,
-      { plugin: clientScopesPlugin, options: { clients } }
+      { plugin: clientScopesPlugin, options: { clientsScopes } }
     ])
 
     // bare test servers have no request.logger, and the handler logs
@@ -183,7 +184,7 @@ describe('PATCH /workorders/activity', () => {
       await routed.register([
         errorEnvelope,
         versionPlugin,
-        { plugin: clientScopesPlugin, options: { clients } }
+        { plugin: clientScopesPlugin, options: { clientsScopes } }
       ])
 
       registerSimpleAuthStrategy(routed, { clientId: WRITE_CLIENT })
@@ -357,7 +358,7 @@ describe('PATCH /workorders/activity', () => {
       })
     })
 
-    test('returns 401 for a client absent from the clients config', async () => {
+    test('returns 401 for a client absent from the client scopes map', async () => {
       const res = await server.inject({
         method: 'PATCH',
         url: routePath,

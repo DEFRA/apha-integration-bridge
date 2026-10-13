@@ -2,7 +2,7 @@ Update (and resolve) a work schedule activity in SAM. The bridge authenticates t
 
 ## Authentication
 
-Requests must carry a valid bearer token **and** the calling client must hold the `write` scope (granted per client id in `clients.jsonc`). The scope is checked immediately after authentication and before the payload is validated, so a client without it receives `401` whatever its (well-formed) body contains — it cannot use validation errors to probe the schema:
+Requests must carry a valid bearer token **and** the calling client must hold the `write` scope (granted by listing its id in the environment's `WRITE_ALLOWED_CLIENT_IDS` configuration). The scope is checked immediately after authentication and before the payload is validated, so a client without it receives `401` whatever its (well-formed) body contains — it cannot use validation errors to probe the schema:
 
 ```json
 {

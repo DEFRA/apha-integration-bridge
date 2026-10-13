@@ -70,6 +70,24 @@ convict.addFormat({
   }
 })
 
+convict.addFormat({
+  name: 'client-id-list',
+  validate: (value) => {
+    if (
+      !Array.isArray(value) ||
+      value.some(
+        (clientId) => typeof clientId !== 'string' || clientId.length === 0
+      )
+    ) {
+      throw new Error('must be a comma-separated list of non-empty client ids')
+    }
+  },
+  coerce: (/** @type {string} */ value) =>
+    value.trim() === ''
+      ? []
+      : value.split(',').map((clientId) => clientId.trim())
+})
+
 const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
 const isDevelopment = process.env.NODE_ENV === 'development'
@@ -521,11 +539,17 @@ const config = convict({
     }
   },
   clients: {
-    path: {
-      doc: 'Path to the clients config (JSONC)',
-      format: String,
-      default: './clients.jsonc',
-      env: 'CLIENTS_PATH'
+    piiAllowed: {
+      doc: 'Comma-separated OAuth client ids allowed to receive unmasked PII. Unset or empty grants no PII access.',
+      format: 'client-id-list',
+      default: [],
+      env: 'PII_ALLOWED_CLIENT_IDS'
+    },
+    writeAllowed: {
+      doc: 'Comma-separated OAuth client ids allowed to call write endpoints. Unset or empty grants no write access.',
+      format: 'client-id-list',
+      default: [],
+      env: 'WRITE_ALLOWED_CLIENT_IDS'
     }
   },
   rateLimit: {

@@ -9,13 +9,11 @@ LABEL uk.gov.defra.ffc.parent-image=defradigital/node-development:${PARENT_VERSI
 ARG PORT
 ARG PORT_DEBUG
 ENV PORT=${PORT}
-ENV CLIENTS_PATH=/home/node/clients.jsonc
 EXPOSE ${PORT} ${PORT_DEBUG}
 
 COPY --chown=node:node package*.json ./
 RUN npm install
 COPY --chown=node:node ./src ./src
-COPY --chown=node:node clients.jsonc ./
 
 CMD [ "npm", "run", "docker:dev" ]
 
@@ -31,13 +29,11 @@ USER node
 
 COPY --from=development /home/node/package*.json ./
 COPY --from=development /home/node/src ./src/
-COPY --from=development /home/node/clients.jsonc ./
 
 RUN npm ci --omit=dev
 
 ARG PORT
 ENV PORT=${PORT}
-ENV CLIENTS_PATH=/home/node/clients.jsonc
 EXPOSE ${PORT}
 
 CMD [ "node", "src" ]
