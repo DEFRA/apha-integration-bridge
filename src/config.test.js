@@ -60,6 +60,75 @@ describe('config auth.allowedIssuers', () => {
   })
 })
 
+describe('config clients', () => {
+  const CLIENT_ENV_VARS = ['PII_ALLOWED_CLIENT_IDS', 'WRITE_ALLOWED_CLIENT_IDS']
+  const ORIGINAL = Object.fromEntries(
+    CLIENT_ENV_VARS.map((name) => [name, process.env[name]])
+  )
+
+  const clearClientEnv = () => {
+    for (const name of CLIENT_ENV_VARS) {
+      delete process.env[name]
+    }
+  }
+
+  beforeEach(() => {
+    jest.resetModules()
+    clearClientEnv()
+  })
+
+  afterEach(() => {
+    clearClientEnv()
+  })
+
+  afterAll(() => {
+    for (const name of CLIENT_ENV_VARS) {
+      if (ORIGINAL[name] === undefined) {
+        delete process.env[name]
+      } else {
+        process.env[name] = ORIGINAL[name]
+      }
+    }
+  })
+
+  test('defaults both access lists to empty', async () => {
+    const { config } = await import('./config.js')
+
+    expect(config.get('clients')).toEqual({
+      piiAllowed: [],
+      writeAllowed: []
+    })
+  })
+
+  test('comma-splits and trims both client allowlists', async () => {
+    process.env.PII_ALLOWED_CLIENT_IDS = ' pii-client , another-pii-client '
+    process.env.WRITE_ALLOWED_CLIENT_IDS = 'write-client'
+
+    const { config } = await import('./config.js')
+
+    expect(config.get('clients')).toEqual({
+      piiAllowed: ['pii-client', 'another-pii-client'],
+      writeAllowed: ['write-client']
+    })
+  })
+
+  test('treats an empty list as no access', async () => {
+    process.env.PII_ALLOWED_CLIENT_IDS = ''
+
+    const { config } = await import('./config.js')
+
+    expect(config.get('clients.piiAllowed')).toEqual([])
+  })
+
+  test('rejects empty entries in a configured list', async () => {
+    process.env.WRITE_ALLOWED_CLIENT_IDS = 'write-client,,another-client'
+
+    await expect(import('./config.js')).rejects.toThrow(
+      /comma-separated list of non-empty client ids/
+    )
+  })
+})
+
 describe('config samApi', () => {
   const SAM_ENV_VARS = [
     'SAM_API_BASE_URL',

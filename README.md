@@ -77,6 +77,17 @@ the `.env` file.
 | `SAM_API_ENTRA_CLIENT_SECRET` | when base URL set | EntraID client secret.                                                                                                                                                         |
 | `SAM_API_ENTRA_SCOPE`         | when base URL set | Requested scope, normally the Sam app's ID URI plus `/.default` (e.g. `api://<sam-app-id>/.default`).                                                                          |
 
+#### Client permissions
+
+The client ids allowed to access unmasked PII or call write endpoints are configured per environment, rather than in a repository file:
+
+| Variable                   | Required | Description                                                                                        |
+| :------------------------- | :------- | :------------------------------------------------------------------------------------------------- |
+| `PII_ALLOWED_CLIENT_IDS`   | no       | Comma-separated OAuth client ids allowed to receive unmasked PII. Unset or empty grants no access. |
+| `WRITE_ALLOWED_CLIENT_IDS` | no       | Comma-separated OAuth client ids allowed to call write endpoints. Unset or empty grants no access. |
+
+For example, `PII_ALLOWED_CLIENT_IDS=client-id-a,client-id-b`. Set these in `.env.local` for local development; do not commit environment-specific allowlists. Values are read when the service starts, so changing them requires the environment configuration to be applied and the service re-deployed. A client that needs both permissions must be listed in both variables.
+
 Base URLs by environment:
 
 | Environment      | `SAM_API_BASE_URL`                               |
@@ -92,7 +103,7 @@ Notes for deployment:
 - Without `SAM_API_BASE_URL` the endpoint returns `503` in every environment — it never acknowledges a write it did not perform. Use the alpha mock endpoint for canned-scenario testing.
 - Both the Sam gateway host **and** the EntraID token host must be on the squid proxy allowlist — token acquisition also egresses through the proxy.
 - Worst-case latency for one request is roughly `4 × SAM_API_TIMEOUT_MS` (token, write, then a re-authenticated retry if Sam rejects the token). The caller's own timeout must exceed it.
-- Clients need the `write` scope in `clients.jsonc` to call the endpoint.
+- Clients need to be listed in `WRITE_ALLOWED_CLIENT_IDS` to call the endpoint.
 
 ### Setup
 

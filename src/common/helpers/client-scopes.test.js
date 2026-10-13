@@ -11,49 +11,50 @@ import { piiContextPlugin } from './pii-context.js'
 
 describe('findScopesForClient', () => {
   test('returns [] for nullish clientId', () => {
-    const clients = { wfm: { client_ids: ['abc'], scopes: ['pii'] } }
+    const clientsScopes = [{ client_id: 'abc', scopes: ['pii'] }]
 
-    expect(findScopesForClient(undefined, clients)).toEqual([])
+    expect(findScopesForClient(undefined, clientsScopes)).toEqual([])
 
-    expect(findScopesForClient(null, clients)).toEqual([])
+    expect(findScopesForClient(null, clientsScopes)).toEqual([])
 
-    expect(findScopesForClient('', clients)).toEqual([])
+    expect(findScopesForClient('', clientsScopes)).toEqual([])
   })
 
   test('returns [] when no entry matches', () => {
-    const clients = { wfm: { client_ids: ['abc'], scopes: ['pii'] } }
+    const clientsScopes = [{ client_id: 'abc', scopes: ['pii'] }]
 
-    expect(findScopesForClient('xyz', clients)).toEqual([])
+    expect(findScopesForClient('xyz', clientsScopes)).toEqual([])
   })
 
   test('returns the matching entry scopes', () => {
-    const clients = {
-      wfm: { client_ids: ['abc', 'def'], scopes: ['pii', 'admin'] }
-    }
+    const clientsScopes = [
+      { client_id: 'abc', scopes: ['pii'] },
+      { client_id: 'def', scopes: ['pii'] }
+    ]
 
-    expect(findScopesForClient('abc', clients)).toEqual(['pii', 'admin'])
+    expect(findScopesForClient('abc', clientsScopes)).toEqual(['pii'])
   })
 
   test('unions scopes across multiple matching entries', () => {
-    const clients = {
-      legacy: { client_ids: ['abc'], scopes: ['legacy-scope'] },
-      wfm: { client_ids: ['abc'], scopes: ['pii'] }
-    }
+    const clientsScopes = [
+      { client_id: 'abc', scopes: ['pii'] },
+      { client_id: 'abc', scopes: ['write'] }
+    ]
 
-    expect(findScopesForClient('abc', clients).sort()).toEqual(
-      ['legacy-scope', 'pii'].sort()
+    expect(findScopesForClient('abc', clientsScopes).sort()).toEqual(
+      ['pii', 'write'].sort()
     )
   })
 
-  test('returns [] for an empty clients config', () => {
-    expect(findScopesForClient('abc', {})).toEqual([])
+  test('returns [] for an empty client scopes list', () => {
+    expect(findScopesForClient('abc', [])).toEqual([])
   })
 })
 
-const clients = {
-  wfm: { client_ids: ['pii-client'], scopes: ['pii'] },
-  legacy: { client_ids: ['no-pii-client'], scopes: ['other'] }
-}
+const clientsScopes = [
+  { client_id: 'pii-client', scopes: ['pii'] },
+  { client_id: 'write-client', scopes: ['write'] }
+]
 
 const buildServer = async () => {
   const server = Hapi.server()
@@ -80,7 +81,7 @@ const buildServer = async () => {
 
   await server.register({
     plugin: clientScopesPlugin,
-    options: { clients }
+    options: { clientsScopes }
   })
 
   server.route({
@@ -129,16 +130,16 @@ describe('clientScopesPlugin', () => {
     expect(res.result).toEqual({ scopes: ['pii'] })
   })
 
-  test('exposes scopes for a non-pii recognised client', async () => {
+  test('exposes write scope for a write-only recognised client', async () => {
     const res = await server.inject({
       method: 'GET',
       url: '/probe',
-      headers: { 'x-client-id': 'no-pii-client' }
+      headers: { 'x-client-id': 'write-client' }
     })
 
     expect(res.statusCode).toBe(200)
 
-    expect(res.result).toEqual({ scopes: ['other'] })
+    expect(res.result).toEqual({ scopes: ['write'] })
   })
 
   test('exposes [] for an unknown client', async () => {
@@ -191,7 +192,7 @@ const buildIntegrationServer = async () => {
   await server.register([
     {
       plugin: clientScopesPlugin,
-      options: { clients }
+      options: { clientsScopes }
     },
     piiContextPlugin
   ])
@@ -251,7 +252,7 @@ describe('clientScopesPlugin + piiContextPlugin (integration)', () => {
     const res = await server.inject({
       method: 'GET',
       url: '/probe',
-      headers: { 'x-client-id': 'no-pii-client' }
+      headers: { 'x-client-id': 'write-client' }
     })
 
     expect(res.statusCode).toBe(200)
@@ -292,7 +293,7 @@ describe('clientScopesPlugin + piiContextPlugin (integration)', () => {
       server.inject({
         method: 'GET',
         url: '/probe',
-        headers: { 'x-client-id': 'no-pii-client' }
+        headers: { 'x-client-id': 'write-client' }
       })
     ])
 
