@@ -51,7 +51,7 @@ jobs:
           ORACLE_CLIENT_LIB_DIR: ${{ steps.oracle.outputs.install-path }}
 
       - name: Publish Hot Fix
-        uses: DEFRA/cdp-build-action/build-hotfix@4d21d1bcf50f5971593c9e88c93a3de5b9e29a81 # main
+        uses: DEFRA/cdp-build-action/build-hotfix@5ff8be1833b05bfdbe396b3e46e0802822b94615 # main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 #     - run: npm install && npm test
