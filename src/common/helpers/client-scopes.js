@@ -1,27 +1,31 @@
+/** @import {ClientsScopes} from '../../lib/clients/create.js' */
+/** @import {HapiRequestWithScopes} from '../../types/api.js' */
+/** @import {Server} from '@hapi/hapi' */
+
 /**
- * @typedef {import('../../types/api.js').HapiRequestWithScopes} HapiRequestWithScopes
+ * @typedef {HapiRequestWithScopes} HapiRequestWithScopes
  *
  * @typedef {Object} ClientScopesOptions
- * @property {import('../../lib/clients/load.js').ClientsConfig} clients
+ * @property {ClientsScopes} clientsScopes
  */
 
 /**
  * Returns the union of scopes granted to `clientId` across every matching
- * entry in the clients config. Returns `[]` when the client is not present.
+ * client scope entry. Returns `[]` when the client is not present.
  *
  * @param {string | null | undefined} clientId
- * @param {import('../../lib/clients/load.js').ClientsConfig} clients
+ * @param {ClientsScopes} clientsScopes
  * @returns {string[]}
  */
-export const findScopesForClient = (clientId, clients) => {
+export const findScopesForClient = (clientId, clientsScopes) => {
   if (!clientId) {
     return []
   }
 
   const merged = new Set()
 
-  for (const entry of Object.values(clients)) {
-    if (entry.client_ids.includes(clientId)) {
+  for (const entry of clientsScopes) {
+    if (entry.client_id === clientId) {
       for (const scope of entry.scopes) {
         merged.add(scope)
       }
@@ -44,11 +48,11 @@ export const clientScopesPlugin = {
     name: 'clientScopesPlugin',
     version: '0.0.0',
     /**
-     * @param {import('@hapi/hapi').Server} server
+     * @param {Server} server
      * @param {ClientScopesOptions} options
      */
     register: (server, options) => {
-      const { clients } = options
+      const { clientsScopes } = options
 
       server.ext({
         type: 'onPostAuth',
@@ -58,7 +62,7 @@ export const clientScopesPlugin = {
         method: (request, h) => {
           const clientId = request.auth?.artifacts?.client_id
 
-          request.app.scopes = findScopesForClient(clientId, clients)
+          request.app.scopes = findScopesForClient(clientId, clientsScopes)
 
           return h.continue
         }

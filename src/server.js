@@ -25,7 +25,7 @@ import { authPlugin } from './common/helpers/auth.js'
 import { rateLimitPlugin } from './common/helpers/rate-limit.js'
 import { piiContextPlugin } from './common/helpers/pii-context.js'
 import { clientScopesPlugin } from './common/helpers/client-scopes.js'
-import { loadClients } from './lib/clients/load.js'
+import { createClientsScopes } from './lib/clients/create.js'
 import { securityHeaders } from './common/helpers/security-headers.js'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
@@ -42,7 +42,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname)
 async function createServer() {
   setupProxy()
 
-  const clients = loadClients(config.get('clients.path'))
+  const clientsScopes = createClientsScopes(config.get('clients'))
 
   const server = Hapi.server({
     host: config.get('host'),
@@ -125,7 +125,7 @@ async function createServer() {
      */
     {
       plugin: clientScopesPlugin,
-      options: { clients }
+      options: { clientsScopes }
     },
     /**
      * establishes the per-request PII masking context

@@ -509,9 +509,7 @@ describe('POST /customers/find — PII masking integration', () => {
   const PII_CLIENT_ID = 'pii-allowed-client'
   const UNKNOWN_CLIENT_ID = 'unknown-client'
 
-  const clients = {
-    wfm: { client_ids: [PII_CLIENT_ID], scopes: ['pii'] }
-  }
+  const clientsScopes = [{ client_id: PII_CLIENT_ID, scopes: ['pii'] }]
 
   let otelRegistered = false
 
@@ -523,7 +521,7 @@ describe('POST /customers/find — PII masking integration', () => {
 
     const plugins = [
       { plugin: hapiPino, options: { enabled: false } },
-      { plugin: clientScopesPlugin, options: { clients } },
+      { plugin: clientScopesPlugin, options: { clientsScopes } },
       piiContextPlugin,
       oracleDb
     ]
@@ -568,7 +566,7 @@ describe('POST /customers/find — PII masking integration', () => {
     expect(result.data[0]).toEqual(customer1)
   })
 
-  test('masks every PII field when the client_id is not in the clients config', async () => {
+  test('masks every PII field when the client_id is not in the client scopes map', async () => {
     const server = await createServerWithClient(UNKNOWN_CLIENT_ID)
 
     const response = await server.inject({
