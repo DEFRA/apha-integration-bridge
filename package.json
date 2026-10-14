@@ -72,7 +72,7 @@
     "undici": "8.10.2"
   },
   "devDependencies": {
-    "@babel/core": "7.27.4",
+    "@babel/core": "8.0.7",
     "@babel/eslint-parser": "7.29.9",
     "@babel/plugin-transform-explicit-resource-management": "7.27.5",
     "@babel/preset-env": "7.29.7",
