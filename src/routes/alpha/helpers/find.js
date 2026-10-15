@@ -31,7 +31,7 @@ export const mockFindHandler = (mockData) => async (request, h) => {
   const links = {
     self: `${request.path}?${query.toString()}`,
     next:
-      firstPageOffset + pageSize < mockData.length
+      firstPageOffset + pageSize < payload.ids.length
         ? `${request.path}?${movePage(query, 1).toString()}`
         : null,
     prev:

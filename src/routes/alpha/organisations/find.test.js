@@ -2,7 +2,12 @@ import Hapi from '@hapi/hapi'
 import { test, expect, describe } from '@jest/globals'
 
 import route from './find.js'
-import { organisation1, organisation2 } from './find.mocks.js'
+import {
+  organisation1,
+  organisation2,
+  organisation3,
+  organisation4
+} from './find.mocks.js'
 
 const path = '/organisations/find'
 
@@ -127,6 +132,30 @@ describe('organisations/find', () => {
         self: `${path}?${nextQueryParams.toString()}`,
         next: null,
         prev: url
+      }
+    })
+  })
+
+  test('returns the HPAI scenario organisations', async () => {
+    const queryParams = new URLSearchParams({
+      page: '1',
+      pageSize: '10'
+    })
+    const url = `${path}?${queryParams.toString()}`
+    const response = await server.inject({
+      method: 'POST',
+      payload: {
+        ids: [organisation3.id, organisation4.id]
+      },
+      url
+    })
+
+    expect(response.result).toEqual({
+      data: [organisation3, organisation4],
+      links: {
+        self: url,
+        next: null,
+        prev: null
       }
     })
   })

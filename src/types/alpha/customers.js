@@ -1,7 +1,7 @@
 import Joi from 'joi'
 
 import { baseData, relationshipToMany, relationshipToOne } from './helpers.js'
-import { Address } from '../address.js'
+import { StructuredAddress } from './address.js'
 
 export const CustomerRelationship = relationshipToOne(
   baseData({
@@ -25,7 +25,12 @@ export const CustomersRelationships = Joi.object({
 }).required()
 
 const PreferredContact = Joi.object({
-  isPreferred: Joi.boolean().required()
+  isPreferred: Joi.boolean().required(),
+  usageType: Joi.string()
+    .allow(null)
+    .description(
+      'Proposed. SAM address-usage type: HOME, CORRESPONDENCE or PLACEOFBUSINESS; `null` for most entries'
+    )
 })
 
 const EmailAddress = PreferredContact.keys({
@@ -38,14 +43,54 @@ const PhoneNumber = PreferredContact.keys({
   phoneNumber: Joi.string().required()
 })
 
-const CustomerContactDetails = Joi.alternatives(EmailAddress, PhoneNumber)
+const FaxNumber = PreferredContact.keys({
+  type: Joi.string().valid('fax').required(),
+  faxNumber: Joi.string().required()
+})
+
+export const CustomerContactDetails = Joi.alternatives(
+  EmailAddress,
+  PhoneNumber,
+  FaxNumber
+)
+
+export const Role = Joi.object({
+  mainRoleType: Joi.string()
+    .valid(
+      'CUSTOMER',
+      'SUPPLIER',
+      'EMPLOYEE',
+      'DEFRAORGROLE',
+      'INTERESTEDPARTY'
+    )
+    .required()
+    .description("SAM's high-level role class"),
+  roleType: Joi.string()
+    .required()
+    .description(
+      'SAM role type, for example CPHHOLDER, LIVESTOCKKEEPER or LANDOWNER'
+    ),
+  roleName: Joi.string()
+    .required()
+    .allow(null)
+    .description("SAM's label for `roleType`, for example `CPH Holder`"),
+  from: Joi.string().required().description('Start of the role')
+})
+  .description('A current role the party holds in SAM')
+  .label('Role')
 
 export const Customer = CustomersData.keys({
+  partyType: Joi.string()
+    .valid('PERSON')
+    .description('Proposed. Always PERSON on this endpoint'),
   title: Joi.string().required(),
   firstName: Joi.string().required(),
   middleName: Joi.string().required().allow(null),
   lastName: Joi.string().required(),
-  addresses: Joi.array().items(Address.keys({ isPreferred: Joi.boolean() })),
+  roles: Joi.array().items(Role).description('Proposed'),
+  addresses: Joi.array().items(
+    StructuredAddress.keys({ isPreferred: Joi.boolean() })
+  ),
   contactDetails: Joi.array().items(CustomerContactDetails),
   relationships: CustomersRelationships
 })
