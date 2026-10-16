@@ -4,6 +4,10 @@ You can test this endpoint by supplying one or all of the following mock IDs:
 
 - `L123456`
 - `L234567`
+- `L97339`
+- `L120044`
+- `L104588`
+- `L151203`
 
 You can send one ID or multiple IDs in the `ids` array.
 
@@ -19,7 +23,7 @@ Example payload (all mock IDs):
 
 ```json
 {
-  "ids": ["L123456", "L234567"]
+  "ids": ["L123456", "L234567", "L97339", "L120044", "L104588", "L151203"]
 }
 ```
 
