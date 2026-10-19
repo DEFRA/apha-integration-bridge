@@ -39,6 +39,13 @@ Response body:
 - `data.relationships.facilities.data`: facility references
 - `links.self`: path of this resource
 
+### Address fields
+
+- `ukInternalCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`.
+- `countryCode` is SAM's `COUNTRY_CODE`: one of `England`, `GB` or `Wales`, or `null`.
+
+> **Not the same as `countryCode` elsewhere.** `POST /locations/find`, `POST /customers/find` and `POST /organisations/find` return SAM's `UK_INTERNAL_CODE` as `address.countryCode`. To compare this endpoint with those, use `ukInternalCode` here.
+
 Example:
 
 ```json
@@ -54,7 +61,7 @@ Example:
       "town": "Exampletown",
       "administrativeAreaCounty": "Devon",
       "postcode": "EX1 2AB",
-      "ukInternalCode": "UKX123",
+      "ukInternalCode": "England",
       "countryCode": "GB"
     },
     "relationships": {

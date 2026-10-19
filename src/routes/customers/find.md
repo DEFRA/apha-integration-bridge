@@ -53,6 +53,10 @@ Each returned customer can include:
 - `contactDetails`: email/mobile/landline entries with preferred flag
 - `relationships.srabpiPlants`
 
+### Address fields
+
+- `addresses[].countryCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`. It is not SAM's `COUNTRY_CODE`. Note that `GET /locations/{locationId}` returns this value as `ukInternalCode`, and uses `countryCode` for SAM's `COUNTRY_CODE` instead.
+
 Example:
 
 ```json
