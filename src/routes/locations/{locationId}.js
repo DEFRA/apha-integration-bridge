@@ -95,9 +95,9 @@ function toAddress(row) {
       saonEndNumber: row.saon_end_number ?? null,
       saonEndNumberSuffix: row.saon_end_number_suffix ?? null,
       street: mask(row.street ?? null),
-      locality: row.locality ?? null,
+      locality: mask(row.locality ?? null),
       town: mask(row.town ?? null),
-      administrativeAreaCounty: row.county ?? null,
+      administrativeAreaCounty: mask(row.county ?? null),
       postcode: mask(row.postcode ?? null),
       ukInternalCode: row.uk_internal_code ?? null,
       countryCode: row.country_code ?? null

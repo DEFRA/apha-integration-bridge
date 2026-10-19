@@ -44,6 +44,17 @@ test('keeps telecom address usage optional when resolving contact details', () =
   )
 })
 
+test('selects the address usage type of each telecom contact', () => {
+  const { sql } = findCustomersQuery(['C123456'], 'PERSON')
+
+  expect(sql).toMatch(
+    /telecom_contacts AS \([\s\S]*au\.address_usage_type,[\s\S]*\),\ncounty_lookup/
+  )
+  expect(sql).toContain('mobile.address_usage_type mobile_usage_type')
+  expect(sql).toContain('landline.address_usage_type landline_usage_type')
+  expect(sql).toContain('email.address_usage_type email_usage_type')
+})
+
 test('throws if customerType is missing', () => {
   expect(() =>
     // @ts-expect-error - explicitly testing missing required parameter
@@ -177,7 +188,8 @@ describe('findCustomers', () => {
           {
             type: 'landline',
             phoneNumber: '+44 1111 11111',
-            isPreferred: true
+            isPreferred: true,
+            usageType: null
           }
         ],
         relationships: {
@@ -222,12 +234,14 @@ describe('findCustomers', () => {
           {
             type: 'email',
             emailAddress: 'example@example.com',
-            isPreferred: false
+            isPreferred: false,
+            usageType: null
           },
           {
             type: 'mobile',
             phoneNumber: '+44 11111 11111',
-            isPreferred: true
+            isPreferred: true,
+            usageType: null
           }
         ],
         relationships: {

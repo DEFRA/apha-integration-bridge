@@ -62,12 +62,14 @@ const customer1 = {
     {
       type: 'email',
       emailAddress: 'example@example.com',
-      isPreferred: false
+      isPreferred: false,
+      usageType: 'EMAIL'
     },
     {
       type: 'mobile',
       phoneNumber: '+44 11111 11111',
-      isPreferred: true
+      isPreferred: true,
+      usageType: 'MOBILE'
     }
   ],
   relationships: {
@@ -113,7 +115,8 @@ const customer2 = {
     {
       type: 'landline',
       phoneNumber: '+44 1111 11111',
-      isPreferred: true
+      isPreferred: true,
+      usageType: 'LANDLINE'
     }
   ],
   relationships: {

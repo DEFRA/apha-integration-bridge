@@ -41,10 +41,15 @@ Response body:
 
 ### Address fields
 
+- `administrativeAreaCounty` is the decoded county name (from SAM's `ADMINISTRATIVE_AREA` code), as `POST /locations/find` returns it, or `null` if the code has no description.
 - `ukInternalCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`.
 - `countryCode` is SAM's `COUNTRY_CODE`: one of `England`, `GB` or `Wales`, or `null`.
 
 > **Not the same as `countryCode` elsewhere.** `POST /locations/find`, `POST /customers/find` and `POST /organisations/find` return SAM's `UK_INTERNAL_CODE` as `address.countryCode`. To compare this endpoint with those, use `ukInternalCode` here.
+
+### Masking
+
+Without the `pii` scope, `street`, `locality`, `town`, `administrativeAreaCounty` and `postcode` are masked, matching the structured address on the find endpoints.
 
 Example:
 

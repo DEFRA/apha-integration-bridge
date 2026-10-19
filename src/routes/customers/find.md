@@ -50,12 +50,28 @@ Each returned customer can include:
 
 - Identity fields: `id`, `title`, `firstName`, `middleName`, `lastName`
 - `addresses`: with preferred flag and structured address objects
-- `contactDetails`: email/mobile/landline entries with preferred flag
+- `contactDetails`: email/mobile/landline entries with preferred flag and `usageType`
 - `relationships.srabpiPlants`
 
 ### Address fields
 
+- `addresses[].county` is the decoded county name (from SAM's `ADMINISTRATIVE_AREA` code).
 - `addresses[].countryCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`. It is not SAM's `COUNTRY_CODE`. Note that `GET /locations/{locationId}` returns this value as `ukInternalCode`, and uses `countryCode` for SAM's `COUNTRY_CODE` instead.
+
+### Contact usage type
+
+Each `contactDetails` entry carries `usageType`: SAM's `ADDRESS_USAGE_TYPE` for that contact, or `null` if none is recorded. Use it to tell a number recorded for a named secondary contact apart from the customer's own. A number recorded under more than one usage type appears once per usage type; entries are labelled, not filtered out.
+
+Example contact entry:
+
+```json
+{
+  "type": "mobile",
+  "phoneNumber": "+44 11111 11111",
+  "isPreferred": true,
+  "usageType": "MOBILE"
+}
+```
 
 Example:
 
