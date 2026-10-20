@@ -14,7 +14,6 @@ import {
   buildApplicationCreationCompositeRequest,
   refIdLicenseTypeQuery
 } from '../../../lib/salesforce/request-builders/application-creation-request-builder.js'
-import { buildCustomerCreationPayload } from '../../../lib/salesforce/request-builders/customer-creation-request-builder.js'
 import { buildCaseCreationPayload } from '../../../lib/salesforce/request-builders/case-creation-request-builder.js'
 import { buildSupportingMaterialsCompositeRequest } from '../../../lib/salesforce/request-builders/supporting-materials-request-builder.js'
 import { refIdApplicationRef } from '../../../lib/salesforce/request-builders/file-upload-request-builder.js'
@@ -29,7 +28,7 @@ import {
 import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request-builders/questions-and-answers-creation-request-builder.js'
 
 /**
- * @import {CreateCasePayload, GuestCustomerDetails} from '../../../types/case-management/case.js'
+ * @import {CreateCasePayload} from '../../../types/case-management/case.js'
  * @import {Request} from '@hapi/hapi'
  * @import {Logger} from 'pino'
  * @import {CompositeResponseItem, CompositeObjectResponseItem} from '../../../types/salesforce/composite-response.js'
@@ -90,12 +89,8 @@ const options = {
  */
 async function handler(request, h) {
   await runCaseCreationFlow(request, async () => {
-    const [applicationId, customerId] = await Promise.all([
-      createApplicationAndFile(request),
-      createCustomerAccount(request)
-    ])
-
-    const caseId = await createCase(request, applicationId, customerId)
+    const applicationId = await createApplicationAndFile(request)
+    const caseId = await createCase(request, applicationId)
     await Promise.all([
       addQuestionsAndAnswers(request, applicationId),
       uploadSupportingMaterials(request, caseId),
@@ -124,19 +119,14 @@ async function runCaseCreationFlow(request, action) {
 /**
  * @param {Request} request
  * @param {string} applicationId
- * @param {string} customerId
  * @returns {Promise<string|null>}
  */
-async function createCase(request, applicationId, customerId) {
+async function createCase(request, applicationId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const applicationReference = payload.applicationReferenceNumber
   const licenceType = /** @type {string} */ (payload.keyFacts.licenceType.value)
 
-  const createCasePayload = buildCaseCreationPayload(
-    applicationId,
-    customerId,
-    licenceType
-  )
+  const createCasePayload = buildCaseCreationPayload(applicationId, licenceType)
 
   const salesforceResponse = await retry(() => {
     return salesforceClient.createOrUpdateCase(
@@ -349,25 +339,6 @@ async function uploadCaseFile(caseId, title, filePath, logger) {
   }, retriesConfig)
 
   return salesforceResponse
-}
-
-/**
- * @param {Request} request
- * @returns {Promise<string|null>}
- */
-async function createCustomerAccount(request) {
-  const payload = /** @type {CreateCasePayload} */ (request.payload)
-  const applicant = /** @type {GuestCustomerDetails} */ (payload.applicant)
-  const customerCreationPayload = buildCustomerCreationPayload(applicant)
-
-  const salesforceResponse = await retry(() => {
-    return salesforceClient.createCustomer(
-      customerCreationPayload,
-      request.logger
-    )
-  }, retriesConfig)
-
-  return salesforceResponse?.id || null
 }
 
 /**

@@ -10,7 +10,7 @@ import {
 import { salesforceTaggedError } from './errors/error-helpers.js'
 
 /**
- * @import {CaseDetailsPayload, UpdateCaseDetailsPayload} from '../../types/case-management/case.js'
+ * @import {CaseDetailsPayload} from '../../types/case-management/case.js'
  * @import {Logger} from 'pino'
  * @import {CompositeResponse} from '../../types/salesforce/composite-response.js'
  * @import {CompositeObjectResponse} from '../../types/salesforce/composite-response.js'
@@ -298,24 +298,7 @@ class SalesforceClient {
   }
 
   /**
-   * Create a customer (Contact) in Salesforce.
-   *
-   * @param {object} payload The request payload to forward.
-   * @param {Logger} [logger] Optional logger.
-   * @returns {Promise<CreateGuestResponse>} The Salesforce create guest response.
-   */
-  async createCustomer(payload, logger) {
-    return this.sendRequest(
-      HTTPMethods.POST,
-      'sobjects/Contact',
-      payload,
-      logger,
-      'createCustomer'
-    )
-  }
-
-  /**
-   * @param {CaseDetailsPayload | UpdateCaseDetailsPayload} payload
+   * @param {CaseDetailsPayload} payload
    * @param {string} applicationReference
    * @param {Logger} [logger]
    * @returns {Promise<CreateGuestResponse>} The Salesforce create case response.

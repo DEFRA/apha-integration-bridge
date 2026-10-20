@@ -45,15 +45,6 @@ const GuestCustomerDetailsSchema = Joi.object({
  * @typedef {Object} CaseDetailsPayload
  * @property {string} Priority
  * @property {string} APHA_Application__c
- * @property {string} ContactId
- */
-
-/**
- * @typedef {Object} UpdateCaseDetailsPayload
- * @property {string} [Status]
- * @property {string} [Priority]
- * @property {string} [APHA_Application__c]
- * @property {string} [ContactId]
  */
 
 /**
@@ -276,7 +267,7 @@ export const CreateCasePayloadSchema = Joi.object({
   applicationReferenceNumber: Joi.string().required(),
   sections: Joi.array().items(SectionSchema).required(),
   keyFacts: KeyFactsSchema.required(),
-  applicant: GuestCustomerDetailsSchema.required()
+  applicant: GuestCustomerDetailsSchema.optional() // making this optional as not in use anymore since we are not creating customer.
 })
   .description('Case creation API request payload')
   .label('Create Case Request')

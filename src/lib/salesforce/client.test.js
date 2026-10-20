@@ -17,7 +17,9 @@ const mockLogger = /** @type {any} */ ({
   error: jest.fn()
 })
 
-const mockFetch = jest.fn(() => Promise.resolve(/** @type {Response} */ ({})))
+const mockFetch = /** @type {jest.MockedFunction<typeof fetch>} */ (
+  jest.fn(() => Promise.resolve(/** @type {Response} */ ({})))
+)
 
 const mockedAccessTokenResponse = {
   access_token: 'token-123',
@@ -195,64 +197,6 @@ describe('salesforce client', () => {
     )
   })
 
-  test('createCustomer returns response body on success', async () => {
-    const mockedResponse = {
-      id: '001',
-      success: true,
-      errors: []
-    }
-    mockFetch
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
-      )
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (mockJsonResponse(201, mockedResponse))
-      )
-
-    const result = await salesforceClient.createCustomer(
-      {
-        FirstName: 'Name',
-        LastName: 'Surname',
-        Email: 'test@mail.com'
-      },
-      mockLogger
-    )
-
-    expect(result).toEqual(mockedResponse)
-    expect(mockLogger.debug).toHaveBeenCalledWith(
-      expect.objectContaining({
-        authContext: 'system-level',
-        operation: 'createCustomer'
-      }),
-      'Sending POST request'
-    )
-  })
-
-  test('createCustomer throws with sanitised logging when Salesforce returns error', async () => {
-    const errorMessage = 'Unexpected character...'
-    mockFetch
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (mockJsonResponse(200, mockedAccessTokenResponse))
-      )
-      .mockResolvedValueOnce(
-        /** @type {any}*/ (
-          mockJsonResponse(400, {
-            message: errorMessage,
-            errorCode: 'JSON_PARSER_ERROR'
-          })
-        )
-      )
-
-    await expect(
-      salesforceClient.createCustomer({}, mockLogger)
-    ).rejects.toThrow(/Salesforce POST request failed/)
-
-    expect(mockLogger.error).toHaveBeenCalledWith(
-      { status: 400, body: errorMessage, operation: 'createCustomer' },
-      'Salesforce POST request failed'
-    )
-  })
-
   test('createOrUpdateCase returns response body on success', async () => {
     const mockedResponse = {
       id: 'CASE-001',
@@ -269,8 +213,7 @@ describe('salesforce client', () => {
 
     const payload = {
       Priority: 'Medium',
-      APHA_Application__c: 'APP-123',
-      ContactId: 'CONTACT-456'
+      APHA_Application__c: 'APP-123'
     }
 
     const result = await salesforceClient.createOrUpdateCase(
