@@ -1,0 +1,491 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`GET /holdings/01/001/0001 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/01/409/1111 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "DUPLICATE_RESOURCES_FOUND",
+    "errors": [],
+    "message": "Duplicate Location resources found associated with given CPH number.",
+  },
+  "statusCode": 409,
+}
+`;
+
+exports[`GET /holdings/04/432/1234 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "data": {
+      "cphType": "HOLDER_TEST",
+      "id": "04/432/1234",
+      "relationships": {
+        "cphHolder": {
+          "data": {
+            "id": "CUST-044321234",
+            "type": "customers",
+          },
+        },
+        "location": {
+          "data": {
+            "id": "LOC-GAMMA",
+            "type": "locations",
+          },
+        },
+      },
+      "type": "holdings",
+    },
+    "links": {
+      "self": "/holdings/04/432/1234",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`GET /holdings/07/094/0117 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/07/204/6008 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/07/204/6031 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/11/111/1111 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "data": {
+      "cphType": "HOLDER_TEST",
+      "id": "11/111/1111",
+      "relationships": {
+        "cphHolder": {
+          "data": {
+            "id": "CUST-111111111",
+            "type": "customers",
+          },
+        },
+        "location": {
+          "data": {
+            "id": "LOC-1111111111",
+            "type": "locations",
+          },
+        },
+      },
+      "type": "holdings",
+    },
+    "links": {
+      "self": "/holdings/11/111/1111",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`GET /holdings/14/159/0112 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/22/222/2222 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "data": {
+      "cphType": "HOLDER_TEST",
+      "id": "22/222/2222",
+      "relationships": {
+        "cphHolder": {
+          "data": {
+            "id": "CUST-222222222",
+            "type": "customers",
+          },
+        },
+        "location": {
+          "data": {
+            "id": "LOC-2222222222",
+            "type": "locations",
+          },
+        },
+      },
+      "type": "holdings",
+    },
+    "links": {
+      "self": "/holdings/22/222/2222",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`GET /holdings/29/820/0001 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "DUPLICATE_RESOURCES_FOUND",
+    "errors": [],
+    "message": "Duplicate Location resources found associated with given CPH number.",
+  },
+  "statusCode": 409,
+}
+`;
+
+exports[`GET /holdings/33/333/3333 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "data": {
+      "cphType": "HOLDER_TEST",
+      "id": "33/333/3333",
+      "relationships": {
+        "cphHolder": {
+          "data": {
+            "id": "CUST-333333333",
+            "type": "customers",
+          },
+        },
+        "location": {
+          "data": {
+            "id": "LOC-3333333333",
+            "type": "locations",
+          },
+        },
+      },
+      "type": "holdings",
+    },
+    "links": {
+      "self": "/holdings/33/333/3333",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`GET /holdings/45/001/0002 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "data": {
+      "cphType": "DEV_SAMPLE",
+      "id": "45/001/0002",
+      "relationships": {
+        "cphHolder": {
+          "data": {
+            "id": "CUST-450010002",
+            "type": "customers",
+          },
+        },
+        "location": {
+          "data": {
+            "id": "LOC-BETA",
+            "type": "locations",
+          },
+        },
+      },
+      "type": "holdings",
+    },
+    "links": {
+      "self": "/holdings/45/001/0002",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`GET /holdings/52/078/0012 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/66/053/0218 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/76/348/0005 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/79/440/8500 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`GET /holdings/98/001/0001 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "data": {
+      "cphType": "HOLDER_TEST",
+      "id": "98/001/0001",
+      "relationships": {
+        "cphHolder": {
+          "data": {
+            "id": "CUST-98001",
+            "type": "customers",
+          },
+        },
+        "location": {
+          "data": {
+            "id": "L98001",
+            "type": "locations",
+          },
+        },
+      },
+      "type": "holdings",
+    },
+    "links": {
+      "self": "/holdings/98/001/0001",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`GET /holdings/98/002/0001 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "data": {
+      "cphType": "HOLDER_TEST",
+      "id": "98/002/0001",
+      "relationships": {
+        "cphHolder": {
+          "data": {
+            "id": "CUST-98002",
+            "type": "customers",
+          },
+        },
+        "location": {
+          "data": {
+            "id": "L98002",
+            "type": "locations",
+          },
+        },
+      },
+      "type": "holdings",
+    },
+    "links": {
+      "self": "/holdings/98/002/0001",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`GET /holdings/99/999/9999 is unchanged apart from localAuthority 1`] = `
+{
+  "result": {
+    "code": "NOT_FOUND",
+    "errors": [],
+    "message": "Holding not found or inactive",
+  },
+  "statusCode": 404,
+}
+`;
+
+exports[`POST /holdings/find is unchanged apart from cphType 1`] = `
+{
+  "result": {
+    "data": [
+      {
+        "id": "04/432/1234",
+        "localAuthority": "Local Authority 04/432",
+        "relationships": {
+          "cphHolder": {
+            "data": {
+              "id": "CUST-044321234",
+              "type": "customers",
+            },
+          },
+          "location": {
+            "data": {
+              "id": "LOC-GAMMA",
+              "type": "locations",
+            },
+          },
+        },
+        "type": "holdings",
+      },
+      {
+        "id": "11/111/1111",
+        "localAuthority": "Local Authority 11/111",
+        "relationships": {
+          "cphHolder": {
+            "data": {
+              "id": "CUST-111111111",
+              "type": "customers",
+            },
+          },
+          "location": {
+            "data": {
+              "id": "LOC-1111111111",
+              "type": "locations",
+            },
+          },
+        },
+        "type": "holdings",
+      },
+      {
+        "id": "22/222/2222",
+        "localAuthority": "Local Authority 22/222",
+        "relationships": {
+          "cphHolder": {
+            "data": {
+              "id": "CUST-222222222",
+              "type": "customers",
+            },
+          },
+          "location": {
+            "data": {
+              "id": "LOC-2222222222",
+              "type": "locations",
+            },
+          },
+        },
+        "type": "holdings",
+      },
+      {
+        "id": "33/333/3333",
+        "localAuthority": null,
+        "relationships": {
+          "cphHolder": {
+            "data": {
+              "id": "CUST-333333333",
+              "type": "customers",
+            },
+          },
+          "location": {
+            "data": {
+              "id": "LOC-3333333333",
+              "type": "locations",
+            },
+          },
+        },
+        "type": "holdings",
+      },
+      {
+        "id": "45/001/0002",
+        "localAuthority": null,
+        "relationships": {
+          "cphHolder": {
+            "data": {
+              "id": "CUST-450010002",
+              "type": "customers",
+            },
+          },
+          "location": {
+            "data": {
+              "id": "LOC-BETA",
+              "type": "locations",
+            },
+          },
+        },
+        "type": "holdings",
+      },
+      {
+        "id": "98/001/0001",
+        "localAuthority": "Local Authority 98/001",
+        "relationships": {
+          "cphHolder": {
+            "data": {
+              "id": "CUST-98001",
+              "type": "customers",
+            },
+          },
+          "location": {
+            "data": {
+              "id": "L98001",
+              "type": "locations",
+            },
+          },
+        },
+        "type": "holdings",
+      },
+      {
+        "id": "98/002/0001",
+        "localAuthority": "Local Authority 98/002",
+        "relationships": {
+          "cphHolder": {
+            "data": {
+              "id": "CUST-98002",
+              "type": "customers",
+            },
+          },
+          "location": {
+            "data": {
+              "id": "L98002",
+              "type": "locations",
+            },
+          },
+        },
+        "type": "holdings",
+      },
+    ],
+    "links": {
+      "next": null,
+      "prev": null,
+      "self": "/holdings/find?",
+    },
+  },
+  "statusCode": 200,
+}
+`;

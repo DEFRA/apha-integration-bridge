@@ -43,6 +43,7 @@ Example:
 - Duplicate IDs are removed before paging.
 - Unknown IDs are ignored.
 - Out-of-range page returns `200` with empty `data`.
+- A CPH with several current holderships returns the selected one: the latest start date, then the highest SAM key. `GET /holdings/{countyId}/{parishId}/{holdingId}/locations` lists every holdership and marks this one `selected`.
 
 ## Success response (`200 OK`)
 
@@ -50,6 +51,7 @@ Each holding includes:
 
 - `type`: always `holdings`
 - `id`: CPH
+- `cphType`: the CPH type of the reported holdership, string or `null`
 - `localAuthority`: string or `null`
 - `relationships.location.data`: related location reference
 - `relationships.cphHolder.data`: related customer reference
@@ -62,6 +64,7 @@ Example:
     {
       "type": "holdings",
       "id": "11/111/1111",
+      "cphType": "PERMANENT",
       "localAuthority": "Local Authority 11/111",
       "relationships": {
         "location": {

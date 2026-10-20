@@ -47,3 +47,18 @@ export const Address = Joi.object({
   postcode: Joi.string().allow(null).required(),
   countryCode: Joi.string().allow(null).required()
 })
+
+/**
+ * The address of the holding sub-resources, with SAM's country code in
+ * `countryCode` and the UK nation in `ukInternalCode`
+ */
+export const StructuredAddress = Address.keys({
+  countryCode: Joi.string()
+    .allow(null)
+    .required()
+    .description("SAM's country code"),
+  ukInternalCode: Joi.string()
+    .allow(null)
+    .required()
+    .description('The UK nation or Crown Dependency, as SAM stores it')
+}).label('Structured address')

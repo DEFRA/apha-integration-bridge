@@ -137,6 +137,7 @@ describe('holdings/find', () => {
       holding1: {
         type: 'holdings',
         id: '11/111/1111',
+        cphType: 'HOLDER_TEST',
         localAuthority: 'Local Authority 11/111',
         relationships: {
           cphHolder: {
@@ -156,6 +157,7 @@ describe('holdings/find', () => {
       holding2: {
         type: 'holdings',
         id: '22/222/2222',
+        cphType: 'HOLDER_TEST',
         localAuthority: 'Local Authority 22/222',
         relationships: {
           cphHolder: {
@@ -175,6 +177,7 @@ describe('holdings/find', () => {
       holding3: {
         type: 'holdings',
         id: '33/333/3333',
+        cphType: 'HOLDER_TEST',
         localAuthority: null,
         relationships: {
           cphHolder: {
@@ -210,6 +213,50 @@ describe('holdings/find', () => {
 
       expect(response.result).toEqual({
         data: [expectedHoldingsData.holding1, expectedHoldingsData.holding2],
+        links: {
+          self: url,
+          next: null,
+          prev: null
+        }
+      })
+    })
+
+    test('returns the selected holdership of a CPH with several: the latest, then the highest key', async () => {
+      const server = await createServer()
+      const url = `${path}?page=1&pageSize=10`
+      const response = await server.inject({
+        method: 'POST',
+        payload: {
+          ids: ['29/820/0001', '01/409/1111']
+        },
+        url
+      })
+
+      // 29/820/0001's core 2 holdership started last; both of 01/409/1111's
+      // started the same day, so the one with the higher key is reported
+      expect(response.result).toEqual({
+        data: [
+          {
+            type: 'holdings',
+            id: '29/820/0001',
+            cphType: 'TEMPORARY',
+            localAuthority: null,
+            relationships: {
+              location: { data: { type: 'locations', id: 'L298220' } },
+              cphHolder: { data: { type: 'customers', id: 'C2982001' } }
+            }
+          },
+          {
+            type: 'holdings',
+            id: '01/409/1111',
+            cphType: 'TEMPORARY',
+            localAuthority: 'Local Authority 01/409',
+            relationships: {
+              location: { data: { type: 'locations', id: 'LOC-THETA' } },
+              cphHolder: { data: { type: 'customers', id: 'CUST-014091111' } }
+            }
+          }
+        ],
         links: {
           self: url,
           next: null,
