@@ -56,13 +56,9 @@ export const StructuredAddress = Address.keys({
   countryCode: Joi.string()
     .allow(null)
     .required()
-    .description(
-      "The UK nation or Crown Dependency, SAM's UK_INTERNAL_CODE, as the find endpoints return it"
-    ),
+    .description("SAM's country code"),
   ukInternalCode: Joi.string()
     .allow(null)
     .required()
-    .description(
-      'The same UK nation or Crown Dependency, under the name GET /locations/{locationId} uses'
-    )
+    .description('The UK nation or Crown Dependency, as SAM stores it')
 }).label('Structured address')
