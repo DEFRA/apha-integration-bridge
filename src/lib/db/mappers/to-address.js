@@ -33,15 +33,14 @@ export const toAddress = (row) => {
 }
 
 /**
- * The address as the holding sub-resources return it, with SAM's country code
- * in `countryCode` and the UK nation in `ukInternalCode`, as the HPAI contract
- * has them. `toAddress` keeps the nation in `countryCode` for the endpoints
- * that already return it, until their correction.
+ * The address as the holding sub-resources return it: `toAddress`'s, whose
+ * `countryCode` is the UK nation, as WFM rely on, with the nation repeated in
+ * `ukInternalCode`, the name `GET /locations/{locationId}` uses. SAM's
+ * `COUNTRY_CODE` mixes nations with `GB`, so it is not returned.
  *
  * @param {Record<string, unknown>} row
  */
 export const toStructuredAddress = (row) => ({
   ...toAddress(row),
-  countryCode: asNullableString(row.country_code),
   ukInternalCode: asNullableString(row.uk_internal_code)
 })

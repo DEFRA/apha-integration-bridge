@@ -49,16 +49,20 @@ export const Address = Joi.object({
 })
 
 /**
- * The address of the holding sub-resources, with SAM's country code in
- * `countryCode` and the UK nation in `ukInternalCode`
+ * The address of the holding sub-resources, with the UK nation in
+ * `countryCode`, as the find endpoints return it, and again in `ukInternalCode`
  */
 export const StructuredAddress = Address.keys({
   countryCode: Joi.string()
     .allow(null)
     .required()
-    .description("SAM's country code"),
+    .description(
+      "The UK nation or Crown Dependency, SAM's UK_INTERNAL_CODE, as the find endpoints return it"
+    ),
   ukInternalCode: Joi.string()
     .allow(null)
     .required()
-    .description('The UK nation or Crown Dependency, as SAM stores it')
+    .description(
+      'The same UK nation or Crown Dependency, under the name GET /locations/{locationId} uses'
+    )
 }).label('Structured address')

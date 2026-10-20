@@ -77,7 +77,7 @@ const hillTopFarmAddress = {
   street: 'Hill Lane',
   town: 'Exampleton',
   postcode: 'EX2 9HT',
-  countryCode: 'GB',
+  countryCode: 'England',
   ukInternalCode: 'England'
 }
 
