@@ -33,10 +33,8 @@ export const toAddress = (row) => {
 }
 
 /**
- * The address as the holding sub-resources return it: `toAddress`'s, whose
- * `countryCode` is the UK nation, as WFM rely on, with the nation repeated in
- * `ukInternalCode`, the name `GET /locations/{locationId}` uses. SAM's
- * `COUNTRY_CODE` mixes nations with `GB`, so it is not returned.
+ * The address as the holding sub-resources return it, with SAM's country code
+ * in `countryCode` and the UK nation in `ukInternalCode`.
  *
  * @param {Record<string, unknown>} row
  */
