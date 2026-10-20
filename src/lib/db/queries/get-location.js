@@ -1,14 +1,15 @@
 import Joi from 'joi'
-import { loadSQL } from '../utils/load-sql.js'
+import { findLocationsQuery } from './find-locations.js'
 import { LocationIdSchema } from '../../../types/locations.js'
-
-const sql = loadSQL(import.meta.filename)
 
 export const GetLocationSchema = Joi.object({
   locationId: LocationIdSchema.description('Location ID (e.g., L97339)')
 })
 
 /**
+ * The location's rows from find-locations.sql, the query `POST /locations/find`
+ * runs
+ *
  * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings
  */
 export function getLocation(locationId) {
@@ -17,8 +18,5 @@ export function getLocation(locationId) {
     throw new Error(`Invalid parameters: ${error.message}`)
   }
 
-  return {
-    sql,
-    bindings: { location: value.locationId }
-  }
+  return findLocationsQuery([value.locationId])
 }
