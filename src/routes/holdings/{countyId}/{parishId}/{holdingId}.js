@@ -11,6 +11,7 @@ import {
   HTTPException,
   HTTPError
 } from '../../../../lib/http/http-exception.js'
+import { asNullableString } from '../../../../lib/db/mappers/as-nullable-string.js'
 import { execute } from '../../../../lib/db/operations/execute.js'
 import { findHoldingQuery } from '../../../../lib/db/queries/find-holding.js'
 import { HTTPObjectResponse } from '../../../../lib/http/http-response.js'
@@ -162,7 +163,8 @@ export async function handler(request, h) {
     const { cph, cphtype, locationid } = row
 
     const response = new HTTPObjectResponse(Holdings, cph, {
-      cphType: cphtype
+      cphType: cphtype,
+      localAuthority: asNullableString(row.laname)
     })
 
     response.links({ self: request.path })

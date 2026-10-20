@@ -24,6 +24,7 @@ test('toHolding maps base holding and relationship identifiers', () => {
   expect(holding).toEqual({
     type: 'holdings',
     id: '11/111/1111',
+    cphType: null,
     localAuthority: 'LA name 001',
     relationships: {
       location: {
@@ -53,6 +54,7 @@ test('toHolding keeps relationship data as null when optional ids are not presen
   expect(holding).toEqual({
     type: 'holdings',
     id: '22/222/2222',
+    cphType: null,
     localAuthority: null,
     relationships: {
       location: {

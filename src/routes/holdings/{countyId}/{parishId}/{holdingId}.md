@@ -5,7 +5,7 @@ Use this endpoint for a single CPH lookup when you already have county/parish/ho
 ## What this endpoint does
 
 - Looks up exactly one holding by its CPH components.
-- Returns core holding identity (`id`, `cphType`) and key relationships.
+- Returns core holding identity (`id`, `cphType`), its local authority (`localAuthority`, `null` when SAM has none) and key relationships.
 - Fails with specific errors when the CPH is missing or ambiguous.
 
 ## Authentication and headers
@@ -42,6 +42,7 @@ Example:
     "type": "holdings",
     "id": "45/001/0002",
     "cphType": "DEV_SAMPLE",
+    "localAuthority": "Local Authority 45/001",
     "relationships": {
       "location": {
         "data": {
@@ -86,3 +87,4 @@ The response does not say which case applies, and does not list the matching hol
 
 - If your source system already stores full CPH strings, `POST /holdings/find` may be easier.
 - Treat `409` as a data-quality issue that needs investigation rather than a transient retry.
+- For a CPH that returns `409`, `GET /holdings/{countyId}/{parishId}/{holdingId}/locations`, `/parties` and `/suppliers` list every current holdership, everyone involved with it and the vet practice and delivery partner of each livestock unit.

@@ -31,3 +31,17 @@ export const toAddress = (row) => {
     isPreferred: asPreferredFlag(row.preferred_contact_method_ind)
   }
 }
+
+/**
+ * The address as the holding sub-resources return it, with SAM's country code
+ * in `countryCode` and the UK nation in `ukInternalCode`, as the HPAI contract
+ * has them. `toAddress` keeps the nation in `countryCode` for the endpoints
+ * that already return it, until their correction.
+ *
+ * @param {Record<string, unknown>} row
+ */
+export const toStructuredAddress = (row) => ({
+  ...toAddress(row),
+  countryCode: asNullableString(row.country_code),
+  ukInternalCode: asNullableString(row.uk_internal_code)
+})

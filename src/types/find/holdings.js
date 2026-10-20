@@ -7,6 +7,7 @@ import { CustomerRelationship } from './customers.js'
  * @typedef {{
  *   type: 'holdings'
  *   id: string
+ *   cphType?: string | null
  *   localAuthority: string | null
  *   relationships: {
  *    location: object
@@ -30,6 +31,10 @@ const HoldingsData = baseData({
 export const HoldingsSchema = HoldingsData.keys({
   type: Joi.string().valid('holdings').required().label('Type'),
   id: Joi.string().required().label('CPH'),
+  cphType: Joi.string()
+    .allow(null)
+    .label('CPH Type')
+    .description('The CPH type of the reported holdership'),
   localAuthority: Joi.string().required().allow(null).label('Local Authority'),
   relationships: Joi.object({
     location: LocationsRelationship,

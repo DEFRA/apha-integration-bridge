@@ -53,6 +53,7 @@ test('toHoldings ignores rows that cannot be mapped and keeps first mapped value
     {
       type: 'holdings',
       id: '11/111/1111',
+      cphType: null,
       localAuthority: 'LA name 001',
       relationships: {
         location: {
@@ -69,5 +70,29 @@ test('toHoldings ignores rows that cannot be mapped and keeps first mapped value
         }
       }
     }
+  ])
+})
+
+test('toHoldings keeps the selected holdership of a CPH with several: the latest, then the highest key', () => {
+  const holdership = (key, from, locationId) => ({
+    cph_id: '11/111/1111',
+    cph_type: 'PERMANENT',
+    location_id: locationId,
+    party_id: 'PARTY-11',
+    feature_involvement_pk: key,
+    feature_involv_from_date: from
+  })
+
+  const holdings = toHoldings(
+    [
+      holdership(4, new Date(2015, 0, 1), 'L-EARLIER'),
+      holdership(2, new Date(2020, 5, 1), 'L-LOWER-KEY'),
+      holdership(3, new Date(2020, 5, 1), 'L-SELECTED')
+    ],
+    ['11/111/1111']
+  )
+
+  expect(holdings.map((h) => h.relationships.location.data.id)).toEqual([
+    'L-SELECTED'
   ])
 })

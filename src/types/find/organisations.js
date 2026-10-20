@@ -9,7 +9,7 @@ const ContactDetails = Joi.object({
   phoneNumber: Joi.string().allow(null).label('Phone number')
 }).required()
 
-const OrganisationContactDetails = Joi.object({
+export const OrganisationContactDetails = Joi.object({
   primaryContact: ContactDetails.label('Primary contact'),
   secondaryContact: ContactDetails.label('Secondary contact')
 })
