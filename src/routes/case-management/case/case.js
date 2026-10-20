@@ -124,9 +124,8 @@ async function runCaseCreationFlow(request, action) {
 async function createCase(request, applicationId) {
   const payload = /** @type {CreateCasePayload} */ (request.payload)
   const applicationReference = payload.applicationReferenceNumber
-  const licenceType = /** @type {string} */ (payload.keyFacts.licenceType.value)
 
-  const createCasePayload = buildCaseCreationPayload(applicationId, licenceType)
+  const createCasePayload = buildCaseCreationPayload(applicationId)
 
   const salesforceResponse = await retry(() => {
     return salesforceClient.createOrUpdateCase(

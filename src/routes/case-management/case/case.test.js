@@ -493,10 +493,7 @@ describe('POST /case-management/case', () => {
         expect.anything(),
         expect.anything()
       )
-      expect(buildCaseCreationPayload).toHaveBeenCalledWith(
-        'TEST-CASE-789',
-        'TB15'
-      )
+      expect(buildCaseCreationPayload).toHaveBeenCalledWith('TEST-CASE-789')
     })
 
     test('creates case, returns 201 Created and skips adding key facts if already present', async () => {

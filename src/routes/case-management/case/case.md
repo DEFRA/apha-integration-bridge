@@ -26,7 +26,7 @@ Creates a new case in Salesforce using a composite API request. This endpoint pr
 | `applicationReferenceNumber` | string | Yes      | Your unique application reference          |
 | `sections`                   | array  | Yes      | List of captured form sections and answers |
 | `keyFacts`                   | object | Yes      | Case summary values used for creation      |
-| `applicant`                  | object | Yes      | Must represent a guest applicant           |
+| `applicant`                  | object | No       | Guest applicant - Not currently being used |
 
 ### `sections` shape
 
