@@ -1,14 +1,18 @@
 import { toPerson } from './to-person.js'
 
 /**
- * @param {{ type: 'email', emailAddress: string } | { type: 'mobile' | 'landline', phoneNumber: string }} detail
+ * Usage type is part of the key so that one number recorded under two usages
+ * (e.g. the customer's own and a named secondary contact's) is kept as two
+ * labelled entries rather than collapsed into one.
+ *
+ * @param {{ type: 'email', emailAddress: string, usageType: string | null } | { type: 'mobile' | 'landline', phoneNumber: string, usageType: string | null }} detail
  */
 const contactDetailKey = (detail) => {
   if (detail.type === 'email') {
-    return `${detail.type}:${detail.emailAddress}`
+    return `${detail.type}:${detail.emailAddress}:${detail.usageType}`
   }
 
-  return `${detail.type}:${detail.phoneNumber}`
+  return `${detail.type}:${detail.phoneNumber}:${detail.usageType}`
 }
 
 /**

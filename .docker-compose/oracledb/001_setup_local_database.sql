@@ -316,6 +316,16 @@ BEGIN
 EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
 /
 
+-- A COUNTY code that differs from its description, so tests can tell a
+-- decoded county ('Test County') from the raw ADMINISTRATIVE_AREA code.
+BEGIN
+  INSERT INTO ref_data_code (ref_data_code_pk, code, ref_data_set_pk, effective_to_date)
+  VALUES (6006, 'TSTCTY', 6000, DATE '9999-12-31');
+  INSERT INTO ref_data_code_desc (ref_data_code_pk, short_description, language_code)
+  VALUES (6006, 'Test County', 'ENG');
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN NULL; END;
+/
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- NEW: /locations endpoint structures (BS7666 + assets) + seed data
 -- ─────────────────────────────────────────────────────────────────────────────

@@ -55,6 +55,11 @@ Each location includes:
 - `facilities` (array)
 - `relationships` (object)
 
+### Address fields
+
+- `address.county` is the decoded county name (from SAM's `ADMINISTRATIVE_AREA` code), or `null` if the code has no description.
+- `address.countryCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`. It is not SAM's `COUNTRY_CODE`. Note that `GET /locations/{locationId}` returns this value as `ukInternalCode`, and uses `countryCode` for SAM's `COUNTRY_CODE` instead.
+
 Example:
 
 ```json

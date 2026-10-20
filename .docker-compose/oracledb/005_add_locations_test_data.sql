@@ -292,7 +292,7 @@ BEGIN
       'Test Street',
       'Test Locality',
       'Test Town',
-      'Test County',
+      'TSTCTY',
       'TE1 1ST',
       'UK123',
       'GB'

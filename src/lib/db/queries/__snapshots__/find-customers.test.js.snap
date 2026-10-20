@@ -50,6 +50,7 @@ telecom_contacts AS (
     ta.mobile_number,
     ta.telephone_number,
     ta.internet_email_address,
+    au.address_usage_type,
     au.preferred_contact_method_ind
   FROM target_party tp
   JOIN ahbrp.party_contact_address pca
@@ -109,10 +110,13 @@ SELECT
   ba.country_code,
   mobile.mobile_number,
   mobile.preferred_contact_method_ind mobile_preferred_ind,
+  mobile.address_usage_type mobile_usage_type,
   landline.telephone_number landline,
   landline.preferred_contact_method_ind landline_preferred_ind,
+  landline.address_usage_type landline_usage_type,
   email.internet_email_address email,
   email.preferred_contact_method_ind email_preferred_ind,
+  email.address_usage_type email_usage_type,
   api.alt_party_identity_value srabpi_plantid,
   CASE
     WHEN per.customer_type IS NOT NULL THEN per.customer_type

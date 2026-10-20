@@ -25,7 +25,11 @@ export const CustomersRelationships = Joi.object({
 }).required()
 
 const PreferredContact = Joi.object({
-  isPreferred: Joi.boolean().required()
+  isPreferred: Joi.boolean().required(),
+  usageType: Joi.string()
+    .required()
+    .allow(null)
+    .description('SAM ADDRESS_USAGE_TYPE recorded for this contact')
 })
 
 const EmailAddress = PreferredContact.keys({

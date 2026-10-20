@@ -65,13 +65,22 @@ Example:
 
 ## Error responses
 
-| Status | When it happens                                          | Typical code                               |
-| ------ | -------------------------------------------------------- | ------------------------------------------ |
-| `400`  | Invalid path parameter format                            | `BAD_REQUEST` / `VALIDATION_ERROR`         |
-| `401`  | Missing or invalid bearer token                          | Unauthorized by auth layer                 |
-| `404`  | Holding not found or inactive                            | `NOT_FOUND`                                |
-| `409`  | Multiple holdings found for the same CPH (data conflict) | `DUPLICATE_RESOURCES_FOUND`                |
-| `500`  | Unexpected backend failure                               | `INTERNAL_SERVER_ERROR` / `DATABASE_ERROR` |
+| Status | When it happens                                      | Typical code                               |
+| ------ | ---------------------------------------------------- | ------------------------------------------ |
+| `400`  | Invalid path parameter format                        | `BAD_REQUEST` / `VALIDATION_ERROR`         |
+| `401`  | Missing or invalid bearer token                      | Unauthorized by auth layer                 |
+| `404`  | Holding not found or inactive                        | `NOT_FOUND`                                |
+| `409`  | The CPH lookup matched more than one row (see below) | `DUPLICATE_RESOURCES_FOUND`                |
+| `500`  | Unexpected backend failure                           | `INTERNAL_SERVER_ERROR` / `DATABASE_ERROR` |
+
+### What a `409` means
+
+This endpoint looks the holding up by CPH number only, and expects exactly one current row. It returns `409 DUPLICATE_RESOURCES_FOUND` when that query returns more than one row, which happens when either:
+
+- the CPH has several current holderships (more than one current CPH holder / location pairing for the same CPH), or
+- one holdership matched several SAM `CPH` rows for the same CPH number.
+
+The response does not say which case applies, and does not list the matching holderships.
 
 ## Practical tips
 

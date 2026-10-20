@@ -29,17 +29,20 @@ export const toPerson = (row) => {
     {
       type: 'email',
       value: asNullableString(row.email),
-      preferred: row.email_preferred_ind
+      preferred: row.email_preferred_ind,
+      usageType: asNullableString(row.email_usage_type)
     },
     {
       type: 'mobile',
       value: asNullableString(row.mobile_number),
-      preferred: row.mobile_preferred_ind
+      preferred: row.mobile_preferred_ind,
+      usageType: asNullableString(row.mobile_usage_type)
     },
     {
       type: 'landline',
       value: asNullableString(row.landline),
-      preferred: row.landline_preferred_ind
+      preferred: row.landline_preferred_ind,
+      usageType: asNullableString(row.landline_usage_type)
     }
   ]
 
@@ -52,13 +55,15 @@ export const toPerson = (row) => {
       customer.contactDetails.push({
         type: detail.type,
         emailAddress: mask(detail.value),
-        isPreferred: asPreferredFlag(detail.preferred)
+        isPreferred: asPreferredFlag(detail.preferred),
+        usageType: detail.usageType
       })
     } else {
       customer.contactDetails.push({
         type: detail.type,
         phoneNumber: mask(detail.value),
-        isPreferred: asPreferredFlag(detail.preferred)
+        isPreferred: asPreferredFlag(detail.preferred),
+        usageType: detail.usageType
       })
     }
   }
