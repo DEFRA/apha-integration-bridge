@@ -19,6 +19,17 @@ test('uses optimized set operation and removes redundant table joins', () => {
   expect(sql).not.toContain('AHBRP.FEATURE,')
 })
 
+test('decodes ADMINISTRATIVE_AREA through the COUNTY reference data in both branches', () => {
+  const { sql } = getLocation('L97339')
+
+  expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
+  expect(sql.match(/COUNTY_LOOKUP\.SHORT_DESCRIPTION county/g)).toHaveLength(2)
+  expect(
+    sql.match(/BA\.ADMINISTRATIVE_AREA = COUNTY_LOOKUP\.CODE\(\+\)/g)
+  ).toHaveLength(2)
+  expect(sql).not.toContain('ADMINISTRATIVE_AREA county')
+})
+
 test('throws if the parameters are invalid', () => {
   expect(() => getLocation(null)).toThrow(/invalid/i)
 })

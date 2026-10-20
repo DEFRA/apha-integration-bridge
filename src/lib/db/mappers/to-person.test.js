@@ -39,10 +39,13 @@ test('toPerson maps a single row into one customer resource', () => {
     preferred_contact_method_ind: 'N',
     email: 'example@example.com',
     email_preferred_ind: 'N',
+    email_usage_type: 'EMAIL',
     mobile_number: '+44 11111 11111',
     mobile_preferred_ind: 'Y',
+    mobile_usage_type: 'SECONDARY',
     landline: null,
     landline_preferred_ind: null,
+    landline_usage_type: null,
     srabpi_plantid: 'PLANT-A'
   })
 
@@ -82,12 +85,14 @@ test('toPerson maps a single row into one customer resource', () => {
       {
         type: 'email',
         emailAddress: 'example@example.com',
-        isPreferred: false
+        isPreferred: false,
+        usageType: 'EMAIL'
       },
       {
         type: 'mobile',
         phoneNumber: '+44 11111 11111',
-        isPreferred: true
+        isPreferred: true,
+        usageType: 'SECONDARY'
       }
     ],
     relationships: {
