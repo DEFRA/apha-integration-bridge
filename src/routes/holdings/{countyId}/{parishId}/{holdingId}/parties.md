@@ -44,7 +44,7 @@ A person and an organisation share one flat shape. `partyType` (`PERSON` or `ORG
 Every party also has:
 
 - `roles`: every current SAM role the party holds, not only the one behind its involvement (`mainRoleType`, `roleType`, `roleName`, `from`).
-- `addresses`: every current postal address (neither its link nor the address has ended), with SAM's `isPreferred`. `countryCode` is SAM's country code and `ukInternalCode` the UK nation.
+- `addresses`: every current postal address (neither its link nor the address has ended), with SAM's `isPreferred`. `countryCode` is the UK nation (SAM's `UK_INTERNAL_CODE`), as the find endpoints return it.
 - `contactMethods`: every current e-mail, mobile, landline and fax entry, with `isPreferred` and `usageType` (`null` where SAM records none).
 - `involvements`: `role`, `involvementType` and `locationId` are always set; the other members are `null` where they do not apply:
   - `holder` (`CPHHOLDERSHIP`): `vetnetCoreId`, which pairs the entry with an item of `/locations`, `from`, and `selected`, `true` on the holdership `POST /holdings/find` reports.

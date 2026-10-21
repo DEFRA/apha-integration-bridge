@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-import { StructuredAddress } from './address.js'
+import { Address } from './address.js'
 import { baseData } from './find/helpers.js'
 import { LocationsSchema } from './find/locations.js'
 
@@ -61,7 +61,7 @@ const SubLocation = baseData({
   )
   .label('Sub-location')
 
-const LocationAddress = StructuredAddress.keys({
+const LocationAddress = Address.keys({
   isPreferred: Joi.boolean()
     .required()
     .description(
@@ -100,7 +100,7 @@ const Holdership = Joi.object({
  * addresses and sub-locations, plus the holdership that links it to the CPH.
  */
 export const HoldingLocation = LocationsSchema.keys({
-  address: StructuredAddress.required().description(
+  address: Address.required().description(
     'The preferred current address; every member is `null` when SAM holds none'
   ),
   status: FeatureStatus.required(),
