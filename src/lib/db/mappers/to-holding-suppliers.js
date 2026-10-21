@@ -1,4 +1,3 @@
-import { mask } from '../../pii/index.js'
 import { asNullableDate } from './as-nullable-date.js'
 import { toSupplier } from './to-supplier.js'
 
@@ -7,7 +6,6 @@ import { toSupplier } from './to-supplier.js'
  * one per supplier, in the order of its first involvement, with the supplier
  * roles behind its involvements in `supplierTypes` and an `involvements` entry
  * for each of its current involvements with a livestock unit at a location.
- * The title is masked like the other names, as on `/parties`.
  *
  * @param {Record<string, unknown>[]} rows find-supplier-involvements.sql rows for the CPH's features
  */
@@ -26,12 +24,9 @@ export const toHoldingSuppliers = (rows) =>
       })
     }
 
-    const supplier = toSupplier(supplierRows[0])
-
     return {
       type: 'suppliers',
-      ...supplier,
-      title: mask(supplier.title),
+      ...toSupplier(supplierRows[0]),
       supplierTypes: [
         ...new Set(supplierRows.map((row) => String(row.role_type)))
       ],
