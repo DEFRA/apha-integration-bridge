@@ -175,4 +175,44 @@ describe('find-sub-locations.sql', () => {
     expect(rows[0].feature_relatn_from_date).toBeInstanceOf(Date)
     expect(rows[0].feature_state_from_dttm).toBeInstanceOf(Date)
   })
+
+  // fixture 018 gives the shed 97001 two current points and two current
+  // addresses; the field 97002 has neither
+  test('reads the latest current point and the postal address before a later non-postal one, one row each', async () => {
+    const rows = await rowsFor(findSubLocationsQuery([91001]))
+
+    expect(
+      rows.map((row) => ({
+        featurePk: row.feature_pk,
+        easting: row.easting,
+        northing: row.northing,
+        osMapReference: row.os_map_reference,
+        pointType: row.feature_point_type,
+        featureAddressPk: row.feature_address_pk,
+        street: row.street,
+        county: row.county
+      }))
+    ).toEqual([
+      {
+        featurePk: 97001,
+        easting: 412310,
+        northing: 323410,
+        osMapReference: 'SK1231023410',
+        pointType: 'BUILDING',
+        featureAddressPk: 298383,
+        street: 'Test Street',
+        county: 'Test County'
+      },
+      {
+        featurePk: 97002,
+        easting: null,
+        northing: null,
+        osMapReference: null,
+        pointType: null,
+        featureAddressPk: null,
+        street: null,
+        county: null
+      }
+    ])
+  })
 })

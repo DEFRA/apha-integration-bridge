@@ -88,3 +88,39 @@ test('puts the preferred address in `address` whichever row comes first', () => 
     { street: 'Back Lane', isPreferred: false }
   ])
 })
+
+test('gives a sub-location its own point, and its own address only when it has one', () => {
+  const [location] = toStructuredLocations(
+    [locationRow('L10', 10)],
+    [
+      {
+        ...subLocationRow(10, 11),
+        easting: 412310,
+        northing: 323410,
+        os_map_reference: 'SK1231023410',
+        feature_point_type: 'BUILDING',
+        feature_address_pk: 21,
+        feature_address_from_date: new Date(Date.UTC(2015, 2, 1)),
+        street: 'Test Street'
+      },
+      subLocationRow(10, 12)
+    ],
+    ['L10']
+  )
+
+  const [shed, field] = location.subLocations
+
+  expect(shed.position).toEqual({
+    easting: 412310,
+    northing: 323410,
+    osMapReference: 'SK1231023410',
+    pointType: 'BUILDING'
+  })
+  expect(shed.address).toMatchObject({
+    street: 'Test Street',
+    isPreferred: true,
+    from: '2015-03-01'
+  })
+  expect(field.position).toBeNull()
+  expect(field).not.toHaveProperty('address')
+})

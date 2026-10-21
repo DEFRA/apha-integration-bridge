@@ -217,7 +217,38 @@ describe('locations/find', () => {
               reasonCode: null,
               since: '2015-03-01T00:00:00Z'
             },
-            position: null
+            // fixture 018: the later of two current points, and the postal
+            // address although a non-postal one started later
+            position: {
+              easting: 412310,
+              northing: 323410,
+              osMapReference: 'SK1231023410',
+              pointType: 'BUILDING'
+            },
+            address: {
+              primaryAddressableObject: {
+                startNumber: null,
+                startNumberSuffix: null,
+                endNumber: null,
+                endNumberSuffix: null,
+                description: 'Shed 1'
+              },
+              secondaryAddressableObject: {
+                startNumber: null,
+                startNumberSuffix: null,
+                endNumber: null,
+                endNumberSuffix: null,
+                description: null
+              },
+              street: 'Test Street',
+              locality: null,
+              town: 'Test Town',
+              county: 'Test County',
+              postcode: 'TE1 1SH',
+              countryCode: 'UK123',
+              isPreferred: true,
+              from: '2015-03-01'
+            }
           },
           {
             type: 'sub-locations',
@@ -626,6 +657,8 @@ describe('locations/find status and personal data', () => {
   const personalData = (location) => ({
     name: location.name,
     subLocationNames: location.subLocations.map((s) => s.name),
+    // Shed 1's own address (fixture 018)
+    shedAddress: location.subLocations[0].address,
     address: location.address,
     addresses: location.addresses.map(({ isPreferred, from, ...address }) => ({
       ...address
@@ -647,6 +680,12 @@ describe('locations/find status and personal data', () => {
     expect(personalData(location)).toEqual({
       name: 'T****************n', // Test Farm Location
       subLocationNames: ['S****1', 'T*******d'], // Shed 1, Top Field
+      shedAddress: expect.objectContaining({
+        street: 'T*********t', // Test Street
+        town: 'T*******n', // Test Town
+        county: 'T*********y', // Test County
+        postcode: 'T*****H' // TE1 1SH
+      }),
       address: maskedAddress,
       addresses: [maskedAddress]
     })
@@ -666,6 +705,12 @@ describe('locations/find status and personal data', () => {
     expect(personalData(location)).toEqual({
       name: 'Test Farm Location',
       subLocationNames: ['Shed 1', 'Top Field'],
+      shedAddress: expect.objectContaining({
+        street: 'Test Street',
+        town: 'Test Town',
+        county: 'Test County',
+        postcode: 'TE1 1SH'
+      }),
       address,
       addresses: [address]
     })
