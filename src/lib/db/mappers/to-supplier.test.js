@@ -23,13 +23,13 @@ test('toSupplier maps the party and both name sets', () => {
   })
 })
 
-test('toSupplier masks the names but not the title', () => {
+test('toSupplier masks the title and the names', () => {
   const supplier = runWithMaskingContext({ shouldMask: true }, () =>
     toSupplier(row)
   )
 
   expect(supplier).toMatchObject({
-    title: 'DR',
+    title: '**',
     firstName: '***',
     lastName: 'H*****t'
   })
