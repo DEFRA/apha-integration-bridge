@@ -2,6 +2,8 @@ import Hapi from '@hapi/hapi'
 import hapiPino from 'hapi-pino'
 import { test, expect, describe, afterEach, jest } from '@jest/globals'
 import route from './find.js'
+import { clientScopesPlugin } from '../../common/helpers/client-scopes.js'
+import { piiContextPlugin } from '../../common/helpers/pii-context.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { HTTPException } from '../../lib/http/http-exception.js'
@@ -131,34 +133,108 @@ describe('locations/find', () => {
       location2: 'L98002'
     }
 
+    const location1Address = {
+      primaryAddressableObject: {
+        startNumber: 123,
+        startNumberSuffix: null,
+        endNumber: null,
+        endNumberSuffix: null,
+        description: 'Test Building'
+      },
+      secondaryAddressableObject: {
+        startNumber: null,
+        startNumberSuffix: null,
+        endNumber: null,
+        endNumberSuffix: null,
+        description: 'Unit 1'
+      },
+      street: 'Test Street',
+      locality: 'Test Locality',
+      town: 'Test Town',
+      postcode: 'TE1 1ST',
+      countryCode: 'UK123',
+      county: 'Test County'
+    }
+
+    const location2Address = {
+      primaryAddressableObject: {
+        startNumber: 456,
+        startNumberSuffix: 'A',
+        endNumber: null,
+        endNumberSuffix: null,
+        description: 'Farm House'
+      },
+      secondaryAddressableObject: {
+        startNumber: null,
+        startNumberSuffix: null,
+        endNumber: null,
+        endNumberSuffix: null,
+        description: null
+      },
+      street: 'Farm Road',
+      locality: 'Little Village',
+      town: 'Bigtown',
+      postcode: 'TE2 2ST',
+      countryCode: 'UK456',
+      county: 'Shire'
+    }
+
+    // fixture 001 seeds both as ACTIVE and 011 dates their states
+    const active = {
+      code: 'ACTIVE',
+      reasonCode: null,
+      since: '2008-01-01T00:00:00Z'
+    }
+
     const expectedLocationsData = {
       location1: {
         type: 'locations',
         id: 'L98001',
         name: 'Test Farm Location',
-        address: {
-          primaryAddressableObject: {
-            startNumber: 123,
-            startNumberSuffix: null,
-            endNumber: null,
-            endNumberSuffix: null,
-            description: 'Test Building'
-          },
-          secondaryAddressableObject: {
-            startNumber: null,
-            startNumberSuffix: null,
-            endNumber: null,
-            endNumberSuffix: null,
-            description: 'Unit 1'
-          },
-          street: 'Test Street',
-          locality: 'Test Locality',
-          town: 'Test Town',
-          postcode: 'TE1 1ST',
-          countryCode: 'UK123',
-          county: 'Test County'
-        },
+        status: active,
+        address: location1Address,
+        addresses: [
+          { ...location1Address, isPreferred: true, from: '2008-01-01' }
+        ],
         osMapReference: 'SK123456',
+        position: {
+          easting: 412345,
+          northing: 323456,
+          osMapReference: 'SK123456',
+          pointType: 'CENTROID'
+        },
+        subLocations: [
+          {
+            type: 'sub-locations',
+            id: '97001',
+            name: 'Shed 1',
+            subLocationType: 'BROILERSHED',
+            usableArea: 1200,
+            usualStockQuantity: 30000,
+            broilerStockingDensityRange: '33-39',
+            status: {
+              code: 'COMPLETE',
+              reasonCode: null,
+              since: '2015-03-01T00:00:00Z'
+            },
+            position: null
+          },
+          {
+            type: 'sub-locations',
+            id: '97002',
+            name: 'Top Field',
+            subLocationType: 'FIELD',
+            usableArea: null,
+            usualStockQuantity: null,
+            broilerStockingDensityRange: null,
+            status: {
+              code: 'MIGRATED',
+              reasonCode: 'VETNETDATAMIG',
+              since: '2008-01-01T00:00:00Z'
+            },
+            position: null
+          }
+        ],
         livestockUnits: [
           {
             type: 'animal-commodities',
@@ -191,29 +267,19 @@ describe('locations/find', () => {
         type: 'locations',
         id: 'L98002',
         name: 'Highland Farm',
-        address: {
-          primaryAddressableObject: {
-            startNumber: 456,
-            startNumberSuffix: 'A',
-            endNumber: null,
-            endNumberSuffix: null,
-            description: 'Farm House'
-          },
-          secondaryAddressableObject: {
-            startNumber: null,
-            startNumberSuffix: null,
-            endNumber: null,
-            endNumberSuffix: null,
-            description: null
-          },
-          street: 'Farm Road',
-          locality: 'Little Village',
-          town: 'Bigtown',
-          postcode: 'TE2 2ST',
-          countryCode: 'UK456',
-          county: 'Shire'
-        },
+        status: active,
+        address: location2Address,
+        addresses: [
+          { ...location2Address, isPreferred: true, from: '2008-01-01' }
+        ],
         osMapReference: 'SK789012',
+        position: {
+          easting: null,
+          northing: null,
+          osMapReference: 'SK789012',
+          pointType: 'NOTKNOWN'
+        },
+        subLocations: [],
         livestockUnits: [
           {
             type: 'animal-commodities',
@@ -513,5 +579,118 @@ describe('locations/find', () => {
       )
       expect(responseBody.errors).toEqual([])
     })
+  })
+})
+
+describe('locations/find status and personal data', () => {
+  const PII_CLIENT_ID = 'pii-client'
+
+  /**
+   * @param {string[]} ids
+   * @param {Record<string, string>} [headers]
+   */
+  const find = async (ids, headers = { 'x-client-id': PII_CLIENT_ID }) => {
+    const server = Hapi.server({ port: 0 })
+
+    await server.register([
+      { plugin: hapiPino, options: { enabled: false } },
+      {
+        plugin: clientScopesPlugin,
+        options: {
+          clientsScopes: [{ client_id: PII_CLIENT_ID, scopes: ['pii'] }]
+        }
+      },
+      piiContextPlugin,
+      oracleDb
+    ])
+
+    registerSimpleAuthStrategy(server, {
+      getClientId: (request) => request.headers['x-client-id']
+    })
+
+    server.route({ ...route, path, method: 'POST' })
+
+    const response = await server.inject({
+      method: 'POST',
+      url: path,
+      payload: { ids },
+      headers
+    })
+
+    return /** @type {Record<string, any>} */ (response.result).data
+  }
+
+  /**
+   * @param {Record<string, any>} location
+   */
+  const personalData = (location) => ({
+    name: location.name,
+    subLocationNames: location.subLocations.map((s) => s.name),
+    address: location.address,
+    addresses: location.addresses.map(({ isPreferred, from, ...address }) => ({
+      ...address
+    }))
+  })
+
+  test('masks the names and the address of a client without the pii scope', async () => {
+    const [location] = await find(['L98001'], {})
+
+    const maskedAddress = expect.objectContaining({
+      street: 'T*********t', // Test Street
+      locality: 'T***********y', // Test Locality
+      town: 'T*******n', // Test Town
+      county: 'T*********y', // Test County
+      postcode: 'T*****T', // TE1 1ST
+      countryCode: 'UK123'
+    })
+
+    expect(personalData(location)).toEqual({
+      name: 'T****************n', // Test Farm Location
+      subLocationNames: ['S****1', 'T*******d'], // Shed 1, Top Field
+      address: maskedAddress,
+      addresses: [maskedAddress]
+    })
+  })
+
+  test('returns the names and the address unmasked to a client with the pii scope', async () => {
+    const [location] = await find(['L98001'])
+
+    const address = expect.objectContaining({
+      street: 'Test Street',
+      locality: 'Test Locality',
+      town: 'Test Town',
+      county: 'Test County',
+      postcode: 'TE1 1ST'
+    })
+
+    expect(personalData(location)).toEqual({
+      name: 'Test Farm Location',
+      subLocationNames: ['Shed 1', 'Top Field'],
+      address,
+      addresses: [address]
+    })
+  })
+
+  // SAM does not enforce one current state per feature; both are seeded by
+  // .docker-compose/oracledb/017_add_location_status_scenarios.sql
+  test.each([
+    [
+      'L298360',
+      'the later of two current states',
+      'PARTIAL',
+      null,
+      '2020-01-01T09:00:00Z'
+    ],
+    [
+      'L298370',
+      'the higher key of two current states from the same moment',
+      'MIGRATED',
+      'VETNETDATAMIG',
+      '2008-01-31T00:00:00Z'
+    ]
+  ])('returns %s with %s', async (locationId, _, code, reasonCode, since) => {
+    const [location] = await find([locationId])
+
+    expect(location.status).toEqual({ code, reasonCode, since })
   })
 })
