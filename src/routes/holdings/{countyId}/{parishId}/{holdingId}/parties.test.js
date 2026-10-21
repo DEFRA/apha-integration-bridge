@@ -115,8 +115,7 @@ const annHill = {
       county: null,
       postcode: 'EX2 1MR',
       countryCode: 'England',
-      isPreferred: true,
-      ukInternalCode: 'England'
+      isPreferred: true
     }
   ],
   contactMethods: [

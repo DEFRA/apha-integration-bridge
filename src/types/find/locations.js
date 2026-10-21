@@ -1,6 +1,6 @@
 import Joi from 'joi'
 import { baseData, relationshipToOne, relationshipToMany } from './helpers.js'
-import { StructuredAddress } from '../address.js'
+import { Address } from '../address.js'
 
 /**
  * @typedef {{
@@ -75,7 +75,7 @@ export const SubLocation = baseData({
   )
   .label('Sub-location')
 
-const LocationAddress = StructuredAddress.keys({
+const LocationAddress = Address.keys({
   isPreferred: Joi.boolean()
     .required()
     .description(
@@ -151,9 +151,11 @@ export const LocationsSchema = LocationsData.keys({
   id: Joi.string().required().label('Location ID'),
   name: Joi.string().allow(null).required().label('Location name'),
   status: FeatureStatus.required(),
-  address: StructuredAddress.required().description(
-    'The preferred current address; every member is `null` when SAM holds none'
-  ),
+  address: Address.required()
+    .label('Address')
+    .description(
+      'The preferred current address; every member is `null` when SAM holds none'
+    ),
   addresses: Joi.array()
     .items(LocationAddress)
     .required()

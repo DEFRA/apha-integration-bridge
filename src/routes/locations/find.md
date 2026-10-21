@@ -72,7 +72,6 @@ Without the `pii` scope, location and sub-location names, and the street, locali
 
 - `address.county` is the decoded county name (from SAM's `ADMINISTRATIVE_AREA` code), or `null` if the code has no description.
 - `address.countryCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`. It is not SAM's `COUNTRY_CODE`. Note that `GET /locations/{locationId}` returns this value as `ukInternalCode`, and uses `countryCode` for SAM's `COUNTRY_CODE` instead.
-- `address.ukInternalCode` is the UK nation.
 
 Example (trimmed):
 
@@ -108,8 +107,7 @@ Example (trimmed):
         "town": "Test Town",
         "county": "South Lanarkshire",
         "postcode": "TE1 1ST",
-        "countryCode": "Scotland",
-        "ukInternalCode": "Scotland"
+        "countryCode": "Scotland"
       },
       "addresses": [
         {

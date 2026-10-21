@@ -2,7 +2,7 @@ import { mask } from '../../pii/index.js'
 import { asNullableDate, asNullableTimestamp } from './as-nullable-date.js'
 import { asNullableNumber } from './as-nullable-number.js'
 import { asNullableString } from './as-nullable-string.js'
-import { toStructuredAddress } from './to-address.js'
+import { toAddress } from './to-address.js'
 import { toLocations } from './to-locations.js'
 
 /**
@@ -80,7 +80,7 @@ const toAddresses = (rows) => {
     }
 
     addresses.set(key, {
-      ...toStructuredAddress(row),
+      ...toAddress(row),
       isPreferred: row.address_rank === 1,
       from: asNullableDate(row.feature_address_from_date)
     })
@@ -110,9 +110,9 @@ const toSubLocation = (row) => ({
 /**
  * The canonical location representation, which `POST /locations/find`,
  * `GET /locations/{locationId}` and the holding `/locations` list share: the
- * location as `toLocations` merges it, with its preferred address, in the
- * structured form, in `address`, plus its status, position, every current
- * address and its sub-locations.
+ * location as `toLocations` merges it, with its preferred address in
+ * `address`, plus its status, position, every current address and its
+ * sub-locations.
  *
  * @param {Record<string, unknown>[]} rows find-locations.sql rows
  * @param {Record<string, unknown>[]} subLocationRows find-sub-locations.sql rows for their features
@@ -126,8 +126,7 @@ export const toStructuredLocations = (rows, subLocationRows, ids) =>
     const addresses = toAddresses(locationRows)
 
     // the preferred address, or every member null when SAM holds none
-    const { isPreferred, from, ...address } =
-      addresses[0] ?? toStructuredAddress(first)
+    const { isPreferred, from, ...address } = addresses[0] ?? toAddress(first)
 
     // keyed by feature, keeping the latest of several current states
     const subLocations = new Map()

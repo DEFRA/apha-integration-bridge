@@ -3,7 +3,7 @@ import { asNullableDate } from './as-nullable-date.js'
 import { asNullableString } from './as-nullable-string.js'
 import { asPreferredFlag } from './as-preferred-flag.js'
 import { bySelectedHoldership } from './by-selected-holdership.js'
-import { toStructuredAddress } from './to-address.js'
+import { toAddress } from './to-address.js'
 import { toOrganisations } from './to-organisations.js'
 import { toPeople } from './to-people.js'
 
@@ -109,7 +109,7 @@ const toAddresses = (rows) => {
   const addresses = new Map()
 
   for (const row of rows) {
-    const address = toStructuredAddress(row)
+    const address = toAddress(row)
     const listed = addresses.get(row.address_pk)
 
     if (listed) {

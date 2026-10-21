@@ -153,7 +153,6 @@ describe('locations/find', () => {
       town: 'Test Town',
       postcode: 'TE1 1ST',
       countryCode: 'UK123',
-      ukInternalCode: 'UK123',
       county: 'Test County'
     }
 
@@ -177,7 +176,6 @@ describe('locations/find', () => {
       town: 'Bigtown',
       postcode: 'TE2 2ST',
       countryCode: 'UK456',
-      ukInternalCode: 'UK456',
       county: 'Shire'
     }
 
@@ -643,8 +641,7 @@ describe('locations/find status and personal data', () => {
       town: 'T*******n', // Test Town
       county: 'T*********y', // Test County
       postcode: 'T*****T', // TE1 1ST
-      countryCode: 'UK123',
-      ukInternalCode: 'UK123'
+      countryCode: 'UK123'
     })
 
     expect(personalData(location)).toEqual({
