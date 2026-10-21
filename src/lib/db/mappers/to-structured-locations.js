@@ -90,22 +90,39 @@ const toAddresses = (rows) => {
 }
 
 /**
+ * A sub-location with its own point, and its own address only when it has
+ * one: otherwise the premises address applies.
+ *
  * @param {Record<string, unknown>} row a find-sub-locations.sql row
  */
-const toSubLocation = (row) => ({
-  type: 'sub-locations',
-  id: String(row.feature_pk),
-  name: mask(asNullableString(row.feature_name)),
-  subLocationType: asNullableString(row.sub_location_type),
-  usableArea: asNullableNumber(row.usable_area),
-  usualStockQuantity: asNullableNumber(row.usual_stock_quantity),
-  broilerStockingDensityRange: asNullableString(
-    row.broiler_stockg_density_range
-  ),
-  status: toStatus(row),
-  // find-sub-locations.sql does not read a sub-location's point yet
-  position: null
-})
+const toSubLocation = (row) => {
+  const subLocation = {
+    type: 'sub-locations',
+    id: String(row.feature_pk),
+    name: mask(asNullableString(row.feature_name)),
+    subLocationType: asNullableString(row.sub_location_type),
+    usableArea: asNullableNumber(row.usable_area),
+    usualStockQuantity: asNullableNumber(row.usual_stock_quantity),
+    broilerStockingDensityRange: asNullableString(
+      row.broiler_stockg_density_range
+    ),
+    status: toStatus(row),
+    position: toPosition(row)
+  }
+
+  if (asNullableNumber(row.feature_address_pk) === null) {
+    return subLocation
+  }
+
+  return {
+    ...subLocation,
+    address: {
+      ...toAddress(row),
+      isPreferred: true,
+      from: asNullableDate(row.feature_address_from_date)
+    }
+  }
+}
 
 /**
  * The canonical location representation, which `POST /locations/find`,
