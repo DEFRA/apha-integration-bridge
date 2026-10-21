@@ -108,4 +108,4 @@ Example:
 ## Practical tips
 
 - Be a tolerant reader: ignore fields you do not recognise and do not depend on key order. Fields are only ever added under `application/vnd.apha.1+json`.
-- `locationId` and `livestockUnitId` are the ids `/locations` uses. A unit whose primary location has a future end date is current here but missing from that location's `livestockUnits`, which leaves out every unit with an end date.
+- `locationId` and `livestockUnitId` are the ids `/locations` uses. Both endpoints leave out a unit whose primary location has an end date, even one in the future.

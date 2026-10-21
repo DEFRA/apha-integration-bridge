@@ -80,12 +80,11 @@ VALUES (29290102, 'MOBILE', DATE '2012-01-01', NULL, '07700 900102');
 INSERT INTO party_contact_address (party_contact_address_pk, party_pk, party_role_pk, telecom_address_pk, address_pk, party_contact_from_date, party_contact_to_date)
 VALUES (29290102, 292901, NULL, 29290102, NULL, DATE '2012-01-01', NULL);
 
---    a landline with a country code and extension, on a link that ends in
---    the future
+--    a landline with a country code and extension
 INSERT INTO telecom_address (telecom_address_pk, telecom_address_type, telecom_address_from_date, telecom_address_to_date, telephone_number, telephone_country_code, extension_number)
 VALUES (29290103, 'LANDLINE', DATE '2014-01-01', NULL, '01234 567890', '44', '123');
 INSERT INTO party_contact_address (party_contact_address_pk, party_pk, party_role_pk, telecom_address_pk, address_pk, party_contact_from_date, party_contact_to_date)
-VALUES (29290103, 292901, NULL, 29290103, NULL, DATE '2014-01-01', DATE '2099-12-31');
+VALUES (29290103, 292901, NULL, 29290103, NULL, DATE '2014-01-01', NULL);
 INSERT INTO address_usage (address_usage_pk, party_contact_address_pk, address_usage_type, preferred_contact_method_ind, address_usage_from_date, address_usage_to_date)
 VALUES (29290103, 29290103, 'CORRESPONDENCE', 'N', DATE '2014-01-01', NULL);
 
