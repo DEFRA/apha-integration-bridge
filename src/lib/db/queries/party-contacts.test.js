@@ -74,8 +74,7 @@ describe('find-party-contacts.sql', () => {
       // the second with no usage row
       contact(292901, 29290101, 'MOBILE', '07700 900101', 'HOME', 'Y'),
       contact(292901, 29290102, 'MOBILE', '07700 900102', null, null),
-      // a landline with a country code and extension, on a link that ends in
-      // the future
+      // a landline with a country code and extension
       contact(
         292901,
         29290103,

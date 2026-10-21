@@ -176,6 +176,12 @@ const hillTopFarms = {
       phoneNumber: '01234 500100',
       isPreferred: true,
       usageType: 'PLACEOFBUSINESS'
+    },
+    {
+      type: 'mobile',
+      phoneNumber: '07700 900222',
+      isPreferred: false,
+      usageType: null
     }
   ],
   involvements: [holder('L298210', '3', '2018-03-01', false)]
@@ -232,8 +238,9 @@ describe('GET /holdings/{countyId}/{parishId}/{holdingId}/parties', () => {
     // C2982001 holds two holderships and owns L298210, but keeps nothing
     // there; the stored copy of core 2, the holder of 29/820/0002 at L298210
     // and the second link to C2982001's first mobile are all left out.
-    // C2982002's named contact has a name only, and its mobile that starts
-    // in the future is in neither its contact methods nor its named contacts
+    // C2982002's named contact has a name only. Its mobile that starts in
+    // the future has no end date, so it is current and listed in its contact
+    // methods, though never in its named contacts
     expect(result).toEqual({
       data: [annHill, hillTopFarms, tomDale],
       links: { self: '/holdings/29/820/0001/parties' }
