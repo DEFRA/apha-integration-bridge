@@ -1,8 +1,10 @@
 import Hapi from '@hapi/hapi'
 import { test, expect, jest } from '@jest/globals'
 import hapiPino from 'hapi-pino'
+import { clientScopesPlugin } from '../../common/helpers/client-scopes.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
 import { piiContextPlugin } from '../../common/helpers/pii-context.js'
+import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 
 import * as route from './{locationId}.js'
 
@@ -82,6 +84,48 @@ test('returns the location, address and related units for a known Location ID', 
   )
 
   expect(rel.facilities.data).toEqual([{ type: 'facilities', id: 'F98001001' }])
+
+  // The location fields `POST /locations/find` also returns
+  expect(body.data).toMatchObject({
+    name: 'Test Farm Location',
+    status: { code: 'ACTIVE', reasonCode: null, since: '2008-01-01T00:00:00Z' },
+    position: {
+      easting: 412345,
+      northing: 323456,
+      osMapReference: 'SK123456',
+      pointType: 'CENTROID'
+    }
+  })
+  expect(body.data.subLocations.map((s) => s.id)).toEqual(['97001', '97002'])
+  expect(rel.holdings.data).toEqual([{ type: 'holdings', id: '98/001/0001' }])
+})
+
+test('returns an empty sub-location list for a location without sub-locations', async () => {
+  const server = Hapi.server({ port: 0 })
+
+  await server.register([
+    { plugin: hapiPino, options: { enabled: false } },
+    oracleDb
+  ])
+
+  registerSimpleAuthStrategy(server)
+
+  server.route({
+    handler: route.handler,
+    options: route.options,
+    path: '/{locationId}',
+    method: 'GET'
+  })
+
+  const res = await server.inject({ method: 'GET', url: '/L98002' })
+
+  const body = /** @type {Record<string, any>} */ (res.result)
+
+  expect(res.statusCode).toBe(200)
+  expect(body.data.subLocations).toEqual([])
+  expect(body.data.relationships.holdings.data).toEqual([
+    { type: 'holdings', id: '98/002/0001' }
+  ])
 })
 
 test('returns the error envelope and logs when the database is unavailable', async () => {
@@ -144,7 +188,7 @@ test('returns the error envelope and logs when the database is unavailable', asy
   expect(errorSpy).toHaveBeenCalled()
 })
 
-test('masks every free-text address field, including locality and county, without the pii scope', async () => {
+test('masks the names and every free-text address field, including locality and county, without the pii scope', async () => {
   const server = Hapi.server({ port: 0 })
 
   await server.register([
@@ -159,21 +203,37 @@ test('masks every free-text address field, including locality and county, withou
 
   server.decorate('server', 'oracledb.sam', async () => ({
     connection: {
-      execute: async () => ({
-        rows: [
-          {
-            location_id: 'L98001',
-            street: 'Test Street',
-            locality: 'Test Locality',
-            town: 'Test Town',
-            county: 'Test County',
-            postcode: 'TE1 1ST',
-            uk_internal_code: 'England',
-            country_code: 'GB',
-            unit_id: 'N/A',
-            unit_type: 'N/A'
-          }
-        ]
+      // a shed for the sub-location query, the location for the other
+      execute: async (sql) => ({
+        rows: sql.includes('SUB_LOCATION')
+          ? [
+              {
+                premises_feature_pk: 91001,
+                feature_pk: 97001,
+                feature_name: 'Shed 1',
+                sub_location_type: 'BROILERSHED',
+                feature_status_code: 'COMPLETE',
+                feature_state_from_dttm: new Date(Date.UTC(2015, 2, 1))
+              }
+            ]
+          : [
+              {
+                location_id: 'L98001',
+                feature_pk: 91001,
+                feature_name: 'Test Farm Location',
+                feature_status_code: 'ACTIVE',
+                feature_state_from_dttm: new Date(Date.UTC(2008, 0, 1)),
+                street: 'Test Street',
+                locality: 'Test Locality',
+                town: 'Test Town',
+                county: 'Test County',
+                postcode: 'TE1 1ST',
+                uk_internal_code: 'England',
+                country_code: 'GB',
+                unit_id: 'N/A',
+                unit_type: 'N/A'
+              }
+            ]
       })
     },
     [Symbol.asyncDispose]: async () => {}
@@ -208,5 +268,48 @@ test('masks every free-text address field, including locality and county, withou
     postcode: 'T*****T', // TE1 1ST
     ukInternalCode: 'England',
     countryCode: 'GB'
+  })
+  expect(body.data.name).toBe('T****************n') // Test Farm Location
+  expect(body.data.subLocations.map((s) => s.name)).toEqual(['S****1']) // Shed 1
+})
+
+test('returns the names and every address field unmasked to a client with the pii scope', async () => {
+  const server = Hapi.server({ port: 0 })
+
+  await server.register([
+    { plugin: hapiPino, options: { enabled: false } },
+    {
+      plugin: clientScopesPlugin,
+      options: { clientsScopes: [{ client_id: 'pii-client', scopes: ['pii'] }] }
+    },
+    piiContextPlugin,
+    oracleDb
+  ])
+
+  registerSimpleAuthStrategy(server, { clientId: 'pii-client' })
+
+  server.route({
+    handler: route.handler,
+    options: route.options,
+    path: '/{locationId}',
+    method: 'GET'
+  })
+
+  const res = await server.inject({ method: 'GET', url: '/L98001' })
+
+  const body = /** @type {Record<string, any>} */ (res.result)
+
+  expect(res.statusCode).toBe(200)
+  expect(body.data.name).toBe('Test Farm Location')
+  expect(body.data.subLocations.map((s) => s.name)).toEqual([
+    'Shed 1',
+    'Top Field'
+  ])
+  expect(body.data.address).toMatchObject({
+    street: 'Test Street',
+    locality: 'Test Locality',
+    town: 'Test Town',
+    administrativeAreaCounty: 'Test County',
+    postcode: 'TE1 1ST'
   })
 })

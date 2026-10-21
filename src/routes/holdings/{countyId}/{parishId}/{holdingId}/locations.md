@@ -5,7 +5,7 @@ Use this endpoint to get every location a CPH is currently held at, as full loca
 ## What this endpoint does
 
 - Lists the CPH's active holderships: a holdership that has not ended, at a location that is not inactive, held through a party role that has not ended by a party that is not inactive. This is the test `GET /holdings/{countyId}/{parishId}/{holdingId}` applies.
-- Returns one item per holdership. Each is the location as `POST /locations/find` returns it, plus `status`, `position`, `addresses`, `subLocations` and a `holdership` object.
+- Returns one item per holdership. Each is the location as `POST /locations/find` returns it, with its `status`, `position`, `addresses` and `subLocations`, plus a `holdership` object.
 - A location held under two holderships (two Vetnet core ids) appears twice, with a different `holdership` each time. A holdership SAM stores more than once appears once.
 - The list is not paginated.
 
@@ -34,13 +34,9 @@ curl -X GET \
 
 ## Success response (`200 OK`)
 
-Each item adds these fields to the `POST /locations/find` representation:
+Each item is the `POST /locations/find` representation, whose fields that endpoint's documentation describes, plus:
 
 - `holdership`: `vetnetCoreId`, `from`, `cphType`, and `selected`, which is `true` on one holdership per CPH: the latest `from`, then the highest SAM key. It is the holdership `POST /holdings/find` reports.
-- `status`: the current SAM feature state (`code`, `reasonCode`, `since`).
-- `position`: the current primary point as SAM stores it, in British National Grid eastings and northings (metres), usually to the nearest 100 m. `null` when SAM has no point. A missing easting or northing, a stored 0 or a value outside the national grid (0 to 700,000 east, 0 to 1,300,000 north) makes both `null`; `osMapReference` is returned as stored.
-- `addresses`: every current address with `from` and `isPreferred`. `isPreferred` is `true` on the one chosen postal first, then the latest start date, then the highest SAM key; that address is also in `address`. Most SAM locations have no address: `addresses` is then empty and every member of `address` is `null`. In both, `countryCode` is SAM's country code and `ukInternalCode` the UK nation.
-- `subLocations`: the buildings, fields and sheds of the premises. `id` is the SAM feature key, as sub-locations have no `L` number. Their `position` is always `null`: this endpoint does not read points for sub-locations.
 
 Example (trimmed):
 

@@ -10,7 +10,11 @@ import {
 import { LocationsSchema } from '../../types/find/locations.js'
 import { PaginationSchema } from '../../types/find/pagination.js'
 import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
-import { findLocations } from '../../lib/db/queries/find-locations.js'
+import { metricsCounter } from '../../common/helpers/metrics.js'
+import { toStructuredLocations } from '../../lib/db/mappers/to-structured-locations.js'
+import { execute } from '../../lib/db/operations/execute.js'
+import { findLocationsQuery } from '../../lib/db/queries/find-locations.js'
+import { findSubLocationsQuery } from '../../lib/db/queries/find-sub-locations.js'
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { HTTPFindRequest } from '../../lib/http/http-find-request.js'
@@ -102,7 +106,34 @@ export async function handler(request, h) {
 
     await using oracledb = await request.server['oracledb.sam']()
 
-    const locations = await findLocations(oracledb.connection, findRequest.ids)
+    /**
+     * runs one of the route's batch queries for a set of keys, counted so the
+     * performance test sees every round trip
+     *
+     * @param {string} name
+     * @param {any[]} keys
+     * @param {(keys: any[]) => { sql: string; bindings: Record<string, unknown> }} toQuery
+     */
+    const runFor = async (name, keys, toQuery) => {
+      await metricsCounter('locationsFindQuery', 1, { query: name })
+
+      return execute(oracledb.connection, toQuery(keys))
+    }
+
+    const rows = await runFor('locations', findRequest.ids, findLocationsQuery)
+
+    const featureKeys = [...new Set(rows.map((row) => row.feature_pk))]
+
+    const subLocationRows =
+      featureKeys.length > 0
+        ? await runFor('subLocations', featureKeys, findSubLocationsQuery)
+        : []
+
+    const locations = toStructuredLocations(
+      rows,
+      subLocationRows,
+      findRequest.ids
+    )
 
     const isDevelopment = config.get('isDevelopment')
     if (isDevelopment) {

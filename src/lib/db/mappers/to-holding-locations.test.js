@@ -25,7 +25,7 @@ test.each([[[older, latest]], [[latest, older]]])(
   (subLocationRows) => {
     const [location] = toHoldingLocations(
       [holdership(1, 'L10', 10)],
-      [{ location_id: 'L10' }],
+      [{ location_id: 'L10', feature_pk: 10 }],
       subLocationRows
     )
 

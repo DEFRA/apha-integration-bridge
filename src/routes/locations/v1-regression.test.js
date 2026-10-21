@@ -12,7 +12,9 @@ import * as getRoute from './{locationId}.js'
  * The regression guard for the location queries (_Location query fan-out_ and
  * DSFAAP-2983): the responses of the three endpoints that read
  * find-locations.sql or get-location.sql, for every fixture location with an
- * `L` number, captured in the snapshot before the queries changed.
+ * `L` number, captured in the snapshot before the queries changed. The only
+ * permitted differences are DSFAAP-2983's declared additions, removed here
+ * before comparing.
  */
 const FIXTURE_LOCATION_IDS = [
   'L298210',
@@ -70,10 +72,17 @@ test('POST /locations/find is unchanged', async () => {
     payload: { ids: FIXTURE_LOCATION_IDS }
   })
 
-  expect({
-    statusCode: response.statusCode,
-    result: response.result
-  }).toMatchSnapshot()
+  const result = /** @type {Record<string, any>} */ (response.result)
+
+  for (const location of result.data) {
+    delete location.status
+    delete location.addresses
+    delete location.position
+    delete location.subLocations
+    delete location.address.ukInternalCode
+  }
+
+  expect({ statusCode: response.statusCode, result }).toMatchSnapshot()
 })
 
 test.each(FIXTURE_LOCATION_IDS)(
@@ -81,10 +90,15 @@ test.each(FIXTURE_LOCATION_IDS)(
   async (locationId) => {
     const response = await server.inject({ url: `/locations/${locationId}` })
 
-    expect({
-      statusCode: response.statusCode,
-      result: response.result
-    }).toMatchSnapshot()
+    const result = /** @type {Record<string, any>} */ (response.result)
+
+    delete result.data.name
+    delete result.data.status
+    delete result.data.position
+    delete result.data.subLocations
+    delete result.data.relationships.holdings
+
+    expect({ statusCode: response.statusCode, result }).toMatchSnapshot()
   }
 )
 
