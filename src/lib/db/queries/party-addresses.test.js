@@ -55,9 +55,9 @@ describe('find-party-addresses.sql', () => {
         preferred: 'Y'
       },
       // C2982005 has no current version. Its first link has two current
-      // usages and comes back once, with the preferred one; the second ends
-      // in the future. The links that start in the future, have ended or
-      // lead to an ended address are absent.
+      // usages and comes back once, with the preferred one; the third starts
+      // in the future but has no end date, so it is current. The links that
+      // end in the future, have ended or lead to an ended address are absent.
       {
         partyPk: 298205,
         linkPk: 29820511,
@@ -68,9 +68,9 @@ describe('find-party-addresses.sql', () => {
       },
       {
         partyPk: 298205,
-        linkPk: 29820512,
-        addressPk: 298272,
-        street: 'Station Road',
+        linkPk: 29820513,
+        addressPk: 298273,
+        street: 'New Road',
         usageType: null,
         preferred: null
       }

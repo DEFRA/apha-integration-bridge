@@ -17,7 +17,7 @@ const FindPartyAddressesSchema = Joi.object({
 
 /**
  * Every current postal address of each party: one row per address link,
- * where both the link and its address have started and not ended, with the
+ * where neither the link nor its address has ended, with the
  * BS7666 fields, the county decoded through the COUNTY reference set, and
  * the link's current usage, the preferred one when it has several. SAM holds
  * every postal link at party level, never through a role.

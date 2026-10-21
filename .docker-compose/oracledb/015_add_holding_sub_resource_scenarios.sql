@@ -182,9 +182,8 @@ VALUES (29820123, NULL, 29820101, 29820121, NULL, DATE '2018-01-01', NULL);
 INSERT INTO address_usage (address_usage_pk, party_contact_address_pk, address_usage_type, preferred_contact_method_ind, address_usage_from_date, address_usage_to_date)
 VALUES (29820123, 29820123, 'HOME', 'Y', DATE '2018-01-01', NULL);
 
--- 8) C2982002's landline, and a mobile that only starts in the future, which
---    the find-customers.sql telecom pivot (no start-date check) would still
---    return
+-- 8) C2982002's landline, and a mobile that only starts in the future. Current
+--    means no end date, as in find-customers.sql, so the mobile is current
 INSERT INTO telecom_address (telecom_address_pk, telecom_address_type, telecom_address_from_date, telecom_address_to_date, telephone_number)
 VALUES (29820221, 'LANDLINE', DATE '2018-03-01', NULL, '01234 500100');
 INSERT INTO party_contact_address (party_contact_address_pk, party_pk, party_role_pk, telecom_address_pk, address_pk, party_contact_from_date, party_contact_to_date)
@@ -208,8 +207,9 @@ VALUES (29820322, 298203, NULL, 29820322, NULL, DATE '2016-04-01', NULL);
 
 -- 10) C2982005, a party with no current version, and its postal address links:
 --    current, with two current usages of which the HOME one is preferred;
---    current until a future end date; starting in the future; ended; and
---    current but to an ended address. Only the first two are current.
+--    ending in the future; starting in the future; ended; and current but to
+--    an ended address. Current means no end date, so the first and third are
+--    current.
 INSERT INTO party (party_pk, party_id) VALUES (298205, 'C2982005');
 INSERT INTO party_state (party_pk, party_status_code, party_state_to_dttm) VALUES (298205, 'ACTIVE', NULL);
 

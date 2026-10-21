@@ -89,7 +89,8 @@ BEGIN INSERT INTO party_version (party_pk, party_type, party_version_to_datetime
 /
 
 -- 6) An agent organisation that is the owner of place of 11/111/1111's location
---    (feature 81111), with a future end date the current-row window must keep
+--    (feature 81111), with a future end date. Current means no end date, so
+--    the ownership is not current
 INSERT INTO party (party_pk, party_id) VALUES (29281, 'CUST-AGENT01');
 INSERT INTO party_state (party_pk, party_status_code, party_state_to_dttm) VALUES (29281, 'ACTIVE', NULL);
 INSERT INTO party_role (party_role_pk, party_pk, party_role_to_date, role_pk, main_role_type, party_role_from_date)
