@@ -99,8 +99,7 @@ test('toHoldingParties leaves every name field null for a party SAM records no c
         county: null,
         postcode: null,
         countryCode: null,
-        isPreferred: false,
-        ukInternalCode: null
+        isPreferred: false
       }
     ],
     contactMethods: [],

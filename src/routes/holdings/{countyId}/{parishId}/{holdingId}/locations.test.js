@@ -67,8 +67,7 @@ const noAddress = {
   town: null,
   county: null,
   postcode: null,
-  countryCode: null,
-  ukInternalCode: null
+  countryCode: null
 }
 
 const hillTopFarmAddress = {
@@ -77,8 +76,7 @@ const hillTopFarmAddress = {
   street: 'Hill Lane',
   town: 'Exampleton',
   postcode: 'EX2 9HT',
-  countryCode: 'England',
-  ukInternalCode: 'England'
+  countryCode: 'England'
 }
 
 const hillTopYardAddress = {
