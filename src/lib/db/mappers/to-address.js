@@ -31,14 +31,3 @@ export const toAddress = (row) => {
     isPreferred: asPreferredFlag(row.preferred_contact_method_ind)
   }
 }
-
-/**
- * The address as the holding sub-resources return it, with SAM's country code
- * in `countryCode` and the UK nation in `ukInternalCode`.
- *
- * @param {Record<string, unknown>} row
- */
-export const toStructuredAddress = (row) => ({
-  ...toAddress(row),
-  ukInternalCode: asNullableString(row.uk_internal_code)
-})

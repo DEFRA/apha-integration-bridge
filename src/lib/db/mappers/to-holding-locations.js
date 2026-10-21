@@ -3,7 +3,7 @@ import { asNullableDate, asNullableTimestamp } from './as-nullable-date.js'
 import { asNullableNumber } from './as-nullable-number.js'
 import { asNullableString } from './as-nullable-string.js'
 import { bySelectedHoldership } from './by-selected-holdership.js'
-import { toStructuredAddress } from './to-address.js'
+import { toAddress } from './to-address.js'
 import { toLocations } from './to-locations.js'
 
 /**
@@ -81,7 +81,7 @@ const toAddresses = (rows) => {
     }
 
     addresses.set(key, {
-      ...toStructuredAddress(row),
+      ...toAddress(row),
       isPreferred: row.address_rank === 1,
       from: asNullableDate(row.feature_address_from_date)
     })
@@ -112,10 +112,9 @@ const toSubLocation = (row) => ({
 /**
  * The items of `GET /holdings/{countyId}/{parishId}/{holdingId}/locations`:
  * one per holdership, the selected one first. Each is the location as
- * `POST /locations/find` returns it, with its preferred address, in the
- * contract's structured form, in `address`, plus its status, position, every
- * current address, its sub-locations and the holdership itself, so a location
- * held under two holderships appears twice.
+ * `POST /locations/find` returns it, with its preferred address in `address`,
+ * plus its status, position, every current address, its sub-locations and the
+ * holdership itself, so a location held under two holderships appears twice.
  *
  * @param {Record<string, unknown>[]} holderships find-holdings.sql rows for one CPH
  * @param {Record<string, unknown>[]} locationRows find-locations.sql rows for their locations
@@ -140,8 +139,7 @@ export const toHoldingLocations = (
     const addresses = toAddresses(rows)
 
     // the preferred address, or every member null when SAM holds none
-    const { isPreferred, from, ...address } =
-      addresses[0] ?? toStructuredAddress(rows[0])
+    const { isPreferred, from, ...address } = addresses[0] ?? toAddress(rows[0])
 
     // keyed by feature, keeping the latest of several current states
     const subLocations = new Map()

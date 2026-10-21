@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-import { StructuredAddress } from './address.js'
+import { Address } from './address.js'
 import { baseData } from './find/helpers.js'
 import { OrganisationContactDetails } from './find/organisations.js'
 
@@ -125,7 +125,7 @@ export const Party = baseData({
       .required()
       .description('Every current SAM role the party holds'),
     addresses: Joi.array()
-      .items(StructuredAddress.keys({ isPreferred: Joi.boolean().required() }))
+      .items(Address.keys({ isPreferred: Joi.boolean().required() }))
       .required()
       .description(
         "Every current postal address, with SAM's preferred-contact indicator"
