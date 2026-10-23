@@ -26,6 +26,29 @@ CURRENT_FEATURE_POINT AS (
    AND FP.PRIMARY_FEATURE_POINT_IND = 'Y'
    AND FP.FEATURE_POINT_TO_DATE IS NULL
 ),
+-- each location that is not INACTIVE, once, with its position, which every
+-- row below repeats
+CURRENT_LOCATION AS (
+  SELECT
+    LOCATION.LOCATION_ID,
+    LOCATION.FEATURE_PK,
+    LOCATION.FEATURE_NAME,
+    TRIM(FP.OS_MAP_REFERENCE) OS_MAP_REFERENCE,
+    FP.FEATURE_POINT_TYPE,
+    CASE WHEN FP.EASTING = 0 OR FP.NORTHING = 0 THEN NULL ELSE FP.EASTING END EASTING,
+    CASE WHEN FP.EASTING = 0 OR FP.NORTHING = 0 THEN NULL ELSE FP.NORTHING END NORTHING
+  FROM TARGET_LOCATION LOCATION
+  LEFT JOIN CURRENT_FEATURE_POINT FP
+    ON FP.FEATURE_PK = LOCATION.FEATURE_PK
+   AND FP.POINT_RANK = 1
+  WHERE EXISTS (
+    SELECT 1
+    FROM AHBRP.FEATURE_STATE FS
+    WHERE FS.FEATURE_PK = LOCATION.FEATURE_PK
+      AND FS.FEATURE_STATUS_CODE <> 'INACTIVE'
+      AND FS.FEATURE_STATE_TO_DTTM IS NULL
+  )
+),
 CURRENT_FEATURE_ADDRESS AS (
   SELECT
     FA.FEATURE_PK,
@@ -142,6 +165,12 @@ COUNTY_LOOKUP AS (
     AND RDCD.LANGUAGE_CODE = 'ENG'
 )
 
+-- Each branch adds its own rows, so a location returns one row per current
+-- address (or one with no address), plus one per primary livestock unit, per
+-- primary facility and per current CPH holdership. Only the address rows
+-- carry the address.
+
+-- every current address, or one row with none
 SELECT
   LOCATION.LOCATION_ID,
   LOCATION.FEATURE_NAME feature_name,
@@ -162,7 +191,54 @@ SELECT
   BA.POSTCODE,
   BA.UK_INTERNAL_CODE uk_internal_code,
   BA.COUNTRY_CODE country_code,
-  TRIM(FP.OS_MAP_REFERENCE) os_map_reference,
+  LOCATION.OS_MAP_REFERENCE os_map_reference,
+  'N/A' unit_type,
+  'N/A' unit_id,
+  'N/A' species,
+  NULL usual_quantity_of_animals,
+  'N/A' facility_name,
+  'N/A' facility_type,
+  'N/A' business_activity,
+  NULL cph,
+  LOCATION.FEATURE_POINT_TYPE feature_point_type,
+  LOCATION.EASTING easting,
+  LOCATION.NORTHING northing,
+  FA.FEATURE_ADDRESS_PK feature_address_pk,
+  FA.FEATURE_ADDRESS_FROM_DATE feature_address_from_date,
+  FA.NON_POSTAL_ADDRESS_IND non_postal_address_ind,
+  FA.ADDRESS_RANK address_rank
+FROM CURRENT_LOCATION LOCATION
+LEFT JOIN CURRENT_FEATURE_ADDRESS FA
+  ON FA.FEATURE_PK = LOCATION.FEATURE_PK
+LEFT JOIN AHBRP.BS7666_ADDRESS BA
+  ON BA.ADDRESS_PK = FA.ADDRESS_PK
+LEFT JOIN COUNTY_LOOKUP
+  ON COUNTY_LOOKUP.CODE = BA.ADMINISTRATIVE_AREA
+
+UNION ALL
+
+-- every primary livestock unit
+SELECT
+  LOCATION.LOCATION_ID,
+  LOCATION.FEATURE_NAME feature_name,
+  NULL paon_start_number,
+  NULL paon_start_number_suffix,
+  NULL paon_end_number,
+  NULL paon_end_number_suffix,
+  NULL paon_description,
+  NULL saon_description,
+  NULL saon_start_number,
+  NULL saon_start_number_suffix,
+  NULL saon_end_number,
+  NULL saon_end_number_suffix,
+  NULL street,
+  NULL locality,
+  NULL town,
+  NULL county,
+  NULL postcode,
+  NULL uk_internal_code,
+  NULL country_code,
+  LOCATION.OS_MAP_REFERENCE os_map_reference,
   CASE WHEN ASSET.ASSET_PK IS NULL THEN 'N/A' ELSE 'LU' END unit_type,
   CASE WHEN LU.UNIT_ID IS NULL THEN 'N/A' ELSE LU.UNIT_ID END unit_id,
   CASE WHEN LU_SPECIES.SHORT_DESCRIPTION IS NULL THEN 'N/A' ELSE LU_SPECIES.SHORT_DESCRIPTION END species,
@@ -170,70 +246,50 @@ SELECT
   'N/A' facility_name,
   'N/A' facility_type,
   'N/A' business_activity,
-  FI.CPH cph,
-  FP.FEATURE_POINT_TYPE feature_point_type,
-  CASE WHEN FP.EASTING = 0 OR FP.NORTHING = 0 THEN NULL ELSE FP.EASTING END easting,
-  CASE WHEN FP.EASTING = 0 OR FP.NORTHING = 0 THEN NULL ELSE FP.NORTHING END northing,
-  FA.FEATURE_ADDRESS_PK feature_address_pk,
-  FA.FEATURE_ADDRESS_FROM_DATE feature_address_from_date,
-  FA.NON_POSTAL_ADDRESS_IND non_postal_address_ind,
-  FA.ADDRESS_RANK address_rank
-FROM TARGET_LOCATION LOCATION
-JOIN AHBRP.FEATURE_STATE FS
-  ON FS.FEATURE_PK = LOCATION.FEATURE_PK
- AND FS.FEATURE_STATUS_CODE <> 'INACTIVE'
- AND FS.FEATURE_STATE_TO_DTTM IS NULL
-LEFT JOIN CURRENT_FEATURE_ADDRESS FA
-  ON FA.FEATURE_PK = LOCATION.FEATURE_PK
-LEFT JOIN AHBRP.BS7666_ADDRESS BA
-  ON BA.ADDRESS_PK = FA.ADDRESS_PK
-LEFT JOIN TARGET_PRIMARY_ASSET_LOCATION AL
+  NULL cph,
+  LOCATION.FEATURE_POINT_TYPE feature_point_type,
+  LOCATION.EASTING easting,
+  LOCATION.NORTHING northing,
+  NULL feature_address_pk,
+  NULL feature_address_from_date,
+  NULL non_postal_address_ind,
+  NULL address_rank
+FROM CURRENT_LOCATION LOCATION
+JOIN TARGET_PRIMARY_ASSET_LOCATION AL
   ON AL.FEATURE_PK = LOCATION.FEATURE_PK
-LEFT JOIN AHBRP.LIVESTOCK_UNIT LU
+JOIN AHBRP.LIVESTOCK_UNIT LU
   ON LU.ASSET_PK = AL.ASSET_PK
-LEFT JOIN AHBRP.ASSET_STATE ASS
-  ON ASS.ASSET_PK = LU.ASSET_PK
- AND ASS.ASSET_STATUS_CODE <> 'INACTIVE'
- AND ASS.ASSET_STATE_TO_DTTM IS NULL
 LEFT JOIN AHBRP.ASSET
   ON ASSET.ASSET_PK = LU.ASSET_PK
 LEFT JOIN AHBRP.COLL_REGSTRD_ANIMAL_GROUP CRAG
   ON CRAG.ANIMAL_PK = ASSET.ANIMAL_PK
 LEFT JOIN LU_SPECIES
   ON LU_SPECIES.ASSET_PK = ASSET.ASSET_PK
-LEFT JOIN CURRENT_FEATURE_POINT FP
-  ON FP.FEATURE_PK = LOCATION.FEATURE_PK
- AND FP.POINT_RANK = 1
-LEFT JOIN AHBRP.FEATURE_INVOLVEMENT FI
-  ON FI.FEATURE_PK = LOCATION.FEATURE_PK
- AND FI.FEATURE_INVOLVEMENT_TYPE = 'CPHHOLDERSHIP'
- AND FI.FEATURE_INVOLV_TO_DATE IS NULL
-LEFT JOIN COUNTY_LOOKUP
-  ON COUNTY_LOOKUP.CODE = BA.ADMINISTRATIVE_AREA
 
 UNION ALL
 
+-- every primary facility
 SELECT
   LOCATION.LOCATION_ID,
   LOCATION.FEATURE_NAME feature_name,
-  BA.PAON_START_NUMBER paon_start_number,
-  BA.PAON_START_NUMBER_SUFFIX paon_start_number_suffix,
-  BA.PAON_END_NUMBER paon_end_number,
-  BA.PAON_END_NUMBER_SUFFIX paon_end_number_suffix,
-  BA.PAON_DESCRIPTION paon_description,
-  BA.SAON_DESCRIPTION saon_description,
-  BA.SAON_START_NUMBER saon_start_number,
-  BA.SAON_START_NUMBER_SUFFIX saon_start_number_suffix,
-  BA.SAON_END_NUMBER saon_end_number,
-  BA.SAON_END_NUMBER_SUFFIX saon_end_number_suffix,
-  BA.STREET,
-  BA.LOCALITY,
-  BA.TOWN,
-  COUNTY_LOOKUP.SHORT_DESCRIPTION county,
-  BA.POSTCODE,
-  BA.UK_INTERNAL_CODE uk_internal_code,
-  BA.COUNTRY_CODE country_code,
-  TRIM(FP.OS_MAP_REFERENCE) os_map_reference,
+  NULL paon_start_number,
+  NULL paon_start_number_suffix,
+  NULL paon_end_number,
+  NULL paon_end_number_suffix,
+  NULL paon_description,
+  NULL saon_description,
+  NULL saon_start_number,
+  NULL saon_start_number_suffix,
+  NULL saon_end_number,
+  NULL saon_end_number_suffix,
+  NULL street,
+  NULL locality,
+  NULL town,
+  NULL county,
+  NULL postcode,
+  NULL uk_internal_code,
+  NULL country_code,
+  LOCATION.OS_MAP_REFERENCE os_map_reference,
   CASE WHEN ASSET.ASSET_PK IS NULL THEN 'N/A' ELSE 'F' END unit_type,
   CASE WHEN FACILITY.UNIT_ID IS NULL THEN 'N/A' ELSE FACILITY.UNIT_ID END unit_id,
   'N/A' species,
@@ -241,26 +297,18 @@ SELECT
   CASE WHEN FACILITY.FACILITY_NAME IS NULL THEN 'N/A' ELSE FACILITY.FACILITY_NAME END facility_name,
   CASE WHEN FACILITY_BUS.FACILITY_TYPE IS NULL THEN 'N/A' ELSE FACILITY_BUS.FACILITY_TYPE END facility_type,
   CASE WHEN FACILITY_BUS.BUSINESS_ACTIVITY IS NULL THEN 'N/A' ELSE FACILITY_BUS.BUSINESS_ACTIVITY END business_activity,
-  FI.CPH cph,
-  FP.FEATURE_POINT_TYPE feature_point_type,
-  CASE WHEN FP.EASTING = 0 OR FP.NORTHING = 0 THEN NULL ELSE FP.EASTING END easting,
-  CASE WHEN FP.EASTING = 0 OR FP.NORTHING = 0 THEN NULL ELSE FP.NORTHING END northing,
-  FA.FEATURE_ADDRESS_PK feature_address_pk,
-  FA.FEATURE_ADDRESS_FROM_DATE feature_address_from_date,
-  FA.NON_POSTAL_ADDRESS_IND non_postal_address_ind,
-  FA.ADDRESS_RANK address_rank
-FROM TARGET_LOCATION LOCATION
-JOIN AHBRP.FEATURE_STATE FS
-  ON FS.FEATURE_PK = LOCATION.FEATURE_PK
- AND FS.FEATURE_STATUS_CODE <> 'INACTIVE'
- AND FS.FEATURE_STATE_TO_DTTM IS NULL
-LEFT JOIN CURRENT_FEATURE_ADDRESS FA
-  ON FA.FEATURE_PK = LOCATION.FEATURE_PK
-LEFT JOIN AHBRP.BS7666_ADDRESS BA
-  ON BA.ADDRESS_PK = FA.ADDRESS_PK
-LEFT JOIN TARGET_PRIMARY_ASSET_LOCATION AL
+  NULL cph,
+  LOCATION.FEATURE_POINT_TYPE feature_point_type,
+  LOCATION.EASTING easting,
+  LOCATION.NORTHING northing,
+  NULL feature_address_pk,
+  NULL feature_address_from_date,
+  NULL non_postal_address_ind,
+  NULL address_rank
+FROM CURRENT_LOCATION LOCATION
+JOIN TARGET_PRIMARY_ASSET_LOCATION AL
   ON AL.FEATURE_PK = LOCATION.FEATURE_PK
-LEFT JOIN AHBRP.FACILITY
+JOIN AHBRP.FACILITY
   ON FACILITY.ASSET_PK = AL.ASSET_PK
 LEFT JOIN AHBRP.ASSET_STATE ASS
   ON ASS.ASSET_PK = FACILITY.ASSET_PK
@@ -272,12 +320,52 @@ LEFT JOIN AHBRP.ASSET
   ON ASSET.ASSET_PK = FACILITY.ASSET_PK
 LEFT JOIN AHBRP.COLL_REGSTRD_ANIMAL_GROUP CRAG
   ON CRAG.ANIMAL_PK = ASSET.ANIMAL_PK
-LEFT JOIN CURRENT_FEATURE_POINT FP
-  ON FP.FEATURE_PK = LOCATION.FEATURE_PK
- AND FP.POINT_RANK = 1
-LEFT JOIN AHBRP.FEATURE_INVOLVEMENT FI
+
+UNION ALL
+
+-- every current CPH holdership
+SELECT
+  LOCATION.LOCATION_ID,
+  LOCATION.FEATURE_NAME feature_name,
+  NULL paon_start_number,
+  NULL paon_start_number_suffix,
+  NULL paon_end_number,
+  NULL paon_end_number_suffix,
+  NULL paon_description,
+  NULL saon_description,
+  NULL saon_start_number,
+  NULL saon_start_number_suffix,
+  NULL saon_end_number,
+  NULL saon_end_number_suffix,
+  NULL street,
+  NULL locality,
+  NULL town,
+  NULL county,
+  NULL postcode,
+  NULL uk_internal_code,
+  NULL country_code,
+  LOCATION.OS_MAP_REFERENCE os_map_reference,
+  'N/A' unit_type,
+  'N/A' unit_id,
+  'N/A' species,
+  NULL usual_quantity_of_animals,
+  'N/A' facility_name,
+  'N/A' facility_type,
+  'N/A' business_activity,
+  FI.CPH cph,
+  LOCATION.FEATURE_POINT_TYPE feature_point_type,
+  LOCATION.EASTING easting,
+  LOCATION.NORTHING northing,
+  NULL feature_address_pk,
+  NULL feature_address_from_date,
+  NULL non_postal_address_ind,
+  NULL address_rank
+FROM CURRENT_LOCATION LOCATION
+JOIN AHBRP.FEATURE_INVOLVEMENT FI
   ON FI.FEATURE_PK = LOCATION.FEATURE_PK
  AND FI.FEATURE_INVOLVEMENT_TYPE = 'CPHHOLDERSHIP'
  AND FI.FEATURE_INVOLV_TO_DATE IS NULL
-LEFT JOIN COUNTY_LOOKUP
-  ON COUNTY_LOOKUP.CODE = BA.ADMINISTRATIVE_AREA
+
+-- the mappers take a location's address from its first row, so the preferred
+-- address comes first
+ORDER BY LOCATION_ID, address_rank NULLS LAST, unit_id, cph

@@ -1,33 +1,11 @@
 import { test, expect } from '@jest/globals'
 
 import { placeholdersIn } from '../../../common/helpers/test-helpers/bind-placeholders.js'
+import { findLocationsQuery } from './find-locations.js'
 import { getLocation } from './get-location.js'
 
-test('returns the expected query for valid parameters', () => {
-  const locationId = 'L97339'
-
-  const { sql, bindings } = getLocation(locationId)
-
-  expect(sql).toMatchSnapshot()
-  expect(bindings).toEqual({ location: 'L97339' })
-})
-
-test('uses optimized set operation and removes redundant table joins', () => {
-  const { sql } = getLocation('L97339')
-
-  expect(sql).toContain('UNION ALL')
-  expect(sql).not.toContain('AHBRP.FEATURE,')
-})
-
-test('decodes ADMINISTRATIVE_AREA through the COUNTY reference data in both branches', () => {
-  const { sql } = getLocation('L97339')
-
-  expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
-  expect(sql.match(/COUNTY_LOOKUP\.SHORT_DESCRIPTION county/g)).toHaveLength(2)
-  expect(
-    sql.match(/BA\.ADMINISTRATIVE_AREA = COUNTY_LOOKUP\.CODE\(\+\)/g)
-  ).toHaveLength(2)
-  expect(sql).not.toContain('ADMINISTRATIVE_AREA county')
+test('runs find-locations.sql for the one location', () => {
+  expect(getLocation('L97339')).toEqual(findLocationsQuery(['L97339']))
 })
 
 test('throws if the parameters are invalid', () => {

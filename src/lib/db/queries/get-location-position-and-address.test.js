@@ -41,12 +41,13 @@ const positionOf = (row) => ({
 })
 
 /**
- * One entry per address link in rank order; every unit row repeats them
+ * One entry per address link in rank order; the unit and holdership rows carry
+ * none
  */
 const addressesOf = (rows) => {
   const byLink = new Map()
 
-  for (const row of rows) {
+  for (const row of rows.filter((row) => row.feature_address_pk !== null)) {
     byLink.set(row.feature_address_pk, {
       featureAddressPk: row.feature_address_pk,
       rank: row.address_rank,
@@ -59,8 +60,8 @@ const addressesOf = (rows) => {
 }
 
 describe.each([
-  ['find-locations.sql', (id) => findLocationsQuery([id])],
-  ['get-location.sql', (id) => getLocation(id)]
+  ['findLocationsQuery', (id) => findLocationsQuery([id])],
+  ['getLocation', (id) => getLocation(id)]
 ])('%s position and address columns', (_, queryFor) => {
   test('two current primary points: the latest wins, not the highest key', async () => {
     const rows = await rowsFor(queryFor('L98001'))
@@ -100,9 +101,7 @@ describe.each([
       northing: null,
       osMapReference: null
     })
-    expect(addressesOf(rows)).toEqual([
-      { featureAddressPk: null, rank: null, nonPostal: null, street: null }
-    ])
+    expect(addressesOf(rows)).toEqual([])
   })
 
   test('no point, and several current addresses ranked postal first, then latest from date, then highest key', async () => {
