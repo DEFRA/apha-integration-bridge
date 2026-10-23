@@ -54,6 +54,17 @@ export const Position = Joi.object({
   )
   .label('Position')
 
+const LocationAddress = Address.keys({
+  isPreferred: Joi.boolean()
+    .required()
+    .description(
+      'True on the address in `address`: postal first, then the latest start date, then the highest SAM key'
+    ),
+  from: Joi.string()
+    .required()
+    .description("Start of the address's use for this location")
+}).label('Location address')
+
 export const SubLocation = baseData({
   plural: 'sub-locations',
   singular: 'sub-location'
@@ -68,23 +79,13 @@ export const SubLocation = baseData({
     usualStockQuantity: Joi.number().integer().required().allow(null),
     broilerStockingDensityRange: Joi.string().required().allow(null),
     status: FeatureStatus.required(),
-    position: Position.required()
+    position: Position.required(),
+    address: LocationAddress
   })
   .description(
-    'A building, field or shed of the premises. `id` is the SAM feature key; sub-locations have no `L` number'
+    'A building, field or shed of the premises. `id` is the SAM feature key; sub-locations have no `L` number. `address` is its own address, omitted when it has none; the premises address then applies'
   )
   .label('Sub-location')
-
-const LocationAddress = Address.keys({
-  isPreferred: Joi.boolean()
-    .required()
-    .description(
-      'True on the address in `address`: postal first, then the latest start date, then the highest SAM key'
-    ),
-  from: Joi.string()
-    .required()
-    .description("Start of the address's use for this location")
-}).label('Location address')
 
 export const LocationsRelationship = relationshipToOne(
   baseData({

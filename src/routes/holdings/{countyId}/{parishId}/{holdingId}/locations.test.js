@@ -215,7 +215,7 @@ describe('GET /holdings/{countyId}/{parishId}/{holdingId}/locations', () => {
     })
   })
 
-  test('returns the sub-locations of a premises and the latest of two current points', async () => {
+  test('returns the sub-locations of a premises, with their own point and address, and the latest of two current points', async () => {
     const { statusCode, result } = await getLocations('98/001/0001')
 
     expect(statusCode).toBe(200)
@@ -243,7 +243,25 @@ describe('GET /holdings/{countyId}/{parishId}/{holdingId}/locations', () => {
           reasonCode: null,
           since: '2015-03-01T00:00:00Z'
         },
-        position: null
+        // the later of its two current points
+        position: {
+          easting: 412310,
+          northing: 323410,
+          osMapReference: 'SK1231023410',
+          pointType: 'BUILDING'
+        },
+        // its postal address, although a non-postal one started later
+        address: {
+          ...noAddress,
+          primaryAddressableObject: addressableObject('Shed 1'),
+          street: 'Test Street',
+          town: 'Test Town',
+          county: 'Test County',
+          postcode: 'TE1 1SH',
+          countryCode: 'UK123',
+          isPreferred: true,
+          from: '2015-03-01'
+        }
       },
       {
         type: 'sub-locations',
