@@ -5,7 +5,7 @@ import { oracleDb } from '../../../../common/helpers/oracledb.js'
 
 import * as route from './{holdingId}.js'
 
-test('returns the cph and type for a CPH ID that exists', async () => {
+test('returns the cph, type and local authority for a CPH ID that exists', async () => {
   const server = Hapi.server({ port: 0 })
 
   await server.register([
@@ -52,6 +52,7 @@ test('returns the cph and type for a CPH ID that exists', async () => {
       id: '04/432/1234',
       type: 'holdings',
       cphType: 'HOLDER_TEST',
+      localAuthority: 'Local Authority 04/432',
       relationships: {
         location: {
           data: {

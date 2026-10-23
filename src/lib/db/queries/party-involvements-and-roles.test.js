@@ -70,7 +70,8 @@ describe('find-party-involvements.sql', () => {
     )
 
     expect(rows.map(involvementOf)).toEqual([
-      // 11/111/1111: a person holds it and an agent organisation owns the place
+      // 11/111/1111: a person holds it; the agent organisation's ownership of
+      // the place has an end date, so it is absent
       holder(
         81111,
         'LOC-1111111111',
@@ -78,20 +79,6 @@ describe('find-party-involvements.sql', () => {
         'CUST-111111111',
         'PERSON'
       ),
-      {
-        featurePk: 81111,
-        locationId: 'LOC-1111111111',
-        type: 'OWNEROFLOCATION',
-        status: 'UNCONFIRMED',
-        unitId: null,
-        cph: null,
-        vetnetCoreId: null,
-        partyId: 'CUST-AGENT01',
-        partyType: 'ORGANISATION',
-        partyStatus: 'ACTIVE',
-        mainRoleType: 'CUSTOMER',
-        roleType: 'AGENT'
-      },
       // 22/222/2222: an organisation holds it
       holder(
         82222,
@@ -150,14 +137,20 @@ describe('find-party-involvements.sql', () => {
     ])
   })
 
-  test('an owner of place with a future end date is current, and carries its keys and dates', async () => {
+  test('an owner of place whose involvement ends in the future is not current', async () => {
     const rows = await rowsFor(findPartyInvolvementsQuery([81111]))
+
+    expect(rows.map((row) => row.involvement_type)).toEqual(['CPHHOLDERSHIP'])
+  })
+
+  test('a current owner of place carries its keys and dates', async () => {
+    const rows = await rowsFor(findPartyInvolvementsQuery([298210]))
 
     const owner = rows.find((row) => row.involvement_type === 'OWNEROFLOCATION')
 
-    expect(owner.party_pk).toBe(29281)
-    expect(owner.involvement_pk).toEqual(expect.any(Number))
-    expect(owner.party_role_pk).toBe(2928101)
+    expect(owner.party_pk).toBe(298201)
+    expect(owner.involvement_pk).toBe(298236)
+    expect(owner.party_role_pk).toBe(29820102)
     expect(owner.last_checked_date).toBeInstanceOf(Date)
     expect(owner.involvement_from_date).toBeInstanceOf(Date)
     expect(owner.party_role_from_date).toBeInstanceOf(Date)

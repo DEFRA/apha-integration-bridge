@@ -10,6 +10,7 @@ export const createHolding = (row, id) => {
   const holding = {
     type: 'holdings',
     id,
+    cphType: asNullableString(row.cph_type),
     localAuthority,
     relationships: {
       location: {
