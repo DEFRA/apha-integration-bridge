@@ -23,7 +23,7 @@ export const HoldingsRelationship = relationshipToOne(
   })
 )
 
-const HoldingsData = baseData({
+export const HoldingsData = baseData({
   plural: 'holdings',
   singular: 'holding'
 }).meta({ response: { type: 'holdings' } })

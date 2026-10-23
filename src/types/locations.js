@@ -2,6 +2,8 @@ import Joi from 'joi'
 
 import { CommoditiesData } from './commodities.js'
 import { FacilitiesData } from './facilities.js'
+import { HoldingsData } from './find/holdings.js'
+import { FeatureStatus, Position, SubLocation } from './find/locations.js'
 
 export const LocationIdSchema = Joi.string()
   .pattern(/^L\d+$/)
@@ -41,13 +43,29 @@ const Address = Joi.object({
 }).required()
 
 export const Locations = LocationsData.keys({
+  name: Joi.string().allow(null).required().label('Location name'),
+  status: FeatureStatus.required(),
   address: Address.required(),
+  position: Position.required(),
+  subLocations: Joi.array()
+    .items(SubLocation)
+    .required()
+    .description('Buildings, fields and sheds of the premises'),
   relationships: Joi.object({
     commodities: Joi.object({
       data: Joi.array().items(CommoditiesData).required()
     }),
     facilities: Joi.object({
       data: Joi.array().items(FacilitiesData).required()
+    }),
+    holdings: Joi.object({
+      // its own label: `POST /locations/find`'s holdings items are `Holding`
+      data: Joi.array()
+        .items(HoldingsData.label('Holding reference'))
+        .required()
+        .label('Holding references')
     })
+      .description('CPHs with a current holdership at this location')
+      .label('Location holdings')
   })
 })

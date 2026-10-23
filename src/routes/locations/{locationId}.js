@@ -3,7 +3,10 @@ import Joi from 'joi'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { metricsCounter } from '../../common/helpers/metrics.js'
+import { toStructuredLocations } from '../../lib/db/mappers/to-structured-locations.js'
 import { execute } from '../../lib/db/operations/execute.js'
+import { findSubLocationsQuery } from '../../lib/db/queries/find-sub-locations.js'
 import { mask } from '../../lib/pii/index.js'
 import {
   HTTPExceptionSchema,
@@ -17,6 +20,7 @@ import {
 import { HTTPObjectResponse } from '../../lib/http/http-response.js'
 import { CommoditiesData } from '../../types/commodities.js'
 import { FacilitiesData } from '../../types/facilities.js'
+import { HoldingsData } from '../../types/find/holdings.js'
 import { TopLevelLinksReferenceSchema } from '../../types/links.js'
 import { Locations } from '../../types/locations.js'
 import { config } from '../../config.js'
@@ -144,6 +148,8 @@ export async function handler(request, h) {
      * example row keys (lowercased by the driver):
      * locationid, paonstartnumber, ..., countrycode, unitid, unittype ('LU'|'F')
      */
+    await metricsCounter('locationQuery', 1, { query: 'location' })
+
     const rows = await execute(oracledb.connection, query)
 
     if (isDevelopment) {
@@ -160,6 +166,19 @@ export async function handler(request, h) {
        */
       throw new HTTPException('NOT_FOUND', 'Location not found')
     }
+
+    await metricsCounter('locationQuery', 1, { query: 'subLocations' })
+
+    const subLocationRows = await execute(
+      oracledb.connection,
+      findSubLocationsQuery([...new Set(rows.map((row) => row.feature_pk))])
+    )
+
+    // the name, status, position, sub-locations and holdings, as
+    // `POST /locations/find` returns them
+    const [location] = toStructuredLocations(rows, subLocationRows, [
+      /** @type {string} */ (locationId)
+    ])
 
     const address = toAddress(rows[0])
 
@@ -186,7 +205,11 @@ export async function handler(request, h) {
 
     // Build response using HTTPObjectResponse
     const response = new HTTPObjectResponse(Locations, locationId, {
-      address
+      name: location.name,
+      status: location.status,
+      address,
+      position: location.position,
+      subLocations: location.subLocations
     })
 
     response.links({ self: request.path })
@@ -204,6 +227,14 @@ export async function handler(request, h) {
       response.relationship(
         'facilities',
         new HTTPObjectResponse(FacilitiesData, id, {})
+      )
+    }
+
+    // Add the CPHs with a current holdership here
+    for (const holding of location.relationships.holdings.data) {
+      response.relationship(
+        'holdings',
+        new HTTPObjectResponse(HoldingsData, holding.id, {})
       )
     }
 

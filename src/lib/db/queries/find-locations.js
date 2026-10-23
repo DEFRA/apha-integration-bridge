@@ -1,7 +1,5 @@
 import Joi from 'joi'
 
-import { toLocations } from '../mappers/to-locations.js'
-import { execute } from '../operations/execute.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { LocationIdSchema } from '../../../types/locations.js'
@@ -36,16 +34,4 @@ export function findLocationsQuery(ids) {
     sql: sqlWithIds,
     bindings
   }
-}
-
-/**
- * @param {import('oracledb').Connection} connection
- * @param {string[]} ids
- */
-export async function findLocations(connection, ids) {
-  const query = findLocationsQuery(ids)
-
-  const rows = await execute(connection, query)
-
-  return toLocations(rows, ids)
 }
