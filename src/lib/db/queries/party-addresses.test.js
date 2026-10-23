@@ -84,7 +84,8 @@ describe('find-party-addresses.sql', () => {
       paon_start_number: 4,
       town: 'Exampleton',
       postcode: 'EX2 1MR',
-      county: null,
+      // fixture 020: not a COUNTY code, so the value as SAM holds it
+      county: 'Exampleshire',
       uk_internal_code: 'England',
       country_code: 'GB'
     })

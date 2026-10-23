@@ -29,14 +29,15 @@ test('uses optimized set operation and removes redundant table joins', () => {
   expect(sql).not.toContain('AHBRP.FEATURE,')
 })
 
-test('joins county lookup to resolve county code to descriptive name', () => {
+test('joins county lookup to resolve county code to descriptive name, keeping a value that is not a code', () => {
   const ids = ['L97339']
   const { sql } = findLocationsQuery(ids)
 
   expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
-  expect(sql).toContain('COUNTY_LOOKUP.SHORT_DESCRIPTION county')
+  expect(sql).toContain(
+    'COALESCE(COUNTY_LOOKUP.SHORT_DESCRIPTION, BA.ADMINISTRATIVE_AREA) county'
+  )
   expect(sql).toContain('COUNTY_LOOKUP.CODE = BA.ADMINISTRATIVE_AREA')
-  expect(sql).not.toContain('ADMINISTRATIVE_AREA county')
 })
 
 test('uses unit ids from livestock and facility tables rather than asset', () => {

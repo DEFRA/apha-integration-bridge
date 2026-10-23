@@ -27,13 +27,14 @@ test('throws when ids contain invalid characters', () => {
   )
 })
 
-test('joins county lookup to resolve county code to descriptive name', () => {
+test('joins county lookup to resolve county code to descriptive name, keeping a value that is not a code', () => {
   const { sql } = findCustomersQuery(['C123456'], 'PERSON')
 
   expect(sql).toContain("RDS.REF_DATA_SET_NAME = 'COUNTY'")
-  expect(sql).toContain('county_lookup.short_description county')
+  expect(sql).toContain(
+    'COALESCE(county_lookup.short_description, ba.administrative_area) county'
+  )
   expect(sql).toContain('county_lookup.code = ba.administrative_area')
-  expect(sql).not.toContain('administrative_area county')
 })
 
 test('keeps telecom address usage optional when resolving contact details', () => {

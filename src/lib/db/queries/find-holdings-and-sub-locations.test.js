@@ -240,4 +240,22 @@ describe('find-sub-locations.sql', () => {
       }
     ])
   })
+
+  // fixture 020 gives the shed 298391 an address whose county, Exampleshire,
+  // is not a COUNTY code
+  test('a county that is not a COUNTY code comes back as SAM holds it', async () => {
+    const rows = await rowsFor(findSubLocationsQuery([298390]))
+
+    expect(
+      rows.map((row) => ({
+        featurePk: row.feature_pk,
+        street: row.street,
+        county: row.county
+      }))
+    ).toEqual([
+      { featurePk: 298391, street: 'Status Lane', county: 'Exampleshire' },
+      { featurePk: 298392, street: null, county: null },
+      { featurePk: 298393, street: null, county: null }
+    ])
+  })
 })
