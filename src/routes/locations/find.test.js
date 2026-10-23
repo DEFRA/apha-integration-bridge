@@ -738,4 +738,38 @@ describe('locations/find status and personal data', () => {
 
     expect(location.status).toEqual({ code, reasonCode, since })
   })
+
+  // seeded by .docker-compose/oracledb/019_add_sub_location_status_scenarios.sql
+  test('gives each sub-location its state by the same rule, and leaves out one that is only INACTIVE', async () => {
+    const [location] = await find(['L298390'])
+
+    expect(
+      location.subLocations.map(({ id, status }) => ({ id, status }))
+    ).toEqual([
+      {
+        id: '298391',
+        status: {
+          code: 'COMPLETE',
+          reasonCode: null,
+          since: '2020-01-01T09:00:00Z'
+        }
+      },
+      {
+        id: '298392',
+        status: {
+          code: 'MIGRATED',
+          reasonCode: 'VETNETDATAMIG',
+          since: '2008-01-31T00:00:00Z'
+        }
+      },
+      {
+        id: '298393',
+        status: {
+          code: 'COMPLETE',
+          reasonCode: null,
+          since: '2015-01-01T09:00:00Z'
+        }
+      }
+    ])
+  })
 })

@@ -176,6 +176,31 @@ describe('find-sub-locations.sql', () => {
     expect(rows[0].feature_state_from_dttm).toBeInstanceOf(Date)
   })
 
+  // fixture 019's premises 298390: several current states per shed, and a
+  // shed that is only INACTIVE
+  test('takes the current state that is not INACTIVE, the latest, then the highest key, and leaves out an inactive sub-location', async () => {
+    const rows = await rowsFor(findSubLocationsQuery([298390]))
+
+    expect(
+      rows.map((row) => ({
+        featurePk: row.feature_pk,
+        statusCode: row.feature_status_code,
+        reasonCode: row.feature_state_reason_code
+      }))
+    ).toEqual([
+      // PARTIAL since 2016, COMPLETE since 2020
+      { featurePk: 298391, statusCode: 'COMPLETE', reasonCode: null },
+      // COMPLETE and MIGRATED from the same moment
+      {
+        featurePk: 298392,
+        statusCode: 'MIGRATED',
+        reasonCode: 'VETNETDATAMIG'
+      },
+      // COMPLETE since 2015, INACTIVE since 2020
+      { featurePk: 298393, statusCode: 'COMPLETE', reasonCode: null }
+    ])
+  })
+
   // fixture 018 gives the shed 97001 two current points and two current
   // addresses; the field 97002 has neither
   test('reads the latest current point and the postal address before a later non-postal one, one row each', async () => {
