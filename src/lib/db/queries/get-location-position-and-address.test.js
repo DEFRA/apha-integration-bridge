@@ -9,8 +9,9 @@ import { getLocation } from './get-location.js'
 
 /**
  * Runs both location queries against the local Oracle fixtures and checks the
- * position and address columns that no route reads yet (DSFAAP-2927). The rows
- * are seeded by .docker-compose/oracledb/010_add_location_position_and_address.sql
+ * position and address columns that no route reads yet (DSFAAP-2927). The base
+ * rows are seeded by .docker-compose/oracledb/010_add_location_position_and_address.sql
+ * and the non-county administrative-area case by 020.
  */
 
 /** @type {import('@hapi/hapi').Server} */
