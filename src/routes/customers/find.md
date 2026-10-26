@@ -48,15 +48,22 @@ Example:
 
 Each returned customer can include:
 
-- Identity fields: `id`, `title`, `firstName`, `middleName`, `lastName`
+- Identity fields: `id`, `partyType`, `title`, `firstName`, `middleName`, `lastName`
 - `addresses`: with preferred flag and structured address objects
-- `contactDetails`: email/mobile/landline entries with preferred flag and `usageType`
+- `contactDetails`: email/mobile/landline/fax entries with preferred flag and `usageType`
+- `roles`: current SAM roles
 - `relationships.srabpiPlants`
+
+`partyType` is always `PERSON`.
 
 ### Address fields
 
 - `addresses[].county` is the decoded county name (from SAM's `ADMINISTRATIVE_AREA` code).
 - `addresses[].countryCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`. It is not SAM's `COUNTRY_CODE`. Note that `GET /locations/{locationId}` returns this value as `ukInternalCode`, and uses `countryCode` for SAM's `COUNTRY_CODE` instead.
+
+### Contact details
+
+`contactDetails` includes every current email, mobile, landline and fax (`faxNumber`), including contacts held through one of the customer's roles. Entries are in the order SAM recorded them. Without the `pii` scope every value is masked, after duplicates are removed.
 
 ### Contact usage type
 
@@ -73,6 +80,10 @@ Example contact entry:
 }
 ```
 
+### Roles
+
+Each `roles` entry is a current SAM role: `mainRoleType`, `roleType`, `roleName` (or `null`) and `from` (`YYYY-MM-DD`, or `null`).
+
 Example:
 
 ```json
@@ -81,12 +92,21 @@ Example:
     {
       "type": "customers",
       "id": "C123456",
+      "partyType": "PERSON",
       "title": "Mr",
       "firstName": "Bert",
       "middleName": null,
       "lastName": "Farmer",
       "addresses": [],
       "contactDetails": [],
+      "roles": [
+        {
+          "mainRoleType": "CUSTOMER",
+          "roleType": "CPHHOLDER",
+          "roleName": "CPH Holder",
+          "from": "2015-01-01"
+        }
+      ],
       "relationships": {
         "srabpiPlants": {
           "data": []

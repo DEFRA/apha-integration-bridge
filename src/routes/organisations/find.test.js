@@ -5,6 +5,7 @@ import hapiPino from 'hapi-pino'
 import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
+import { piiContextPlugin } from '../../common/helpers/pii-context.js'
 
 const path = '/organisations/find'
 const organisationId = 'O123456'
@@ -28,6 +29,7 @@ const organisation = {
   type: 'organisations',
   id: organisationId,
   organisationName: 'Acme Farms Ltd',
+  organisationType: 'NOTKNOWN',
   address: {
     primaryAddressableObject: {
       startNumber: 100,
@@ -62,6 +64,8 @@ const organisation = {
       phoneNumber: null
     }
   },
+  contactMethods: [],
+  roles: [],
   relationships: {
     srabpiPlants: {
       data: []
@@ -374,5 +378,153 @@ describe('POST /organisations/find', () => {
         prev: null
       }
     })
+  })
+})
+
+// C2990002 is seeded by 020_add_customer_and_organisation_search_scenarios.sql
+// and ACAR2930 (a Defra organisational unit) by 014_add_organisation_type_column.sql
+describe('POST /organisations/find — type, roles and contact methods', () => {
+  /**
+   * @param {string[]} ids
+   * @param {{ masked: boolean }} options
+   * @returns {Promise<Record<string, any>[]>}
+   */
+  const findOrganisations = async (ids, { masked }) => {
+    const server = Hapi.server({ port: 0 })
+
+    const plugins = [
+      { plugin: hapiPino, options: { enabled: false } },
+      oracleDb
+    ]
+
+    if (masked) {
+      plugins.push(piiContextPlugin)
+    }
+
+    await server.register(plugins)
+
+    registerSimpleAuthStrategy(server)
+
+    server.route({ ...route, path, method: 'POST' })
+
+    const response = await server.inject({
+      method: 'POST',
+      url: `${path}?page=1&pageSize=10`,
+      headers: authHeaders,
+      payload: { ids }
+    })
+
+    await server.stop()
+
+    expect(response.statusCode).toBe(200)
+
+    const result = /** @type {Record<string, any>} */ (response.result)
+
+    return result.data
+  }
+
+  test('returns organisation type, roles and contact methods', async () => {
+    const [searchOrganisation] = await findOrganisations(['C2990002'], {
+      masked: false
+    })
+
+    expect(searchOrganisation).toEqual({
+      type: 'organisations',
+      id: 'C2990002',
+      organisationName: 'Search Test Farms Ltd',
+      organisationType: 'NOTKNOWN',
+      address: {
+        primaryAddressableObject: {
+          startNumber: null,
+          startNumberSuffix: null,
+          endNumber: null,
+          endNumberSuffix: null,
+          description: null
+        },
+        secondaryAddressableObject: {
+          startNumber: null,
+          startNumberSuffix: null,
+          endNumber: null,
+          endNumberSuffix: null,
+          description: null
+        },
+        street: null,
+        locality: null,
+        town: null,
+        county: null,
+        postcode: null,
+        countryCode: null
+      },
+      // primary contact gets the mobile ahead of the landline
+      contactDetails: {
+        primaryContact: {
+          fullName: 'P Search',
+          emailAddress: null,
+          phoneNumber: '07700 900308'
+        },
+        secondaryContact: {
+          fullName: null,
+          emailAddress: 'office@searchtest.example.com',
+          phoneNumber: null
+        }
+      },
+      contactMethods: [
+        {
+          type: 'landline',
+          phoneNumber: '01234 900307',
+          isPreferred: true,
+          usageType: 'PLACEOFBUSINESS'
+        },
+        {
+          type: 'mobile',
+          phoneNumber: '07700 900308',
+          isPreferred: false,
+          usageType: null
+        },
+        {
+          type: 'email',
+          emailAddress: 'office@searchtest.example.com',
+          isPreferred: false,
+          usageType: 'CORRESPONDENCE'
+        },
+        {
+          type: 'fax',
+          faxNumber: '01234 900310',
+          isPreferred: false,
+          usageType: 'PLACEOFBUSINESS'
+        }
+      ],
+      roles: [
+        {
+          mainRoleType: 'CUSTOMER',
+          roleType: 'CPHHOLDER',
+          roleName: 'CPH Holder',
+          from: '2018-01-01'
+        },
+        {
+          mainRoleType: 'CUSTOMER',
+          roleType: 'LIVESTOCKOWNER',
+          roleName: 'Livestock Owner',
+          from: '2019-01-01'
+        }
+      ],
+      relationships: {
+        srabpiPlants: {
+          data: []
+        }
+      }
+    })
+  })
+
+  test('returns a Defra organisational unit', async () => {
+    const [organisationalUnit] = await findOrganisations(['ACAR2930'], {
+      masked: false
+    })
+
+    expect(organisationalUnit.id).toBe('ACAR2930')
+    expect(organisationalUnit.organisationName).toBe('APHA Carlisle Office')
+    expect(organisationalUnit.organisationType).toBe('AHORGUNIT')
+    expect(organisationalUnit.roles).toEqual([])
+    expect(organisationalUnit.contactMethods).toEqual([])
   })
 })

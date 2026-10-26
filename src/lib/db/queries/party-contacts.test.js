@@ -41,7 +41,8 @@ const contactOf = (row) => ({
   countryCode: row.telephone_country_code,
   extension: row.extension_number,
   usageType: row.address_usage_type,
-  preferred: row.preferred_contact_method_ind
+  preferred: row.preferred_contact_method_ind,
+  usageRow: row.usage_row
 })
 
 const contact = (
@@ -62,6 +63,7 @@ const contact = (
   extension: null,
   usageType,
   preferred,
+  usageRow: 1,
   ...extra
 })
 
@@ -89,8 +91,8 @@ describe('find-party-contacts.sql', () => {
       ),
       // a fax whose blank country code and preferred indicator come back null
       contact(292901, 29290104, 'FAX', '01234 567891', 'CORRESPONDENCE', null),
-      // an e-mail with two current usage rows is returned once, with the
-      // preferred one
+      // an e-mail with two current usage rows is returned once per usage,
+      // numbered from the preferred one
       contact(
         292901,
         29290105,
@@ -98,6 +100,15 @@ describe('find-party-contacts.sql', () => {
         'a.person@example.com',
         'PLACEOFBUSINESS',
         'Y'
+      ),
+      contact(
+        292901,
+        29290105,
+        'EMAIL',
+        'a.person@example.com',
+        'CORRESPONDENCE',
+        'N',
+        { usageRow: 2 }
       ),
       // an e-mail stored as blanks has a null value; the current link to an
       // ended mobile and the ended link to a current landline are absent
