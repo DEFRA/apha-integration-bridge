@@ -5,7 +5,6 @@ import hapiPino from 'hapi-pino'
 import route from './find.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import { oracleDb } from '../../common/helpers/oracledb.js'
-import { piiContextPlugin } from '../../common/helpers/pii-context.js'
 
 const path = '/organisations/find'
 const organisationId = 'O123456'
@@ -386,26 +385,10 @@ describe('POST /organisations/find', () => {
 describe('POST /organisations/find — type, roles and contact methods', () => {
   /**
    * @param {string[]} ids
-   * @param {{ masked: boolean }} options
    * @returns {Promise<Record<string, any>[]>}
    */
-  const findOrganisations = async (ids, { masked }) => {
-    const server = Hapi.server({ port: 0 })
-
-    const plugins = [
-      { plugin: hapiPino, options: { enabled: false } },
-      oracleDb
-    ]
-
-    if (masked) {
-      plugins.push(piiContextPlugin)
-    }
-
-    await server.register(plugins)
-
-    registerSimpleAuthStrategy(server)
-
-    server.route({ ...route, path, method: 'POST' })
+  const findOrganisations = async (ids) => {
+    const server = await createServer()
 
     const response = await server.inject({
       method: 'POST',
@@ -413,8 +396,6 @@ describe('POST /organisations/find — type, roles and contact methods', () => {
       headers: authHeaders,
       payload: { ids }
     })
-
-    await server.stop()
 
     expect(response.statusCode).toBe(200)
 
@@ -424,9 +405,7 @@ describe('POST /organisations/find — type, roles and contact methods', () => {
   }
 
   test('returns organisation type, roles and contact methods', async () => {
-    const [searchOrganisation] = await findOrganisations(['C2990002'], {
-      masked: false
-    })
+    const [searchOrganisation] = await findOrganisations(['C2990002'])
 
     expect(searchOrganisation).toEqual({
       type: 'organisations',
@@ -517,9 +496,7 @@ describe('POST /organisations/find — type, roles and contact methods', () => {
   })
 
   test('returns a Defra organisational unit', async () => {
-    const [organisationalUnit] = await findOrganisations(['ACAR2930'], {
-      masked: false
-    })
+    const [organisationalUnit] = await findOrganisations(['ACAR2930'])
 
     expect(organisationalUnit.id).toBe('ACAR2930')
     expect(organisationalUnit.organisationName).toBe('APHA Carlisle Office')

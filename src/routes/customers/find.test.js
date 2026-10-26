@@ -672,8 +672,6 @@ describe('POST /customers/find — roles and contacts', () => {
       payload: { ids: [searchCustomerId] }
     })
 
-    await server.stop()
-
     expect(response.statusCode).toBe(200)
 
     const result = /** @type {Record<string, any>} */ (response.result)
