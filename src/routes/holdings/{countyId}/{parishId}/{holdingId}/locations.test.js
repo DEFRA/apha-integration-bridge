@@ -84,6 +84,7 @@ const hillTopYardAddress = {
   primaryAddressableObject: addressableObject('Hill Top Yard'),
   street: 'Back Lane',
   town: 'Exampleton',
+  county: 'Exampleshire',
   postcode: 'EX2 9HY'
 }
 

@@ -112,7 +112,7 @@ const annHill = {
       street: 'Mill Road',
       locality: null,
       town: 'Exampleton',
-      county: null,
+      county: 'Exampleshire',
       postcode: 'EX2 1MR',
       countryCode: 'England',
       isPreferred: true

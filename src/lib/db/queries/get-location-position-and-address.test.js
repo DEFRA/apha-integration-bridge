@@ -9,8 +9,9 @@ import { getLocation } from './get-location.js'
 
 /**
  * Runs both location queries against the local Oracle fixtures and checks the
- * position and address columns that no route reads yet (DSFAAP-2927). The rows
- * are seeded by .docker-compose/oracledb/010_add_location_position_and_address.sql
+ * position and address columns that no route reads yet (DSFAAP-2927). The base
+ * rows are seeded by .docker-compose/oracledb/010_add_location_position_and_address.sql
+ * and the non-county administrative-area case by 020.
  */
 
 /** @type {import('@hapi/hapi').Server} */
@@ -102,6 +103,21 @@ describe.each([
       osMapReference: null
     })
     expect(addressesOf(rows)).toEqual([])
+  })
+
+  // fixture 020 gives Hill Top Yard the county Exampleshire, which is not a
+  // COUNTY code
+  test('a county that is not a COUNTY code comes back as SAM holds it', async () => {
+    const rows = await rowsFor(queryFor('L298210'))
+
+    expect(
+      rows
+        .filter((row) => row.feature_address_pk !== null)
+        .map((row) => ({ street: row.street, county: row.county }))
+    ).toEqual([
+      { street: 'Hill Lane', county: null },
+      { street: 'Back Lane', county: 'Exampleshire' }
+    ])
   })
 
   test('no point, and several current addresses ranked postal first, then latest from date, then highest key', async () => {

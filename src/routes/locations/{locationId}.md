@@ -49,7 +49,7 @@ Response body:
 
 ### Address fields
 
-- `administrativeAreaCounty` is the decoded county name (from SAM's `ADMINISTRATIVE_AREA` code), as `POST /locations/find` returns it, or `null` if the code has no description.
+- `administrativeAreaCounty` is the decoded county name (from SAM's `ADMINISTRATIVE_AREA` code), or the value as SAM holds it if that is not a county code, as `POST /locations/find` returns it.
 - `ukInternalCode` is SAM's `UK_INTERNAL_CODE`: one of `England`, `Scotland`, `Wales`, `Northern Ireland`, `Isle of Man`, or `null`.
 - `countryCode` is SAM's `COUNTRY_CODE`: one of `England`, `GB` or `Wales`, or `null`.
 

@@ -104,7 +104,7 @@ SELECT
   ba.street,
   ba.locality,
   ba.town,
-  county_lookup.short_description county,
+  COALESCE(county_lookup.short_description, ba.administrative_area) county,
   ba.postcode,
   ba.uk_internal_code,
   ba.country_code,

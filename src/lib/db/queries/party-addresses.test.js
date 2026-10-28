@@ -9,7 +9,8 @@ import { findPartyAddressesQuery } from './find-party-addresses.js'
 /**
  * Runs the party-address query against the local Oracle fixtures
  * (DSFAAP-2982). The rows are seeded by
- * .docker-compose/oracledb/015_add_holding_sub_resource_scenarios.sql
+ * .docker-compose/oracledb/015_add_holding_sub_resource_scenarios.sql; fixture
+ * 020 adds the non-county administrative-area value.
  */
 
 /** @type {import('@hapi/hapi').Server} */
@@ -84,7 +85,8 @@ describe('find-party-addresses.sql', () => {
       paon_start_number: 4,
       town: 'Exampleton',
       postcode: 'EX2 1MR',
-      county: null,
+      // fixture 020: not a COUNTY code, so the value as SAM holds it
+      county: 'Exampleshire',
       uk_internal_code: 'England',
       country_code: 'GB'
     })
