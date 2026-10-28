@@ -1,0 +1,559 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`POST /organisations/find is unchanged for a client without the pii scope apart from the added members 1`] = `
+{
+  "result": {
+    "data": [
+      {
+        "address": {
+          "countryCode": "UKX002",
+          "county": "C****y",
+          "locality": null,
+          "postcode": "2*****2",
+          "primaryAddressableObject": {
+            "description": "Head office",
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": 100,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": "E************y",
+          "town": "****",
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": "J**********t",
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": "J**********t",
+            "phoneNumber": null,
+          },
+        },
+        "id": "O123456",
+        "organisationName": "A************d",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": "J****l",
+            "phoneNumber": "0**********2",
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982002",
+        "organisationName": "H****************d",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982006",
+        "organisationName": "H***********d",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982007",
+        "organisationName": "D***********************p",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982008",
+        "organisationName": "O***********s",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "ACAR2930",
+        "organisationName": "A******************e",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+    ],
+    "links": {
+      "next": null,
+      "prev": null,
+      "self": "/organisations/find?page=1&pageSize=10",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`POST /organisations/find is unchanged for the fixture organisations apart from the added members 1`] = `
+{
+  "result": {
+    "data": [
+      {
+        "address": {
+          "countryCode": "UKX002",
+          "county": "County",
+          "locality": null,
+          "postcode": "2BB B22",
+          "primaryAddressableObject": {
+            "description": "Head office",
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": 100,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": "Enterprise Way",
+          "town": "Town",
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": "Jane Contact",
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": "John Contact",
+            "phoneNumber": null,
+          },
+        },
+        "id": "O123456",
+        "organisationName": "Acme Farms Ltd",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": "J Hill",
+            "phoneNumber": "07700 900222",
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982002",
+        "organisationName": "Hill Top Farms Ltd",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982006",
+        "organisationName": "Hill Vets Ltd",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982007",
+        "organisationName": "Dale Delivery Partnership",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "C2982008",
+        "organisationName": "Old Town Vets",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+      {
+        "address": {
+          "countryCode": null,
+          "county": null,
+          "locality": null,
+          "postcode": null,
+          "primaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "secondaryAddressableObject": {
+            "description": null,
+            "endNumber": null,
+            "endNumberSuffix": null,
+            "startNumber": null,
+            "startNumberSuffix": null,
+          },
+          "street": null,
+          "town": null,
+        },
+        "contactDetails": {
+          "primaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+          "secondaryContact": {
+            "emailAddress": null,
+            "fullName": null,
+            "phoneNumber": null,
+          },
+        },
+        "id": "ACAR2930",
+        "organisationName": "APHA Carlisle Office",
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "type": "organisations",
+      },
+    ],
+    "links": {
+      "next": null,
+      "prev": null,
+      "self": "/organisations/find?page=1&pageSize=10",
+    },
+  },
+  "statusCode": 200,
+}
+`;

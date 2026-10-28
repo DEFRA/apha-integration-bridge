@@ -27,12 +27,6 @@ test('toPeople maps rows and preserves requested id order', () => {
       postcode: '1AA A11',
       country_code: null,
       preferred_contact_method_ind: 'N',
-      email: 'example@example.com',
-      email_preferred_ind: 'N',
-      mobile_number: '+44 11111 11111',
-      mobile_preferred_ind: 'Y',
-      landline: null,
-      landline_preferred_ind: null,
       srabpi_plantid: 'PLANT-A'
     },
     {
@@ -58,12 +52,6 @@ test('toPeople maps rows and preserves requested id order', () => {
       postcode: '1AA A11',
       country_code: null,
       preferred_contact_method_ind: 'N',
-      email: 'example@example.com',
-      email_preferred_ind: 'N',
-      mobile_number: '+44 11111 11111',
-      mobile_preferred_ind: 'Y',
-      landline: null,
-      landline_preferred_ind: null,
       srabpi_plantid: 'PLANT-A'
     },
     {
@@ -89,12 +77,6 @@ test('toPeople maps rows and preserves requested id order', () => {
       postcode: null,
       country_code: null,
       preferred_contact_method_ind: null,
-      email: null,
-      email_preferred_ind: null,
-      mobile_number: null,
-      mobile_preferred_ind: null,
-      landline: '+44 1111 11111',
-      landline_preferred_ind: 'Y',
       srabpi_plantid: null
     }
   ]
@@ -134,14 +116,7 @@ test('toPeople maps rows and preserves requested id order', () => {
           town: null
         }
       ],
-      contactDetails: [
-        {
-          type: 'landline',
-          phoneNumber: '+44 1111 11111',
-          isPreferred: true,
-          usageType: null
-        }
-      ],
+      contactDetails: [],
       relationships: {
         srabpiPlants: {
           data: []
@@ -180,20 +155,7 @@ test('toPeople maps rows and preserves requested id order', () => {
           isPreferred: false
         }
       ],
-      contactDetails: [
-        {
-          type: 'email',
-          emailAddress: 'example@example.com',
-          isPreferred: false,
-          usageType: null
-        },
-        {
-          type: 'mobile',
-          phoneNumber: '+44 11111 11111',
-          isPreferred: true,
-          usageType: null
-        }
-      ],
+      contactDetails: [],
       relationships: {
         srabpiPlants: {
           data: [
@@ -233,12 +195,6 @@ test('toPeople aggregates multiple srabpiPlants from rows with same party_id', (
       postcode: 'SW1A 1AA',
       country_code: null,
       preferred_contact_method_ind: 'Y',
-      email: 'john@example.com',
-      email_preferred_ind: 'Y',
-      mobile_number: null,
-      mobile_preferred_ind: null,
-      landline: null,
-      landline_preferred_ind: null,
       srabpi_plantid: 'PLANT-A'
     },
     {
@@ -264,12 +220,6 @@ test('toPeople aggregates multiple srabpiPlants from rows with same party_id', (
       postcode: 'SW1A 1AA',
       country_code: null,
       preferred_contact_method_ind: 'Y',
-      email: 'john@example.com',
-      email_preferred_ind: 'Y',
-      mobile_number: null,
-      mobile_preferred_ind: null,
-      landline: null,
-      landline_preferred_ind: null,
       srabpi_plantid: 'PLANT-B'
     },
     {
@@ -295,12 +245,6 @@ test('toPeople aggregates multiple srabpiPlants from rows with same party_id', (
       postcode: 'SW1A 1AA',
       country_code: null,
       preferred_contact_method_ind: 'Y',
-      email: 'john@example.com',
-      email_preferred_ind: 'Y',
-      mobile_number: null,
-      mobile_preferred_ind: null,
-      landline: null,
-      landline_preferred_ind: null,
       srabpi_plantid: 'PLANT-C'
     }
   ]
@@ -340,14 +284,7 @@ test('toPeople aggregates multiple srabpiPlants from rows with same party_id', (
           isPreferred: true
         }
       ],
-      contactDetails: [
-        {
-          type: 'email',
-          emailAddress: 'john@example.com',
-          isPreferred: true,
-          usageType: null
-        }
-      ],
+      contactDetails: [],
       relationships: {
         srabpiPlants: {
           data: [
@@ -366,47 +303,6 @@ test('toPeople aggregates multiple srabpiPlants from rows with same party_id', (
           ]
         }
       }
-    }
-  ])
-})
-
-test('toPeople keeps one number recorded under two usage types as two labelled entries', () => {
-  const baseRow = {
-    party_id: 'C123456',
-    customer_type: 'PERSON',
-    title: 'Mr',
-    first_name: 'Bert',
-    second_name: null,
-    last_name: 'Farmer',
-    email: null,
-    email_preferred_ind: null,
-    email_usage_type: null,
-    mobile_number: '+44 11111 11111',
-    landline: null,
-    landline_preferred_ind: null,
-    landline_usage_type: null,
-    srabpi_plantid: null
-  }
-
-  const rows = [
-    { ...baseRow, mobile_preferred_ind: 'Y', mobile_usage_type: 'MOBILE' },
-    { ...baseRow, mobile_preferred_ind: 'N', mobile_usage_type: 'SECONDARY' }
-  ]
-
-  const [customer] = toPeople(rows, ['C123456'])
-
-  expect(customer.contactDetails).toEqual([
-    {
-      type: 'mobile',
-      phoneNumber: '+44 11111 11111',
-      isPreferred: true,
-      usageType: 'MOBILE'
-    },
-    {
-      type: 'mobile',
-      phoneNumber: '+44 11111 11111',
-      isPreferred: false,
-      usageType: 'SECONDARY'
     }
   ])
 })

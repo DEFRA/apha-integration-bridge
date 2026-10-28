@@ -37,15 +37,6 @@ test('toPerson maps a single row into one customer resource', () => {
     uk_internal_code: 'ENG',
     country_code: null,
     preferred_contact_method_ind: 'N',
-    email: 'example@example.com',
-    email_preferred_ind: 'N',
-    email_usage_type: 'EMAIL',
-    mobile_number: '+44 11111 11111',
-    mobile_preferred_ind: 'Y',
-    mobile_usage_type: 'SECONDARY',
-    landline: null,
-    landline_preferred_ind: null,
-    landline_usage_type: null,
     srabpi_plantid: 'PLANT-A'
   })
 
@@ -81,20 +72,8 @@ test('toPerson maps a single row into one customer resource', () => {
         isPreferred: false
       }
     ],
-    contactDetails: [
-      {
-        type: 'email',
-        emailAddress: 'example@example.com',
-        isPreferred: false,
-        usageType: 'EMAIL'
-      },
-      {
-        type: 'mobile',
-        phoneNumber: '+44 11111 11111',
-        isPreferred: true,
-        usageType: 'SECONDARY'
-      }
-    ],
+    // contacts come from find-party-contacts.sql; toCustomer adds them
+    contactDetails: [],
     relationships: {
       srabpiPlants: {
         data: [
@@ -108,7 +87,7 @@ test('toPerson maps a single row into one customer resource', () => {
   })
 })
 
-test('toPerson masks names, address and contact details when masking context is active', () => {
+test('toPerson masks names and address when masking context is active', () => {
   runWithMaskingContext({ shouldMask: true }, () => {
     const customer = toPerson({
       party_id: 'C123456',
@@ -134,12 +113,6 @@ test('toPerson masks names, address and contact details when masking context is 
       postcode: 'SW1A 1AA',
       uk_internal_code: 'GB',
       preferred_contact_method_ind: 'N',
-      email: 'bert@example.com',
-      email_preferred_ind: 'N',
-      mobile_number: '07700900123',
-      mobile_preferred_ind: 'Y',
-      landline: null,
-      landline_preferred_ind: null,
       srabpi_plantid: null
     })
 
@@ -157,11 +130,6 @@ test('toPerson masks names, address and contact details when masking context is 
         })
       ]
     })
-
-    const email = customer.contactDetails.find((c) => c.type === 'email')
-    const mobile = customer.contactDetails.find((c) => c.type === 'mobile')
-    expect(email.emailAddress).toBe('b**************m')
-    expect(mobile.phoneNumber).toBe('0*********3')
   })
 })
 
@@ -190,12 +158,6 @@ test('toPerson throws when row customer_type is ORGANISATION', () => {
       postcode: null,
       country_code: null,
       preferred_contact_method_ind: null,
-      email: null,
-      email_preferred_ind: null,
-      mobile_number: null,
-      mobile_preferred_ind: null,
-      landline: null,
-      landline_preferred_ind: null,
       srabpi_plantid: null
     })
   ).toThrow(/person/i)

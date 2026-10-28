@@ -29,6 +29,7 @@ const authHeaders = { authorization: `Bearer ${authToken}` }
 const customer1 = {
   type: 'customers',
   id: 'C123456',
+  partyType: 'PERSON',
   title: 'Mr',
   firstName: 'Bert',
   middleName: null,
@@ -72,6 +73,7 @@ const customer1 = {
       usageType: 'MOBILE'
     }
   ],
+  roles: [],
   relationships: {
     srabpiPlants: {
       data: []
@@ -82,6 +84,7 @@ const customer1 = {
 const customer2 = {
   type: 'customers',
   id: 'C234567',
+  partyType: 'PERSON',
   title: 'Mrs',
   firstName: 'Roberta',
   middleName: null,
@@ -119,6 +122,7 @@ const customer2 = {
       usageType: 'LANDLINE'
     }
   ],
+  roles: [],
   relationships: {
     srabpiPlants: {
       data: []
@@ -632,5 +636,172 @@ describe('POST /customers/find — PII masking integration', () => {
 
     expect(unmasked.data[0].firstName).toBe('Bert')
     expect(masked.data[0].firstName).toBe('****')
+  })
+})
+
+// C2990001 is seeded by 020_add_customer_and_organisation_search_scenarios.sql
+describe('POST /customers/find — roles and contacts', () => {
+  const searchCustomerId = 'C2990001'
+
+  /**
+   * @param {{ masked: boolean }} options
+   * @returns {Promise<Record<string, any>>}
+   */
+  const findSearchCustomer = async ({ masked }) => {
+    const server = Hapi.server({ port: 0 })
+
+    const plugins = [
+      { plugin: hapiPino, options: { enabled: false } },
+      oracleDb
+    ]
+
+    if (masked) {
+      plugins.push(piiContextPlugin)
+    }
+
+    await server.register(plugins)
+
+    registerSimpleAuthStrategy(server)
+
+    server.route({ ...route, path, method: 'POST' })
+
+    const response = await server.inject({
+      method: 'POST',
+      url: `${path}?page=1&pageSize=10`,
+      headers: authHeaders,
+      payload: { ids: [searchCustomerId] }
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    const result = /** @type {Record<string, any>} */ (response.result)
+
+    expect(result.data).toHaveLength(1)
+
+    return result.data[0]
+  }
+
+  /**
+   * @param {Record<string, any>} customer
+   * @param {string} type
+   * @returns {Record<string, any>[]}
+   */
+  const contactDetailsOfType = (customer, type) => {
+    const matches = []
+
+    for (const contactDetail of customer.contactDetails) {
+      if (contactDetail.type === type) {
+        matches.push(contactDetail)
+      }
+    }
+
+    return matches
+  }
+
+  test('returns party type, roles and all contact details', async () => {
+    const customer = await findSearchCustomer({ masked: false })
+
+    expect(customer.partyType).toBe('PERSON')
+
+    // the AGENT role has ended, so it is not returned
+    expect(customer.roles).toEqual([
+      {
+        mainRoleType: 'CUSTOMER',
+        roleType: 'CPHHOLDER',
+        roleName: 'CPH Holder',
+        from: '2015-01-01'
+      },
+      {
+        mainRoleType: 'CUSTOMER',
+        roleType: 'LIVESTOCKKEEPER',
+        roleName: 'Livestock Keeper',
+        from: '2016-01-01'
+      }
+    ])
+
+    // the email has two usage types; the last mobile is held through a role
+    expect(customer.contactDetails).toEqual([
+      {
+        type: 'mobile',
+        phoneNumber: '07700 900301',
+        isPreferred: true,
+        usageType: 'HOME'
+      },
+      {
+        type: 'mobile',
+        phoneNumber: '07700 900311',
+        isPreferred: false,
+        usageType: 'HOME'
+      },
+      {
+        type: 'fax',
+        faxNumber: '01234 900303',
+        isPreferred: false,
+        usageType: 'CORRESPONDENCE'
+      },
+      {
+        type: 'landline',
+        phoneNumber: '01234 900304',
+        isPreferred: false,
+        usageType: 'SECONDARYCONTACT'
+      },
+      {
+        type: 'email',
+        emailAddress: 's.search@example.com',
+        isPreferred: true,
+        usageType: 'PLACEOFBUSINESS'
+      },
+      {
+        type: 'email',
+        emailAddress: 's.search@example.com',
+        isPreferred: false,
+        usageType: 'CORRESPONDENCE'
+      },
+      {
+        type: 'mobile',
+        phoneNumber: '07700 900306',
+        isPreferred: false,
+        usageType: 'PLACEOFBUSINESS'
+      }
+    ])
+  })
+
+  test('keeps two numbers that mask the same when masked', async () => {
+    const customer = await findSearchCustomer({ masked: true })
+
+    const homeMobiles = []
+
+    for (const mobile of contactDetailsOfType(customer, 'mobile')) {
+      if (mobile.usageType === 'HOME') {
+        homeMobiles.push(mobile)
+      }
+    }
+
+    // 07700 900301 and 07700 900311 both mask to 0**********1
+    expect(homeMobiles).toEqual([
+      {
+        type: 'mobile',
+        phoneNumber: '0**********1',
+        isPreferred: true,
+        usageType: 'HOME'
+      },
+      {
+        type: 'mobile',
+        phoneNumber: '0**********1',
+        isPreferred: false,
+        usageType: 'HOME'
+      }
+    ])
+
+    expect(contactDetailsOfType(customer, 'fax')).toEqual([
+      {
+        type: 'fax',
+        faxNumber: '0**********3',
+        isPreferred: false,
+        usageType: 'CORRESPONDENCE'
+      }
+    ])
+
+    expect(customer.lastName).toBe('S****h')
   })
 })

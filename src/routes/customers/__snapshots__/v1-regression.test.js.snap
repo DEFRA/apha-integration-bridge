@@ -1,0 +1,501 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`POST /customers/find is unchanged for a client without the pii scope apart from the added members 1`] = `
+{
+  "result": {
+    "data": [
+      {
+        "addresses": [
+          {
+            "countryCode": "UKX001",
+            "county": "C****y",
+            "isPreferred": false,
+            "locality": null,
+            "postcode": "1*****1",
+            "primaryAddressableObject": {
+              "description": "Rose cottage",
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": 12,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": 12,
+              "startNumberSuffix": null,
+            },
+            "street": "S****t",
+            "town": "****",
+          },
+        ],
+        "contactDetails": [
+          {
+            "emailAddress": "e*****************m",
+            "isPreferred": false,
+            "type": "email",
+            "usageType": "EMAIL",
+          },
+          {
+            "isPreferred": true,
+            "phoneNumber": "+*************1",
+            "type": "mobile",
+            "usageType": "MOBILE",
+          },
+        ],
+        "firstName": "****",
+        "id": "C123456",
+        "lastName": "F****r",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "**",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": null,
+            "county": null,
+            "isPreferred": false,
+            "locality": null,
+            "postcode": null,
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": null,
+            "town": null,
+          },
+        ],
+        "contactDetails": [
+          {
+            "isPreferred": true,
+            "phoneNumber": "+************1",
+            "type": "landline",
+            "usageType": "LANDLINE",
+          },
+        ],
+        "firstName": "R*****a",
+        "id": "C234567",
+        "lastName": "F****r",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "***",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": "England",
+            "county": null,
+            "isPreferred": true,
+            "locality": null,
+            "postcode": "E*****R",
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": 4,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": "M*******d",
+            "town": "E********n",
+          },
+        ],
+        "contactDetails": [
+          {
+            "isPreferred": true,
+            "phoneNumber": "0**********1",
+            "type": "mobile",
+            "usageType": "HOME",
+          },
+          {
+            "isPreferred": false,
+            "phoneNumber": "0**********1",
+            "type": "mobile",
+            "usageType": null,
+          },
+        ],
+        "firstName": "***",
+        "id": "C2982001",
+        "lastName": "****",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "***",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": null,
+            "county": null,
+            "isPreferred": false,
+            "locality": null,
+            "postcode": null,
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": null,
+            "town": null,
+          },
+        ],
+        "contactDetails": [
+          {
+            "emailAddress": "t****************m",
+            "isPreferred": false,
+            "type": "email",
+            "usageType": null,
+          },
+        ],
+        "firstName": "***",
+        "id": "C2982003",
+        "lastName": "****",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "**",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": null,
+            "county": null,
+            "isPreferred": false,
+            "locality": null,
+            "postcode": null,
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": null,
+            "town": null,
+          },
+        ],
+        "contactDetails": [],
+        "firstName": "**",
+        "id": "C2982004",
+        "lastName": "*****",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "**",
+        "type": "customers",
+      },
+    ],
+    "links": {
+      "next": null,
+      "prev": null,
+      "self": "/customers/find?page=1&pageSize=10",
+    },
+  },
+  "statusCode": 200,
+}
+`;
+
+exports[`POST /customers/find is unchanged for the fixture customers apart from the added members 1`] = `
+{
+  "result": {
+    "data": [
+      {
+        "addresses": [
+          {
+            "countryCode": "UKX001",
+            "county": "County",
+            "isPreferred": false,
+            "locality": null,
+            "postcode": "1AA A11",
+            "primaryAddressableObject": {
+              "description": "Rose cottage",
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": 12,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": 12,
+              "startNumberSuffix": null,
+            },
+            "street": "Street",
+            "town": "Town",
+          },
+        ],
+        "contactDetails": [
+          {
+            "emailAddress": "example@example.com",
+            "isPreferred": false,
+            "type": "email",
+            "usageType": "EMAIL",
+          },
+          {
+            "isPreferred": true,
+            "phoneNumber": "+44 11111 11111",
+            "type": "mobile",
+            "usageType": "MOBILE",
+          },
+        ],
+        "firstName": "Bert",
+        "id": "C123456",
+        "lastName": "Farmer",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "Mr",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": null,
+            "county": null,
+            "isPreferred": false,
+            "locality": null,
+            "postcode": null,
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": null,
+            "town": null,
+          },
+        ],
+        "contactDetails": [
+          {
+            "isPreferred": true,
+            "phoneNumber": "+44 1111 11111",
+            "type": "landline",
+            "usageType": "LANDLINE",
+          },
+        ],
+        "firstName": "Roberta",
+        "id": "C234567",
+        "lastName": "Farmer",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "Mrs",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": "England",
+            "county": null,
+            "isPreferred": true,
+            "locality": null,
+            "postcode": "EX2 1MR",
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": 4,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": "Mill Road",
+            "town": "Exampleton",
+          },
+        ],
+        "contactDetails": [
+          {
+            "isPreferred": true,
+            "phoneNumber": "07700 900101",
+            "type": "mobile",
+            "usageType": "HOME",
+          },
+          {
+            "isPreferred": false,
+            "phoneNumber": "07700 900201",
+            "type": "mobile",
+            "usageType": null,
+          },
+        ],
+        "firstName": "Ann",
+        "id": "C2982001",
+        "lastName": "Hill",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "Mrs",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": null,
+            "county": null,
+            "isPreferred": false,
+            "locality": null,
+            "postcode": null,
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": null,
+            "town": null,
+          },
+        ],
+        "contactDetails": [
+          {
+            "emailAddress": "t.dale@example.com",
+            "isPreferred": false,
+            "type": "email",
+            "usageType": null,
+          },
+        ],
+        "firstName": "Tom",
+        "id": "C2982003",
+        "lastName": "Dale",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "Mr",
+        "type": "customers",
+      },
+      {
+        "addresses": [
+          {
+            "countryCode": null,
+            "county": null,
+            "isPreferred": false,
+            "locality": null,
+            "postcode": null,
+            "primaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "secondaryAddressableObject": {
+              "description": null,
+              "endNumber": null,
+              "endNumberSuffix": null,
+              "startNumber": null,
+              "startNumberSuffix": null,
+            },
+            "street": null,
+            "town": null,
+          },
+        ],
+        "contactDetails": [],
+        "firstName": "Jo",
+        "id": "C2982004",
+        "lastName": "Field",
+        "middleName": null,
+        "relationships": {
+          "srabpiPlants": {
+            "data": [],
+          },
+        },
+        "title": "Ms",
+        "type": "customers",
+      },
+    ],
+    "links": {
+      "next": null,
+      "prev": null,
+      "self": "/customers/find?page=1&pageSize=10",
+    },
+  },
+  "statusCode": 200,
+}
+`;

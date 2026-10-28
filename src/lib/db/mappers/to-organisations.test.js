@@ -28,9 +28,6 @@ test('toOrganisations maps rows and preserves requested id order', () => {
       uk_internal_code: 'ENG',
       country_code: 'GB',
       preferred_contact_method_ind: null,
-      email: 'example@example.com',
-      mobile_number: null,
-      landline: '+44 1111 11111',
       srabpi_plantid: 'SP123456'
     },
     {
@@ -57,9 +54,6 @@ test('toOrganisations maps rows and preserves requested id order', () => {
       uk_internal_code: 'ENG',
       country_code: 'GB',
       preferred_contact_method_ind: null,
-      email: 'example@example.com',
-      mobile_number: null,
-      landline: '+44 1111 11111',
       srabpi_plantid: 'SP123456'
     },
     {
@@ -86,9 +80,6 @@ test('toOrganisations maps rows and preserves requested id order', () => {
       uk_internal_code: 'SCT',
       country_code: 'GB',
       preferred_contact_method_ind: null,
-      email: null,
-      mobile_number: null,
-      landline: '+44 1111 11111',
       srabpi_plantid: null
     }
   ]
@@ -126,7 +117,7 @@ test('toOrganisations maps rows and preserves requested id order', () => {
         primaryContact: {
           fullName: 'Sally Scientist',
           emailAddress: null,
-          phoneNumber: '+44 1111 11111'
+          phoneNumber: null
         },
         secondaryContact: {
           fullName: null,
@@ -170,11 +161,11 @@ test('toOrganisations maps rows and preserves requested id order', () => {
         primaryContact: {
           fullName: 'Bob Farmer',
           emailAddress: null,
-          phoneNumber: '+44 1111 11111'
+          phoneNumber: null
         },
         secondaryContact: {
           fullName: 'Roberta Farmer',
-          emailAddress: 'example@example.com',
+          emailAddress: null,
           phoneNumber: null
         }
       },

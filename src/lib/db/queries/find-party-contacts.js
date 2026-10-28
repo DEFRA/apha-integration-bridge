@@ -17,8 +17,8 @@ const FindPartyContactsSchema = Joi.object({
 
 /**
  * Every current e-mail, phone and fax contact of each party, held directly or
- * through one of its current roles: one row per contact, with the value for
- * its type, its usage type and SAM's preferred-contact indicator.
+ * through one of its current roles. A contact with several usage types has a
+ * row per usage; USAGE_ROW 1 is the preferred one.
  *
  * @param {Array<number>} partyKeys
  * @returns {{ sql: string; bindings: Record<string, unknown> }} The query and its bindings

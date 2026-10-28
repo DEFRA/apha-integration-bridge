@@ -1,28 +1,12 @@
 import { toPerson } from './to-person.js'
 
 /**
- * Usage type is part of the key so that one number recorded under two usages
- * (e.g. the customer's own and a named secondary contact's) is kept as two
- * labelled entries rather than collapsed into one.
- *
- * @param {{ type: 'email', emailAddress: string, usageType: string | null } | { type: 'mobile' | 'landline', phoneNumber: string, usageType: string | null }} detail
- */
-const contactDetailKey = (detail) => {
-  if (detail.type === 'email') {
-    return `${detail.type}:${detail.emailAddress}:${detail.usageType}`
-  }
-
-  return `${detail.type}:${detail.phoneNumber}:${detail.usageType}`
-}
-
-/**
  * @param {Record<string, unknown>[]} rows
  * @param {string[]} ids
  */
 export const toPeople = (rows, ids) => {
   const people = new Map()
   const addressKeys = new Map()
-  const contactKeys = new Map()
   const plantKeys = new Map()
 
   for (const row of rows) {
@@ -37,10 +21,6 @@ export const toPeople = (rows, ids) => {
       addressKeys.set(
         mapped.id,
         new Set(mapped.addresses.map((address) => JSON.stringify(address)))
-      )
-      contactKeys.set(
-        mapped.id,
-        new Set(mapped.contactDetails.map((detail) => contactDetailKey(detail)))
       )
       plantKeys.set(
         mapped.id,
@@ -65,15 +45,6 @@ export const toPeople = (rows, ids) => {
       if (!addressKeys.get(mapped.id)?.has(key)) {
         person.addresses.push(address)
         addressKeys.get(mapped.id)?.add(key)
-      }
-    }
-
-    for (const detail of mapped.contactDetails) {
-      const key = contactDetailKey(detail)
-
-      if (!contactKeys.get(mapped.id)?.has(key)) {
-        person.contactDetails.push(detail)
-        contactKeys.get(mapped.id)?.add(key)
       }
     }
 

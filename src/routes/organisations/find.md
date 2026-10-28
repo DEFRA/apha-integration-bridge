@@ -48,11 +48,17 @@ Example:
 
 Each organisation can include:
 
-- `id`, `type`, `organisationName`
+- `id`, `type`, `organisationName`, `organisationType`
 - `address`
 - `contactDetails.primaryContact`
 - `contactDetails.secondaryContact`
+- `contactMethods`: email/mobile/landline/fax entries, same shape as `contactDetails` on `POST /customers/find`
+- `roles`: current SAM roles, same shape as on `POST /customers/find`
 - `relationships.srabpiPlants`
+
+`organisationType` is SAM's organisation type code, usually `NOTKNOWN`. Defra's own organisational units are `AHORGUNIT` and are returned like any other organisation.
+
+`contactDetails` is unchanged: `primaryContact.phoneNumber` is the organisation's first mobile (or landline) and `secondaryContact.emailAddress` its first email. Use `contactMethods` for the full list.
 
 ### Address fields
 
@@ -68,6 +74,7 @@ Example:
       "type": "organisations",
       "id": "O123456",
       "organisationName": "Acme Farms Ltd",
+      "organisationType": "NOTKNOWN",
       "address": {
         "street": "Enterprise Way",
         "town": "Town",
@@ -79,7 +86,7 @@ Example:
         "primaryContact": {
           "fullName": "Jane Contact",
           "emailAddress": null,
-          "phoneNumber": null
+          "phoneNumber": "01234 500100"
         },
         "secondaryContact": {
           "fullName": "John Contact",
@@ -87,6 +94,22 @@ Example:
           "phoneNumber": null
         }
       },
+      "contactMethods": [
+        {
+          "type": "landline",
+          "phoneNumber": "01234 500100",
+          "isPreferred": true,
+          "usageType": "PLACEOFBUSINESS"
+        }
+      ],
+      "roles": [
+        {
+          "mainRoleType": "CUSTOMER",
+          "roleType": "CPHHOLDER",
+          "roleName": "CPH Holder",
+          "from": "2018-03-01"
+        }
+      ],
       "relationships": {
         "srabpiPlants": {
           "data": []

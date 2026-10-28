@@ -1,10 +1,10 @@
-import { mask } from '../../pii/index.js'
 import { asNullableDate } from './as-nullable-date.js'
 import { asNullableString } from './as-nullable-string.js'
-import { asPreferredFlag } from './as-preferred-flag.js'
 import { bySelectedHoldership } from './by-selected-holdership.js'
-import { toAddress } from './to-address.js'
+import { toContactMethods } from './to-contact-methods.js'
 import { toOrganisations } from './to-organisations.js'
+import { toPartyAddresses } from './to-party-addresses.js'
+import { toPartyRole } from './to-party-role.js'
 import { toPeople } from './to-people.js'
 
 /** @type {Record<string, string>} */
@@ -14,14 +14,6 @@ const ROLES = {
   PRIMARYKEEPEROF: 'keeper',
   SECONDARYKEEPEROF: 'keeper',
   OWNEROF: 'keeper'
-}
-
-/** @type {Record<string, [string, string]>} */
-const CONTACT_METHODS = {
-  EMAIL: ['email', 'emailAddress'],
-  MOBILE: ['mobile', 'phoneNumber'],
-  LANDLINE: ['landline', 'phoneNumber'],
-  FAX: ['fax', 'faxNumber']
 }
 
 /**
@@ -90,76 +82,24 @@ const toNamedContact = ({ fullName }) => ({
 })
 
 /**
- * @param {Record<string, unknown>} row a find-party-roles.sql row
- */
-const toRole = (row) => ({
-  mainRoleType: asNullableString(row.main_role_type),
-  roleType: asNullableString(row.role_type),
-  roleName: asNullableString(row.role_name),
-  from: asNullableDate(row.party_role_from_date)
-})
-
-/**
- * Every current postal address of a party, once each: an address linked twice
- * is preferred if either link is.
+ * /parties lists each contact once, so keep only its preferred usage row.
  *
- * @param {Record<string, unknown>[]} rows the party's find-party-addresses.sql rows
+ * @param {Record<string, unknown>[]} rows
+ * @returns {Record<string, unknown>[]}
  */
-const toAddresses = (rows) => {
-  const addresses = new Map()
+const firstUsageRowsOf = (rows) => {
+  const firstUsageRows = []
 
   for (const row of rows) {
-    const address = toAddress(row)
-    const listed = addresses.get(row.address_pk)
+    const hasUsageRowNumber =
+      row.usage_row !== null && row.usage_row !== undefined
 
-    if (listed) {
-      listed.isPreferred ||= address.isPreferred
-    } else {
-      addresses.set(row.address_pk, address)
+    if (!hasUsageRowNumber || Number(row.usage_row) === 1) {
+      firstUsageRows.push(row)
     }
   }
 
-  return [...addresses.values()]
-}
-
-/**
- * Every current e-mail, phone and fax entry of a party. A value linked twice
- * for the same use is one entry, preferred if either link is. Values are
- * compared before they are masked, so a masked client still receives two
- * numbers that mask alike.
- *
- * @param {Record<string, unknown>[]} rows the party's find-party-contacts.sql rows
- */
-const toContactMethods = (rows) => {
-  const contactMethods = new Map()
-
-  for (const row of rows) {
-    const [type, valueKey] =
-      CONTACT_METHODS[String(row.telecom_address_type)] ?? []
-    const value = asNullableString(row.contact_value)
-
-    if (!type || !value) {
-      continue
-    }
-
-    const usageType = asNullableString(row.address_usage_type)
-    const isPreferred = asPreferredFlag(row.preferred_contact_method_ind)
-    const key = `${type}:${value}:${usageType}`
-    const listed = contactMethods.get(key)
-
-    if (listed) {
-      listed.isPreferred ||= isPreferred
-    } else {
-      contactMethods.set(key, {
-        type,
-        [valueKey]: mask(value),
-        isPreferred,
-        usageType
-      })
-    }
-  }
-
-  return [...contactMethods.values()]
+  return firstUsageRows
 }
 
 /**
@@ -246,9 +186,9 @@ export const toHoldingParties = ({
               )
             }
           : null,
-        roles: ofParty(roles).map(toRole),
-        addresses: toAddresses(ofParty(addresses)),
-        contactMethods: toContactMethods(ofParty(contacts)),
+        roles: ofParty(roles).map(toPartyRole),
+        addresses: toPartyAddresses(ofParty(addresses)),
+        contactMethods: toContactMethods(firstUsageRowsOf(ofParty(contacts))),
         involvements: partyInvolvements.map((row) =>
           toInvolvement(row, selected.feature_involvement_pk)
         )

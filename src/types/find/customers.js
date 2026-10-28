@@ -2,6 +2,7 @@ import Joi from 'joi'
 
 import { baseData, relationshipToMany, relationshipToOne } from './helpers.js'
 import { Address } from '../address.js'
+import { ContactMethods, Role } from '../party-details.js'
 
 export const CustomerRelationship = relationshipToOne(
   baseData({
@@ -24,32 +25,24 @@ export const CustomersRelationships = Joi.object({
   )
 }).required()
 
-const PreferredContact = Joi.object({
-  isPreferred: Joi.boolean().required(),
-  usageType: Joi.string()
-    .required()
-    .allow(null)
-    .description('SAM ADDRESS_USAGE_TYPE recorded for this contact')
-})
-
-const EmailAddress = PreferredContact.keys({
-  type: Joi.string().valid('email').required(),
-  emailAddress: Joi.string().required()
-})
-
-const PhoneNumber = PreferredContact.keys({
-  type: Joi.string().valid('mobile', 'landline').required(),
-  phoneNumber: Joi.string().required()
-})
-
-const CustomerContactDetails = Joi.alternatives(EmailAddress, PhoneNumber)
-
 export const Customer = CustomersData.keys({
+  partyType: Joi.string()
+    .valid('PERSON')
+    .required()
+    .description('SAM party type. This endpoint returns persons only'),
   title: Joi.string().required(),
   firstName: Joi.string().required().allow(null),
   middleName: Joi.string().required().allow(null),
   lastName: Joi.string().required(),
   addresses: Joi.array().items(Address.keys({ isPreferred: Joi.boolean() })),
-  contactDetails: Joi.array().items(CustomerContactDetails),
+  contactDetails: Joi.array()
+    .items(ContactMethods)
+    .description(
+      'Every current e-mail, mobile, landline and fax entry, held directly or through a current role, once per SAM usage type'
+    ),
+  roles: Joi.array()
+    .items(Role)
+    .required()
+    .description('Every current SAM role the customer holds'),
   relationships: CustomersRelationships
 })

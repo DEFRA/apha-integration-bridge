@@ -36,9 +36,6 @@ test('toOrganisation maps a single row into one organisation resource', () => {
     uk_internal_code: 'ENG',
     country_code: 'GB',
     preferred_contact_method_ind: null,
-    email: 'example@example.com',
-    mobile_number: null,
-    landline: '+44 1111 11111',
     srabpi_plantid: 'SP123456'
   })
 
@@ -72,11 +69,11 @@ test('toOrganisation maps a single row into one organisation resource', () => {
       primaryContact: {
         fullName: 'Bob Farmer',
         emailAddress: null,
-        phoneNumber: '+44 1111 11111'
+        phoneNumber: null
       },
       secondaryContact: {
         fullName: 'Roberta Farmer',
-        emailAddress: 'example@example.com',
+        emailAddress: null,
         phoneNumber: null
       }
     },
@@ -116,9 +113,6 @@ test('toOrganisation emits a full address object when address fields are empty',
     postcode: null,
     country_code: null,
     preferred_contact_method_ind: null,
-    email: null,
-    mobile_number: null,
-    landline: null,
     srabpi_plantid: null
   })
 
@@ -168,7 +162,7 @@ test('toOrganisation emits a full address object when address fields are empty',
   })
 })
 
-test('toOrganisation masks names, address, primary phone and secondary email when masking context is active', () => {
+test('toOrganisation masks names and address when masking context is active', () => {
   runWithMaskingContext({ shouldMask: true }, () => {
     const organisation = toOrganisation({
       party_id: 'O123456',
@@ -193,9 +187,6 @@ test('toOrganisation masks names, address, primary phone and secondary email whe
       postcode: 'SW1A 1AA',
       uk_internal_code: 'GB',
       preferred_contact_method_ind: null,
-      email: 'org@example.com',
-      mobile_number: null,
-      landline: '02012345678',
       srabpi_plantid: null
     })
 
@@ -205,12 +196,6 @@ test('toOrganisation masks names, address, primary phone and secondary email whe
     )
     expect(organisation.contactDetails.secondaryContact.fullName).toBe(
       'R************r'
-    )
-    expect(organisation.contactDetails.primaryContact.phoneNumber).toBe(
-      '0*********8'
-    )
-    expect(organisation.contactDetails.secondaryContact.emailAddress).toBe(
-      'o*************m'
     )
     expect(organisation.address).toMatchObject({
       street: 'A***********e',
@@ -246,9 +231,6 @@ test('toOrganisation throws when row customer_type is PERSON', () => {
       postcode: null,
       country_code: null,
       preferred_contact_method_ind: null,
-      email: null,
-      mobile_number: null,
-      landline: null,
       srabpi_plantid: null
     })
   ).toThrow(/organisation/i)

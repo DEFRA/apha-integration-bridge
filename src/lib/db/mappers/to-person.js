@@ -1,10 +1,10 @@
-import { mask } from '../../pii/index.js'
 import { asNullableString } from './as-nullable-string.js'
-import { asPreferredFlag } from './as-preferred-flag.js'
 import { createCustomer } from './create-customer.js'
 import { toAddress } from './to-address.js'
 
 /**
+ * Contact details are added later by toCustomer.
+ *
  * @param {Record<string, unknown>} row
  */
 export const toPerson = (row) => {
@@ -23,49 +23,6 @@ export const toPerson = (row) => {
 
   if (address) {
     customer.addresses.push(address)
-  }
-
-  const details = [
-    {
-      type: 'email',
-      value: asNullableString(row.email),
-      preferred: row.email_preferred_ind,
-      usageType: asNullableString(row.email_usage_type)
-    },
-    {
-      type: 'mobile',
-      value: asNullableString(row.mobile_number),
-      preferred: row.mobile_preferred_ind,
-      usageType: asNullableString(row.mobile_usage_type)
-    },
-    {
-      type: 'landline',
-      value: asNullableString(row.landline),
-      preferred: row.landline_preferred_ind,
-      usageType: asNullableString(row.landline_usage_type)
-    }
-  ]
-
-  for (const detail of details) {
-    if (!detail.value) {
-      continue
-    }
-
-    if (detail.type === 'email') {
-      customer.contactDetails.push({
-        type: detail.type,
-        emailAddress: mask(detail.value),
-        isPreferred: asPreferredFlag(detail.preferred),
-        usageType: detail.usageType
-      })
-    } else {
-      customer.contactDetails.push({
-        type: detail.type,
-        phoneNumber: mask(detail.value),
-        isPreferred: asPreferredFlag(detail.preferred),
-        usageType: detail.usageType
-      })
-    }
   }
 
   const plantId = asNullableString(row.srabpi_plantid)
