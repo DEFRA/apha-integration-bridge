@@ -20,7 +20,7 @@ test('returns one entry per usage type', () => {
   expect(
     toContactMethods([
       contactRow('MOBILE', '07700 900001', 'HOME', 'Y'),
-      contactRow('MOBILE', '07700 900001', 'SECONDARYCONTACT', 'N')
+      contactRow('MOBILE', '07700 900001', 'CORRESPONDENCE', 'N')
     ])
   ).toEqual([
     {
@@ -33,7 +33,7 @@ test('returns one entry per usage type', () => {
       type: 'mobile',
       phoneNumber: '07700 900001',
       isPreferred: false,
-      usageType: 'SECONDARYCONTACT'
+      usageType: 'CORRESPONDENCE'
     }
   ])
 })

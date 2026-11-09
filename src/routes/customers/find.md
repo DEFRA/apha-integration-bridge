@@ -53,6 +53,7 @@ Each returned customer can include:
 - `contactDetails`: email/mobile/landline/fax entries with preferred flag and `usageType`
 - `roles`: current SAM roles
 - `relationships.srabpiPlants`
+- `relationships.organisations`: organisations the customer is currently related to
 
 `partyType` is always `PERSON`.
 
@@ -67,7 +68,7 @@ Each returned customer can include:
 
 ### Contact usage type
 
-Each `contactDetails` entry carries `usageType`: SAM's `ADDRESS_USAGE_TYPE` for that contact, or `null` if none is recorded. Use it to tell a number recorded for a named secondary contact apart from the customer's own. A number recorded under more than one usage type appears once per usage type; entries are labelled, not filtered out.
+Each `contactDetails` entry carries `usageType`: SAM's `ADDRESS_USAGE_TYPE` for that contact, or `null` if none is recorded, for example `HOME`, `CORRESPONDENCE` or `PLACEOFBUSINESS`. A number recorded under more than one usage type appears once per usage type; entries are labelled, not filtered out.
 
 Example contact entry:
 
@@ -83,6 +84,10 @@ Example contact entry:
 ### Roles
 
 Each `roles` entry is a current SAM role: `mainRoleType`, `roleType`, `roleName` (or `null`) and `from` (`YYYY-MM-DD`, or `null`).
+
+### Related organisations
+
+`relationships.organisations` lists the organisations the customer is related to in SAM's `PARTY_RELATIONSHIP`, for example as an employee (`EMPLOYEDBY`) or business partner (`BUSINESSPARTNEROF`). Only current relationships to organisations that are not inactive are included, and each organisation appears once even if it is related more than once. Look the ids up with `POST /organisations/find`. It is empty if there are none.
 
 Example:
 
@@ -110,6 +115,9 @@ Example:
       "relationships": {
         "srabpiPlants": {
           "data": []
+        },
+        "organisations": {
+          "data": [{ "type": "organisations", "id": "O123456" }]
         }
       }
     }

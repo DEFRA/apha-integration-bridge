@@ -8,7 +8,7 @@ Changes to values returned by the v1 API (`application/vnd.apha.1+json`).
 
 - `GET /locations/{locationId}`: `address.administrativeAreaCounty` is now the decoded county name from SAM's COUNTY reference data (for example `Devon`), matching `POST /locations/find`. It was previously the raw `ADMINISTRATIVE_AREA` code. It is `null` when the code has no description.
 - `GET /locations/{locationId}`: without the `pii` scope, `address.locality` and `address.administrativeAreaCounty` are now masked, as `street`, `town` and `postcode` already were. This matches the structured address on the find endpoints.
-- `POST /customers/find`: a phone number or email address recorded under more than one SAM address usage type now appears once per usage type, labelled by `usageType`. It previously appeared once, so a number recorded for a named secondary contact could not be told apart from the customer's own.
+- `POST /customers/find`: a phone number or email address recorded under more than one SAM address usage type now appears once per usage type, labelled by `usageType`. It previously appeared once, under only one of its usage types.
 - `POST /customers/find`: without the `pii` scope, two different numbers that mask to the same string (for example `07700 900301` and `07700 900311`) are now both returned. Previously duplicates were removed after masking, so one was dropped.
 - `POST /customers/find`: `contactDetails` now includes contacts held through one of the customer's current roles, as `GET /holdings/{countyId}/{parishId}/{holdingId}/parties` does.
 - `POST /customers/find`: `contactDetails` entries are now in the order SAM recorded them. Previously the order was not defined.
@@ -20,6 +20,7 @@ Changes to values returned by the v1 API (`application/vnd.apha.1+json`).
 - `POST /customers/find`: `partyType`, always `PERSON`.
 - `POST /customers/find`: `roles` (`mainRoleType`, `roleType`, `roleName`, `from`).
 - `POST /customers/find`: fax entries in `contactDetails` (`type: fax`, `faxNumber`).
+- `POST /customers/find`: `relationships.organisations`, the organisations the customer is currently related to in SAM.
 - `POST /organisations/find`: `organisationType` (for example `NOTKNOWN`, or `AHORGUNIT` for a Defra organisational unit).
 - `POST /organisations/find`: `roles`, as on `POST /customers/find`.
 - `POST /organisations/find`: `contactMethods`, with the same entries as `contactDetails` on `POST /customers/find`.

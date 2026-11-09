@@ -52,13 +52,13 @@ VALUES (29900103, 299001, NULL, 29900103, NULL, DATE '2017-01-01', NULL);
 INSERT INTO address_usage (address_usage_pk, party_contact_address_pk, address_usage_type, preferred_contact_method_ind, address_usage_from_date, address_usage_to_date)
 VALUES (29900103, 29900103, 'CORRESPONDENCE', 'N', DATE '2017-01-01', NULL);
 
---    a landline for a named secondary contact
+--    a business landline
 INSERT INTO telecom_address (telecom_address_pk, telecom_address_type, telecom_address_from_date, telecom_address_to_date, telephone_number)
 VALUES (29900104, 'LANDLINE', DATE '2018-01-01', NULL, '01234 900304');
 INSERT INTO party_contact_address (party_contact_address_pk, party_pk, party_role_pk, telecom_address_pk, address_pk, party_contact_from_date, party_contact_to_date)
 VALUES (29900104, 299001, NULL, 29900104, NULL, DATE '2018-01-01', NULL);
 INSERT INTO address_usage (address_usage_pk, party_contact_address_pk, address_usage_type, preferred_contact_method_ind, address_usage_from_date, address_usage_to_date)
-VALUES (29900104, 29900104, 'SECONDARYCONTACT', 'N', DATE '2018-01-01', NULL);
+VALUES (29900104, 29900104, 'PLACEOFBUSINESS', 'N', DATE '2018-01-01', NULL);
 
 --    an email with two usage types
 INSERT INTO telecom_address (telecom_address_pk, telecom_address_type, telecom_address_from_date, telecom_address_to_date, internet_email_address)

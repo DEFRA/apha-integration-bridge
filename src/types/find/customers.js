@@ -22,6 +22,14 @@ export const CustomersRelationships = Joi.object({
       singular: 'srabpi-plant',
       plural: 'srabpi-plants'
     })
+  ),
+  organisations: relationshipToMany(
+    baseData({
+      singular: 'organisation',
+      plural: 'organisations'
+    })
+  ).description(
+    'Organisations the customer is currently related to in SAM, for example as an employee or business partner. Each id can be looked up with POST /organisations/find'
   )
 }).required()
 

@@ -9,6 +9,7 @@ import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { findOrganisationAttributesQuery } from './find-organisation-attributes.js'
 import { findPartyContactsQuery } from './find-party-contacts.js'
+import { findPartyOrganisationsQuery } from './find-party-organisations.js'
 import { findPartyRolesQuery } from './find-party-roles.js'
 
 const sql = loadSQL(import.meta.filename)
@@ -98,7 +99,8 @@ const rowsOfParty = (rows, partyKey) => {
 }
 
 /**
- * Finds customers or organisations by id, with their contacts and roles.
+ * Finds customers or organisations by id, with their contacts and roles, and
+ * for customers the organisations they are related to.
  *
  * @param {import('oracledb').Connection} connection
  * @param {string[]} ids
@@ -143,6 +145,11 @@ export async function findCustomers(connection, ids, customerType) {
     return organisations
   }
 
+  const organisations = await execute(
+    connection,
+    findPartyOrganisationsQuery(partyKeys)
+  )
+
   const customers = []
 
   for (const person of toPeople(rows, ids)) {
@@ -151,7 +158,8 @@ export async function findCustomers(connection, ids, customerType) {
     customers.push(
       toCustomer(person, {
         contacts: rowsOfParty(contacts, partyKey),
-        roles: rowsOfParty(roles, partyKey)
+        roles: rowsOfParty(roles, partyKey),
+        organisations: rowsOfParty(organisations, partyKey)
       })
     )
   }
