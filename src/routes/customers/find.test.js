@@ -77,6 +77,9 @@ const customer1 = {
   relationships: {
     srabpiPlants: {
       data: []
+    },
+    organisations: {
+      data: []
     }
   }
 }
@@ -125,6 +128,9 @@ const customer2 = {
   roles: [],
   relationships: {
     srabpiPlants: {
+      data: []
+    },
+    organisations: {
       data: []
     }
   }
@@ -743,7 +749,7 @@ describe('POST /customers/find — roles and contacts', () => {
         type: 'landline',
         phoneNumber: '01234 900304',
         isPreferred: false,
-        usageType: 'SECONDARYCONTACT'
+        usageType: 'PLACEOFBUSINESS'
       },
       {
         type: 'email',
@@ -803,5 +809,15 @@ describe('POST /customers/find — roles and contacts', () => {
     ])
 
     expect(customer.lastName).toBe('S****h')
+  })
+
+  // 021_add_party_relationship_scenarios.sql also relates C2990001 to O123456
+  // (ended) and to the person C123456
+  test('returns each current related organisation once', async () => {
+    const customer = await findSearchCustomer({ masked: false })
+
+    expect(customer.relationships.organisations).toEqual({
+      data: [{ type: 'organisations', id: 'C2990002' }]
+    })
   })
 })
