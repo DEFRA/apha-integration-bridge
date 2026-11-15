@@ -11,6 +11,7 @@ Changes to values returned by the v1 API (`application/vnd.apha.1+json`).
 - `POST /customers/find`: a phone number or email address recorded under more than one SAM address usage type now appears once per usage type, labelled by `usageType`. It previously appeared once, under only one of its usage types.
 - `POST /customers/find`: without the `pii` scope, two different numbers that mask to the same string (for example `07700 900301` and `07700 900311`) are now both returned. Previously duplicates were removed after masking, so one was dropped.
 - `POST /customers/find`: `contactDetails` now includes contacts held through one of the customer's current roles, as `GET /holdings/{countyId}/{parishId}/{holdingId}/parties` does.
+- `POST /customers/find`, `POST /organisations/find` and `GET /holdings/{countyId}/{parishId}/{holdingId}/parties`: contacts held through a party role are no longer returned, as MIDAS confirmed contact details belong to the party. Production holds none, so live responses are unchanged.
 - `POST /customers/find`: `contactDetails` entries are now in the order SAM recorded them. Previously the order was not defined.
 - `POST /organisations/find`: if an organisation has more than one mobile, landline or email, `contactDetails.primaryContact.phoneNumber` and `contactDetails.secondaryContact.emailAddress` now use the earliest recorded. Previously the choice was not defined.
 

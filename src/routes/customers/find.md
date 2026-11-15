@@ -64,7 +64,7 @@ Each returned customer can include:
 
 ### Contact details
 
-`contactDetails` includes every current email, mobile, landline and fax (`faxNumber`), including contacts held through one of the customer's roles. Entries are in the order SAM recorded them. Without the `pii` scope every value is masked, after duplicates are removed.
+`contactDetails` includes every current email, mobile, landline and fax (`faxNumber`) the customer holds directly. Entries are in the order SAM recorded them. Without the `pii` scope every value is masked, after duplicates are removed.
 
 ### Contact usage type
 

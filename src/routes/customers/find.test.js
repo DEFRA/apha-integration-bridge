@@ -725,7 +725,8 @@ describe('POST /customers/find — roles and contacts', () => {
       }
     ])
 
-    // the email has two usage types; the last mobile is held through a role
+    // the email has two usage types; the mobile held through a role is not
+    // returned
     expect(customer.contactDetails).toEqual([
       {
         type: 'mobile',
@@ -762,12 +763,6 @@ describe('POST /customers/find — roles and contacts', () => {
         emailAddress: 's.search@example.com',
         isPreferred: false,
         usageType: 'CORRESPONDENCE'
-      },
-      {
-        type: 'mobile',
-        phoneNumber: '07700 900306',
-        isPreferred: false,
-        usageType: 'PLACEOFBUSINESS'
       }
     ])
   })

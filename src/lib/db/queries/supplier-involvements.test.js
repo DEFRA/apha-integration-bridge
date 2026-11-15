@@ -9,7 +9,8 @@ import { findSupplierInvolvementsQuery } from './find-supplier-involvements.js'
 /**
  * Runs the supplier-involvement query against the local Oracle fixtures
  * (DSFAAP-2982). The rows are seeded by
- * .docker-compose/oracledb/015_add_holding_sub_resource_scenarios.sql
+ * .docker-compose/oracledb/015_add_holding_sub_resource_scenarios.sql and
+ * 022_add_role_effective_to_date_scenarios.sql
  */
 
 /** @type {import('@hapi/hapi').Server} */
@@ -48,7 +49,8 @@ describe('find-supplier-involvements.sql', () => {
     const rows = await rowsFor(findSupplierInvolvementsQuery([298210, 298220]))
 
     // U298240 has both an OV practice and a DP, and the practice also serves
-    // U298241; the ended OVFOR of C2982008 and U298240's keeper are absent
+    // U298241; the ended OVFOR of C2982008, its OVFOR through an ended role
+    // and U298240's keeper are absent
     expect(rows.map(involvementOf)).toEqual([
       {
         featurePk: 298210,

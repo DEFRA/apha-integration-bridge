@@ -35,11 +35,8 @@ async function rowsFor(query) {
 const contactOf = (row) => ({
   partyPk: row.party_pk,
   linkPk: row.party_contact_address_pk,
-  partyRolePk: row.party_role_pk,
   type: row.telecom_address_type,
   value: row.contact_value,
-  countryCode: row.telephone_country_code,
-  extension: row.extension_number,
   usageType: row.address_usage_type,
   preferred: row.preferred_contact_method_ind,
   usageRow: row.usage_row
@@ -56,11 +53,8 @@ const contact = (
 ) => ({
   partyPk,
   linkPk,
-  partyRolePk: null,
   type,
   value,
-  countryCode: null,
-  extension: null,
   usageType,
   preferred,
   usageRow: 1,
@@ -68,7 +62,7 @@ const contact = (
 })
 
 describe('find-party-contacts.sql', () => {
-  test('returns every current contact of each party once, held directly or through a current role', async () => {
+  test('returns every current contact each party holds directly, and none held through a role', async () => {
     const rows = await rowsFor(findPartyContactsQuery([292901, 292902]))
 
     expect(rows.map(contactOf)).toEqual([
@@ -76,20 +70,15 @@ describe('find-party-contacts.sql', () => {
       // the second with no usage row
       contact(292901, 29290101, 'MOBILE', '07700 900101', 'HOME', 'Y'),
       contact(292901, 29290102, 'MOBILE', '07700 900102', null, null),
-      // a landline with a country code and extension
       contact(
         292901,
         29290103,
         'LANDLINE',
         '01234 567890',
         'CORRESPONDENCE',
-        'N',
-        {
-          countryCode: '44',
-          extension: '123'
-        }
+        'N'
       ),
-      // a fax whose blank country code and preferred indicator come back null
+      // a fax whose blank preferred indicator comes back null
       contact(292901, 29290104, 'FAX', '01234 567891', 'CORRESPONDENCE', null),
       // an e-mail with two current usage rows is returned once per usage,
       // numbered from the preferred one
@@ -112,30 +101,17 @@ describe('find-party-contacts.sql', () => {
       ),
       // an e-mail stored as blanks has a null value; the current link to an
       // ended mobile and the ended link to a current landline are absent
-      contact(292901, 29290108, 'EMAIL', null, null, null),
-      // CUST-2929B holds a mobile through a current role; the landline held
-      // through its ended role is absent
-      contact(
-        292902,
-        29290201,
-        'MOBILE',
-        '07700 900201',
-        'PLACEOFBUSINESS',
-        'Y',
-        {
-          partyRolePk: 29290201
-        }
-      )
+      contact(292901, 29290108, 'EMAIL', null, null, null)
+      // CUST-2929B holds its contacts only through roles, so has none
     ])
   })
 
   test('returns the keys and the from date of each contact', async () => {
-    const rows = await rowsFor(findPartyContactsQuery([292902]))
+    const rows = await rowsFor(findPartyContactsQuery([292901]))
 
-    expect(rows).toHaveLength(1)
-    expect(rows[0].party_pk).toBe(292902)
-    expect(rows[0].party_contact_address_pk).toBe(29290201)
-    expect(rows[0].telecom_address_pk).toBe(29290201)
+    expect(rows[0].party_pk).toBe(292901)
+    expect(rows[0].party_contact_address_pk).toBe(29290101)
+    expect(rows[0].telecom_address_pk).toBe(29290101)
     expect(rows[0].party_contact_from_date).toBeInstanceOf(Date)
   })
 

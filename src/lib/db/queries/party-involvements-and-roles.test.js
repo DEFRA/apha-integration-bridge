@@ -10,7 +10,8 @@ import { findPartyRolesQuery } from './find-party-roles.js'
 /**
  * Runs the party-involvement and party-role queries against the local Oracle
  * fixtures (DSFAAP-2928). The rows are seeded by
- * .docker-compose/oracledb/012_add_party_role_and_involvement_tables.sql
+ * .docker-compose/oracledb/012_add_party_role_and_involvement_tables.sql and
+ * 022_add_role_effective_to_date_scenarios.sql
  */
 
 /** @type {import('@hapi/hapi').Server} */
@@ -89,8 +90,9 @@ describe('find-party-involvements.sql', () => {
       ),
       // 98/001/0001: the holder is also primary keeper and owner of LU98001001,
       // and the owner row's status is the ownership status, not the keepership
-      // status that SAM also filled in; the ended keepership and the facility
-      // ownership at the same location are absent
+      // status that SAM also filled in; the ended keepership, the facility
+      // ownership at the same location and the ownership held through an
+      // ended role are absent
       holder(91001, 'L98001', '98/001/0001', 'CUST-98001', 'PERSON'),
       {
         featurePk: 91001,
@@ -162,7 +164,7 @@ describe('find-party-involvements.sql', () => {
 })
 
 describe('find-party-roles.sql', () => {
-  test('returns every current role of each party with its decoded name, and none that has ended', async () => {
+  test('returns every current role of each party with its decoded name, and none that has ended or is on an ended role', async () => {
     const rows = await rowsFor(findPartyRolesQuery([94001, 29281, 29282]))
 
     expect(
@@ -174,6 +176,8 @@ describe('find-party-roles.sql', () => {
         roleName: row.role_name
       }))
     ).toEqual([
+      // the AGENT role ends on 31-DEC-9999, so it is current; CUST-KEEPER02's
+      // party role on an ended livestock owner role is absent
       {
         partyPk: 29281,
         partyRolePk: 2928101,
