@@ -2,6 +2,8 @@ import { createMetricsLogger, Unit } from 'aws-embedded-metrics'
 import Joi from 'joi'
 
 import { loadDocumentation } from '../../common/helpers/documentation.js'
+import { hasPiiScope } from '../../common/helpers/pii-context.js'
+import { findCustomerIdsByEmail } from '../../lib/db/queries/find-customer-ids-by-email.js'
 import {
   findCustomers,
   FindCustomersSchema
@@ -25,9 +27,29 @@ const PostFindCustomersSchema = Joi.object({
   .description('Customer Details')
   .label('Find Customer Response')
 
+const UK_POSTCODE = /^(GIR\s*0AA|[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i
+
 const PostFindPayloadSchema = Joi.object({
-  ids: FindCustomersSchema.extract('ids').label('Customer ids')
+  ids: FindCustomersSchema.extract('ids').optional().label('Customer ids'),
+  email: Joi.string()
+    .trim()
+    .email({ tlds: { allow: false } })
+    .max(254)
+    .description('E-mail address to search for. Requires the pii scope'),
+  surname: Joi.string()
+    .trim()
+    .max(100)
+    .description('Only return customers with this family name'),
+  postcode: Joi.string()
+    .trim()
+    .pattern(UK_POSTCODE, 'UK postcode')
+    .description(
+      'Only return customers with a current address at this postcode'
+    )
 })
+  .xor('ids', 'email')
+  .with('surname', 'email')
+  .with('postcode', 'email')
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -41,7 +63,7 @@ const options = {
     mode: 'required'
   },
   tags: ['api', 'customers'],
-  description: 'Retrieve customers by ids',
+  description: 'Retrieve customers by ids or e-mail address',
   notes: documentationNotes,
   plugins: {
     'hapi-swagger': {
@@ -71,17 +93,74 @@ const options = {
 const metrics = createMetricsLogger()
 
 /**
+ * @typedef {{ ids?: string[], email?: string, surname?: string, postcode?: string }} FindCustomersPayload
+ */
+
+/**
+ * Adds the customers on the current page of `findRequest` to it.
+ *
+ * @param {import('../../types/api.js').ControllerRequest} request
+ * @param {HTTPFindRequest} findRequest
+ * @param {import('oracledb').Connection} connection
+ */
+const addCustomers = async (request, findRequest, connection) => {
+  if (findRequest.ids.length === 0) {
+    return
+  }
+
+  const customers = await findCustomers(connection, findRequest.ids, 'PERSON')
+
+  const isDevelopment = config.get('isDevelopment')
+  if (isDevelopment) {
+    request.logger.debug(`customers: ${JSON.stringify(customers)}`)
+  } else {
+    const customerIds = customers.map((c) => c.id).join(', ')
+    request.logger.debug(
+      `Retrieved ${customers.length} customer(s): ${customerIds}`
+    )
+  }
+
+  for (const customer of customers) {
+    const customerResponse = new HTTPObjectResponse(
+      Customer,
+      customer.id,
+      customer
+    )
+
+    findRequest.add(customerResponse)
+  }
+}
+
+/**
  * @param {import('../../types/api.js').ControllerRequest} request
  * @param {import('@hapi/hapi').ResponseToolkit} h
  * @returns {Promise<import('@hapi/hapi').Lifecycle.ReturnValue>}
  */
 const handler = async (request, h) => {
+  const { email, surname, postcode } = /** @type {FindCustomersPayload} */ (
+    request.payload
+  )
+
+  metrics.putMetric('customersFindRequest', 1, Unit.Count)
+
+  if (email !== undefined && !hasPiiScope(request)) {
+    request.logger.warn('Customer e-mail search refused: no pii scope')
+
+    return new HTTPException(
+      'FORBIDDEN',
+      'Searching customers by e-mail address requires the pii scope'
+    ).boomify()
+  }
+
   try {
-    metrics.putMetric('customersFindRequest', 1, Unit.Count)
+    /**
+     * an id search pages over the payload ids, so an empty page needs no
+     * connection; an e-mail search resolves its ids from the database first
+     */
+    let findRequest =
+      email === undefined ? new HTTPFindRequest(request, Customer) : undefined
 
-    const findRequest = new HTTPFindRequest(request, Customer)
-
-    if (findRequest.ids.length === 0) {
+    if (findRequest?.ids.length === 0) {
       return h.response(findRequest.toResponse()).code(200)
     }
 
@@ -90,31 +169,17 @@ const handler = async (request, h) => {
      */
     await using oracledb = await request.server['oracledb.sam']()
 
-    const customers = await findCustomers(
-      oracledb.connection,
-      findRequest.ids,
-      'PERSON'
+    findRequest ??= new HTTPFindRequest(
+      request,
+      Customer,
+      await findCustomerIdsByEmail(oracledb.connection, {
+        email,
+        surname,
+        postcode
+      })
     )
 
-    const isDevelopment = config.get('isDevelopment')
-    if (isDevelopment) {
-      request.logger.debug(`customers: ${JSON.stringify(customers)}`)
-    } else {
-      const customerIds = customers.map((c) => c.id).join(', ')
-      request.logger.debug(
-        `Retrieved ${customers.length} customer(s): ${customerIds}`
-      )
-    }
-
-    for (const customer of customers) {
-      const customerResponse = new HTTPObjectResponse(
-        Customer,
-        customer.id,
-        customer
-      )
-
-      findRequest.add(customerResponse)
-    }
+    await addCustomers(request, findRequest, oracledb.connection)
 
     return h.response(findRequest.toResponse()).code(200)
   } catch (error) {

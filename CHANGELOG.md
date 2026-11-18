@@ -17,6 +17,7 @@ Changes to values returned by the v1 API (`application/vnd.apha.1+json`).
 
 ### Added
 
+- `POST /customers/find`: search by `email` instead of `ids`, optionally narrowed by `surname` and `postcode`. Matching is exact, ignoring case and surrounding spaces (and all spaces in the postcode). Needs the `pii` scope; without it the endpoint returns `403 FORBIDDEN`. Responses have the same shape as an ID search.
 - `POST /customers/find`: each `contactDetails` entry has `usageType`, the SAM `ADDRESS_USAGE_TYPE` recorded for that contact, or `null`.
 - `POST /customers/find`: `partyType`, always `PERSON`.
 - `POST /customers/find`: `roles` (`mainRoleType`, `roleType`, `roleName`, `from`).

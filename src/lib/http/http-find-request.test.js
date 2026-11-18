@@ -28,6 +28,22 @@ describe('HTTPFindRequest', () => {
     expect(req.nextOffset).toBe(2)
   })
 
+  test('pages over the ids it is given instead of the payload ids', () => {
+    const req = new HTTPFindRequest(
+      /** @type {any} */ ({
+        url: 'http://localhost/customers/find?page=2&pageSize=1',
+        query: { page: 2, pageSize: 1 },
+        payload: { email: 'a@example.com' }
+      }),
+      schemaFor('customers'),
+      ['a', 'b', 'c']
+    )
+
+    expect(req.ids).toEqual(['b'])
+    expect(req.distinctIds).toEqual(['a', 'b', 'c'])
+    expect(req.hasRemainingIds()).toBe(true)
+  })
+
   test('toResponse() infers next link from added item count and remaining ids', () => {
     const req = new HTTPFindRequest(
       /** @type {any} */ ({

@@ -12,6 +12,7 @@ describe('HTTPExceptionCode constants', () => {
     expect(HTTPExceptionCode.BAD_REQUEST).toBe(400)
     expect(HTTPExceptionCode.NOT_FOUND).toBe(404)
     expect(HTTPExceptionCode.UNSUPPORTED_VERSION).toBe(404)
+    expect(HTTPExceptionCode.FORBIDDEN).toBe(403)
     expect(HTTPExceptionCode.INTERNAL_SERVER_ERROR).toBe(500)
   })
 })

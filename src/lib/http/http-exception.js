@@ -3,6 +3,7 @@ import { boomify } from '@hapi/boom'
 
 export const HTTPExceptionCode = {
   BAD_REQUEST: 400,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
   UNSUPPORTED_VERSION: 404,
   DUPLICATE_RESOURCES_FOUND: 409,

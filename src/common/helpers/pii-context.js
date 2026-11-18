@@ -8,6 +8,16 @@ const PII_SCOPE = 'pii'
  */
 
 /**
+ * Whether the client calling `request` has the `pii` scope. Fail-closed: a
+ * request whose `request.app.scopes` is not populated does not have it.
+ *
+ * @param {{ app: { scopes?: string[] } }} request
+ * @returns {boolean}
+ */
+export const hasPiiScope = (request) =>
+  (request.app.scopes ?? []).includes(PII_SCOPE)
+
+/**
  * Tracks the original (unwrapped) route handler for each route, keyed by the
  * route's settings object. A WeakMap avoids mutating Hapi's `RouteSettings`
  * type and lets entries be garbage-collected if Hapi ever removes a route.
@@ -69,8 +79,7 @@ export const piiContextPlugin = {
                * @param {import('@hapi/hapi').ResponseToolkit} h
                */
               function (request, h) {
-                const scopes = request.app.scopes ?? []
-                const shouldMask = !scopes.includes(PII_SCOPE)
+                const shouldMask = !hasPiiScope(request)
 
                 return runWithMaskingContext({ shouldMask }, () =>
                   original.call(this, request, h)
