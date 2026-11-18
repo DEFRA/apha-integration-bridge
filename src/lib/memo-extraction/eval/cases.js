@@ -13,7 +13,9 @@
  * correct answer must return; an entry may list alternative forms that are
  * all correct (the first is its key in `expectedRoles`). `expectedRoles` is
  * checked only for the names it lists. `scoreNames: false` scores the status
- * only.
+ * only. `ambiguousCandidates` lists names an ambiguous answer may give as its
+ * unclear candidates without counting as wrong, for cases that accept
+ * `ambiguous`.
  */
 
 /**
@@ -26,6 +28,7 @@
  *   expectedNames: Array<string | string[]>,
  *   expectedRoles?: Record<string, string | null>,
  *   scoreNames?: boolean,
+ *   ambiguousCandidates?: string[],
  *   note?: string
  * }} MemoCase
  */
@@ -219,7 +222,8 @@ export const cases = [
     memo: 'Formerly occupied by the Openshaw family. Now vacant.',
     expectedStatus: ['none', 'ambiguous'],
     expectedNames: [],
-    note: 'A family name with no person'
+    ambiguousCandidates: ['Openshaw', 'Openshaw family'],
+    note: 'A family name with no person. Flagging the surname as an unclear candidate is acceptable'
   },
   {
     id: 'previous-3',

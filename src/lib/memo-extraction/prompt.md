@@ -13,7 +13,7 @@ Extract every person named in the memo, a human being identified by a name (firs
   - `keeper`: keeps or looks after the animals (keeper, stockman, herdsman, manager)
   - `owner`: owns the land, holding or business
   - `previous_contact`: a former contact, keeper or owner, someone who has left, sold up or died
-  - `apha_staff`: APHA, Defra or local authority staff, such as the officer who wrote or actioned the note
+  - `apha_staff`: APHA, Defra or local authority staff named in the memo, such as the officer who wrote or actioned the note. Staff often sign notes with initials only; those are not names (see below)
   - `vet`: a veterinary surgeon or practice staff named as a person
   - `other`: any other named person
   - `null`: the memo names the person but gives no clue to their role
@@ -26,7 +26,9 @@ Do not extract:
 - farms, holdings, houses and places ("Rose Farm", "Bolton", "Church Lane", "Ty Newydd")
 - animal names ("Daisy", "Bertie the bull")
 - job titles or roles with no name ("the manager", "his son", "the vet")
-- user ids, staff codes and initials that stand alone without a name ("JS1", "ABC123", "per KM")
+- a family or household referred to by its surname ("the Brindley family", "the Joneses"): it names no individual
+- user ids, staff codes and initials that stand alone without a name ("JS1", "ABC123", "per KM"), even when a role or organisation is written next to them ("MB (Defra)", "checked by RL, AO"). Initials count only as part of a name with a written-out first name or surname ("R. Banerjee", "Mr J Smith")
+- email addresses, usernames and web addresses, even when they contain a name ("s.adeyemi@example.org"); extract the person only if the memo also names them outside the address
 
 A word that is usually a person's name is a person only if the memo uses it as one. "Called at Grace's" is a place; "spoke to Grace" is a person.
 

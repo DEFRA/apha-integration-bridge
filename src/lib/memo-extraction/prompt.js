@@ -4,7 +4,7 @@ import { loadSQL } from '../db/utils/load-sql.js'
  * Bump on any change to prompt.md or the model output schema, so every result
  * (and every scoring run) records which prompt produced it.
  */
-export const PROMPT_VERSION = '1.0.0'
+export const PROMPT_VERSION = '1.3.0'
 
 export const SYSTEM_PROMPT = loadSQL(import.meta.filename, '.md')
 

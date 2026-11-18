@@ -33,6 +33,9 @@ import { normaliseName } from '../validate.js'
  * status is one the case accepts and the names match exactly (no missing,
  * no extra). Roles are reported separately and don't affect the pass.
  *
+ * An ambiguous result lists its unclear candidates, so on an ambiguous run
+ * the names in the case's `ambiguousCandidates` aren't counted as extra.
+ *
  * @param {MemoCase} memoCase
  * @param {MemoContacts} memoContacts
  * @returns {RunScore}
@@ -82,7 +85,14 @@ export const scoreRun = (memoCase, memoContacts) => {
       }
     }
 
-    falsePositives = predicted.length - matched.size
+    const allowed =
+      memoContacts.status === 'ambiguous'
+        ? (memoCase.ambiguousCandidates ?? []).map(normaliseName)
+        : []
+
+    falsePositives = predicted.filter(
+      (candidate, i) => !matched.has(i) && !allowed.includes(candidate.key)
+    ).length
   }
 
   return {

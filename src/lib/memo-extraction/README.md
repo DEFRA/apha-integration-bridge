@@ -41,7 +41,7 @@ Each contact also has `sourceMatch`: `exact` (in the memo as written) or `normal
 
 ## Running it
 
-Put `ANTHROPIC_API_KEY` in `.env.local`. Then:
+Put `ANTHROPIC_API_KEY` in `.env.local` (create the file if it isn't there; git ignores it). The key comes from the Claude Console (platform.claude.com, Settings → API Keys) and needs credit on the account: a claude.ai login or subscription doesn't give API access. Then:
 
 - **Alpha route:** `npm run dev`, then `POST /alpha/customers/find` with the ids listed in [the route's docs](../../routes/alpha/customers/find.md). Each call makes one model call per customer.
 - **Scoring the prompt:** `npm run eval:memo` runs every labelled case 3 times against the configured model. Options: `--models claude-haiku-5-5,claude-sonnet-5-5`, `--repeats 5`, `--category "prompt injection"`, `--case roles-1`, `--concurrency 4`. It prints pass rate, status accuracy, name precision and recall, role accuracy, dropped (unverifiable) names, latency and tokens per category, then every failed run and every case whose answer changed between repeats. Full results go to `.eval-results/` (git-ignored).
@@ -54,11 +54,30 @@ Set `MEMO_EXTRACTION_PROVIDER=bedrock` and `MEMO_EXTRACTION_MODEL_ID` to the mod
 
 ## Findings
 
-_To be filled in from the first scoring runs._
+Scored on 18 November 2026: 39 invented cases, 3 repeats each, through the Anthropic API with Strands' structured output and `effort` left at each model's default (Haiku `medium`, Sonnet `high`). The four runs together cost about $2.54.
 
-| Model | Prompt | Pass rate | Status accuracy | Name precision | Name recall | Unstable cases | p95 latency | Notes |
-| :---- | :----- | :-------- | :-------------- | :------------- | :---------- | :------------- | :---------- | :---- |
-|       |        |           |                 |                |             |                |             |       |
+| Model      | Prompt | Pass rate      | Status accuracy | Name precision | Name recall | Unstable cases                      | p50 / p95 latency   | Notes                                                                                                                     |
+| :--------- | :----- | :------------- | :-------------- | :------------- | :---------- | :---------------------------------- | :------------------ | :------------------------------------------------------------------------------------------------------------------------ |
+| Haiku 5.5  | 1.0.0  | 94.0%          | 99.1%           | 93.8%          | 100%        | previous-2, contact-details-3       | 1.3s / 3.2s         | Took "JS (APHA)" for a person, a family surname for a previous contact, and the name in an email address for a candidate. |
+| Sonnet 5.5 | 1.0.0  | 96.6%          | 97.4%           | 96.3%          | 100%        | contact-details-3                   | 1.7s / 4.0s         | Took "the Openshaw family" for a previous contact on every repeat; email name as above.                                   |
+| Haiku 5.5  | 1.2.0  | 98.3%          | 100%            | 98.1%          | 100%        | names-only-2, roles-3               | 1.3s / 2.7s         | Family and email rules fixed. Still listed "JS (APHA)" as `apha_staff` in 2 of 3 repeats.                                 |
+| Sonnet 5.5 | 1.2.0  | 100%           | 100%            | 100%           | 100%        | none                                | 1.9s / 4.4s         |                                                                                                                           |
+| Haiku 5.5  | 1.3.0  | 100%           | 100%            | 100%           | 100%        | names-only-2 (both answers allowed) | 1.2s / 2.8s         | Current prompt.                                                                                                           |
+| Sonnet 5.5 | 1.3.0  | 100% (18 runs) | 100%            | 100%           | 100%        | roles-3 (both forms allowed)        | 1.7–2.2s / 2.4–5.8s | Only the two categories 1.3.0 changed: several people with roles, titles and initials.                                    |
+
+What changed in the prompt:
+
+- **1.1.0 / 1.2.0:** a family or household named by its surname, an email address or username, and initials with a role or organisation next to them are all listed as not a person. 1.1.0 quoted three of the scored memos as its examples, which breaks the rule at the top of `eval/cases.js`; 1.2.0 replaced them with invented ones, so its results are the honest measure. Prompt 1.1.0 was never committed.
+- **1.3.0:** the `apha_staff` role no longer reads as "whoever wrote the note", and initials count only alongside a written-out name. That was what made Haiku pick up staff initials.
+
+What the spike shows:
+
+- **Both models find every person in the set** (recall 100% on every run) and never followed an injected instruction. Every miss was an extra name, not a missing one, and all three kinds were fixed by saying in the prompt what isn't a person.
+- **Haiku 5.5 is the model to take forward.** On prompt 1.3.0 it matches Sonnet on this set, answers faster (p95 about 2.8s against Sonnet's 4.4s, well inside the 15s deadline), and costs about **$0.37 per 1,000 memos** against Sonnet's **$6.40** (about 2,500 input and 240 output tokens per memo on Haiku, 2,450 and 155 on Sonnet). 39 cases can't separate two models that both score 100%, so Sonnet stays the fallback if real memos show Haiku missing things.
+- **The validator does its job.** In one repeat Haiku split "Mr & Mrs Eccleston" into "Mrs Eccleston", which isn't written in the memo; the validator dropped it and the answer came back `ambiguous` (`UNVERIFIED_NAMES`) rather than an invented name.
+- **Strands' structured output works on both models** through the Anthropic provider: no call came back `unavailable`. This was the known spike risk; on Bedrock it is still untested.
+- **The scoring script needed one fix:** a case that accepts `ambiguous` could never pass with one, because an ambiguous answer has to list its candidates and every candidate counted as a wrong name. Such a case can now list `ambiguousCandidates`.
+- **A judgement for the business to confirm:** "the Openshaw family" is treated as no person. If former occupiers named only by surname are worth keeping as previous contacts, the rule in `prompt.md` and the label for previous-2 change together.
 
 Known gaps in the spike:
 

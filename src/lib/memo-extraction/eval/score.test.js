@@ -83,6 +83,28 @@ describe('scoreRun', () => {
     ).toMatchObject({ statusCorrect: true, pass: true })
   })
 
+  test('ambiguousCandidates are allowed on an ambiguous run only', () => {
+    const familyCase = {
+      ...memoCase,
+      expectedStatus: /** @type {const} */ (['none', 'ambiguous']),
+      expectedNames: [],
+      ambiguousCandidates: ['Openshaw family']
+    }
+
+    expect(
+      scoreRun(familyCase, result('ambiguous', [['Openshaw family', null]]))
+    ).toMatchObject({ falsePositives: 0, pass: true })
+    expect(
+      scoreRun(familyCase, result('ambiguous', [['Someone Else', null]]))
+    ).toMatchObject({ falsePositives: 1, pass: false })
+    expect(
+      scoreRun(
+        { ...familyCase, expectedStatus: ['found', 'none', 'ambiguous'] },
+        result('found', [['Openshaw family', 'previous_contact']])
+      )
+    ).toMatchObject({ falsePositives: 1, pass: false })
+  })
+
   test('unavailable never passes and scores no names', () => {
     expect(scoreRun(memoCase, result('unavailable'))).toMatchObject({
       unavailable: true,
