@@ -482,6 +482,59 @@ const config = convict({
       }
     }
   },
+  memoExtraction: {
+    provider: {
+      doc: 'SPIKE (DSFAAP-2993). Model provider for AH_MEMO contact extraction: "anthropic" (Anthropic API, synthetic data only) or "bedrock" (once CDP grant access).',
+      format: ['anthropic', 'bedrock'],
+      default: 'anthropic',
+      env: 'MEMO_EXTRACTION_PROVIDER'
+    },
+    modelId: {
+      doc: 'Model used for AH_MEMO contact extraction. Bedrock ids take the anthropic. (or inference profile) prefix.',
+      format: String,
+      default: 'claude-haiku-5-5',
+      env: 'MEMO_EXTRACTION_MODEL_ID'
+    },
+    anthropicApiKey: {
+      doc: 'Anthropic API key, provider "anthropic" only. Unset, every extraction returns status "unavailable" (NOT_CONFIGURED). Only synthetic memos may be sent with it.',
+      format: String,
+      nullable: true,
+      default: null,
+      sensitive: true,
+      env: 'ANTHROPIC_API_KEY'
+    },
+    effort: {
+      doc: 'Optional output_config.effort sent to the model (low, medium, high). Unset uses the model default.',
+      format: ['low', 'medium', 'high'],
+      nullable: true,
+      default: null,
+      env: 'MEMO_EXTRACTION_EFFORT'
+    },
+    maxTokens: {
+      doc: 'Maximum output tokens per extraction call.',
+      format: 'nat',
+      default: 4000,
+      env: 'MEMO_EXTRACTION_MAX_TOKENS'
+    },
+    timeoutMs: {
+      doc: 'Deadline for one extraction (model call plus any structured-output retry). On expiry the result is "unavailable" (TIMEOUT).',
+      format: 'nat',
+      default: 15000,
+      env: 'MEMO_EXTRACTION_TIMEOUT_MS'
+    },
+    maxMemoChars: {
+      doc: 'Memos longer than this are not sent to the model; the result is "unavailable" (MEMO_TOO_LONG).',
+      format: 'nat',
+      default: 4000,
+      env: 'MEMO_EXTRACTION_MAX_MEMO_CHARS'
+    },
+    maxConcurrency: {
+      doc: 'Maximum extraction calls in flight for one API request.',
+      format: 'nat',
+      default: 4,
+      env: 'MEMO_EXTRACTION_MAX_CONCURRENCY'
+    }
+  },
   aws: {
     region: {
       doc: 'AWS region to use',

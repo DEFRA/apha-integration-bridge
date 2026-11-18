@@ -12,6 +12,13 @@ process.env.AWS_EMF_ENVIRONMENT = 'Local'
 process.env.ORACLEDB_HEALTHCHECK_ENABLED = 'false'
 
 /**
+ * never let tests call a live model: a key in the developer's shell would
+ * otherwise turn the alpha customers tests into paid Anthropic API calls.
+ * Tests that exercise extraction inject a fake model instead.
+ */
+delete process.env.ANTHROPIC_API_KEY
+
+/**
  * Provide a trusted issuer allowlist for the auth plugin. Tests run with
  * NODE_ENV=test (isDevelopment === false), so the auth plugin throws at
  * registration when AUTH_ALLOWED_ISSUERS is empty — which would break any
