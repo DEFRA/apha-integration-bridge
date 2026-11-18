@@ -15,7 +15,9 @@
  * checked only for the names it lists. `scoreNames: false` scores the status
  * only. `ambiguousCandidates` lists names an ambiguous answer may give as its
  * unclear candidates without counting as wrong, for cases that accept
- * `ambiguous`.
+ * `ambiguous`. `knownGap` explains why the pipeline can't pass a correctly
+ * labelled case yet; the case is still scored, and fails until the gap is
+ * fixed.
  */
 
 /**
@@ -29,6 +31,7 @@
  *   expectedRoles?: Record<string, string | null>,
  *   scoreNames?: boolean,
  *   ambiguousCandidates?: string[],
+ *   knownGap?: string,
  *   note?: string
  * }} MemoCase
  */

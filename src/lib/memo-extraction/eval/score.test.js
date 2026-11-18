@@ -1,6 +1,8 @@
 import { describe, expect, test } from '@jest/globals'
 
+import { findInMemo } from '../validate.js'
 import { cases } from './cases.js'
+import { heldOutCases } from './held-out-cases.js'
 import { percentile, scoreRun, summarise, unstableCases } from './score.js'
 
 /**
@@ -16,7 +18,12 @@ const result = (status, contacts = []) => ({
     role,
     sourceMatch: 'exact'
   })),
-  meta: { modelId: 'm', promptVersion: '1' }
+  meta: {
+    modelId: 'm',
+    promptVersion: '1',
+    schemaVersion: '1',
+    policyVersion: '1'
+  }
 })
 
 /** @type {import('./cases.js').MemoCase} */
@@ -182,15 +189,18 @@ describe('summarise and unstableCases', () => {
   })
 })
 
-describe('labelled cases', () => {
+describe.each([
+  ['development', cases],
+  ['held-out', heldOutCases]
+])('%s cases', (_, set) => {
   test('ids are unique', () => {
-    const ids = cases.map((memoCase) => memoCase.id)
+    const ids = set.map((memoCase) => memoCase.id)
 
     expect(new Set(ids).size).toBe(ids.length)
   })
 
   test('every role label refers to an expected name', () => {
-    for (const memoCase of cases) {
+    for (const memoCase of set) {
       const primaries = memoCase.expectedNames.map((name) =>
         Array.isArray(name) ? name[0] : name
       )
@@ -201,11 +211,31 @@ describe('labelled cases', () => {
     }
   })
 
-  test('every expected name appears in its memo', () => {
-    for (const memoCase of cases) {
-      for (const name of memoCase.expectedNames.flat()) {
-        expect(memoCase.memo).toContain(name)
+  // The validator drops any name not in the memo, so a label naming one
+  // could never pass.
+  test('every expected name and candidate can be found in its memo', () => {
+    for (const memoCase of set.filter(({ knownGap }) => !knownGap)) {
+      for (const name of [
+        ...memoCase.expectedNames.flat(),
+        ...(memoCase.ambiguousCandidates ?? [])
+      ]) {
+        expect([memoCase.id, findInMemo(name, memoCase.memo)]).not.toEqual([
+          memoCase.id,
+          null
+        ])
       }
     }
   })
+
+  test('every memo is short enough to be sent', () => {
+    for (const memoCase of set) {
+      expect(memoCase.memo.length).toBeLessThanOrEqual(4000)
+    }
+  })
+})
+
+test('the held-out set shares no ids with the development set', () => {
+  const devIds = new Set(cases.map((memoCase) => memoCase.id))
+
+  expect(heldOutCases.filter((memoCase) => devIds.has(memoCase.id))).toEqual([])
 })

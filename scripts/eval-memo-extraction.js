@@ -9,6 +9,12 @@
  *   npm run eval:memo -- --models claude-haiku-5-5,claude-sonnet-5-5 --repeats 3
  *   npm run eval:memo -- --category "prompt injection" --repeats 5
  *   npm run eval:memo -- --case roles-1 --repeats 1
+ *   npm run eval:memo -- --set held-out --models baseline:rules,baseline:ner,claude-haiku-5-5
+ *
+ * `--set dev` (the default) scores the cases the prompt is developed against;
+ * `--set held-out` scores the locked set, which the prompt must never be
+ * tuned against. `baseline:rules` and `baseline:ner` are the non-AI
+ * baselines: free, offline, and scored through the same pipeline.
  *
  * Prints a summary per model and category, the cases that failed or changed
  * answer between repeats, and writes the full results to .eval-results/.
@@ -16,13 +22,20 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-import { extractMemoContacts } from '../src/lib/memo-extraction/index.js'
+import {
+  VERSIONS,
+  extractMemoContacts
+} from '../src/lib/memo-extraction/index.js'
 import {
   getMemoExtractionConfig,
   isModelConfigured
 } from '../src/lib/memo-extraction/model.js'
-import { PROMPT_VERSION } from '../src/lib/memo-extraction/prompt.js'
 import { cases } from '../src/lib/memo-extraction/eval/cases.js'
+import { heldOutCases } from '../src/lib/memo-extraction/eval/held-out-cases.js'
+import {
+  createBaselineModel,
+  isBaseline
+} from '../src/lib/memo-extraction/eval/baselines/index.js'
 import {
   groupBy,
   scoreRun,
@@ -34,6 +47,7 @@ import { mapWithConcurrency } from '../src/common/helpers/map-with-concurrency.j
 const { values: args } = parseArgs({
   options: {
     models: { type: 'string' },
+    set: { type: 'string', default: 'dev' },
     repeats: { type: 'string', default: '3' },
     category: { type: 'string' },
     case: { type: 'string' },
@@ -43,20 +57,32 @@ const { values: args } = parseArgs({
 
 const baseConfig = getMemoExtractionConfig()
 
-if (!isModelConfigured(baseConfig)) {
+const models = (args.models ?? baseConfig.modelId)
+  .split(',')
+  .map((m) => m.trim())
+
+if (
+  models.some((modelId) => !isBaseline(modelId)) &&
+  !isModelConfigured(baseConfig)
+) {
   console.error(
     'ANTHROPIC_API_KEY is not set. Put it in .env.local, or set MEMO_EXTRACTION_PROVIDER=bedrock.'
   )
   process.exit(1)
 }
 
-const models = (args.models ?? baseConfig.modelId)
-  .split(',')
-  .map((m) => m.trim())
+/** @type {Record<string, import('../src/lib/memo-extraction/eval/cases.js').MemoCase[]>} */
+const SETS = { dev: cases, 'held-out': heldOutCases }
+const caseSet = SETS[args.set]
+
+if (!caseSet) {
+  console.error(`--set must be one of: ${Object.keys(SETS).join(', ')}`)
+  process.exit(1)
+}
 const repeats = Number(args.repeats)
 const concurrency = Number(args.concurrency)
 
-const selected = cases.filter(
+const selected = caseSet.filter(
   (memoCase) =>
     (!args.case || memoCase.id === args.case) &&
     (!args.category || memoCase.category === args.category)
@@ -68,7 +94,7 @@ if (selected.length === 0) {
 }
 
 console.log(
-  `Prompt ${PROMPT_VERSION}, ${selected.length} cases x ${repeats} repeats x ${models.length} model(s) = ${selected.length * repeats * models.length} calls\n`
+  `${args.set} set. Prompt ${VERSIONS.promptVersion}, schema ${VERSIONS.schemaVersion}, policy ${VERSIONS.policyVersion}, effort ${baseConfig.effort ?? 'model default'}: ${selected.length} cases x ${repeats} repeats x ${models.length} model(s) = ${selected.length * repeats * models.length} calls\n`
 )
 
 const stamp = new Date().toISOString().replace(/[:.]/g, '-')
@@ -77,6 +103,7 @@ mkdirSync('.eval-results', { recursive: true })
 
 for (const modelId of models) {
   const cfg = { ...baseConfig, modelId }
+  const model = isBaseline(modelId) ? createBaselineModel(modelId) : undefined
   const jobs = selected.flatMap((memoCase) =>
     Array.from({ length: repeats }, (_, repeat) => ({ memoCase, repeat }))
   )
@@ -88,7 +115,7 @@ for (const modelId of models) {
     async ({ memoCase, repeat }) => {
       const { memoContacts, diagnostics } = await extractMemoContacts(
         memoCase.memo,
-        { cfg }
+        { cfg, model }
       )
 
       process.stdout.write('.')
@@ -136,14 +163,15 @@ for (const modelId of models) {
     console.log(`\nAnswer changed between repeats: ${unstable.join(', ')}`)
   }
 
-  const file = `.eval-results/memo-${modelId}-${stamp}.json`
+  const file = `.eval-results/memo-${args.set}-${modelId.replace(':', '-')}-${stamp}.json`
 
   writeFileSync(
     file,
     JSON.stringify(
       {
+        set: args.set,
         modelId,
-        promptVersion: PROMPT_VERSION,
+        ...VERSIONS,
         repeats,
         effort: cfg.effort,
         overall,
