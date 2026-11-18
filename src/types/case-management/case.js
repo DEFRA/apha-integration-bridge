@@ -198,7 +198,9 @@ const KeyFactsSchema = Joi.object({
   destinationAddress: AddressKeyFactItemSchema.optional(),
   destinationKeeperName: NameKeyFactItemSchema.optional(),
   requesterCph: TextKeyFactItemSchema.optional(),
-  biosecurityMaps: FileArrayKeyFactItemSchema.optional()
+  biosecurityMaps: FileArrayKeyFactItemSchema.optional(),
+  language: TextKeyFactItemSchema.optional(),
+  country: TextKeyFactItemSchema.optional()
 })
 
 /**
