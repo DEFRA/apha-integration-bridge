@@ -105,6 +105,23 @@ Notes for deployment:
 - Worst-case latency for one request is roughly `4 × SAM_API_TIMEOUT_MS` (token, write, then a re-authenticated retry if Sam rejects the token). The caller's own timeout must exceed it.
 - Clients need to be listed in `WRITE_ALLOWED_CLIENT_IDS` to call the endpoint.
 
+#### Memo contact extraction (spike, DSFAAP-2993)
+
+`POST /alpha/customers/find` runs AI extraction of contact names from a synthetic SAM `AH_MEMO` field on every customer it returns, through Strands Agents. See [src/lib/memo-extraction/README.md](src/lib/memo-extraction/README.md). **Only invented memos may be sent while the provider is `anthropic`.**
+
+| Variable                          | Required | Description                                                                                        |
+| :-------------------------------- | :------- | :------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`               | no       | Anthropic API key. Unset, every customer gets `memoContacts.status: unavailable` (NOT_CONFIGURED). |
+| `MEMO_EXTRACTION_PROVIDER`        | no       | `anthropic` (default) or `bedrock`, once CDP grant access.                                         |
+| `MEMO_EXTRACTION_MODEL_ID`        | no       | Defaults to `claude-haiku-5-5`.                                                                    |
+| `MEMO_EXTRACTION_EFFORT`          | no       | `low`, `medium` or `high`. Unset uses the model default.                                           |
+| `MEMO_EXTRACTION_MAX_TOKENS`      | no       | Output token cap per call. Defaults to `4000`.                                                     |
+| `MEMO_EXTRACTION_TIMEOUT_MS`      | no       | Deadline per memo. Defaults to `15000`.                                                            |
+| `MEMO_EXTRACTION_MAX_MEMO_CHARS`  | no       | Longer memos are not sent. Defaults to `4000`.                                                     |
+| `MEMO_EXTRACTION_MAX_CONCURRENCY` | no       | Model calls in flight per request. Defaults to `4`.                                                |
+
+Put `ANTHROPIC_API_KEY` in `.env.local` (git ignores it). The Jest setup removes it, so tests never call a live model. Deployed, `api.anthropic.com` would need to be on the squid proxy allowlist.
+
 ### Setup
 
 Install application dependencies:

@@ -4,47 +4,58 @@
 
 /**
  * @param {MockData[]} mockData
+ * @param {{
+ *   enrich?: (data: MockData[], request: import('@hapi/hapi').Request) => Promise<MockData[]>
+ * }} [options] `enrich` adds to the page of results before it's returned. It
+ *   must return new objects, never change the shared mock data.
  * @returns {import('@hapi/hapi').Lifecycle.Method}
  */
-export const mockFindHandler = (mockData) => async (request, h) => {
-  const dataMap = Object.fromEntries(mockData.map((datum) => [datum.id, datum]))
-
-  // The alpha find routes validate query/payload with Joi before the
-  // handler runs: page/pageSize arrive as coerced numbers, ids as strings.
-  const { page, pageSize } = /** @type {{ page: number, pageSize: number }} */ (
-    /** @type {unknown} */ (request.query)
-  )
-  const query = new URLSearchParams(
-    /** @type {Record<string, string>} */ (
-      /** @type {unknown} */ (request.query)
+export const mockFindHandler =
+  (mockData, options = {}) =>
+  async (request, h) => {
+    const dataMap = Object.fromEntries(
+      mockData.map((datum) => [datum.id, datum])
     )
-  )
 
-  const zeroIndexedPage = page - 1
-  const firstPageOffset = pageSize * zeroIndexedPage
+    // The alpha find routes validate query/payload with Joi before the
+    // handler runs: page/pageSize arrive as coerced numbers, ids as strings.
+    const { page, pageSize } =
+      /** @type {{ page: number, pageSize: number }} */ (
+        /** @type {unknown} */ (request.query)
+      )
+    const query = new URLSearchParams(
+      /** @type {Record<string, string>} */ (
+        /** @type {unknown} */ (request.query)
+      )
+    )
 
-  const payload = /** @type {{ ids: string[] }} */ (request.payload)
+    const zeroIndexedPage = page - 1
+    const firstPageOffset = pageSize * zeroIndexedPage
 
-  const ids = payload.ids.slice(firstPageOffset, firstPageOffset + pageSize)
-  const data = ids.map((id) => dataMap[id]).filter((data) => data !== undefined)
+    const payload = /** @type {{ ids: string[] }} */ (request.payload)
 
-  const links = {
-    self: `${request.path}?${query.toString()}`,
-    next:
-      firstPageOffset + pageSize < payload.ids.length
-        ? `${request.path}?${movePage(query, 1).toString()}`
-        : null,
-    prev:
-      page !== 1 ? `${request.path}?${movePage(query, -1).toString()}` : null
+    const ids = payload.ids.slice(firstPageOffset, firstPageOffset + pageSize)
+    const data = ids
+      .map((id) => dataMap[id])
+      .filter((data) => data !== undefined)
+
+    const links = {
+      self: `${request.path}?${query.toString()}`,
+      next:
+        firstPageOffset + pageSize < payload.ids.length
+          ? `${request.path}?${movePage(query, 1).toString()}`
+          : null,
+      prev:
+        page !== 1 ? `${request.path}?${movePage(query, -1).toString()}` : null
+    }
+
+    const response = {
+      data: options.enrich ? await options.enrich(data, request) : data,
+      links
+    }
+
+    return h.response(response).code(200)
   }
-
-  const response = {
-    data,
-    links
-  }
-
-  return h.response(response).code(200)
-}
 
 /**
  * @param {URLSearchParams} query

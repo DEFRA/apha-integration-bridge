@@ -9,11 +9,42 @@ import {
   customer4,
   customer5
 } from './find.mocks.js'
+import { PROMPT_VERSION } from '../../../lib/memo-extraction/prompt.js'
 
 const path = '/customers/find'
 
+/**
+ * The Jest setup clears ANTHROPIC_API_KEY, so extraction never reaches a model
+ * here and every customer reports it as not configured. Extraction itself is
+ * covered in find.memo-contacts.test.js with a fake model.
+ *
+ * @param {object} customer
+ */
+const withMemoContacts = (customer) => ({
+  ...customer,
+  memoContacts: {
+    status: 'unavailable',
+    reasonCode: 'NOT_CONFIGURED',
+    contacts: [],
+    meta: { modelId: expect.any(String), promptVersion: PROMPT_VERSION }
+  }
+})
+
 describe('customers/find', () => {
   const server = Hapi.server()
+
+  // The controller logs each memo extraction through request.logger, which a
+  // bare test server (no hapi-pino) doesn't have.
+  server.decorate(
+    'request',
+    'logger',
+    /** @type {any} */ ({
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      debug: () => {}
+    })
+  )
 
   server.route({
     ...route,
@@ -36,7 +67,7 @@ describe('customers/find', () => {
     })
 
     expect(response.result).toEqual({
-      data: [customer1, customer2],
+      data: [customer1, customer2].map(withMemoContacts),
       links: {
         self: url,
         next: null,
@@ -84,7 +115,7 @@ describe('customers/find', () => {
     })
 
     expect(response.result).toEqual({
-      data: [customer2, customer1],
+      data: [customer2, customer1].map(withMemoContacts),
       links: {
         self: url,
         next: null,
@@ -111,7 +142,7 @@ describe('customers/find', () => {
     nextQueryParams.set('page', '2')
 
     expect(firstResponse.result).toEqual({
-      data: [customer2],
+      data: [customer2].map(withMemoContacts),
       links: {
         self: url,
         next: `${path}?${nextQueryParams.toString()}`,
@@ -128,7 +159,7 @@ describe('customers/find', () => {
     })
 
     expect(secondResponse.result).toEqual({
-      data: [customer1],
+      data: [customer1].map(withMemoContacts),
       links: {
         self: `${path}?${nextQueryParams.toString()}`,
         next: null,
@@ -152,7 +183,7 @@ describe('customers/find', () => {
     })
 
     expect(response.result).toEqual({
-      data: [customer3, customer4, customer5],
+      data: [customer3, customer4, customer5].map(withMemoContacts),
       links: {
         self: url,
         next: null,

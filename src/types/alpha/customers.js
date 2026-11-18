@@ -79,6 +79,57 @@ export const Role = Joi.object({
   .description('A current role the party holds in SAM')
   .label('Role')
 
+export const MemoContacts = Joi.object({
+  status: Joi.string()
+    .valid('found', 'none', 'ambiguous', 'unavailable')
+    .required()
+    .description(
+      '`found`: people named in the memo, each checked against the memo text. `none`: no people named. `ambiguous`: possible names, or output that failed a check; check SAM. `unavailable`: extraction did not run or failed; check SAM'
+    ),
+  reasonCode: Joi.string()
+    .required()
+    .description(
+      'Why this status, for example SINGLE_PERSON, MULTIPLE_PEOPLE, NO_PERSON_NAMED, ONLY_NON_PERSON_NAMES, UNCLEAR_IF_PERSON, UNVERIFIED_NAMES, INCONSISTENT_OUTPUT, EMPTY_MEMO, TIMEOUT, NOT_CONFIGURED'
+    ),
+  contacts: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string()
+          .required()
+          .description('The name as written in the memo'),
+        role: Joi.string()
+          .valid(
+            'contact',
+            'agent',
+            'keeper',
+            'owner',
+            'previous_contact',
+            'apha_staff',
+            'vet',
+            'other'
+          )
+          .allow(null)
+          .required()
+          .description('Role the memo gives the person, if any'),
+        sourceMatch: Joi.string()
+          .valid('exact', 'normalised')
+          .required()
+          .description(
+            '`exact`: appears in the memo as written. `normalised`: appears once case and punctuation are ignored'
+          )
+      }).label('Memo Contact')
+    )
+    .required(),
+  meta: Joi.object({
+    modelId: Joi.string().required(),
+    promptVersion: Joi.string().required()
+  }).required()
+})
+  .description(
+    'SPIKE (DSFAAP-2993). People named in the SAM AH_MEMO free-text field, extracted by AI and checked against the memo. An aid to a human check, never authoritative'
+  )
+  .label('Memo Contacts')
+
 export const Customer = CustomersData.keys({
   partyType: Joi.string()
     .valid('PERSON')
@@ -92,5 +143,6 @@ export const Customer = CustomersData.keys({
     StructuredAddress.keys({ isPreferred: Joi.boolean() })
   ),
   contactDetails: Joi.array().items(CustomerContactDetails),
+  memoContacts: MemoContacts,
   relationships: CustomersRelationships
 })
