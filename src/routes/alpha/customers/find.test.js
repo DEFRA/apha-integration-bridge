@@ -9,7 +9,7 @@ import {
   customer4,
   customer5
 } from './find.mocks.js'
-import { PROMPT_VERSION } from '../../../lib/memo-extraction/prompt.js'
+import { VERSIONS } from '../../../lib/memo-extraction/index.js'
 
 const path = '/customers/find'
 
@@ -26,7 +26,7 @@ const withMemoContacts = (customer) => ({
     status: 'unavailable',
     reasonCode: 'NOT_CONFIGURED',
     contacts: [],
-    meta: { modelId: expect.any(String), promptVersion: PROMPT_VERSION }
+    meta: { modelId: expect.any(String), ...VERSIONS }
   }
 })
 

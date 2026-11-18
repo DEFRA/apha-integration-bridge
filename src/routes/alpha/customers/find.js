@@ -87,6 +87,7 @@ const withMemoContacts = (customers, request) =>
             customerId: customer.id,
             status: memoContacts.status,
             reasonCode: memoContacts.reasonCode,
+            ...memoContacts.meta,
             ...diagnostics
           }
         },

@@ -13,15 +13,32 @@ import {
   isModelConfigured
 } from './model.js'
 import { PROMPT_VERSION } from './prompt.js'
-import { validateModelOutput } from './validate.js'
+import { SCHEMA_VERSION } from './schema.js'
+import { POLICY_VERSION, validateModelOutput } from './validate.js'
+
+/**
+ * Which prompt, output schema and decision policy produced a result. With the
+ * model id, enough to reproduce or explain any answer.
+ */
+export const VERSIONS = Object.freeze({
+  promptVersion: PROMPT_VERSION,
+  schemaVersion: SCHEMA_VERSION,
+  policyVersion: POLICY_VERSION
+})
 
 /**
  * @typedef {'found' | 'none' | 'ambiguous' | 'unavailable'} MemoContactsStatus
  * @typedef {{
+ *   modelId: string,
+ *   promptVersion: string,
+ *   schemaVersion: string,
+ *   policyVersion: string
+ * }} MemoContactsMeta
+ * @typedef {{
  *   status: MemoContactsStatus,
  *   reasonCode: string,
  *   contacts: import('./validate.js').Contact[],
- *   meta: { modelId: string, promptVersion: string }
+ *   meta: MemoContactsMeta
  * }} MemoContacts
  * @typedef {{
  *   latencyMs: number,
@@ -43,7 +60,8 @@ import { validateModelOutput } from './validate.js'
  */
 export const extractMemoContacts = async (memo, options = {}) => {
   const cfg = options.cfg ?? getMemoExtractionConfig()
-  const meta = { modelId: cfg.modelId, promptVersion: PROMPT_VERSION }
+  /** @type {MemoContactsMeta} */
+  const meta = { modelId: cfg.modelId, ...VERSIONS }
   const started = performance.now()
 
   /** @type {MemoExtractionDiagnostics} */

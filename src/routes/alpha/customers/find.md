@@ -38,6 +38,7 @@ Each customer has a `memoContacts` field: the people named in the customer's SAM
 
 - `status`: `found` (people named, each found in the memo), `none` (no people named), `ambiguous` (possible names, or the model's answer failed a check: check SAM), `unavailable` (extraction did not run or failed: check SAM).
 - `contacts[].sourceMatch`: `exact` if the name appears in the memo as written, `normalised` if it appears once case and punctuation are ignored. A name that appears nowhere in the memo is never returned; the result becomes `ambiguous` with `UNVERIFIED_NAMES`.
+- `meta`: the model, and the versions of the prompt, output schema and decision policy (the checks above) that produced the result.
 - Without `ANTHROPIC_API_KEY` set, every customer returns `unavailable` / `NOT_CONFIGURED`.
 
 | ID         | Memo variation                         | Memo text                                                                                                                                                                                                                                                                                                         |

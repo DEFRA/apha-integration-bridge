@@ -4,6 +4,13 @@
  * can be found in the memo and whether the output is self-consistent.
  */
 
+/**
+ * Bump on any change to the rules in this file (how names are matched, when
+ * an answer becomes ambiguous), so every result records which decision policy
+ * produced its status.
+ */
+export const POLICY_VERSION = '1.0.0'
+
 export const MAX_CONTACTS = 10
 
 /**

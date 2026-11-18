@@ -122,8 +122,14 @@ export const MemoContacts = Joi.object({
     .required(),
   meta: Joi.object({
     modelId: Joi.string().required(),
-    promptVersion: Joi.string().required()
-  }).required()
+    promptVersion: Joi.string().required(),
+    schemaVersion: Joi.string().required(),
+    policyVersion: Joi.string().required()
+  })
+    .required()
+    .description(
+      'The model, prompt, output schema and decision policy that produced this result'
+    )
 })
   .description(
     'SPIKE (DSFAAP-2993). People named in the SAM AH_MEMO free-text field, extracted by AI and checked against the memo. An aid to a human check, never authoritative'

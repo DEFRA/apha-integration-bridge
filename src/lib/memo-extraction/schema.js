@@ -5,7 +5,16 @@ import { z } from 'zod'
  * outside it sees Zod or the raw model output. Deliberately has no length or
  * count constraints: native structured output doesn't support all of them, so
  * those limits are enforced in validate.js instead.
+ *
+ * Objects are strict: an answer with any field the schema doesn't name is
+ * rejected as invalid output, not silently trimmed.
  */
+
+/**
+ * Bump on any change to this schema, so every result records which schema
+ * its answer was checked against.
+ */
+export const SCHEMA_VERSION = '1.0.0'
 
 export const ROLES = /** @type {const} */ ([
   'contact',
@@ -33,31 +42,37 @@ export const MODEL_REASON_CODES = /** @type {const} */ ([
   'CONFLICTING_INFORMATION'
 ])
 
-export const ModelOutputSchema = z.object({
-  status: z
-    .enum(MODEL_STATUSES)
-    .describe('found, none or ambiguous, as defined in the instructions'),
-  reasonCode: z
-    .enum(MODEL_REASON_CODES)
-    .describe(
-      'Reason code matching the status, as defined in the instructions'
-    ),
-  persons: z
-    .array(
-      z.object({
-        name: z
-          .string()
-          .describe('The name exactly as written in the memo, never corrected'),
-        role: z
-          .enum(ROLES)
-          .nullable()
-          .describe(
-            'Role from the instructions, or null when the memo gives no clue'
-          )
-      })
-    )
-    .describe('Every person named in the memo; empty when status is none')
-})
+export const ModelOutputSchema = z
+  .object({
+    status: z
+      .enum(MODEL_STATUSES)
+      .describe('found, none or ambiguous, as defined in the instructions'),
+    reasonCode: z
+      .enum(MODEL_REASON_CODES)
+      .describe(
+        'Reason code matching the status, as defined in the instructions'
+      ),
+    persons: z
+      .array(
+        z
+          .object({
+            name: z
+              .string()
+              .describe(
+                'The name exactly as written in the memo, never corrected'
+              ),
+            role: z
+              .enum(ROLES)
+              .nullable()
+              .describe(
+                'Role from the instructions, or null when the memo gives no clue'
+              )
+          })
+          .strict()
+      )
+      .describe('Every person named in the memo; empty when status is none')
+  })
+  .strict()
 
 /**
  * @typedef {z.infer<typeof ModelOutputSchema>} ModelOutput

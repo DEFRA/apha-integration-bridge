@@ -1,8 +1,9 @@
 import { loadSQL } from '../db/utils/load-sql.js'
 
 /**
- * Bump on any change to prompt.md or the model output schema, so every result
- * (and every scoring run) records which prompt produced it.
+ * Bump on any change to prompt.md, so every result (and every scoring run)
+ * records which prompt produced it. The schema and the validator's rules carry
+ * their own versions (SCHEMA_VERSION, POLICY_VERSION).
  */
 export const PROMPT_VERSION = '1.3.0'
 

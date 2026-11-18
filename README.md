@@ -114,7 +114,7 @@ Notes for deployment:
 | `ANTHROPIC_API_KEY`               | no       | Anthropic API key. Unset, every customer gets `memoContacts.status: unavailable` (NOT_CONFIGURED). |
 | `MEMO_EXTRACTION_PROVIDER`        | no       | `anthropic` (default) or `bedrock`, once CDP grant access.                                         |
 | `MEMO_EXTRACTION_MODEL_ID`        | no       | Defaults to `claude-haiku-5-5`.                                                                    |
-| `MEMO_EXTRACTION_EFFORT`          | no       | `low`, `medium` or `high`. Unset uses the model default.                                           |
+| `MEMO_EXTRACTION_EFFORT`          | no       | `low`, `medium` or `high`. Defaults to `medium`, the setting Haiku was scored at.                  |
 | `MEMO_EXTRACTION_MAX_TOKENS`      | no       | Output token cap per call. Defaults to `4000`.                                                     |
 | `MEMO_EXTRACTION_TIMEOUT_MS`      | no       | Deadline per memo. Defaults to `15000`.                                                            |
 | `MEMO_EXTRACTION_MAX_MEMO_CHARS`  | no       | Longer memos are not sent. Defaults to `4000`.                                                     |

@@ -504,10 +504,10 @@ const config = convict({
       env: 'ANTHROPIC_API_KEY'
     },
     effort: {
-      doc: 'Optional output_config.effort sent to the model (low, medium, high). Unset uses the model default.',
+      doc: 'output_config.effort sent to the model (low, medium, high). Pinned rather than left to the model default, so a provider changing its default cannot silently change answers. Current Claude models reject temperature, so effort is the only sampling setting. Null sends none and uses the model default.',
       format: ['low', 'medium', 'high'],
       nullable: true,
-      default: null,
+      default: 'medium',
       env: 'MEMO_EXTRACTION_EFFORT'
     },
     maxTokens: {

@@ -27,7 +27,12 @@ const found = (name) => ({
   status: /** @type {const} */ ('found'),
   reasonCode: 'SINGLE_PERSON',
   contacts: [{ name, role: null, sourceMatch: /** @type {const} */ ('exact') }],
-  meta: { modelId: 'test-model', promptVersion: '1.0.0' }
+  meta: {
+    modelId: 'test-model',
+    promptVersion: '1.0.0',
+    schemaVersion: '1.0.0',
+    policyVersion: '1.0.0'
+  }
 })
 
 describe('alpha customers/find memo contacts (spike)', () => {
@@ -102,6 +107,10 @@ describe('alpha customers/find memo contacts (spike)', () => {
           customerId: customer1.id,
           status: 'found',
           reasonCode: 'SINGLE_PERSON',
+          modelId: 'test-model',
+          promptVersion: '1.0.0',
+          schemaVersion: '1.0.0',
+          policyVersion: '1.0.0',
           latencyMs: 7,
           usage: null,
           droppedNames: 0

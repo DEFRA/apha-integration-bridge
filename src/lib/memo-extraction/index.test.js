@@ -1,9 +1,8 @@
 import { describe, expect, jest, test } from '@jest/globals'
 
 import { runWithMaskingContext } from '../pii/index.js'
-import { extractMemoContacts } from './index.js'
+import { VERSIONS, extractMemoContacts } from './index.js'
 import { MemoModelError } from './model.js'
-import { PROMPT_VERSION } from './prompt.js'
 
 /** @type {import('./model.js').MemoExtractionConfig} */
 const cfg = {
@@ -17,7 +16,7 @@ const cfg = {
   maxConcurrency: 2
 }
 
-const meta = { modelId: 'test-model', promptVersion: PROMPT_VERSION }
+const meta = { modelId: 'test-model', ...VERSIONS }
 
 /**
  * @param {import('./schema.js').ModelOutput} output
