@@ -22,3 +22,5 @@ globalConfig.json
 salesforce-jwt-*
 
 .schema
+# memo extraction scoring output (spike, DSFAAP-2993)
+.eval-results/
