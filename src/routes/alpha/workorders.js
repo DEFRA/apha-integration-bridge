@@ -13,8 +13,6 @@ import { workorders } from './workorders.mocks.js'
 import { PaginatedLink } from '../../types/alpha/links.js'
 import { PaginationSchema } from '../../types/alpha/pagination.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 const PaginationWorkordersResponseSchema = Joi.object({
   data: Joi.array().items(Workorders).required().label('Workorders'),
   links: PaginatedLink
@@ -31,7 +29,7 @@ export const options = {
   description:
     'Retrieve workorders filtered by activation date range and paginated',
   notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'workorders.md'),
+    path.join(import.meta.dirname, 'workorders.md'),
     'utf8'
   ),
   plugins: {

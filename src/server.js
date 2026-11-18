@@ -28,8 +28,6 @@ import { clientScopesPlugin } from './common/helpers/client-scopes.js'
 import { createClientsScopes } from './lib/clients/create.js'
 import { securityHeaders } from './common/helpers/security-headers.js'
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname)
-
 /**
  * Builds and configures a Hapi server instance.
  *
@@ -183,7 +181,7 @@ async function createServer() {
     {
       plugin: routingPlugin,
       options: {
-        routesDirectory: path.join(__dirname, 'routes'),
+        routesDirectory: path.join(import.meta.dirname, 'routes'),
         logRoutes: true
       }
     }

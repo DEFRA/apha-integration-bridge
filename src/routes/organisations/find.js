@@ -29,9 +29,7 @@ const PostFindPayloadSchema = Joi.object({
   ids: FindCustomersSchema.extract('ids').label('Organisation ids')
 })
 
-const __dirname = new URL('.', import.meta.url).pathname
-
-const documentationNotes = loadDocumentation(__dirname, 'find.md')
+const documentationNotes = loadDocumentation(import.meta.dirname, 'find.md')
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}

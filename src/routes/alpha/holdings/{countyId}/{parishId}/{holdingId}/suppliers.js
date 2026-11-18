@@ -22,8 +22,6 @@ const GetHoldingSuppliersSchema = Joi.object({
   .description('The vet practice and delivery partner per livestock unit')
   .label('Holding Suppliers Response')
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -32,7 +30,7 @@ const options = {
   tags: ['api', 'holdings'],
   description: 'Retrieve the vet suppliers of a CPH',
   notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'suppliers.md'),
+    path.join(import.meta.dirname, 'suppliers.md'),
     'utf8'
   ),
   plugins: {

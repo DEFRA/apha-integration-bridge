@@ -15,9 +15,7 @@ import { PaginatedLinkSchema } from '../../types/find/links.js'
 import { GetWorkordersSchema } from '../../types/find/workorders-get.js'
 import { config } from '../../config.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
-const documentationNotes = loadDocumentation(__dirname, 'get.md')
+const documentationNotes = loadDocumentation(import.meta.dirname, 'get.md')
 
 const GetWorkordersResponseSchema = Joi.object({
   data: Joi.array().items(WorkordersSchema).required(),

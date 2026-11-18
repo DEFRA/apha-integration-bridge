@@ -22,8 +22,6 @@ const GetHoldingLocationsSchema = Joi.object({
   .description('Every location the CPH is currently held at')
   .label('Holding Locations Response')
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -32,7 +30,7 @@ const options = {
   tags: ['api', 'holdings'],
   description: 'Retrieve the locations a CPH is held at',
   notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'locations.md'),
+    path.join(import.meta.dirname, 'locations.md'),
     'utf8'
   ),
   plugins: {

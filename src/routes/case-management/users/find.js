@@ -32,8 +32,6 @@ const PostFindUsersPayloadSchema = Joi.object({
     })
 })
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -43,10 +41,7 @@ const options = {
   },
   tags: ['api', 'case-management'],
   description: 'Find if a user exists in Salesforce',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'find.md'),
-    'utf8'
-  ),
+  notes: fs.readFileSync(path.join(import.meta.dirname, 'find.md'), 'utf8'),
   plugins: {
     'hapi-swagger': {
       id: 'case-management-users-find',

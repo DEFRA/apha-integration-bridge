@@ -25,8 +25,6 @@ import { TopLevelLinksReferenceSchema } from '../../types/links.js'
 import { Locations } from '../../types/locations.js'
 import { config } from '../../config.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * Params schema (reuse the same shape as the DB query's schema)
  * @type {Joi.ObjectSchema}
@@ -55,7 +53,7 @@ export const options = {
   description:
     'Get a location and its related facilities/commodities by location ID',
   notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), '{locationId}.md'),
+    path.join(import.meta.dirname, '{locationId}.md'),
     'utf8'
   ),
   plugins: {

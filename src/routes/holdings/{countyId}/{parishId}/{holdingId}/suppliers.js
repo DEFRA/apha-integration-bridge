@@ -24,8 +24,6 @@ const GetHoldingSuppliersResponseSchema = Joi.object({
   )
   .label('Holding Suppliers Response')
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -36,7 +34,7 @@ const options = {
   tags: ['api', 'holdings'],
   description:
     'Retrieve the vet practice and delivery partner for each livestock unit of a CPH',
-  notes: loadDocumentation(__dirname, 'suppliers.md'),
+  notes: loadDocumentation(import.meta.dirname, 'suppliers.md'),
   plugins: {
     'hapi-swagger': {
       id: 'holding-suppliers',

@@ -44,9 +44,7 @@ const PostFindPayloadSchema = Joi.object({
     .description('List of CPHs')
 })
 
-const __dirname = new URL('.', import.meta.url).pathname
-
-const documentationNotes = loadDocumentation(__dirname, 'find.md')
+const documentationNotes = loadDocumentation(import.meta.dirname, 'find.md')
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}

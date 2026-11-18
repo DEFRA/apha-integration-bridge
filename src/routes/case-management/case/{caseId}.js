@@ -22,7 +22,6 @@ import { config } from '../../../config.js'
  * @import {Request} from '@hapi/hapi'
  */
 
-const __dirname = new URL('.', import.meta.url).pathname
 const retriesConfig = {
   retries: 3,
   maxRetryTime: 10000,
@@ -38,10 +37,7 @@ const options = {
   auth: false,
   tags: ['api', 'case-management'],
   description: 'Get a case by ID from APHA CRM (Salesforce)',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), '{caseId}.md'),
-    'utf8'
-  ),
+  notes: fs.readFileSync(path.join(import.meta.dirname, '{caseId}.md'), 'utf8'),
   plugins: {
     'hapi-swagger': {
       id: 'case-management-case-get',

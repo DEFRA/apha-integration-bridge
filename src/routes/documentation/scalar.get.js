@@ -3,8 +3,6 @@ import path from 'node:path'
 
 import { config } from '../../config.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -13,7 +11,7 @@ export const options = {
 }
 
 const htmlTemplate = fs.readFileSync(
-  path.join(decodeURIComponent(__dirname), 'scalar.get.html'),
+  path.join(import.meta.dirname, 'scalar.get.html'),
   'utf8'
 )
 

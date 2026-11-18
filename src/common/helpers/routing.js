@@ -2,6 +2,7 @@
 
 import { globSync } from 'glob'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 /**
  * @typedef {import('../../types/api.js').Server} Server
@@ -38,9 +39,14 @@ export const routingPlugin = {
     }
 
     /**
-     * Use glob to find all route files in the specified directory
+     * Use glob to find all route files in the specified directory.
+     * `posix` gives forward slashes on Windows too, since the relative
+     * path becomes the route's URL path.
      */
-    const routeFiles = globSync('**/*.js', { cwd: routesDirectory })
+    const routeFiles = globSync('**/*.js', {
+      cwd: routesDirectory,
+      posix: true
+    })
 
     /**
      * Import and register each route file
@@ -54,9 +60,10 @@ export const routingPlugin = {
       const filePath = path.join(routesDirectory, file)
 
       /**
-       * Dynamically import the route module
+       * Dynamically import the route module. ESM import needs a file URL:
+       * a Windows path (C:\...) is read as a URL scheme and fails.
        */
-      const routeModule = await import(filePath)
+      const routeModule = await import(pathToFileURL(filePath).href)
 
       let routes = routeModule.default
 

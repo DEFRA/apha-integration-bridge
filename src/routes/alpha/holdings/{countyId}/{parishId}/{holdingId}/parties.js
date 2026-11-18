@@ -22,8 +22,6 @@ const GetHoldingPartiesSchema = Joi.object({
   .description('Everyone involved with the CPH, with their involvements')
   .label('Holding Parties Response')
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -31,10 +29,7 @@ const options = {
   auth: false,
   tags: ['api', 'holdings'],
   description: 'Retrieve the parties involved with a CPH',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'parties.md'),
-    'utf8'
-  ),
+  notes: fs.readFileSync(path.join(import.meta.dirname, 'parties.md'), 'utf8'),
   plugins: {
     'hapi-swagger': {
       id: 'holdings-parties',
