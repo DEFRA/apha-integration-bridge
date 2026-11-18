@@ -816,3 +816,272 @@ describe('POST /customers/find — roles and contacts', () => {
     })
   })
 })
+
+// C3110001 to C3110005 are seeded by 023_add_customer_email_search_scenarios.sql.
+// All five hold shared.search@example.com; only C3110001 and C3110002 are
+// current, active people holding it through a current contact.
+describe('POST /customers/find — email search', () => {
+  const PII_CLIENT_ID = 'pii-allowed-client'
+  const NO_PII_CLIENT_ID = 'no-pii-client'
+
+  const clientsScopes = [
+    { client_id: PII_CLIENT_ID, scopes: ['pii'] },
+    { client_id: NO_PII_CLIENT_ID, scopes: ['read'] }
+  ]
+
+  const sharedEmail = 'shared.search@example.com'
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  /**
+   * @param {string} [clientId]
+   */
+  const createEmailSearchServer = async (clientId = PII_CLIENT_ID) => {
+    const server = Hapi.server({ port: 0 })
+
+    await server.register([
+      { plugin: hapiPino, options: { enabled: false } },
+      { plugin: clientScopesPlugin, options: { clientsScopes } },
+      piiContextPlugin,
+      oracleDb
+    ])
+
+    registerSimpleAuthStrategy(server, { clientId })
+
+    server.route({ ...route, path, method: 'POST' })
+
+    return server
+  }
+
+  /**
+   * @param {Record<string, unknown>} payload
+   * @param {{ page?: string, pageSize?: string, clientId?: string }} [options]
+   */
+  const search = async (payload, options = {}) => {
+    const { page = '1', pageSize = '10', clientId } = options
+    const server = await createEmailSearchServer(clientId)
+    const url = `${path}?${new URLSearchParams({ page, pageSize }).toString()}`
+
+    const response = await server.inject({ method: 'POST', url, payload })
+
+    return {
+      url,
+      statusCode: response.statusCode,
+      result: /** @type {Record<string, any>} */ (response.result)
+    }
+  }
+
+  /**
+   * @param {Record<string, any>} result
+   * @returns {string[]}
+   */
+  const idsOf = (result) => result.data.map((customer) => customer.id)
+
+  describe('validation', () => {
+    test.each([
+      ['both ids and email', { ids: ['C3110001'], email: sharedEmail }],
+      ['neither ids nor email', {}],
+      ['surname without email', { surname: 'Hedge-Row' }],
+      ['postcode without email', { postcode: 'AB1 2CD' }],
+      ['surname with ids', { ids: ['C3110001'], surname: 'Hedge-Row' }],
+      ['postcode with ids', { ids: ['C3110001'], postcode: 'AB1 2CD' }],
+      ['an invalid email', { email: 'not-an-email' }],
+      ['an empty email', { email: '' }],
+      ['an invalid postcode', { email: sharedEmail, postcode: 'NOT A CODE' }],
+      ['a blank surname', { email: sharedEmail, surname: '   ' }],
+      [
+        'a surname over 100 characters',
+        { email: sharedEmail, surname: 'a'.repeat(101) }
+      ],
+      ['an unknown field', { email: sharedEmail, firstName: 'Alex' }]
+    ])('returns BAD_REQUEST for %s', async (_, payload) => {
+      const { statusCode, result } = await search(payload)
+
+      expect(statusCode).toBe(400)
+      expect(result).toMatchObject({
+        code: 'BAD_REQUEST',
+        errors: [{ code: 'VALIDATION_ERROR' }]
+      })
+    })
+  })
+
+  describe('pii scope', () => {
+    test.each([
+      ['a client without the pii scope', NO_PII_CLIENT_ID],
+      ['a client not in the client scopes map', 'unknown-client']
+    ])(
+      'returns FORBIDDEN without touching the database for %s',
+      async (_, clientId) => {
+        const server = await createEmailSearchServer(clientId)
+        const samSpy = jest.spyOn(server, /** @type {any} */ ('oracledb.sam'))
+
+        const response = await server.inject({
+          method: 'POST',
+          url: `${path}?page=1&pageSize=10`,
+          payload: { email: sharedEmail }
+        })
+
+        expect(response.statusCode).toBe(403)
+        expect(response.result).toEqual({
+          code: 'FORBIDDEN',
+          message:
+            'Searching customers by e-mail address requires the pii scope',
+          errors: []
+        })
+        expect(samSpy).not.toHaveBeenCalled()
+      }
+    )
+
+    test('still allows an id search without the pii scope', async () => {
+      const { statusCode, result } = await search(
+        { ids: ['C3110001'] },
+        { clientId: NO_PII_CLIENT_ID }
+      )
+
+      expect(statusCode).toBe(200)
+      expect(idsOf(result)).toEqual(['C3110001'])
+    })
+  })
+
+  test('returns each matching customer once, ordered by id, in the id search shape', async () => {
+    const { statusCode, result, url } = await search({ email: sharedEmail })
+
+    expect(statusCode).toBe(200)
+    // C3110001 holds the email twice, once mixed case and padded
+    expect(idsOf(result)).toEqual(['C3110001', 'C3110002'])
+    expect(result.links).toEqual({ self: url, prev: null, next: null })
+
+    const idSearch = await search({ ids: ['C3110001', 'C3110002'] })
+
+    expect(result.data).toEqual(idSearch.result.data)
+  })
+
+  test('excludes ended contacts, inactive people and organisations', async () => {
+    const { result } = await search({ email: sharedEmail })
+
+    expect(idsOf(result)).not.toContain('C3110003')
+    expect(idsOf(result)).not.toContain('C3110004')
+    expect(idsOf(result)).not.toContain('C3110005')
+  })
+
+  test.each([
+    'SHARED.SEARCH@EXAMPLE.COM',
+    '  Shared.Search@Example.com  ',
+    'shared.SEARCH@example.COM'
+  ])(
+    'matches the email ignoring case and surrounding spaces (%p)',
+    async (email) => {
+      const { statusCode, result } = await search({ email })
+
+      expect(statusCode).toBe(200)
+      expect(idsOf(result)).toEqual(['C3110001', 'C3110002'])
+    }
+  )
+
+  test.each([
+    [' hedge-row ', ['C3110001']],
+    ['HEDGE-ROW', ['C3110001']],
+    ["o'neill", ['C3110002']],
+    ['Hedge', []]
+  ])(
+    'narrows by surname exactly, ignoring case and spaces (%p)',
+    async (surname, expected) => {
+      const { statusCode, result } = await search({
+        email: sharedEmail,
+        surname
+      })
+
+      expect(statusCode).toBe(200)
+      expect(idsOf(result)).toEqual(expected)
+    }
+  )
+
+  test.each([
+    ['AB1 2CD', ['C3110001']],
+    ['ab12cd', ['C3110001']],
+    [' Ab1   2cD ', ['C3110001']],
+    // C3110002's second address, held in SAM as ij56kl
+    ['IJ5 6KL', ['C3110002']],
+    ['EF3 4GH', ['C3110002']],
+    // C3110001's address at ZZ9 9ZZ has ended
+    ['ZZ9 9ZZ', []]
+  ])(
+    'narrows by any current address postcode, ignoring case and spaces (%p)',
+    async (postcode, expected) => {
+      const { statusCode, result } = await search({
+        email: sharedEmail,
+        postcode
+      })
+
+      expect(statusCode).toBe(200)
+      expect(idsOf(result)).toEqual(expected)
+    }
+  )
+
+  test('applies surname and postcode together', async () => {
+    const match = await search({
+      email: sharedEmail,
+      surname: "O'Neill",
+      postcode: 'IJ5 6KL'
+    })
+    const mismatch = await search({
+      email: sharedEmail,
+      surname: "O'Neill",
+      postcode: 'AB1 2CD'
+    })
+
+    expect(idsOf(match.result)).toEqual(['C3110002'])
+    expect(idsOf(mismatch.result)).toEqual([])
+  })
+
+  test('returns an empty array when nobody holds the email', async () => {
+    const { statusCode, result, url } = await search({
+      email: 'nobody.search@example.com'
+    })
+
+    expect(statusCode).toBe(200)
+    expect(result).toEqual({
+      data: [],
+      links: { self: url, prev: null, next: null }
+    })
+  })
+
+  test('pages over the matching customers', async () => {
+    const first = await search(
+      { email: sharedEmail },
+      { page: '1', pageSize: '1' }
+    )
+
+    expect(first.statusCode).toBe(200)
+    expect(idsOf(first.result)).toEqual(['C3110001'])
+    expect(first.result.links).toEqual({
+      self: first.url,
+      prev: null,
+      next: `${path}?page=2&pageSize=1`
+    })
+
+    const second = await search(
+      { email: sharedEmail },
+      { page: '2', pageSize: '1' }
+    )
+
+    expect(idsOf(second.result)).toEqual(['C3110002'])
+    expect(second.result.links).toEqual({
+      self: second.url,
+      prev: first.url,
+      next: null
+    })
+
+    const beyond = await search(
+      { email: sharedEmail },
+      { page: '3', pageSize: '1' }
+    )
+
+    expect(beyond.result).toEqual({
+      data: [],
+      links: { self: beyond.url, prev: second.url, next: null }
+    })
+  })
+})

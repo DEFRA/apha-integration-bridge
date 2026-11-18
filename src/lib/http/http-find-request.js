@@ -6,8 +6,9 @@ export class HTTPFindRequest {
    * @typedef {import('../../types/api.js').Request} Request
    * @param {Request} request
    * @param {import('joi').Schema} schema
+   * @param {string[]} [ids] the ids to page over, if not the payload's ids
    */
-  constructor(request, schema) {
+  constructor(request, schema, ids) {
     // The find routes validate query with PaginationSchema, which defaults
     // and coerces page/pageSize to numbers before the handler runs.
     const { page, pageSize } =
@@ -19,7 +20,7 @@ export class HTTPFindRequest {
 
     const nextOffset = pageSize * (page - 1) + pageSize
 
-    const distinctIds = [...new Set(payload.ids)]
+    const distinctIds = [...new Set(ids ?? payload.ids)]
 
     this.page = page
 

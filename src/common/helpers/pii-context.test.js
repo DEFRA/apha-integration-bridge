@@ -2,7 +2,7 @@ import Hapi from '@hapi/hapi'
 import { afterEach, beforeEach, describe, expect, test } from '@jest/globals'
 
 import { mask } from '../../lib/pii/index.js'
-import { piiContextPlugin } from './pii-context.js'
+import { hasPiiScope, piiContextPlugin } from './pii-context.js'
 
 /**
  * @typedef {import('../../types/api.js').HapiRequestWithScopes} HapiRequestWithScopes
@@ -114,5 +114,16 @@ describe('piiContextPlugin', () => {
     expect(unmasked.result).toEqual({ value: 'John Smith' })
 
     expect(masked.result).toEqual({ value: 'J********h' })
+  })
+})
+
+describe('hasPiiScope', () => {
+  test('is true only when the scopes include pii', () => {
+    expect(hasPiiScope({ app: { scopes: ['read', 'pii'] } })).toBe(true)
+    expect(hasPiiScope({ app: { scopes: ['read'] } })).toBe(false)
+  })
+
+  test('is false when the scopes are not populated', () => {
+    expect(hasPiiScope({ app: {} })).toBe(false)
   })
 })
