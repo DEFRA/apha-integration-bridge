@@ -63,7 +63,14 @@ Neither runs in `npm test`: the Jest setup removes `ANTHROPIC_API_KEY`, and test
 
 ## Moving to Bedrock
 
-Set `MEMO_EXTRACTION_PROVIDER=bedrock` and `MEMO_EXTRACTION_MODEL_ID` to the model or inference profile CDP approve. The service's task role needs `bedrock:InvokeModel` on it. Nothing outside `model.js` changes. Still to confirm with CDP: whether Bedrock is reached through a VPC endpoint or the squid proxy (the AWS SDK doesn't use `proxyFetch`), and that Bedrock invocation logging is off.
+Set `MEMO_EXTRACTION_PROVIDER=bedrock`, `MEMO_EXTRACTION_MODEL_ID` to the model or inference profile CDP approve, and `AWS_REGION` if it isn't `eu-west-2`. The service's task role needs `bedrock:InvokeModel` on it. Nothing outside `model.js` changes. Still to confirm with CDP: whether Bedrock is reached through a VPC endpoint or the squid proxy (the AWS SDK doesn't use `proxyFetch`), and that Bedrock invocation logging is off.
+
+What we know so far:
+
+- **Model IDs.** In Europe, Haiku 5.5 and Sonnet 5.5 can only be called through an inference profile, `eu.anthropic.claude-haiku-5-5` or `eu.anthropic.claude-sonnet-5-5`, not the plain model ID. An `eu.` profile can serve a request from any EU region, so CDP's account has to allow that, or name the profile it does allow.
+- **Turning a Claude model on** is a one-off step per account. Accept the model's Marketplace agreement (`aws bedrock create-foundation-model-agreement`), or let the first call accept it, which needs `aws-marketplace:Subscribe`. Then check `aws bedrock get-foundation-model-availability` shows every field `AVAILABLE`. Anthropic's use-case form isn't needed for models from Claude Opus 4.7 on.
+- **The first check once access is granted:** `npm run eval:memo -- --case roles-1 --repeats 1` with the settings above, then a full Haiku run (117 calls, about $0.05 at Anthropic's own prices). That shows whether Strands' structured output works on Bedrock. If it doesn't, `model.js` drops `structuredOutputSchema`, asks for JSON in the prompt and checks it with `schema.js`.
+- **A personal account didn't get that far** (19 November 2026). With no CDP account yet, we tried a personal AWS account: AWS's newer "project" sign-up, free plan, `eu-north-1`. Bedrock listed both models and invocation logging was off. We accepted Haiku 5.5's agreement, and the availability check then showed every field `AVAILABLE`. Every call still failed with `AccessDeniedException`: "not available for this account". AWS's docs say that case needs extra account-level access, arranged through AWS Sales. We stopped there, because the test would only have answered the structured-output question, and a CDP account answers that too.
 
 ## Findings
 
@@ -120,7 +127,7 @@ Gaps in the spike:
 - No caching, metrics or rate limiting beyond the per-request concurrency limit; no circuit breaker or dead-letter queue (later stages of the advice).
 - The real `POST /customers/find` route doesn't read `AH_MEMO` yet; it would also need to mask names (`mask()` already runs inside `extractMemoContacts`).
 - A name run straight into digits can't be verified (above).
-- Bedrock is untested, including whether its structured output behaves as the Anthropic API's does.
+- Bedrock is untested, including whether its structured output behaves as the Anthropic API's does. A personal AWS account couldn't get access to Claude models (see "Moving to Bedrock"), so this waits for CDP.
 
 Questions for the business (the advice's "immediate decisions" and open questions):
 
