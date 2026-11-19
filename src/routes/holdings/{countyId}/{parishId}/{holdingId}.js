@@ -18,8 +18,6 @@ import { HTTPObjectResponse } from '../../../../lib/http/http-response.js'
 import { TopLevelLinksReferenceSchema } from '../../../../types/links.js'
 import { config } from '../../../../config.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 const FindHoldingResponseSchema = Joi.object({
   data: Holdings.label('Basic Holding Data'),
   links: TopLevelLinksReferenceSchema
@@ -57,7 +55,7 @@ export const options = {
   tags: ['api', 'holdings'],
   description: 'Find a holding using its county, parish, and holdings ID',
   notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), '{holdingId}.md'),
+    path.join(import.meta.dirname, '{holdingId}.md'),
     'utf8'
   ),
   plugins: {

@@ -24,8 +24,6 @@ const PostFindPayloadSchema = Joi.object({
   ids: Joi.array().items(Joi.string()).required().label('Organisation ids')
 })
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -33,10 +31,7 @@ const options = {
   auth: false,
   tags: ['api', 'organisations'],
   description: 'Retrieve organisations by ids',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'find.md'),
-    'utf8'
-  ),
+  notes: fs.readFileSync(path.join(import.meta.dirname, 'find.md'), 'utf8'),
   plugins: {
     'hapi-swagger': {
       id: 'organisations-find',

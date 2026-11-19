@@ -37,7 +37,6 @@ import { buildQuestionsAndAnswersRequest } from '../../../lib/salesforce/request
  * @import {FileArrayKeyFactItem} from '../../../types/case-management/case.js'
  */
 
-const __dirname = new URL('.', import.meta.url).pathname
 const retriesConfig = {
   retries: 3,
   maxRetryTime: 10000,
@@ -55,10 +54,7 @@ const options = {
   },
   tags: ['api', 'case-management'],
   description: 'Create a case in APHA CRM (Salesforce)',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'case.md'),
-    'utf8'
-  ),
+  notes: fs.readFileSync(path.join(import.meta.dirname, 'case.md'), 'utf8'),
   plugins: {
     'hapi-swagger': {
       id: 'case-management-case-create',

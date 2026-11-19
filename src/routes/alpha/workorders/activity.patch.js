@@ -9,8 +9,6 @@ import {
 
 import { scenarios } from './activity.mocks.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * Presence rule for the fields that are mandatory only when the activity is
  * being resolved as completed, and optional otherwise (e.g. when it is
@@ -109,10 +107,7 @@ export const options = {
   tags: ['api', 'workorders'],
   description:
     'Update and resolve a work schedule activity (mock of the Sam standardwork API)',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'activity.md'),
-    'utf8'
-  ),
+  notes: fs.readFileSync(path.join(import.meta.dirname, 'activity.md'), 'utf8'),
   plugins: {
     'hapi-swagger': {
       id: 'workorders-activity',

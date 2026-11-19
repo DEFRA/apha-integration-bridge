@@ -9,8 +9,6 @@ import {
 } from '../../lib/http/http-exception.js'
 import { config } from '../../config.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @typedef {import('../../types/api.js').Request} Request
  * @typedef {import('../../types/api.js').ResponseObject} ResponseObject
@@ -106,10 +104,7 @@ const options = {
   tags: ['api', 'auth'],
   description:
     'Obtain Cognito access token using client credentials (Lower environments only)',
-  notes: fs.readFileSync(
-    path.join(decodeURIComponent(__dirname), 'token.md'),
-    'utf8'
-  ),
+  notes: fs.readFileSync(path.join(import.meta.dirname, 'token.md'), 'utf8'),
   plugins: {
     'hapi-swagger': {
       id: 'oauth2-token',

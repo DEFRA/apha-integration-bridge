@@ -11,8 +11,6 @@ import path from 'node:path'
 
 import { routingPlugin } from './routing'
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname)
-
 describe('routingPlugin', () => {
   let server
 
@@ -30,7 +28,10 @@ describe('routingPlugin', () => {
     await server.register({
       plugin: routingPlugin,
       options: {
-        routesDirectory: path.resolve(__dirname, '__fixtures__/routes')
+        routesDirectory: path.resolve(
+          import.meta.dirname,
+          '__fixtures__/routes'
+        )
       }
     })
   })

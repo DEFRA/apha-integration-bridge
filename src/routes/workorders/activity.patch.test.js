@@ -192,10 +192,7 @@ describe('PATCH /workorders/activity', () => {
       await routed.register({
         plugin: routingPlugin,
         options: {
-          routesDirectory: path.join(
-            new URL('.', import.meta.url).pathname,
-            '..'
-          )
+          routesDirectory: path.join(import.meta.dirname, '..')
         }
       })
     })

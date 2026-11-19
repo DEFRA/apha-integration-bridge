@@ -32,8 +32,6 @@ const GetHoldingPartiesResponseSchema = Joi.object({
   )
   .label('Holding Parties Response')
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -44,7 +42,7 @@ const options = {
   tags: ['api', 'holdings'],
   description:
     'Retrieve the holders, land owners and keepers involved with a CPH',
-  notes: loadDocumentation(__dirname, 'parties.md'),
+  notes: loadDocumentation(import.meta.dirname, 'parties.md'),
   plugins: {
     'hapi-swagger': {
       id: 'holding-parties',

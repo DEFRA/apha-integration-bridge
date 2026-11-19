@@ -13,9 +13,7 @@ import { SamResponseSchema, SamErrorSchema } from '../../lib/sam/schemas.js'
 import { StandardWorkSchema } from '../../types/workorders.js'
 import { samClient } from '../../lib/sam/index.js'
 
-const __dirname = new URL('.', import.meta.url).pathname
-
-const documentationNotes = loadDocumentation(__dirname, 'activity.md')
+const documentationNotes = loadDocumentation(import.meta.dirname, 'activity.md')
 
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}

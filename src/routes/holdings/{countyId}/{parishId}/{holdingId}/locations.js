@@ -25,8 +25,6 @@ const GetHoldingLocationsResponseSchema = Joi.object({
   )
   .label('Holding Locations Response')
 
-const __dirname = new URL('.', import.meta.url).pathname
-
 /**
  * @type {import('@hapi/hapi').ServerRoute['options']}
  */
@@ -36,7 +34,7 @@ const options = {
   },
   tags: ['api', 'holdings'],
   description: 'Retrieve every location a CPH is currently held at',
-  notes: loadDocumentation(__dirname, 'locations.md'),
+  notes: loadDocumentation(import.meta.dirname, 'locations.md'),
   plugins: {
     'hapi-swagger': {
       id: 'holding-locations',
