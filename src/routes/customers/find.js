@@ -108,7 +108,11 @@ const addCustomers = async (request, findRequest, connection) => {
     return
   }
 
-  const customers = await findCustomers(connection, findRequest.ids, 'PERSON')
+  // CPH associations are only added when the whole search is on this page
+  const customers = await findCustomers(connection, findRequest.ids, 'PERSON', {
+    withCphAssociations:
+      findRequest.page === 1 && !findRequest.hasRemainingIds()
+  })
 
   const isDevelopment = config.get('isDevelopment')
   if (isDevelopment) {

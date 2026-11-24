@@ -1,4 +1,5 @@
 import { toContactMethods } from './to-contact-methods.js'
+import { toCphAssociations } from './to-cph-associations.js'
 import { toPartyRoles } from './to-party-role.js'
 
 /**
@@ -20,17 +21,18 @@ const toOrganisationRelationships = (rows) => {
 
 /**
  * Adds party type, roles, contact details and related organisations to a
- * person.
+ * person, and its CPH associations if their rows are given.
  *
  * @param {Person} person
  * @param {{
  *   contacts: Record<string, unknown>[],
  *   roles: Record<string, unknown>[],
- *   organisations: Record<string, unknown>[]
+ *   organisations: Record<string, unknown>[],
+ *   cphAssociations?: Record<string, unknown>[]
  * }} partyRows
  */
 export const toCustomer = (person, partyRows) => {
-  return {
+  const customer = {
     type: person.type,
     id: person.id,
     partyType: 'PERSON',
@@ -45,5 +47,14 @@ export const toCustomer = (person, partyRows) => {
       ...person.relationships,
       organisations: toOrganisationRelationships(partyRows.organisations)
     }
+  }
+
+  if (partyRows.cphAssociations === undefined) {
+    return customer
+  }
+
+  return {
+    ...customer,
+    cphAssociations: toCphAssociations(partyRows.cphAssociations)
   }
 }

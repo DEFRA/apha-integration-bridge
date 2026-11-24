@@ -25,7 +25,7 @@ export const ContactMethods = Joi.alternatives(
   })
 ).label('Contact method')
 
-export const Role = Joi.object({
+const roleKeys = {
   mainRoleType: Joi.string()
     .required()
     .description("SAM's high-level role class, for example CUSTOMER"),
@@ -35,8 +35,14 @@ export const Role = Joi.object({
   roleName: Joi.string()
     .required()
     .allow(null)
-    .description("SAM's label for `roleType`, for example `CPH Holder`"),
+    .description("SAM's label for `roleType`, for example `CPH Holder`")
+}
+
+export const Role = Joi.object({
+  ...roleKeys,
   from: Joi.string().required().allow(null).description('Start of the role')
 })
   .description('A current role the party holds in SAM')
   .label('Role')
+
+export const AssociationRole = Joi.object(roleKeys).label('Association role')

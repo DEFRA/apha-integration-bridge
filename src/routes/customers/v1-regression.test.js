@@ -7,8 +7,8 @@ import { piiContextPlugin } from '../../common/helpers/pii-context.js'
 import { registerSimpleAuthStrategy } from '../../common/helpers/test-helpers/simple-auth.js'
 import route from './find.js'
 
-// snapshot recorded before partyType, roles, fax entries and related
-// organisations were added
+// snapshot recorded before partyType, roles, fax entries, related
+// organisations and CPH associations were added
 const FIXTURE_CUSTOMER_IDS = [
   'C123456',
   'C234567',
@@ -68,6 +68,7 @@ function withoutAddedMembers(customer) {
   delete customer.partyType
   delete customer.roles
   delete customer.relationships.organisations
+  delete customer.cphAssociations
 
   const contactDetailsBefore = []
 

@@ -8,6 +8,7 @@ import { execute } from '../operations/execute.js'
 import { createInClauseBindings } from '../utils/create-in-clause-bindings.js'
 import { loadSQL } from '../utils/load-sql.js'
 import { findOrganisationAttributesQuery } from './find-organisation-attributes.js'
+import { findPartyCphAssociationsQuery } from './find-party-cph-associations.js'
 import { findPartyContactsQuery } from './find-party-contacts.js'
 import { findPartyOrganisationsQuery } from './find-party-organisations.js'
 import { findPartyRolesQuery } from './find-party-roles.js'
@@ -102,11 +103,20 @@ const rowsOfParty = (rows, partyKey) => {
  * Finds customers or organisations by id, with their contacts and roles, and
  * for customers the organisations they are related to.
  *
+ * With `withCphAssociations`, a single customer also gets its CPH
+ * associations; with more than one, the query is not run.
+ *
  * @param {import('oracledb').Connection} connection
  * @param {string[]} ids
  * @param {'PERSON' | 'ORGANISATION'} customerType
+ * @param {{ withCphAssociations?: boolean }} [options]
  */
-export async function findCustomers(connection, ids, customerType) {
+export async function findCustomers(
+  connection,
+  ids,
+  customerType,
+  { withCphAssociations = false } = {}
+) {
   const query = findCustomersQuery(ids, customerType)
 
   const rows = await execute(connection, query)
@@ -150,6 +160,11 @@ export async function findCustomers(connection, ids, customerType) {
     findPartyOrganisationsQuery(partyKeys)
   )
 
+  const cphAssociations =
+    withCphAssociations && partyKeys.length === 1
+      ? await execute(connection, findPartyCphAssociationsQuery(partyKeys))
+      : undefined
+
   const customers = []
 
   for (const person of toPeople(rows, ids)) {
@@ -159,7 +174,9 @@ export async function findCustomers(connection, ids, customerType) {
       toCustomer(person, {
         contacts: rowsOfParty(contacts, partyKey),
         roles: rowsOfParty(roles, partyKey),
-        organisations: rowsOfParty(organisations, partyKey)
+        organisations: rowsOfParty(organisations, partyKey),
+        cphAssociations:
+          cphAssociations && rowsOfParty(cphAssociations, partyKey)
       })
     )
   }
