@@ -85,6 +85,7 @@ Each returned customer can include:
 - `addresses`: with preferred flag and structured address objects
 - `contactDetails`: email/mobile/landline/fax entries with preferred flag and `usageType`
 - `roles`: current SAM roles
+- `cphAssociations`: the CPHs the customer is currently linked to, only when the search identifies a single customer
 - `relationships.srabpiPlants`
 - `relationships.organisations`: organisations the customer is currently related to
 
@@ -117,6 +118,34 @@ Example contact entry:
 ### Roles
 
 Each `roles` entry is a current SAM role: `mainRoleType`, `roleType`, `roleName` (or `null`) and `from` (`YYYY-MM-DD`, or `null`).
+
+### CPH associations
+
+`cphAssociations` is only returned when the search finds a single customer: an ID search for one customer (unknown or organisation IDs alongside it are ignored), or an e-mail search with one match. A search that finds more than one customer, or spans more than one page, leaves it out. It is `[]` for a customer with no associations.
+
+There is one entry per CPH and role, ordered by `cph`, `role.mainRoleType` and `role.roleType`:
+
+- `cph`
+- `role`: `mainRoleType`, `roleType` and `roleName` (or `null`)
+- `involvementTypes`: `CPHHOLDERSHIP` for a holder, `OWNEROFLOCATION` for a land owner, `PRIMARYKEEPEROF`, `SECONDARYKEEPEROF` or `OWNEROF` for a keeper or owner of livestock
+- `locationIds`: empty if SAM has no location for it
+- `livestockUnitIds`: only for keepers and owners of livestock, otherwise empty
+
+A land owner's or keeper's CPH is the CPH of the active holdership at the location (the unit's current primary location for a keeper). Holderships are active on the same rules as `POST /holdings/find`. Ended involvements and ended roles are not included, and nor is an owner or keeper at a location with no active holdership.
+
+These values are not masked without the `pii` scope.
+
+```json
+"cphAssociations": [
+  {
+    "cph": "12/345/6789",
+    "role": { "mainRoleType": "CUSTOMER", "roleType": "LIVESTOCKKEEPER", "roleName": "Livestock Keeper" },
+    "involvementTypes": ["PRIMARYKEEPEROF"],
+    "locationIds": ["L123456"],
+    "livestockUnitIds": ["U000001"]
+  }
+]
+```
 
 ### Related organisations
 

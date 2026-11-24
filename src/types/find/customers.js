@@ -2,7 +2,7 @@ import Joi from 'joi'
 
 import { baseData, relationshipToMany, relationshipToOne } from './helpers.js'
 import { Address } from '../address.js'
-import { ContactMethods, Role } from '../party-details.js'
+import { AssociationRole, ContactMethods, Role } from '../party-details.js'
 
 export const CustomerRelationship = relationshipToOne(
   baseData({
@@ -33,6 +33,25 @@ export const CustomersRelationships = Joi.object({
   )
 }).required()
 
+export const CphAssociation = Joi.object({
+  cph: Joi.string().required().description('For example 12/345/6789'),
+  role: AssociationRole.required(),
+  involvementTypes: Joi.array()
+    .items(
+      Joi.string().valid(
+        'CPHHOLDERSHIP',
+        'OWNEROFLOCATION',
+        'PRIMARYKEEPEROF',
+        'SECONDARYKEEPEROF',
+        'OWNEROF'
+      )
+    )
+    .required()
+    .description('SAM involvement types behind the association'),
+  locationIds: Joi.array().items(Joi.string()).required(),
+  livestockUnitIds: Joi.array().items(Joi.string()).required()
+}).label('CPH association')
+
 export const Customer = CustomersData.keys({
   partyType: Joi.string()
     .valid('PERSON')
@@ -52,5 +71,10 @@ export const Customer = CustomersData.keys({
     .items(Role)
     .required()
     .description('Every current SAM role the customer holds'),
+  cphAssociations: Joi.array()
+    .items(CphAssociation)
+    .description(
+      'Current CPH associations, one per CPH and role. Only returned when the search finds a single customer'
+    ),
   relationships: CustomersRelationships
 })

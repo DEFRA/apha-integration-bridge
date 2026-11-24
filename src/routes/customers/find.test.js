@@ -9,6 +9,7 @@ import { oracleDb } from '../../common/helpers/oracledb.js'
 import { opentelemetryPlugin } from '../../common/helpers/telemetry.js'
 import { piiContextPlugin } from '../../common/helpers/pii-context.js'
 import * as executeOperation from '../../lib/db/operations/execute.js'
+import { findPartyCphAssociationsQuery } from '../../lib/db/queries/find-party-cph-associations.js'
 
 const path = '/customers/find'
 const organisationId = 'O123456'
@@ -135,6 +136,10 @@ const customer2 = {
     }
   }
 }
+
+// a search that identifies customer1 alone also returns its CPH associations,
+// of which it has none
+const uniqueCustomer1 = { ...customer1, cphAssociations: [] }
 
 async function createServer() {
   const server = Hapi.server({ port: 0 })
@@ -500,7 +505,7 @@ describe('POST /customers/find', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({
-      data: [customer1],
+      data: [uniqueCustomer1],
       links: {
         self: `${path}?${queryParams.toString()}`,
         next: null,
@@ -576,7 +581,7 @@ describe('POST /customers/find — PII masking integration', () => {
 
     const result = /** @type {Record<string, any>} */ (response.result)
 
-    expect(result.data[0]).toEqual(customer1)
+    expect(result.data[0]).toEqual(uniqueCustomer1)
   })
 
   test('masks every PII field when the client_id is not in the client scopes map', async () => {
@@ -1083,5 +1088,256 @@ describe('POST /customers/find — email search', () => {
       data: [],
       links: { self: beyond.url, prev: second.url, next: null }
     })
+  })
+})
+
+// C3187001 to C3187004 are seeded by
+// 024_add_customer_cph_association_scenarios.sql. C3187001 and C3187002 share
+// cph.search@example.com.
+describe('POST /customers/find — CPH associations', () => {
+  const PII_CLIENT_ID = 'pii-allowed-client'
+  const NO_PII_CLIENT_ID = 'no-pii-client'
+
+  const clientsScopes = [
+    { client_id: PII_CLIENT_ID, scopes: ['pii'] },
+    { client_id: NO_PII_CLIENT_ID, scopes: ['read'] }
+  ]
+
+  const associationsSql = findPartyCphAssociationsQuery([1]).sql
+
+  const holder = {
+    mainRoleType: 'CUSTOMER',
+    roleType: 'CPHHOLDER',
+    roleName: 'CPH Holder'
+  }
+
+  // every involvement C3187001 has that is ended, inactive or has no active
+  // holdership is left out
+  const associationsOfC3187001 = [
+    {
+      cph: '31/870/0001',
+      role: holder,
+      involvementTypes: ['CPHHOLDERSHIP'],
+      locationIds: ['L3187010', 'L3187011'],
+      livestockUnitIds: []
+    },
+    {
+      cph: '31/870/0001',
+      role: {
+        mainRoleType: 'CUSTOMER',
+        roleType: 'LANDOWNER',
+        roleName: 'Land Owner'
+      },
+      involvementTypes: ['OWNEROFLOCATION'],
+      locationIds: ['L3187010'],
+      livestockUnitIds: []
+    },
+    // held at a feature with no location
+    {
+      cph: '31/870/0002',
+      role: holder,
+      involvementTypes: ['CPHHOLDERSHIP'],
+      locationIds: [],
+      livestockUnitIds: []
+    },
+    {
+      cph: '31/870/0006',
+      role: {
+        mainRoleType: 'CUSTOMER',
+        roleType: 'LIVESTOCKKEEPER',
+        roleName: 'Livestock Keeper'
+      },
+      involvementTypes: ['PRIMARYKEEPEROF'],
+      locationIds: ['L3187015'],
+      livestockUnitIds: ['U3187040']
+    },
+    {
+      cph: '31/870/0006',
+      role: {
+        mainRoleType: 'CUSTOMER',
+        roleType: 'LIVESTOCKOWNER',
+        roleName: 'Livestock Owner'
+      },
+      involvementTypes: ['OWNEROF'],
+      locationIds: ['L3187015'],
+      livestockUnitIds: ['U3187040']
+    }
+  ]
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  /**
+   * @param {string} [clientId]
+   */
+  const createAssociationServer = async (clientId = PII_CLIENT_ID) => {
+    const server = Hapi.server({ port: 0 })
+
+    await server.register([
+      { plugin: hapiPino, options: { enabled: false } },
+      { plugin: clientScopesPlugin, options: { clientsScopes } },
+      piiContextPlugin,
+      oracleDb
+    ])
+
+    registerSimpleAuthStrategy(server, { clientId })
+
+    server.route({ ...route, path, method: 'POST' })
+
+    return server
+  }
+
+  /**
+   * @param {Record<string, unknown>} payload
+   * @param {{ page?: string, pageSize?: string, clientId?: string }} [options]
+   */
+  const find = async (payload, options = {}) => {
+    const { page = '1', pageSize = '10', clientId } = options
+    const server = await createAssociationServer(clientId)
+    const executeSpy = jest.spyOn(executeOperation, 'execute')
+    const url = `${path}?${new URLSearchParams({ page, pageSize }).toString()}`
+
+    const response = await server.inject({ method: 'POST', url, payload })
+
+    let associationQueries = 0
+
+    for (const [, query] of executeSpy.mock.calls) {
+      if (/** @type {{ sql: string }} */ (query).sql === associationsSql) {
+        associationQueries++
+      }
+    }
+
+    const result = /** @type {Record<string, any>} */ (response.result)
+
+    return { statusCode: response.statusCode, result, associationQueries }
+  }
+
+  test('returns every active association of a single customer, holder, land owner and keeper, with one query', async () => {
+    const { statusCode, result, associationQueries } = await find({
+      ids: ['C3187001']
+    })
+
+    expect(statusCode).toBe(200)
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0].cphAssociations).toEqual(associationsOfC3187001)
+    expect(associationQueries).toBe(1)
+  })
+
+  test('excludes ended, inactive and unheld involvements', async () => {
+    const { result } = await find({ ids: ['C3187001'] })
+
+    const [customer] = result.data
+    const cphs = customer.cphAssociations.map(({ cph }) => cph)
+    const unitIds = customer.cphAssociations.flatMap(
+      ({ livestockUnitIds }) => livestockUnitIds
+    )
+
+    // 0003 inactive feature, 0004 ended holdership, 0005 ended party role,
+    // 0007 retired role type, 0008 held only by an inactive party
+    for (const cph of [
+      '31/870/0003',
+      '31/870/0004',
+      '31/870/0005',
+      '31/870/0007',
+      '31/870/0008'
+    ]) {
+      expect(cphs).not.toContain(cph)
+    }
+
+    // U3187041 ended keepership, U3187042 ended primary location, U3187043
+    // ended keeper role, U3187044 no active holdership
+    expect(unitIds).toEqual(['U3187040', 'U3187040'])
+
+    // the ownership of L3187011 has ended and L3187014 has no holdership
+    const landOwner = customer.cphAssociations.find(
+      ({ role }) => role.roleType === 'LANDOWNER'
+    )
+
+    expect(landOwner.locationIds).toEqual(['L3187010'])
+  })
+
+  test('returns an empty array for a single customer with no associations', async () => {
+    const { result, associationQueries } = await find({ ids: ['C3187004'] })
+
+    expect(result.data[0].cphAssociations).toEqual([])
+    expect(associationQueries).toBe(1)
+  })
+
+  test('leaves the field out and runs no association query when several customers are found', async () => {
+    const { result, associationQueries } = await find({
+      ids: ['C3187001', 'C3187002']
+    })
+
+    expect(result.data.map(({ id }) => id)).toEqual(['C3187001', 'C3187002'])
+
+    for (const customer of result.data) {
+      expect(customer).not.toHaveProperty('cphAssociations')
+    }
+
+    expect(associationQueries).toBe(0)
+  })
+
+  test.each([
+    ['an organisation id', 'O123456'],
+    ['an unknown id', 'C9999999']
+  ])('enriches a single customer found alongside %s', async (_, otherId) => {
+    const { result } = await find({ ids: [otherId, 'C3187001'] })
+
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0].cphAssociations).toEqual(associationsOfC3187001)
+  })
+
+  test.each(['1', '2'])(
+    'leaves the field out when the search spans pages (page %s)',
+    async (page) => {
+      const { result, associationQueries } = await find(
+        { ids: ['C3187001', 'C3187004'] },
+        { page, pageSize: '1' }
+      )
+
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0]).not.toHaveProperty('cphAssociations')
+      expect(associationQueries).toBe(0)
+    }
+  )
+
+  test('enriches an e-mail search with exactly one match', async () => {
+    const { result } = await find({
+      email: 'cph.search@example.com',
+      surname: 'Holder'
+    })
+
+    expect(result.data.map(({ id }) => id)).toEqual(['C3187001'])
+    expect(result.data[0].cphAssociations).toEqual(associationsOfC3187001)
+  })
+
+  test('leaves the field out of an e-mail search with several matches', async () => {
+    const { result, associationQueries } = await find({
+      email: 'cph.search@example.com'
+    })
+
+    expect(result.data.map(({ id }) => id)).toEqual(['C3187001', 'C3187002'])
+
+    for (const customer of result.data) {
+      expect(customer).not.toHaveProperty('cphAssociations')
+    }
+
+    expect(associationQueries).toBe(0)
+  })
+
+  test('does not mask associations without the pii scope', async () => {
+    const unmasked = await find({ ids: ['C3187001'] })
+    const masked = await find(
+      { ids: ['C3187001'] },
+      { clientId: NO_PII_CLIENT_ID }
+    )
+
+    // the customer's name is masked, its associations are not
+    expect(unmasked.result.data[0].lastName).toBe('Holder')
+    expect(masked.result.data[0].lastName).toBe('H****r')
+    expect(masked.result.data[0].cphAssociations).toEqual(
+      associationsOfC3187001
+    )
   })
 })
